@@ -3310,12 +3310,13 @@ export default function WRNSignalTabs(props: {
                     ggridTemplateColumns, which is not a property, so three
                     fields that were meant to sit in a row had been stacking
                     full-width. */}
-                <div style={{ ...posCard, borderTop: `4px solid ${L_BLUE}` }}>
+                <div style={posCard}>
+                    <div style={{ ...posCardRule, background: L_BLUE }} />
+                    <div style={posCardHeader}>
+                        <div style={sectionNumber}>1</div>
+                        <div style={sectionLabel}>Your details</div>
+                    </div>
                     <div style={posCardBody}>
-                        <div style={sectionHeadRow}>
-                            <div style={sectionNumber}>1</div>
-                            <div style={sectionLabel}>Your details</div>
-                        </div>
                         <div
                             style={{
                                 display: "grid",
@@ -3362,18 +3363,24 @@ export default function WRNSignalTabs(props: {
                     </div>
                 </div>
 
-                {/* YOUR LETTER. The card keeps the serif and the paper white —
-                    it is the one surface in this file that is meant to look
-                    like a document rather than a panel. The "LETTER GENERATED"
-                    eyebrow and the inline "Copy letter" text button above it
-                    are gone; the label says what it is, and there is one copy
-                    control instead of two firing the same handler 600px
-                    apart. */}
-                <div style={sectionHeadRow}>
-                    <div style={sectionNumber}>2</div>
-                    <div style={sectionLabel}>Your letter</div>
+                {/* YOUR LETTER. Same card as YOUR DETAILS — white, blue rule,
+                    numbered head — with the document inside it rather than a
+                    bare label floating above a slab. The letter itself keeps
+                    the serif, the near-black ink and the generous measure: it
+                    is the one thing in this file meant to look like a page
+                    rather than a panel. It drops the shadow and the 14px
+                    radius it used to carry as a card in its own right, because
+                    the card around it now supplies both. */}
+                <div style={posCard}>
+                    <div style={{ ...posCardRule, background: L_BLUE }} />
+                    <div style={posCardHeader}>
+                        <div style={sectionNumber}>2</div>
+                        <div style={sectionLabel}>Your letter</div>
+                    </div>
+                    <div style={posCardBody}>
+                        <div style={clLetterCard}>{finalLetter}</div>
+                    </div>
                 </div>
-                <div style={clLetterCard}>{finalLetter}</div>
 
                 <div style={clActionRow}>
                     <button
@@ -6188,12 +6195,15 @@ const scanHeroSub: React.CSSProperties = {
     maxWidth: 460,
 }
 
+// 24px of top padding, here and on jfPanelHeader and posCardHeader. Every
+// card that carries a section label draws a 4px rule directly above it, and at
+// 18px the label was crowding its own rule.
 const scanCard: React.CSSProperties = {
     background: L_CARD,
     border: `1px solid ${L_BORDER_SOFT}`,
     boxShadow: L_SHADOW,
     borderRadius: 12,
-    padding: "18px 20px 20px",
+    padding: "24px 20px 20px",
     marginBottom: 16,
 }
 
@@ -6760,7 +6770,7 @@ const posCardHeader: React.CSSProperties = {
     display: "flex",
     alignItems: "flex-start",
     gap: 12,
-    padding: "18px 22px 0",
+    padding: "24px 22px 0",
 }
 
 const posCardCount: React.CSSProperties = {
@@ -6964,20 +6974,20 @@ const clFieldLabel: React.CSSProperties = {
     marginBottom: 6,
 }
 
-// The one surface in this file meant to look like a document rather than a
-// panel: paper white, serif, and near-black ink instead of the brand navy.
+// The page inside the card. White on white, so a hairline is what separates
+// it from its container — the shadow and the 14px radius went with the card it
+// used to be. Serif and near-black ink rather than the brand navy: this is the
+// one surface here meant to read as a document.
 const clLetterCard: React.CSSProperties = {
     background: "#FFFFFF",
     border: `1px solid ${L_BORDER_SOFT}`,
-    boxShadow: L_SHADOW,
-    borderRadius: 14,
-    padding: "32px 36px",
+    borderRadius: 10,
+    padding: "28px 32px",
     fontFamily: "Georgia, 'Times New Roman', serif",
     fontSize: 14,
     lineHeight: "24px",
     color: "#1A1A2E",
     whiteSpace: "pre-wrap",
-    marginBottom: 16,
 }
 
 const clActionRow: React.CSSProperties = {
@@ -7319,7 +7329,7 @@ const jfPanelHeader: React.CSSProperties = {
     display: "flex",
     alignItems: "flex-start",
     gap: 12,
-    padding: "18px 22px 0",
+    padding: "24px 22px 0",
 }
 
 // marginLeft:auto is what pushes the count right. The label cannot take flex:1
