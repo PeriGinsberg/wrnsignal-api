@@ -2550,7 +2550,7 @@ export default function WRNSignalTabs(props: {
                                     the gate reason renders in YOUR MOVE. */}
                                 <div style={{ ...jfPanelRule, background: L_TEAL }} />
                                 <div style={jfPanelHeader}>
-                                    <div style={jfPanelHeaderTitle}>
+                                    <div style={sectionLabel}>
                                         {isPass
                                             ? "Strengths to remember"
                                             : "Why you are competitive"}
@@ -2646,7 +2646,7 @@ export default function WRNSignalTabs(props: {
                             <div style={jfPanel}>
                                 <div style={{ ...jfPanelRule, background: L_RED }} />
                                 <div style={jfPanelHeader}>
-                                    <div style={jfPanelHeaderTitle}>
+                                    <div style={sectionLabel}>
                                         Your risks
                                     </div>
                                     <div
@@ -2864,7 +2864,9 @@ export default function WRNSignalTabs(props: {
                     carry their own numbers and titles. */}
                 {intro ? (
                     <div style={posHero}>
-                        <div style={posHeroEyebrow}>Positioning analysis</div>
+                        <div style={sectionLabelOnNavy}>
+                            Positioning analysis
+                        </div>
                         <div style={posHeroIntro}>{intro}</div>
                     </div>
                 ) : null}
@@ -2881,7 +2883,7 @@ export default function WRNSignalTabs(props: {
                         <div style={posCardRule} />
                         <div style={posCardHeader}>
                             <div style={posCardNumber}>1</div>
-                            <div style={posCardTitle}>Optimize key bullets</div>
+                            <div style={sectionLabel}>Optimize key bullets</div>
                             <div style={posCardCount}>
                                 {normalizedEdits.length}{" "}
                                 {normalizedEdits.length === 1 ? "edit" : "edits"}
@@ -2954,7 +2956,7 @@ export default function WRNSignalTabs(props: {
                         <div style={{ ...posCardRule, background: L_TEAL }} />
                         <div style={posCardHeader}>
                             <div style={posCardNumber}>1</div>
-                            <div style={posCardTitle}>Optimize key bullets</div>
+                            <div style={sectionLabel}>Optimize key bullets</div>
                             <div
                                 style={{ ...posCardCount, color: L_TEAL_INK }}
                             >
@@ -2984,7 +2986,7 @@ export default function WRNSignalTabs(props: {
                     <div style={posCardRule} />
                     <div style={posCardHeader}>
                         <div style={posCardNumber}>2</div>
-                        <div style={posCardTitle}>
+                        <div style={sectionLabel}>
                             Align your summary statement
                         </div>
                     </div>
@@ -3089,7 +3091,7 @@ export default function WRNSignalTabs(props: {
                     <div style={posCard}>
                         <div style={{ ...posCardRule, background: L_BLUE }} />
                         <div style={posCardHeader}>
-                            <div style={posCardTitle}>Lead with these</div>
+                            <div style={sectionLabel}>Lead with these</div>
                             <div style={posCardCount}>
                                 {drivers.length}{" "}
                                 {drivers.length === 1 ? "signal" : "signals"}
@@ -5366,7 +5368,7 @@ export default function WRNSignalTabs(props: {
                                     padding: 24,
                                     border: `1px solid ${BORDER_SOFT}`,
                                     background: CARD,
-                                    borderTop: `3px solid ${WRN_ORANGE}`,
+                                    borderTop: `3px solid ${L_ORANGE}`,
                                 }}
                             >
                                 <div
@@ -5375,7 +5377,7 @@ export default function WRNSignalTabs(props: {
                                         fontWeight: 900,
                                         letterSpacing: 1.8,
                                         textTransform: "uppercase" as const,
-                                        color: WRN_ORANGE,
+                                        color: L_ORANGE,
                                         marginBottom: 8,
                                     }}
                                 >
@@ -5623,14 +5625,7 @@ export default function WRNSignalTabs(props: {
                                 borderTop: `4px solid ${L_RULE_PERSONA}`,
                             }}
                         >
-                            <div
-                                style={{
-                                    ...scanEyebrow,
-                                    color: L_RULE_PERSONA_INK,
-                                }}
-                            >
-                                Evaluating as
-                            </div>
+                            <div style={sectionLabel}>Evaluating as</div>
                             <div
                                 style={{
                                     display: "flex",
@@ -5754,14 +5749,7 @@ export default function WRNSignalTabs(props: {
                         }}
                     >
                         {hasAnyResult ? null : (
-                            <div
-                                style={{
-                                    ...scanEyebrow,
-                                    color: L_RULE_JOB_INK,
-                                }}
-                            >
-                                The job
-                            </div>
+                            <div style={sectionLabel}>The job</div>
                         )}
 
                         <div style={{ display: "flex", gap: 8 }}>
@@ -6481,13 +6469,37 @@ const scanCard: React.CSSProperties = {
     marginBottom: 16,
 }
 
-const scanEyebrow: React.CSSProperties = {
-    fontSize: 11,
-    fontWeight: 600,
-    letterSpacing: 1.4,
+/* ---------- SECTION LABEL ----------
+   ONE STYLE FOR EVERY CARD-LEVEL HEADING IN THE FILE. It replaced four that
+   were doing the same job at three different sizes: scanEyebrow (11px muted),
+   jfPanelHeaderTitle (19px navy), posCardTitle (19px navy) and posHeroEyebrow
+   (11px orange).
+
+   inline-block is load-bearing. The rule has to stop at the end of the words,
+   and a block-level element would run it the full width of the card — which is
+   a divider, not an underscore. In a header row that also carries a count, the
+   label therefore takes no flex and the COUNT gets marginLeft:auto instead;
+   giving the label flex:1 would stretch it and drag the rule out with it.
+
+   This is NOT for the small eyebrows inside a block — BEFORE, AFTER, DO THIS,
+   USE THIS SUMMARY, SUPPORTING EVIDENCE, SIGNAL DECISION, YOUR MOVE. Those are
+   labels within a section and stay 11px orange with no rule. */
+const sectionLabel: React.CSSProperties = {
+    display: "inline-block",
+    fontSize: 17,
+    fontWeight: 700,
+    letterSpacing: "0.1em",
     textTransform: "uppercase",
-    color: L_MUTED,
-    marginBottom: 12,
+    color: L_NAVY,
+    borderBottom: `3px solid ${L_ORANGE}`,
+    paddingBottom: 6,
+    marginBottom: 14,
+}
+
+/** The same label on a navy ground, where the navy ink would be invisible. */
+const sectionLabelOnNavy: React.CSSProperties = {
+    ...sectionLabel,
+    color: "#FFFFFF",
 }
 
 // Supporting copy that the reader is meant to actually read sits at L_MUTED.
@@ -7032,15 +7044,6 @@ const posHeroSub: React.CSSProperties = {
     maxWidth: 460,
 }
 
-const posHeroEyebrow: React.CSSProperties = {
-    fontSize: 11,
-    fontWeight: 600,
-    letterSpacing: 1.4,
-    textTransform: "uppercase",
-    color: L_ORANGE,
-    marginBottom: 10,
-}
-
 const posHeroIntro: React.CSSProperties = {
     fontSize: 15,
     lineHeight: "24px",
@@ -7066,9 +7069,9 @@ const posCardRule: React.CSSProperties = {
 
 const posCardHeader: React.CSSProperties = {
     display: "flex",
-    alignItems: "baseline",
+    alignItems: "flex-start",
     gap: 12,
-    padding: "16px 22px 0",
+    padding: "18px 22px 0",
 }
 
 const posCardNumber: React.CSSProperties = {
@@ -7079,23 +7082,17 @@ const posCardNumber: React.CSSProperties = {
     flexShrink: 0,
 }
 
-const posCardTitle: React.CSSProperties = {
-    fontSize: 19,
-    fontWeight: 500,
-    color: L_NAVY,
-    flex: 1,
-    minWidth: 0,
-}
-
 const posCardCount: React.CSSProperties = {
     fontSize: 13,
     color: L_BLUE,
     whiteSpace: "nowrap",
     flexShrink: 0,
+    marginLeft: "auto",
+    paddingTop: 2,
 }
 
 const posCardBody: React.CSSProperties = {
-    padding: "18px 22px 22px",
+    padding: "0 22px 22px",
 }
 
 /* Bullet edits. Before and After stack, separated from the next edit by a
@@ -7567,29 +7564,29 @@ const jfPanelRule: React.CSSProperties = {
     height: 4,
 }
 
+// flex-start, not center: the row now aligns to the top of the label rather
+// than to the middle of a box whose height changed when the label grew a rule.
 const jfPanelHeader: React.CSSProperties = {
     display: "flex",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 12,
-    padding: "16px 22px 0",
+    padding: "18px 22px 0",
 }
 
-const jfPanelHeaderTitle: React.CSSProperties = {
-    fontSize: 19,
-    fontWeight: 500,
-    color: L_NAVY,
-    flex: 1,
-    minWidth: 0,
-}
-
+// marginLeft:auto is what pushes the count right. The label cannot take flex:1
+// for that job any more — see the note on sectionLabel.
 const jfPanelHeaderCount: React.CSSProperties = {
     fontSize: 13,
     whiteSpace: "nowrap",
     flexShrink: 0,
+    marginLeft: "auto",
+    paddingTop: 2,
 }
 
+// The label carries its own 14px bottom margin now, so the body no longer
+// pays for that gap a second time.
 const jfPanelBody: React.CSSProperties = {
-    padding: "20px 22px",
+    padding: "0 22px 20px",
 }
 
 // Hairlines between bullets, none after the last — a trailing rule with
