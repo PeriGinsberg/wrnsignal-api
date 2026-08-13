@@ -1,5 +1,6 @@
 // START FILE
 import * as React from "react"
+import { addPropertyControls, ControlType } from "framer"
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"
 
 /**
@@ -73,117 +74,115 @@ const DIM = "rgba(255,255,255,0.35)"
 /* ---------- UI COLORS — LIGHT ----------
    The student-facing language, restated here because a Framer code component
    cannot import lib/theme/surfaces.ts. THESE VALUES ARE COPIES, not a second
-   opinion: every one of them is lifted verbatim from LIGHT in that module, so
-   when a token moves there it must be moved here too.
+   opinion: when a token moves there it must be moved here too.
 
-   PEACH IS ACTION AND ONLY ACTION, AND ONE ACTION PER SURFACE — EXCEPT THE
-   RESULTS CTA PAIR, WHICH IS A MATCHED PAIR BY DESIGN. L_PEACH has four call
-   sites in this file and no more: Run JobFit (primaryBtn), the results CTA
-   pair (jfCtaPair, used by BOTH Proceed to Positioning and Add to Network
-   Tracker), Run New Job in the nav (sideRunBtn), and Open Job Posting in the
-   blocked-site modal (scanModalPrimaryBtn).
+   NAVY IS THE ACTION COLOUR. Every primary button on every surface is solid
+   #08203F with white text — Run JobFit, the results CTA pair, Run New Job in
+   the nav, Send Magic Link, Proceed to Cover Letter. Peach used to carry that
+   job and does not any more; L_PEACH is gone rather than left lying around for
+   someone to reach for.
 
-   The exception is deliberate and it is the only one. Proceeding to
-   Positioning and adding the company to the tracker are both things we want
-   the student to do; making one of them the white secondary told them to pick,
-   which is not a choice we meant to offer. They share one style object so they
-   stay identical, and "Not now" carries the quiet option as a text link below
-   the row. Two peach buttons is the exception where they are equals — it is
-   not licence for a second peach button that ranks below the first.
+   ORANGE IS STRUCTURE, NEVER CONTENT. #FF6B00 draws rules, section numbers,
+   eyebrow labels and bullet marks. It never sets body text and it never fills
+   a button. It measures 2.7:1 on the ground, which is why: it is legible as a
+   4px rule or a 26px numeral and illegible as a sentence.
 
-   Fetch, Extract from paste and Extract & Continue were peach and are not any
-   more: they move you through the form, they do not run the scan, and four
-   peach buttons stacked down one card is four things claiming to be the one
-   thing. They are outlined navy secondaries now. Eyebrows, step numbers and
-   the track bar were peach too (WRN_ORANGE); they are navy, teal or coral. If
-   you find yourself reaching for L_PEACH for a label, the answer is L_NAVY or
-   L_CORAL; if you are reaching for it for a second button on a surface that
-   already has one, the answer is the outlined secondary. */
-const L_PAGE =
-    "radial-gradient(120% 120% at 50% 0%, #f0f9fc 0%, #e6f4f9 100%)"
+   THE TOKEN NAMES OUTLIVED THE OLD PALETTE ON PURPOSE. L_TEAL, L_CORAL and the
+   rest are referenced in a few hundred places; renaming them would have made
+   this a thousand-line diff in which the actual colour decisions were
+   invisible. The names describe roles, the values are the new brand. */
+const L_PAGE = "#F2FAFD"
 const L_CARD = "#FFFFFF"
-const L_WELL = "#F4F8FB"
-const L_BORDER = "#DCE6EF"
-const L_BORDER_SOFT = "#E8EFF5"
+const L_WELL = "#F2FAFD"
+const L_BORDER = "#D9E7F0"
+const L_BORDER_SOFT = "#E7F1F7"
 const L_SHADOW =
-    "0 1px 2px rgba(19,41,74,0.04), 0 4px 12px rgba(19,41,74,0.06)"
+    "0 1px 2px rgba(8,32,63,0.04), 0 4px 12px rgba(8,32,63,0.06)"
 
 // Structure + the text ramp. Primary text IS the structural navy, which is
 // what keeps this reading as one product with the dashboard.
-const L_NAVY = "#13294A"
-const L_TEXT = "#13294A"
-const L_TEXT_2 = "#3D5878"
-const L_MUTED = "#4E6B88"
-const L_DIM = "#8299B3"
+const L_NAVY = "#08203F"
+const L_TEXT = "#08203F"
+// L_TEXT_2 and L_MUTED were two shades and are now one. The brand ramp has a
+// single secondary body ink, and pretending otherwise would have meant
+// inventing a shade the palette does not contain.
+const L_TEXT_2 = "#4A6478"
+const L_MUTED = "#4A6478"
+const L_DIM = "#7A93A8"
 
-// Meanings. Teal positive, coral attention, red danger — inks for text on the
-// light ground, accents for rails and fills.
-const L_TEAL = "#218C8C"
-const L_TEAL_INK = "#17706F"
-const L_CORAL = "#F26B52"
-const L_CORAL_INK = "#884133"
-const L_RED = "#E5484D"
+// Meanings. Teal positive, blue informational, red danger.
+const L_TEAL = "#00B3B3"
+// Teal at full strength fails as text on white (2.3:1), so every teal WORD on
+// a light ground takes the darkened ink instead. The rule keeps the brand teal.
+const L_TEAL_INK = "#00757A"
+const L_BLUE = "#009BFF"
+const L_RED = "#C4351B"
+// No coral in the new palette. The one call site that used it — the signed-out
+// headline accent — takes the teal ink, which is the only accent in the set
+// that clears 4.5:1 on the ground. Blue measures 2.8 and orange 2.7.
+const L_CORAL = L_RED
+const L_CORAL_INK = L_TEAL_INK
 
-// On the navy verdict card the light-ground inks are far too dark to read, so
-// the card carries its own pair: body text and a dimmed label.
-const L_ON_NAVY = "#E8F1F8"
-const L_ON_NAVY_DIM = "#7E9CBD"
-// Verdict words sit on navy too. Teal lifts to #5DCAA5 for the same reason;
-// #17706F on #13294A is unreadable. At 46px these are large text, which needs
-// 3:1 — teal measures 8.6, coral 5.4, red 4.1.
-const L_VERDICT_APPLY = "#5DCAA5"
-const L_VERDICT_REVIEW = L_CORAL
-const L_VERDICT_PASS = L_RED
+// Fills for callout blocks.
+const L_PALE_BLUE = "#B6F2F8"
+const L_PEACH_TINT = "#FFEEDC"
 
-// The navy hero on the scan page carries a softer subhead ink than the verdict
-// card's dimmed label — it is running text, not a label, so it sits a step
-// brighter than L_ON_NAVY_DIM.
-const L_ON_NAVY_SOFT = "#A9C6DE"
+/** Rules, section numerals, eyebrow labels, bullet marks. Never text, never a
+    button — see the note at the top of this block. */
+const L_ORANGE = "#FF6B00"
 
-// Hairlines drawn as navy at low alpha rather than the flat L_BORDER grey.
-// The scan page's controls are the only place that needs them: an input the
+// On navy the light-ground inks are unreadable, so the dark blocks carry their
+// own ramp.
+const L_ON_NAVY = "#DCEEF8"
+const L_ON_NAVY_DIM = "#7FA8C6"
+const L_ON_NAVY_SOFT = "#DCEEF8"
+
+// Verdict words, which are large display text on navy and need 3:1.
+// Apply is the brand's on-navy teal at 9.7:1. The other two are DERIVED: the
+// palette supplies no on-navy red, and its light-ground red measures 2.97:1
+// here — just under the bar — so Pass lifts to a lighter red at 4.5:1. Review
+// is brand orange, which reaches 5.7:1 on navy; this is the one place orange
+// sets a word, and it is a 30px verdict rather than body copy.
+const L_VERDICT_APPLY = "#00E0D5"
+const L_VERDICT_REVIEW = L_ORANGE
+const L_VERDICT_PASS = "#E8563A"
+
+// Hairlines drawn as navy at low alpha rather than a flat grey: an input the
 // user is meant to type into reads as structure, not as a divider.
-const L_HAIRLINE = "rgba(19,41,74,0.16)"
-const L_HAIRLINE_SOFT = "rgba(19,41,74,0.14)"
+const L_HAIRLINE = "rgba(8,32,63,0.16)"
+const L_HAIRLINE_SOFT = "rgba(8,32,63,0.14)"
 
-// One step down from L_DIM, for the two supporting lines under a control
-// (the resume preview and the "or paste" hint).
-const L_HINT = "#8AA3BC"
+// The struck "before" bullet and the two supporting lines under a control.
+const L_HINT = "#7A93A8"
 
-// Card rails on the scan page. The colour is a family marker, not a meaning:
-// blue is who you are, teal is the job. Each card's eyebrow takes the darkened
-// ink of its own rail so the pair reads as one unit rather than a stripe with
-// an unrelated label under it.
-const L_RAIL_PERSONA = "#51ADE5"
-const L_RAIL_PERSONA_INK = "#1F6FA8"
-const L_RAIL_JOB = "#218C8C"
-const L_RAIL_JOB_INK = "#17706F"
+// Top rules. Every card that carries one draws it 4px across the full width —
+// the filled header bars and the coloured left rails both became this, because
+// white-on-teal and white-on-red both fail in the new palette and a rail on
+// the left of a card reads as a scrollbar once the fill goes.
+const L_RULE_PERSONA = L_BLUE
+const L_RULE_PERSONA_INK = L_BLUE
+const L_RULE_JOB = L_TEAL
+const L_RULE_JOB_INK = L_TEAL_INK
 
 // The DEFAULT tag once its chip is filled navy.
-const L_ON_NAVY_TAG = "#9FC6E4"
+const L_ON_NAVY_TAG = "#7FA8C6"
 
 // Placeholder ink. Applied by class rather than inline style — ::placeholder
 // is a pseudo-element and cannot be reached from a React style object.
-const L_PLACEHOLDER = "#6B87A3"
-
-/** The one action colour. ONE call site on the scan page: Run JobFit. Fetch,
-    Extract from paste and Extract & Continue are outlined secondaries — they
-    move you through the form, they do not run the scan. */
-const L_PEACH = "#F2963B"
+const L_PLACEHOLDER = "#7A93A8"
 
 /* ---------- SCAN LOADING ----------
-   The three cards shown while a scan is in flight. Each is one of the three
-   things the result will say, in the colour that thing wears on the result
-   page: the verdict on navy, competitive in teal, exposed in coral. Each card
-   carries its own ink pair because it is a fill, not the page ground. */
-const L_SCAN_WHY_BG = "#E1F5EE"
-const L_SCAN_WHY_ICON = "#1D9E75"
-const L_SCAN_WHY_TITLE = "#04342C"
-const L_SCAN_WHY_BODY = "#0F6E56"
-const L_SCAN_RISK_BG = "#FAECE7"
-const L_SCAN_RISK_ICON = "#D85A30"
-const L_SCAN_RISK_TITLE = "#4A1B0C"
-const L_SCAN_RISK_BODY = "#993C1D"
+   The three cards shown while a scan is in flight, each in the colour its
+   half of the result wears: the verdict on navy, competitive in the pale blue
+   callout fill, exposed in the peach tint. */
+const L_SCAN_WHY_BG = L_PALE_BLUE
+const L_SCAN_WHY_ICON = L_TEAL_INK
+const L_SCAN_WHY_TITLE = L_NAVY
+const L_SCAN_WHY_BODY = L_TEXT_2
+const L_SCAN_RISK_BG = L_PEACH_TINT
+const L_SCAN_RISK_ICON = L_RED
+const L_SCAN_RISK_TITLE = L_NAVY
+const L_SCAN_RISK_BODY = L_TEXT_2
 
 type TabKey = "jobfit" | "positioning" | "coverletter" | "networking"
 
@@ -411,8 +410,11 @@ function renderDiffTeal(before: string, after: string) {
                 const shouldBold =
                     !!w && w.length >= 4 && !stop.has(w) && !beforeWords.has(w)
 
+                // The diff mark is a pale-blue highlight now, not teal bold
+                // text. Bolding a word inside a sentence to mean "this is new"
+                // reads as emphasis; a highlight reads as a mark.
                 return shouldBold ? (
-                    <span key={i} style={{ fontWeight: 950, color: WRN_TEAL }}>
+                    <span key={i} style={diffMark}>
                         {p}
                     </span>
                 ) : (
@@ -1043,7 +1045,10 @@ function ScanLoadingCards() {
     )
 }
 
-export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
+export default function WRNSignalTabs(props: {
+    style?: React.CSSProperties
+    logo?: string
+}) {
     console.log("WRNSignalTabs loaded", {
         marker: "RUN-CHECK-0317-B",
         path:
@@ -1130,11 +1135,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
     // Messages
     const [errorMsg, setErrorMsg] = React.useState<string | null>(null)
     const [debug, setDebug] = React.useState<any>(null)
-
-    // Positioning accordions
-    const [posDriversOpen, setPosDriversOpen] = React.useState(true)
-    const [posBulletsOpen, setPosBulletsOpen] = React.useState(false)
-    const [posSummaryOpen, setPosSummaryOpen] = React.useState(false)
 
     // ── Networking prompt under the JobFit verdict ────────────────────────
     // Its own application id, deliberately separate from the tracked
@@ -1651,9 +1651,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         setNetworkingResult(null)
         setTab("jobfit")
         setJobInputOpen(true)
-        setPosDriversOpen(true)
-        setPosBulletsOpen(false)
-        setPosSummaryOpen(false)
         setNetOpenSet(new Set())
         setJobContext({ title: "", company: "" })
         const defaultPersona =
@@ -1793,7 +1790,9 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     onClick={onClick}
                     type="button"
                 >
-                    {loading ? <span style={spinner} aria-hidden /> : null}
+                    {loading ? (
+                        <span style={spinnerOnNavy} aria-hidden />
+                    ) : null}
                     {loading ? "Running…" : label}
                 </button>
                 {loading && scanCards ? <ScanLoadingCards /> : null}
@@ -1957,9 +1956,6 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
             )
 
             setPositioningResult(data)
-            setPosDriversOpen(true)
-            setPosBulletsOpen(false)
-            setPosSummaryOpen(false)
             setTab("positioning")
         } catch (e: any) {
             setErrorMsg(e?.message || String(e))
@@ -2479,17 +2475,9 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     the force-pass wording it used to carry
                                     ("Why This Is a Pass") is redundant now that
                                     the gate reason renders in YOUR MOVE. */}
-                                <div
-                                    style={{
-                                        ...jfPanelHeader,
-                                        background: L_WHY_HEADER,
-                                    }}
-                                >
-                                    <ScanTargetIcon
-                                        size={20}
-                                        color={L_WHY_HEADER_ACCENT}
-                                    />
-                                    <div style={jfPanelHeaderTitle}>
+                                <div style={{ ...jfPanelRule, background: L_TEAL }} />
+                                <div style={jfPanelHeader}>
+                                    <div style={sectionLabel}>
                                         {isPass
                                             ? "Strengths to remember"
                                             : "Why you are competitive"}
@@ -2497,7 +2485,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     <div
                                         style={{
                                             ...jfPanelHeaderCount,
-                                            color: L_WHY_HEADER_ACCENT,
+                                            color: L_BLUE,
                                         }}
                                     >
                                         {renderedBullets.length}{" "}
@@ -2583,23 +2571,15 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
 
                         {showRiskCard ? (
                             <div style={jfPanel}>
-                                <div
-                                    style={{
-                                        ...jfPanelHeader,
-                                        background: L_RISK_HEADER,
-                                    }}
-                                >
-                                    <ScanAlertIcon
-                                        size={20}
-                                        color={L_RISK_HEADER_ACCENT}
-                                    />
-                                    <div style={jfPanelHeaderTitle}>
+                                <div style={{ ...jfPanelRule, background: L_RED }} />
+                                <div style={jfPanelHeader}>
+                                    <div style={sectionLabel}>
                                         Your risks
                                     </div>
                                     <div
                                         style={{
                                             ...jfPanelHeaderCount,
-                                            color: L_RISK_HEADER_ACCENT,
+                                            color: L_RED,
                                         }}
                                     >
                                         {riskRows.length}{" "}
@@ -2702,309 +2682,20 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
         if (!r) {
             return (
                 <>
-                    <div
-                        style={{
-                            borderRadius: 18,
-                            border: "1px solid rgba(81,173,229,0.20)",
-                            background: "#0D1829",
-                            overflow: "hidden",
-                            marginBottom: 16,
-                            marginTop: 4,
-                            position: "relative" as const,
-                        }}
-                    >
-                        <div
-                            style={{
-                                position: "absolute" as const,
-                                top: -40,
-                                left: -40,
-                                width: 220,
-                                height: 220,
-                                borderRadius: "50%",
-                                background: "rgba(81,173,229,0.07)",
-                                pointerEvents: "none" as const,
-                            }}
-                        />
-                        <div
-                            style={{
-                                position: "absolute" as const,
-                                bottom: -20,
-                                right: -20,
-                                width: 180,
-                                height: 180,
-                                borderRadius: "50%",
-                                background: "rgba(254,176,106,0.06)",
-                                pointerEvents: "none" as const,
-                            }}
-                        />
-                        <div
-                            style={{
-                                height: 3,
-                                background:
-                                    "linear-gradient(90deg,#FEB06A,#f97316,#51ADE5)",
-                            }}
-                        />
-                        <div
-                            style={{
-                                padding: "28px 32px 32px",
-                                position: "relative" as const,
-                                zIndex: 1,
-                                textAlign: "center" as const,
-                            }}
-                        >
-                            <div
-                                style={{
-                                    fontSize: 9,
-                                    fontWeight: 900,
-                                    letterSpacing: 2,
-                                    textTransform: "uppercase" as const,
-                                    color: "rgba(254,176,106,0.70)",
-                                    marginBottom: 16,
-                                }}
-                            >
-                                Step 2 of 4
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: 38,
-                                    fontWeight: 950,
-                                    color: "rgba(255,255,255,0.97)",
-                                    lineHeight: 1.1,
-                                    letterSpacing: -1.2,
-                                    marginBottom: 10,
-                                }}
-                            >
-                                Your resume,{" "}
-                                <span style={{ color: "#FEB06A" }}>
-                                    rewritten
-                                </span>
-                                <br />
-                                for this exact job.
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: 22,
-                                    fontWeight: 950,
-                                    letterSpacing: -0.5,
-                                    marginBottom: 18,
-                                    lineHeight: 1.2,
-                                }}
-                            >
-                                <span style={{ color: "#FEB06A" }}>
-                                    One targeted story.
-                                </span>
-                                <span
-                                    style={{ color: "rgba(255,255,255,0.90)" }}
-                                >
-                                    {" "}
-                                    Not a template.
-                                </span>
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: 14,
-                                    lineHeight: "22px",
-                                    color: "rgba(255,255,255,0.45)",
-                                    margin: "0 auto 28px",
-                                    maxWidth: 500,
-                                }}
-                            >
-                                Most resumes fail because they say the right
-                                things in the wrong language. SIGNAL rewrites
-                                your bullets to match this specific role —
-                                before a recruiter decides in 7 seconds that
-                                you're not a fit.
-                            </div>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column" as const,
-                                    gap: 10,
-                                    marginBottom: 22,
-                                    textAlign: "left" as const,
-                                }}
-                            >
-                                {[
-                                    {
-                                        n: "1",
-                                        head: "Run JobFit",
-                                        body: "Paste the job description and get a clear verdict — Apply, Review, or Pass — before you spend a minute on an application.",
-                                    },
-                                    {
-                                        n: "2",
-                                        head: "Run Positioning",
-                                        body: "Rewrite your resume bullets to match this specific role. One targeted story, in the language the recruiter is scanning for.",
-                                    },
-                                    {
-                                        n: "3",
-                                        head: "Run Cover Letter",
-                                        body: "Write a letter in your voice that connects your background to this company — not a template, a real case for why you fit.",
-                                    },
-                                    {
-                                        n: "4",
-                                        head: "Run Networking",
-                                        body: "Build your outreach plan. Know who to contact, what to say, and how to follow up so your name is known before the interview.",
-                                    },
-                                ].map((s, idx) => {
-                                    const isActive = idx === 1
-                                    const isDone = idx < 1
-                                    return (
-                                        <div
-                                            key={s.n}
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "flex-start",
-                                                gap: 14,
-                                                opacity: isActive
-                                                    ? 1
-                                                    : isDone
-                                                      ? 0.55
-                                                      : 0.3,
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    width: isActive ? 36 : 28,
-                                                    height: isActive ? 36 : 28,
-                                                    borderRadius: "50%",
-                                                    background: isActive
-                                                        ? "rgba(254,176,106,0.25)"
-                                                        : isDone
-                                                          ? "rgba(74,222,128,0.15)"
-                                                          : "rgba(255,255,255,0.06)",
-                                                    border: isActive
-                                                        ? "2px solid rgba(254,176,106,0.70)"
-                                                        : isDone
-                                                          ? "2px solid rgba(74,222,128,0.50)"
-                                                          : "2px solid rgba(255,255,255,0.15)",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    fontSize: isActive
-                                                        ? 15
-                                                        : 12,
-                                                    fontWeight: 900,
-                                                    color: isActive
-                                                        ? "#FEB06A"
-                                                        : isDone
-                                                          ? "#4ade80"
-                                                          : "rgba(255,255,255,0.35)",
-                                                    flexShrink: 0,
-                                                    marginTop: 1,
-                                                }}
-                                            >
-                                                {s.n}
-                                            </div>
-                                            <div>
-                                                <div
-                                                    style={{
-                                                        fontSize: isActive
-                                                            ? 16
-                                                            : 13,
-                                                        fontWeight: isActive
-                                                            ? 900
-                                                            : 700,
-                                                        color: isActive
-                                                            ? "#FEB06A"
-                                                            : isDone
-                                                              ? "rgba(255,255,255,0.75)"
-                                                              : "rgba(255,255,255,0.40)",
-                                                        marginBottom: 3,
-                                                    }}
-                                                >
-                                                    {s.head}
-                                                </div>
-                                                <div
-                                                    style={{
-                                                        fontSize: 12,
-                                                        lineHeight: "18px",
-                                                        color: isActive
-                                                            ? "rgba(255,255,255,0.55)"
-                                                            : "rgba(255,255,255,0.22)",
-                                                    }}
-                                                >
-                                                    {s.body}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                            <div
-                                style={{
-                                    borderRadius: 14,
-                                    border: "1px solid rgba(74,222,128,0.18)",
-                                    background: "rgba(74,222,128,0.05)",
-                                    padding: "14px 16px",
-                                    textAlign: "left" as const,
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        fontSize: 9,
-                                        fontWeight: 900,
-                                        letterSpacing: 2,
-                                        textTransform: "uppercase" as const,
-                                        color: "rgba(74,222,128,0.65)",
-                                        marginBottom: 10,
-                                    }}
-                                >
-                                    What Positioning gives you
-                                </div>
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        flexDirection: "column" as const,
-                                        gap: 8,
-                                    }}
-                                >
-                                    {[
-                                        "Rewritten resume bullets matched to this specific job",
-                                        "Language that mirrors what the job description actually says",
-                                        "Proof-first bullets that lead with outcomes, not responsibilities",
-                                        "A narrative that positions you as the obvious candidate",
-                                    ].map((item, i) => (
-                                        <div
-                                            key={i}
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "flex-start",
-                                                gap: 10,
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    width: 18,
-                                                    height: 18,
-                                                    borderRadius: "50%",
-                                                    background:
-                                                        "rgba(74,222,128,0.15)",
-                                                    border: "1.5px solid rgba(74,222,128,0.45)",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    fontSize: 10,
-                                                    fontWeight: 900,
-                                                    color: "#4ade80",
-                                                    flexShrink: 0,
-                                                    marginTop: 1,
-                                                }}
-                                            >
-                                                ✓
-                                            </div>
-                                            <div
-                                                style={{
-                                                    fontSize: 12,
-                                                    lineHeight: "18px",
-                                                    color: "rgba(255,255,255,0.60)",
-                                                }}
-                                            >
-                                                {item}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                    {/* Landing. Eight elements stood here and all eight are
+                        gone: two ambient orb glows, the gradient top bar, the
+                        "Step 2 of 4" eyebrow, a 38px headline, a 22px
+                        sub-headline, a body paragraph, the same four numbered
+                        steps JobFit already deleted, and a "What Positioning
+                        gives you" checklist. Roughly 700px of preamble in front
+                        of one button. */}
+                    <div style={posHero}>
+                        <div style={posHeroHead}>
+                            Rewrite your resume for this job
+                        </div>
+                        <div style={posHeroSub}>
+                            Your bullets, in the language this posting uses, so
+                            a recruiter sees the match in seconds.
                         </div>
                     </div>
                     {renderPrimaryRunButton(
@@ -3090,777 +2781,222 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
 
         const s = r.summary_statement ?? r.summaryStatement ?? null
 
-        // Section header helper
-        function PosSection({
-            label,
-            count,
-        }: {
-            label: string
-            count?: number
-        }) {
-            return (
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        margin: "22px 0 12px",
-                    }}
-                >
-                    <div
-                        style={{
-                            fontSize: 9,
-                            fontWeight: 900,
-                            letterSpacing: 2,
-                            textTransform: "uppercase" as const,
-                            color: "rgba(255,255,255,0.32)",
-                            flexShrink: 0,
-                        }}
-                    >
-                        {label}
-                    </div>
-                    <div
-                        style={{
-                            flex: 1,
-                            height: 1,
-                            background: "rgba(255,255,255,0.07)",
-                        }}
-                    />
-                    {count !== undefined ? (
-                        <div
-                            style={{
-                                fontSize: 9,
-                                fontWeight: 900,
-                                padding: "2px 8px",
-                                borderRadius: 999,
-                                background: "rgba(255,255,255,0.06)",
-                                color: "rgba(255,255,255,0.25)",
-                                flexShrink: 0,
-                            }}
-                        >
-                            {count} {count === 1 ? "signal" : "signals"}
-                        </div>
-                    ) : null}
-                </div>
-            )
-        }
-
         return (
             <>
-                {/* ── POSITIONING ANALYSIS HEADER ── */}
+                {/* The analysis header. The gradient top bar and the
+                    "POSITIONING ANALYSIS" eyebrow-on-a-white-card became a navy
+                    hero with an orange eyebrow — same prose, one block instead
+                    of two. The three-dot step track that sat under it is gone
+                    entirely: it labelled the two cards below it, which already
+                    carry their own numbers and titles. */}
                 {intro ? (
-                    <div
-                        style={{
-                            borderRadius: 18,
-                            border: "1px solid rgba(81,173,229,0.20)",
-                            background: "#0D1829",
-                            overflow: "hidden",
-                            marginBottom: 20,
-                            boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
-                        }}
-                    >
-                        <div
-                            style={{
-                                height: 3,
-                                background:
-                                    "linear-gradient(90deg,#51ADE5,#218C8C,#FEB06A)",
-                            }}
-                        />
-                        <div style={{ padding: "20px 24px" }}>
-                            <div
-                                style={{
-                                    fontSize: 9,
-                                    fontWeight: 900,
-                                    letterSpacing: 2,
-                                    textTransform: "uppercase" as const,
-                                    color: "rgba(81,173,229,0.65)",
-                                    marginBottom: 10,
-                                }}
-                            >
-                                Positioning Analysis
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: 15,
-                                    lineHeight: "24px",
-                                    color: "rgba(255,255,255,0.88)",
-                                }}
-                            >
-                                {intro}
-                            </div>
+                    <div style={posHero}>
+                        <div style={sectionLabelOnNavy}>
+                            Positioning analysis
                         </div>
+                        <div style={posHeroIntro}>{intro}</div>
                     </div>
                 ) : null}
 
-                {/* ── STEP TRACK ── */}
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        marginBottom: 20,
-                        padding: "0 4px",
-                    }}
-                >
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: 10,
-                                height: 10,
-                                borderRadius: "50%",
-                                background: "#FEB06A",
-                                boxShadow: "0 0 8px #FEB06A",
-                            }}
-                        />
-                        <div
-                            style={{
-                                fontSize: 11,
-                                color: "rgba(255,255,255,0.40)",
-                                whiteSpace: "nowrap" as const,
-                            }}
-                        >
-                            Step 1 — Optimize Bullets
-                        </div>
-                    </div>
-                    <div
-                        style={{
-                            flex: 1,
-                            height: 1,
-                            background: "rgba(255,255,255,0.08)",
-                        }}
-                    />
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: 10,
-                                height: 10,
-                                borderRadius: "50%",
-                                background: "#51ADE5",
-                                boxShadow: "0 0 8px #51ADE5",
-                            }}
-                        />
-                        <div
-                            style={{
-                                fontSize: 11,
-                                color: "rgba(255,255,255,0.40)",
-                                whiteSpace: "nowrap" as const,
-                            }}
-                        >
-                            Step 2 — Update Summary
-                        </div>
-                    </div>
-                    <div
-                        style={{
-                            flex: 1,
-                            height: 1,
-                            background: "rgba(255,255,255,0.08)",
-                        }}
-                    />
-                    <div
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: 10,
-                                height: 10,
-                                borderRadius: "50%",
-                                background: "#4ade80",
-                                boxShadow: "0 0 8px #4ade80",
-                            }}
-                        />
-                        <div
-                            style={{
-                                fontSize: 11,
-                                color: "rgba(255,255,255,0.40)",
-                                whiteSpace: "nowrap" as const,
-                            }}
-                        >
-                            Why it works
-                        </div>
-                    </div>
-                </div>
-
-                {/* ── STEP 1: OPTIMIZE KEY BULLETS ── */}
+                {/* STEP 1. White card, orange top rule, number-and-title
+                    header. Gone from it: the gradient bar, the "Do This First
+                    / Start here" eyebrow pair, the two-line subhead, the
+                    circled numeral, and the dark nested before/after grid.
+                    Before and After stack now rather than sitting in two
+                    columns — on a narrow main column each was getting half a
+                    column for a full resume bullet. */}
                 {normalizedEdits.length > 0 ? (
-                    <div
-                        style={{
-                            borderRadius: 18,
-                            border: "1px solid rgba(254,176,106,0.30)",
-                            background: "#0D1829",
-                            overflow: "hidden",
-                            marginBottom: 14,
-                            boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
-                        }}
-                    >
-                        <div
-                            style={{
-                                height: 3,
-                                background:
-                                    "linear-gradient(90deg,#FEB06A,#f97316,#FEB06A)",
-                            }}
-                        />
-                        <div
-                            style={{
-                                padding: "18px 22px 16px",
-                                borderBottom:
-                                    "1px solid rgba(254,176,106,0.12)",
-                                background: "rgba(254,176,106,0.06)",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 12,
-                            }}
-                        >
-                            <div
-                                style={{
-                                    width: 36,
-                                    height: 36,
-                                    borderRadius: "50%",
-                                    flexShrink: 0,
-                                    background: "rgba(254,176,106,0.15)",
-                                    border: "2px solid rgba(254,176,106,0.50)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    fontSize: 16,
-                                    fontWeight: 900,
-                                    color: "#FEB06A",
-                                }}
-                            >
-                                1
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 8,
-                                        marginBottom: 3,
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            fontSize: 13,
-                                            fontWeight: 900,
-                                            color: "#FEB06A",
-                                        }}
-                                    >
-                                        Do This First
-                                    </div>
-                                    <div
-                                        style={{
-                                            padding: "3px 10px",
-                                            borderRadius: 999,
-                                            background:
-                                                "rgba(254,176,106,0.12)",
-                                            border: "1px solid rgba(254,176,106,0.25)",
-                                            fontSize: 10,
-                                            fontWeight: 900,
-                                            color: "#FEB06A",
-                                        }}
-                                    >
-                                        Start here
-                                    </div>
-                                </div>
-                                <div
-                                    style={{
-                                        fontSize: 16,
-                                        fontWeight: 900,
-                                        color: "rgba(255,255,255,0.95)",
-                                    }}
-                                >
-                                    Optimize Key Bullets
-                                </div>
-                                <div
-                                    style={{
-                                        fontSize: 12,
-                                        color: "rgba(255,255,255,0.40)",
-                                        marginTop: 3,
-                                    }}
-                                >
-                                    Copy these rewrites into your resume — they
-                                    match the exact language this hiring manager
-                                    is scanning for
-                                </div>
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                    padding: "3px 10px",
-                                    borderRadius: 999,
-                                    background: "rgba(254,176,106,0.12)",
-                                    color: "#FEB06A",
-                                    border: "1px solid rgba(254,176,106,0.25)",
-                                    flexShrink: 0,
-                                }}
-                            >
+                    <div style={posCard}>
+                        <div style={posCardRule} />
+                        <div style={posCardHeader}>
+                            <div style={posCardNumber}>1</div>
+                            <div style={sectionLabel}>Optimize key bullets</div>
+                            <div style={posCardCount}>
                                 {normalizedEdits.length}{" "}
-                                {normalizedEdits.length === 1
-                                    ? "edit"
-                                    : "edits"}
+                                {normalizedEdits.length === 1 ? "edit" : "edits"}
                             </div>
                         </div>
 
-                        <div
-                            style={{
-                                padding: "14px 16px",
-                                display: "flex",
-                                flexDirection: "column" as const,
-                                gap: 10,
-                            }}
-                        >
+                        <div style={posCardBody}>
                             {normalizedEdits.map((b: any, i: number) => (
                                 <div
                                     key={i}
-                                    style={{
-                                        borderRadius: 14,
-                                        border: "1px solid rgba(255,255,255,0.08)",
-                                        background: "rgba(255,255,255,0.03)",
-                                        overflow: "hidden",
-                                    }}
+                                    style={
+                                        i === normalizedEdits.length - 1
+                                            ? posEditLast
+                                            : posEdit
+                                    }
                                 >
+                                    <div style={posEditEyebrow}>Before</div>
+                                    <div style={posBeforeText}>
+                                        {b.before || "—"}
+                                    </div>
+
                                     <div
                                         style={{
-                                            display: "grid",
-                                            gridTemplateColumns: "1fr 1fr",
+                                            ...posEditEyebrow,
+                                            marginTop: 14,
                                         }}
                                     >
-                                        <div
-                                            style={{
-                                                padding: "14px 16px",
-                                                borderRight:
-                                                    "1px solid rgba(255,255,255,0.06)",
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    fontSize: 9,
-                                                    fontWeight: 900,
-                                                    letterSpacing: 1.4,
-                                                    textTransform:
-                                                        "uppercase" as const,
-                                                    color: "rgba(255,255,255,0.25)",
-                                                    marginBottom: 8,
-                                                }}
-                                            >
-                                                Before
-                                            </div>
-                                            <div
-                                                style={{
-                                                    fontSize: 13,
-                                                    lineHeight: "20px",
-                                                    color: "rgba(255,255,255,0.40)",
-                                                }}
-                                            >
-                                                {b.before || "—"}
-                                            </div>
-                                        </div>
-                                        <div
-                                            style={{
-                                                padding: "14px 16px",
-                                                background:
-                                                    "rgba(74,222,128,0.06)",
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    fontSize: 9,
-                                                    fontWeight: 900,
-                                                    letterSpacing: 1.4,
-                                                    textTransform:
-                                                        "uppercase" as const,
-                                                    color: "#4ade80",
-                                                    marginBottom: 8,
-                                                }}
-                                            >
-                                                After
-                                            </div>
-                                            <div
-                                                style={{
-                                                    fontSize: 13,
-                                                    lineHeight: "20px",
-                                                    color: "rgba(255,255,255,0.88)",
-                                                }}
-                                            >
-                                                {b.after
-                                                    ? renderDiffTeal(
-                                                          String(
-                                                              b.before || ""
-                                                          ),
-                                                          String(b.after || "")
-                                                      )
-                                                    : "—"}
-                                            </div>
-                                            {b.after && (
-                                                <button
-                                                    onClick={() => copyText(String(b.after), `bullet-${i}`)}
-                                                    type="button"
-                                                    style={{
-                                                        marginTop: 8,
-                                                        padding: "5px 12px",
-                                                        borderRadius: 8,
-                                                        fontSize: 11,
-                                                        fontWeight: 900,
-                                                        cursor: "pointer",
-                                                        border: wasCopied(`bullet-${i}`) ? "1px solid rgba(74,222,128,0.40)" : "1px solid rgba(255,255,255,0.12)",
-                                                        background: wasCopied(`bullet-${i}`) ? "rgba(74,222,128,0.15)" : "rgba(255,255,255,0.07)",
-                                                        color: wasCopied(`bullet-${i}`) ? "#4ade80" : "rgba(255,255,255,0.50)",
-                                                    }}
-                                                >
-                                                    {wasCopied(`bullet-${i}`) ? "Copied ✓" : "⎘ Copy bullet"}
-                                                </button>
-                                            )}
-                                        </div>
+                                        After
                                     </div>
-                                    {b.why ? (
-                                        <div
+                                    <div style={posAfterText}>
+                                        {b.after
+                                            ? renderDiffTeal(
+                                                  String(b.before || ""),
+                                                  String(b.after || "")
+                                              )
+                                            : "—"}
+                                    </div>
+
+                                    {b.after && (
+                                        <button
+                                            onClick={() =>
+                                                copyText(
+                                                    String(b.after),
+                                                    `bullet-${i}`
+                                                )
+                                            }
+                                            type="button"
                                             style={{
-                                                padding: "9px 16px",
-                                                borderTop:
-                                                    "1px solid rgba(254,176,106,0.10)",
-                                                background:
-                                                    "rgba(254,176,106,0.04)",
-                                                display: "flex",
-                                                alignItems: "flex-start",
-                                                gap: 8,
+                                                ...posCopyBtn,
+                                                ...(wasCopied(`bullet-${i}`)
+                                                    ? posCopyBtnDone
+                                                    : null),
                                             }}
                                         >
-                                            <div
-                                                style={{
-                                                    fontSize: 9,
-                                                    fontWeight: 900,
-                                                    letterSpacing: 1,
-                                                    textTransform:
-                                                        "uppercase" as const,
-                                                    color: "rgba(254,176,106,0.70)",
-                                                    flexShrink: 0,
-                                                    paddingTop: 2,
-                                                }}
-                                            >
-                                                Why
-                                            </div>
-                                            <div
-                                                style={{
-                                                    fontSize: 12,
-                                                    color: "rgba(255,255,255,0.50)",
-                                                    lineHeight: "18px",
-                                                }}
-                                            >
-                                                {b.why}
-                                            </div>
-                                        </div>
+                                            {wasCopied(`bullet-${i}`)
+                                                ? "Copied ✓"
+                                                : "Copy bullet"}
+                                        </button>
+                                    )}
+
+                                    {b.why ? (
+                                        <div style={posWhyText}>{b.why}</div>
                                     ) : null}
                                 </div>
                             ))}
                         </div>
                     </div>
                 ) : (
-                    <div
-                        style={{
-                            borderRadius: 18,
-                            border: "1px solid rgba(74,222,128,0.25)",
-                            background: "#0D1829",
-                            overflow: "hidden",
-                            marginBottom: 14,
-                        }}
-                    >
-                        <div style={{ height: 3, background: "linear-gradient(90deg,#4ade80,#22c55e,#4ade80)" }} />
-                        <div style={{ padding: "18px 22px 16px", borderBottom: "1px solid rgba(74,222,128,0.12)", background: "rgba(74,222,128,0.06)", display: "flex", alignItems: "center", gap: 12 }}>
-                            <div style={{ width: 36, height: 36, borderRadius: "50%", flexShrink: 0, background: "rgba(74,222,128,0.15)", border: "2px solid rgba(74,222,128,0.50)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 900, color: "#4ade80" }}>✓</div>
-                            <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: 16, fontWeight: 900, color: "rgba(255,255,255,0.95)" }}>Optimize Key Bullets</div>
-                                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.40)", marginTop: 3 }}>No changes needed</div>
+                    <div style={posCard}>
+                        <div style={{ ...posCardRule, background: L_TEAL }} />
+                        <div style={posCardHeader}>
+                            <div style={posCardNumber}>1</div>
+                            <div style={sectionLabel}>Optimize key bullets</div>
+                            <div
+                                style={{ ...posCardCount, color: L_TEAL_INK }}
+                            >
+                                Aligned
                             </div>
-                            <div style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: "rgba(74,222,128,0.12)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.25)", flexShrink: 0 }}>Aligned</div>
                         </div>
-                        <div style={{ padding: "18px 22px" }}>
-                            <div style={{ fontSize: 14, fontWeight: 700, color: "#4ade80", marginBottom: 6 }}>Your resume bullets are aligned well for this job.</div>
-                            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: "20px" }}>SIGNAL didn't find any bullets that need rewriting. Your experience descriptions already match what this role is looking for.</div>
+                        <div style={posCardBody}>
+                            <div style={posEmptyLead}>
+                                Your resume bullets are aligned well for this
+                                job.
+                            </div>
+                            <div style={posEmptyBody}>
+                                SIGNAL didn't find any bullets that need
+                                rewriting. Your experience descriptions already
+                                match what this role is looking for.
+                            </div>
                         </div>
                     </div>
                 )}
 
-                {/* ── STEP 2: UPDATE YOUR SUMMARY ── */}
-                <div
-                    style={{
-                        borderRadius: 18,
-                        border: "1px solid rgba(81,173,229,0.25)",
-                        background: "#0D1829",
-                        overflow: "hidden",
-                        marginBottom: 14,
-                        boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
-                    }}
-                >
-                    <div
-                        style={{
-                            height: 3,
-                            background:
-                                "linear-gradient(90deg,#51ADE5,#218C8C,#51ADE5)",
-                        }}
-                    />
-                    <div
-                        style={{
-                            padding: "18px 22px 16px",
-                            borderBottom: "1px solid rgba(81,173,229,0.12)",
-                            background: "rgba(81,173,229,0.06)",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 12,
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: "50%",
-                                flexShrink: 0,
-                                background: "rgba(81,173,229,0.15)",
-                                border: "2px solid rgba(81,173,229,0.40)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: 16,
-                                fontWeight: 900,
-                                color: "#51ADE5",
-                            }}
-                        >
-                            2
-                        </div>
-                        <div style={{ flex: 1 }}>
-                            <div
-                                style={{
-                                    fontSize: 13,
-                                    fontWeight: 900,
-                                    color: "#51ADE5",
-                                    marginBottom: 3,
-                                }}
-                            >
-                                Then Do This
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: 16,
-                                    fontWeight: 900,
-                                    color: "rgba(255,255,255,0.95)",
-                                }}
-                            >
-                                Align Your Summary Statement
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: 12,
-                                    color: "rgba(255,255,255,0.40)",
-                                    marginTop: 3,
-                                    lineHeight: "17px",
-                                }}
-                            >
-                                A summary is only suggested when your resume
-                                isn't telling one clear story. It helps connect
-                                your background to this specific role when that
-                                connection isn't immediately obvious.
-                            </div>
+                {/* STEP 2. Same card shape as Step 1, same three branches
+                    behind it. Gone: the gradient bar, the "Then Do This"
+                    eyebrow, the circled numeral, and the two-line subhead
+                    explaining when a summary is suggested — the pill below
+                    already says which case this is. */}
+                <div style={posCard}>
+                    <div style={posCardRule} />
+                    <div style={posCardHeader}>
+                        <div style={posCardNumber}>2</div>
+                        <div style={sectionLabel}>
+                            Align your summary statement
                         </div>
                     </div>
 
-                    <div style={{ padding: "18px 22px" }}>
+                    <div style={posCardBody}>
                         {typeof s === "string" && s.trim() ? (
-                            <div
-                                style={{
-                                    fontSize: 14,
-                                    lineHeight: "22px",
-                                    color: "rgba(255,255,255,0.75)",
-                                }}
-                            >
-                                {s.trim()}
-                            </div>
+                            <div style={posProse}>{s.trim()}</div>
                         ) : !s || typeof s !== "object" ? (
-                            <div
-                                style={{
-                                    fontSize: 14,
-                                    color: "rgba(255,255,255,0.35)",
-                                }}
-                            >
+                            <div style={posEmptyBody}>
                                 No summary guidance was generated for this job.
                             </div>
                         ) : (
                             <>
-                                {/* Need summary pill */}
-                                <div
-                                    style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: 6,
-                                        padding: "5px 14px",
-                                        borderRadius: 999,
-                                        marginBottom: 16,
-                                        background:
-                                            String(
-                                                s.need_summary ??
-                                                    s.needSummary ??
-                                                    ""
-                                            ).trim() === "NO"
-                                                ? "rgba(74,222,128,0.10)"
-                                                : "rgba(254,176,106,0.10)",
-                                        border:
-                                            String(
-                                                s.need_summary ??
-                                                    s.needSummary ??
-                                                    ""
-                                            ).trim() === "NO"
-                                                ? "1px solid rgba(74,222,128,0.25)"
-                                                : "1px solid rgba(254,176,106,0.25)",
-                                        fontSize: 11,
-                                        fontWeight: 900,
-                                        color:
-                                            String(
-                                                s.need_summary ??
-                                                    s.needSummary ??
-                                                    ""
-                                            ).trim() === "NO"
-                                                ? "#4ade80"
-                                                : "#FEB06A",
-                                    }}
-                                >
-                                    {String(
-                                        s.need_summary ?? s.needSummary ?? ""
-                                    ).trim() === "NO"
-                                        ? "✓ Your current summary works for this role"
-                                        : "✎ Swap in this summary before you apply"}
+                                {/* The verdict line. It was a tinted pill in
+                                    two colours; a dot and a sentence says the
+                                    same thing without a second fill. */}
+                                <div style={posNeedRow}>
+                                    <div style={posNeedDot} />
+                                    <div style={posNeedText}>
+                                        {String(
+                                            s.need_summary ??
+                                                s.needSummary ??
+                                                ""
+                                        ).trim() === "NO"
+                                            ? "Your current summary works for this role"
+                                            : "Swap in this summary before you apply"}
+                                    </div>
                                 </div>
 
                                 {String(s.why ?? "").trim() ? (
-                                    <div
-                                        style={{
-                                            fontSize: 13,
-                                            lineHeight: "20px",
-                                            color: "rgba(255,255,255,0.50)",
-                                            marginBottom: 16,
-                                        }}
-                                    >
+                                    <div style={posWhyText}>
                                         {String(s.why).trim()}
                                     </div>
                                 ) : null}
 
                                 {(s.recommended_summary ??
                                 s.recommendedSummary) ? (
-                                    <div>
-                                        <div
-                                            style={{
-                                                fontSize: 9,
-                                                fontWeight: 900,
-                                                letterSpacing: 1.5,
-                                                textTransform:
-                                                    "uppercase" as const,
-                                                color: "#51ADE5",
-                                                marginBottom: 8,
-                                            }}
-                                        >
-                                            Resume Summary
+                                    <div style={posSummaryBlock}>
+                                        <div style={posSummaryEyebrow}>
+                                            Use this summary
                                         </div>
-                                        <div
-                                            style={{
-                                                fontSize: 14,
-                                                lineHeight: "22px",
-                                                color: "rgba(255,255,255,0.88)",
-                                                padding: "14px 16px",
-                                                background:
-                                                    "rgba(81,173,229,0.06)",
-                                                borderRadius: 12,
-                                                border: "1px solid rgba(81,173,229,0.18)",
-                                            }}
-                                        >
+                                        <div style={posSummaryText}>
                                             {String(
                                                 s.recommended_summary ??
                                                     s.recommendedSummary
                                             )}
                                         </div>
                                         <button
-                                            onClick={() => copyText(String(s.recommended_summary ?? s.recommendedSummary ?? ""), "pos-summary")}
+                                            onClick={() =>
+                                                copyText(
+                                                    String(
+                                                        s.recommended_summary ??
+                                                            s.recommendedSummary ??
+                                                            ""
+                                                    ),
+                                                    "pos-summary"
+                                                )
+                                            }
                                             type="button"
                                             style={{
-                                                marginTop: 10,
-                                                padding: "6px 14px",
-                                                borderRadius: 8,
-                                                fontSize: 11,
-                                                fontWeight: 900,
-                                                cursor: "pointer",
-                                                border: wasCopied("pos-summary") ? "1px solid rgba(81,173,229,0.50)" : "1px solid rgba(255,255,255,0.12)",
-                                                background: wasCopied("pos-summary") ? "rgba(81,173,229,0.15)" : "rgba(255,255,255,0.07)",
-                                                color: wasCopied("pos-summary") ? "#51ADE5" : "rgba(255,255,255,0.50)",
+                                                ...posCopyBtn,
+                                                ...(wasCopied("pos-summary")
+                                                    ? posCopyBtnDone
+                                                    : null),
                                             }}
                                         >
-                                            {wasCopied("pos-summary") ? "Copied ✓" : "⎘ Copy summary"}
+                                            {wasCopied("pos-summary")
+                                                ? "Copied ✓"
+                                                : "Copy summary"}
                                         </button>
                                     </div>
                                 ) : null}
 
                                 {Array.isArray(s.evidence) &&
                                 s.evidence.length ? (
-                                    <div
-                                        style={{
-                                            marginTop: 16,
-                                            paddingTop: 14,
-                                            borderTop:
-                                                "1px solid rgba(255,255,255,0.07)",
-                                        }}
-                                    >
-                                        <div
-                                            style={{
-                                                fontSize: 9,
-                                                fontWeight: 900,
-                                                letterSpacing: 1.5,
-                                                textTransform:
-                                                    "uppercase" as const,
-                                                color: "rgba(255,255,255,0.28)",
-                                                marginBottom: 10,
-                                            }}
-                                        >
+                                    <div style={posEvidenceBlock}>
+                                        <div style={posEvidenceEyebrow}>
                                             Supporting evidence
                                         </div>
                                         {s.evidence.map((e: any, i: number) => (
-                                            <div
-                                                key={i}
-                                                style={{
-                                                    display: "flex",
-                                                    alignItems: "flex-start",
-                                                    gap: 10,
-                                                    marginBottom: 8,
-                                                }}
-                                            >
-                                                <div
-                                                    style={{
-                                                        width: 5,
-                                                        height: 5,
-                                                        borderRadius: "50%",
-                                                        background:
-                                                            "rgba(81,173,229,0.50)",
-                                                        flexShrink: 0,
-                                                        marginTop: 7,
-                                                    }}
-                                                />
-                                                <div
-                                                    style={{
-                                                        fontSize: 12,
-                                                        lineHeight: "18px",
-                                                        color: "rgba(255,255,255,0.50)",
-                                                    }}
-                                                >
+                                            <div key={i} style={posBulletRow}>
+                                                <div style={posBulletMark} />
+                                                <div style={posBulletText}>
                                                     {toSafeLine(e)}
                                                 </div>
                                             </div>
@@ -3872,148 +3008,43 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     </div>
                 </div>
 
-                {/* ── WHY IT WORKS — PRIMARY MATCH DRIVERS ── */}
+                {/* Drivers. The header carried "Lead With These in Your
+                    Interview & Cover Letter" over a subhead saying the same
+                    thing again; the card is now a heading and a list. The
+                    filter above it is doing real work and stays — it strips
+                    intake-form echoes (name:, target role, location:) that the
+                    API leaks into primary_match_drivers. */}
                 {drivers.length > 0 ? (
-                    <div
-                        style={{
-                            borderRadius: 18,
-                            border: "1px solid rgba(74,222,128,0.20)",
-                            background: "#0D1829",
-                            overflow: "hidden",
-                            marginBottom: 14,
-                            boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
-                        }}
-                    >
-                        <div
-                            style={{
-                                height: 3,
-                                background:
-                                    "linear-gradient(90deg,#4ade80,#22c55e,#51ADE5)",
-                            }}
-                        />
-                        <div
-                            style={{
-                                padding: "18px 22px 16px",
-                                borderBottom: "1px solid rgba(74,222,128,0.10)",
-                                background: "rgba(74,222,128,0.05)",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 12,
-                            }}
-                        >
-                            <div
-                                style={{
-                                    width: 36,
-                                    height: 36,
-                                    borderRadius: "50%",
-                                    flexShrink: 0,
-                                    background: "rgba(74,222,128,0.12)",
-                                    border: "2px solid rgba(74,222,128,0.35)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    fontSize: 16,
-                                    fontWeight: 900,
-                                    color: "#4ade80",
-                                }}
-                            >
-                                ✦
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <div
-                                    style={{
-                                        fontSize: 13,
-                                        fontWeight: 900,
-                                        color: "#4ade80",
-                                        marginBottom: 3,
-                                    }}
-                                >
-                                    Lead With These in Your Interview & Cover Letter
-                                </div>
-                                <div
-                                    style={{
-                                        fontSize: 16,
-                                        fontWeight: 900,
-                                        color: "rgba(255,255,255,0.95)",
-                                    }}
-                                >
-                                    Your strongest competitive signals for this role
-                                </div>
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                    padding: "3px 10px",
-                                    borderRadius: 999,
-                                    background: "rgba(74,222,128,0.10)",
-                                    color: "#4ade80",
-                                    border: "1px solid rgba(74,222,128,0.22)",
-                                    flexShrink: 0,
-                                }}
-                            >
-                                {drivers.length} signals
+                    <div style={posCard}>
+                        <div style={{ ...posCardRule, background: L_BLUE }} />
+                        <div style={posCardHeader}>
+                            <div style={sectionLabel}>Lead with these</div>
+                            <div style={posCardCount}>
+                                {drivers.length}{" "}
+                                {drivers.length === 1 ? "signal" : "signals"}
                             </div>
                         </div>
-                        <div
-                            style={{
-                                padding: "14px 18px 16px",
-                                display: "flex",
-                                flexDirection: "column" as const,
-                                gap: 10,
-                            }}
-                        >
+                        <div style={posCardBody}>
                             {drivers.map((d, i) => (
-                                <div
-                                    key={i}
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "flex-start",
-                                        gap: 12,
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            width: 22,
-                                            height: 22,
-                                            borderRadius: "50%",
-                                            background: "rgba(74,222,128,0.12)",
-                                            border: "1.5px solid rgba(74,222,128,0.40)",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            flexShrink: 0,
-                                            marginTop: 1,
-                                            fontSize: 11,
-                                            color: "#4ade80",
-                                            fontWeight: 900,
-                                        }}
-                                    >
-                                        ✓
-                                    </div>
-                                    <div
-                                        style={{
-                                            fontSize: 14,
-                                            lineHeight: "22px",
-                                            color: "rgba(255,255,255,0.85)",
-                                        }}
-                                    >
-                                        {d}
-                                    </div>
+                                <div key={i} style={posBulletRow}>
+                                    <div style={posBulletMark} />
+                                    <div style={posBulletText}>{d}</div>
                                 </div>
                             ))}
                         </div>
                     </div>
                 ) : null}
 
-                {/* ── CTA ── */}
+                {/* CTA. Solid navy, like every other primary in the file. It
+                    was jobfitHeroBtn, the peach-to-blue gradient, which is now
+                    called from Networking only. */}
                 <div style={{ marginTop: 20 }}>
                     <button
-                        style={{ ...jobfitHeroBtn, width: "100%" }}
+                        style={{ ...primaryBtn, width: "100%" }}
                         onClick={() => goTo("coverletter")}
                         type="button"
                     >
-                        Proceed to Cover Letter →
+                        Proceed to Cover Letter
                     </button>
                 </div>
             </>
@@ -6187,78 +5218,21 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                             margin: "0 auto",
                         }}
                     >
-                        {/* Logo */}
+                        {/* Logo. The CSS wordmark it replaces was three
+                            stacked pieces — italic text, a peach dash and the
+                            two-tone byline — reassembled on every surface and
+                            never quite matching the real mark. Drop the file
+                            into the "Logo" image control in Framer Studio; see
+                            the note on addPropertyControls at the foot of this
+                            file for why there is no default. */}
                         <div style={{ textAlign: "center", marginBottom: 32 }}>
-                            <div
-                                style={{
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    marginBottom: 6,
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        fontSize: 36,
-                                        fontWeight: 800,
-                                        fontStyle: "italic",
-                                        letterSpacing: -1,
-                                        color: L_NAVY,
-                                        lineHeight: 1,
-                                    }}
-                                >
-                                    SIGNAL
-                                </span>
-                                <div
-                                    style={{
-                                        width: 20,
-                                        height: 5,
-                                        background: WRN_ORANGE,
-                                        borderRadius: 1,
-                                        marginLeft: 5,
-                                        marginBottom: 2,
-                                    }}
+                            {props.logo ? (
+                                <img
+                                    src={props.logo}
+                                    alt="SIGNAL"
+                                    style={authLogo}
                                 />
-                            </div>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "flex-start",
-                                    justifyContent: "flex-start",
-                                    gap: 5,
-                                }}
-                            >
-                                <span
-                                    style={{
-                                        fontSize: 10,
-                                        fontWeight: 600,
-                                        color: L_MUTED,
-                                    }}
-                                >
-                                    by
-                                </span>
-                                <span
-                                    style={{
-                                        fontSize: 10,
-                                        fontWeight: 900,
-                                        letterSpacing: 0.8,
-                                        color: WRN_ORANGE,
-                                        textTransform: "uppercase" as const,
-                                    }}
-                                >
-                                    Workforce
-                                </span>
-                                <span
-                                    style={{
-                                        fontSize: 10,
-                                        fontWeight: 900,
-                                        letterSpacing: 0.8,
-                                        color: WRN_BLUE,
-                                        textTransform: "uppercase" as const,
-                                    }}
-                                >
-                                    Ready Now
-                                </span>
-                            </div>
+                            ) : null}
                         </div>
 
                         {/* Headline */}
@@ -6274,11 +5248,12 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                             }}
                         >
                             The decision engine for{" "}
-                            {/* The accent stays warm, but it is the coral ink,
-                                not the action peach. L_PEACH on this ground
-                                measures 2.1:1 — it would re-create the exact
-                                bug this screen is being fixed for. Same choice
-                                the old landing headline made for "applying". */}
+                            {/* The new palette has no coral, so L_CORAL_INK is
+                                the teal ink now — and it is the only accent in
+                                the set that clears 4.5:1 on this ground. Blue
+                                measures 2.8 and orange 2.7; either would put
+                                back the unreadable headline this screen was
+                                fixed for. */}
                             <span style={{ color: L_CORAL_INK }}>
                                 smarter applications
                             </span>
@@ -6320,7 +5295,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                     padding: 24,
                                     border: `1px solid ${BORDER_SOFT}`,
                                     background: CARD,
-                                    borderTop: `3px solid ${WRN_ORANGE}`,
+                                    borderTop: `3px solid ${L_ORANGE}`,
                                 }}
                             >
                                 <div
@@ -6329,7 +5304,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                         fontWeight: 900,
                                         letterSpacing: 1.8,
                                         textTransform: "uppercase" as const,
-                                        color: WRN_ORANGE,
+                                        color: L_ORANGE,
                                         marginBottom: 8,
                                     }}
                                 >
@@ -6387,12 +5362,8 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                         width: "100%",
                                         padding: "13px",
                                         borderRadius: 13,
-                                        // Flat action peach. The peach-to-blue
-                                        // gradient was the last of the five
-                                        // this file used to carry, and it made
-                                        // the one button on the screen the
-                                        // only gradient in the product.
-                                        background: L_PEACH,
+                                        // Solid navy, the action colour.
+                                        background: L_NAVY,
                                         fontWeight: 600,
                                         fontSize: 14,
                                         fontFamily: "inherit",
@@ -6401,7 +5372,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                                             authStatus === "email_sent"
                                                 ? "default"
                                                 : "pointer",
-                                        color: L_NAVY,
+                                        color: "#FFFFFF",
                                         opacity:
                                             authStatus === "email_sent"
                                                 ? 0.4
@@ -6542,6 +5513,7 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     tab={tab}
                     isLoggedIn={isLoggedIn}
                     authedEmail={authedEmail}
+                    logo={props.logo}
                     onSelect={(t) => goTo(t)}
                     onRunNewJob={() => runNewJob()}
                     onNetworkBoard={goToNetworkCompanies}
@@ -6577,17 +5549,10 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                         <div
                             style={{
                                 ...scanCard,
-                                borderLeft: `4px solid ${L_RAIL_PERSONA}`,
+                                borderTop: `4px solid ${L_RULE_PERSONA}`,
                             }}
                         >
-                            <div
-                                style={{
-                                    ...scanEyebrow,
-                                    color: L_RAIL_PERSONA_INK,
-                                }}
-                            >
-                                Evaluating as
-                            </div>
+                            <div style={sectionLabel}>Evaluating as</div>
                             <div
                                 style={{
                                     display: "flex",
@@ -6707,18 +5672,11 @@ export default function WRNSignalTabs(props: { style?: React.CSSProperties }) {
                     <div
                         style={{
                             ...scanCard,
-                            borderLeft: `4px solid ${L_RAIL_JOB}`,
+                            borderTop: `4px solid ${L_RULE_JOB}`,
                         }}
                     >
                         {hasAnyResult ? null : (
-                            <div
-                                style={{
-                                    ...scanEyebrow,
-                                    color: L_RAIL_JOB_INK,
-                                }}
-                            >
-                                The job
-                            </div>
+                            <div style={sectionLabel}>The job</div>
                         )}
 
                         <div style={{ display: "flex", gap: 8 }}>
@@ -7006,6 +5964,7 @@ function SideNav({
     tab,
     isLoggedIn,
     authedEmail,
+    logo,
     onSelect,
     onRunNewJob,
     onNetworkBoard,
@@ -7014,6 +5973,8 @@ function SideNav({
     tab: TabKey
     isLoggedIn: boolean
     authedEmail: string | null
+    /** The uploaded logo, straight from the property control. */
+    logo?: string
     onSelect: (t: TabKey) => void
     onRunNewJob: () => void
     /** Leaves the component for the dashboard board. Not a tab switch. */
@@ -7024,18 +5985,9 @@ function SideNav({
     return (
         <div style={sideNav}>
             <div style={sideBrandBlock}>
-                <div style={{ display: "flex", alignItems: "center" }}>
-                    <span style={sideWordmark}>SIGNAL</span>
-                    {/* The peach dash stays peach. It is half of a brand mark,
-                        not a control, and the same exemption the icon family
-                        takes for peach inside a glyph applies here. */}
-                    <div style={sideWordmarkDash} />
-                </div>
-                <div style={sideByline}>
-                    <span style={sideBylineBy}>by</span>
-                    <span style={sideBylineWorkforce}>Workforce</span>
-                    <span style={sideBylineReadyNow}>Ready Now</span>
-                </div>
+                {logo ? (
+                    <img src={logo} alt="SIGNAL" style={sideLogo} />
+                ) : null}
             </div>
 
             <div style={sideSectionTitle}>System</div>
@@ -7261,52 +6213,14 @@ const sideBrandBlock: React.CSSProperties = {
     borderBottom: `1px solid ${L_BORDER}`,
 }
 
-const sideWordmark: React.CSSProperties = {
-    fontSize: 28,
-    fontWeight: 800,
-    fontStyle: "italic",
-    letterSpacing: -0.5,
-    color: L_NAVY,
-    lineHeight: 1,
-}
-
-const sideWordmarkDash: React.CSSProperties = {
-    width: 18,
-    height: 5,
-    background: WRN_ORANGE,
-    borderRadius: 1,
-    marginLeft: 3,
-    marginBottom: 1,
-    flexShrink: 0,
-}
-
-const sideByline: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 3,
-    marginTop: 4,
-}
-
-const sideBylineBy: React.CSSProperties = {
-    fontSize: 7,
-    fontWeight: 600,
-    color: L_HINT,
-}
-
-const sideBylineWorkforce: React.CSSProperties = {
-    fontSize: 7,
-    fontWeight: 700,
-    letterSpacing: 0.8,
-    color: WRN_ORANGE,
-    textTransform: "uppercase",
-}
-
-const sideBylineReadyNow: React.CSSProperties = {
-    fontSize: 7,
-    fontWeight: 700,
-    letterSpacing: 0.8,
-    color: WRN_BLUE,
-    textTransform: "uppercase",
+// The real mark, in two sizes. Width is set and height is auto so the file's
+// own aspect ratio drives it and neither call site can squash it. This
+// replaced six style objects — sideWordmark, sideWordmarkDash, sideByline and
+// the three byline spans — that rebuilt the logo out of CSS on every surface.
+const sideLogo: React.CSSProperties = {
+    width: 150,
+    height: "auto",
+    display: "block",
 }
 
 const sideSectionTitle: React.CSSProperties = {
@@ -7351,9 +6265,9 @@ const sideRunBtn: React.CSSProperties = {
     width: "100%",
     padding: "11px 12px",
     borderRadius: 10,
-    background: L_PEACH,
+    background: L_NAVY,
     border: "none",
-    color: L_NAVY,
+    color: "#FFFFFF",
     fontWeight: 600,
     cursor: "pointer",
     marginBottom: 8,
@@ -7440,6 +6354,16 @@ const sideLogoutBtn: React.CSSProperties = {
    "Active Job" collapse header, `label` was never called, and `textarea` had
    exactly one call site — the paste box, which now has its own. */
 
+// The signed-out screen's mark. Centred by its parent's textAlign, with
+// margin auto so it centres whether it renders inline or as a block.
+const authLogo: React.CSSProperties = {
+    width: 280,
+    maxWidth: "100%",
+    height: "auto",
+    display: "block",
+    margin: "0 auto",
+}
+
 const scanHero: React.CSSProperties = {
     background: L_NAVY,
     borderRadius: 16,
@@ -7472,13 +6396,37 @@ const scanCard: React.CSSProperties = {
     marginBottom: 16,
 }
 
-const scanEyebrow: React.CSSProperties = {
-    fontSize: 11,
-    fontWeight: 600,
-    letterSpacing: 1.4,
+/* ---------- SECTION LABEL ----------
+   ONE STYLE FOR EVERY CARD-LEVEL HEADING IN THE FILE. It replaced four that
+   were doing the same job at three different sizes: scanEyebrow (11px muted),
+   jfPanelHeaderTitle (19px navy), posCardTitle (19px navy) and posHeroEyebrow
+   (11px orange).
+
+   inline-block is load-bearing. The rule has to stop at the end of the words,
+   and a block-level element would run it the full width of the card — which is
+   a divider, not an underscore. In a header row that also carries a count, the
+   label therefore takes no flex and the COUNT gets marginLeft:auto instead;
+   giving the label flex:1 would stretch it and drag the rule out with it.
+
+   This is NOT for the small eyebrows inside a block — BEFORE, AFTER, DO THIS,
+   USE THIS SUMMARY, SUPPORTING EVIDENCE, SIGNAL DECISION, YOUR MOVE. Those are
+   labels within a section and stay 11px orange with no rule. */
+const sectionLabel: React.CSSProperties = {
+    display: "inline-block",
+    fontSize: 17,
+    fontWeight: 700,
+    letterSpacing: "0.1em",
     textTransform: "uppercase",
-    color: L_MUTED,
-    marginBottom: 12,
+    color: L_NAVY,
+    borderBottom: `3px solid ${L_ORANGE}`,
+    paddingBottom: 6,
+    marginBottom: 14,
+}
+
+/** The same label on a navy ground, where the navy ink would be invisible. */
+const sectionLabelOnNavy: React.CSSProperties = {
+    ...sectionLabel,
+    color: "#FFFFFF",
 }
 
 // Supporting copy that the reader is meant to actually read sits at L_MUTED.
@@ -7785,7 +6733,7 @@ const scanModalScrim: React.CSSProperties = {
     position: "fixed",
     inset: 0,
     zIndex: 9999,
-    background: "rgba(19,41,74,0.55)",
+    background: "rgba(8,32,63,0.55)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -7795,7 +6743,7 @@ const scanModalScrim: React.CSSProperties = {
 // navy wash reads as more page; navy reads as a thing in front of the page.
 const scanModalCard: React.CSSProperties = {
     background: L_NAVY,
-    boxShadow: "0 12px 40px rgba(19,41,74,0.35)",
+    boxShadow: "0 12px 40px rgba(8,32,63,0.35)",
     borderRadius: 14,
     padding: 32,
     maxWidth: 460,
@@ -7812,13 +6760,16 @@ const scanModalTitle: React.CSSProperties = {
 const scanModalBody: React.CSSProperties = {
     fontSize: 14,
     lineHeight: "22px",
-    color: "#C6DCEC",
+    color: L_ON_NAVY,
     marginBottom: 22,
 }
 
+// INVERTED, and it is the only button in the file that is. Every other
+// primary is navy on white; this one sits ON the navy modal card, where a navy
+// fill would be invisible, so it flips to white on navy ink.
 const scanModalPrimaryBtn: React.CSSProperties = {
     padding: 13,
-    background: L_PEACH,
+    background: "#FFFFFF",
     color: L_NAVY,
     fontWeight: 600,
     fontSize: 14,
@@ -7927,13 +6878,13 @@ const upgradeNote: React.CSSProperties = {
 const primaryBtn: React.CSSProperties = {
     padding: "14px 18px",
     borderRadius: 10,
-    background: L_PEACH,
+    background: L_NAVY,
     fontWeight: 600,
     fontSize: 15,
     fontFamily: "inherit",
     border: "none",
     cursor: "pointer",
-    color: L_NAVY,
+    color: "#FFFFFF",
 }
 
 const jobfitHeroBtn: React.CSSProperties = {
@@ -7970,58 +6921,278 @@ const smallLinkBtn: React.CSSProperties = {
     textUnderlineOffset: 4,
 }
 
+// Two spinners, because there are now two button grounds. The dark one is for
+// the outlined secondaries (navy ink on white); the light one is for the navy
+// primaries, where the dark one was invisible the moment peach became navy.
 const spinner: React.CSSProperties = {
     width: 14,
     height: 14,
     borderRadius: 999,
-    border: "2px solid rgba(0,0,0,0.25)",
-    borderTop: "2px solid rgba(0,0,0,0.85)",
+    border: "2px solid rgba(8,32,63,0.25)",
+    borderTop: "2px solid rgba(8,32,63,0.85)",
     animation: "wrnspin 0.9s linear infinite",
 }
 
-/* ---------- POSITIONING ---------- */
-
-const posSectionWrap: React.CSSProperties = {
-    marginTop: 12,
-    padding: 16,
-    borderRadius: 16,
-    background: CARD,
-    border: `1px solid ${BORDER_SOFT}`,
+const spinnerOnNavy: React.CSSProperties = {
+    width: 14,
+    height: 14,
+    borderRadius: 999,
+    border: "2px solid rgba(255,255,255,0.35)",
+    borderTop: "2px solid rgba(255,255,255,0.95)",
+    animation: "wrnspin 0.9s linear infinite",
 }
 
-const posSectionTitleBtn: React.CSSProperties = {
-    width: "100%",
-    background: "transparent",
-    border: "none",
-    padding: 0,
-    margin: 0,
-    textAlign: "left",
-    color: "rgba(255,255,255,0.78)",
-    fontWeight: 900,
+/* ---------- POSITIONING ----------
+   Replaces posSectionWrap, posSectionTitleBtn, posChevron, posBody and
+   posPrimaryBulletText, none of which had a call site: they were the accordion
+   the tab stopped using, left behind when it went to always-open cards. */
+
+// Both hero uses: the landing state, and the analysis intro on a result.
+const posHero: React.CSSProperties = {
+    background: L_NAVY,
+    borderRadius: 16,
+    padding: "26px 30px",
+    marginBottom: 16,
+}
+
+const posHeroHead: React.CSSProperties = {
+    fontSize: 28,
+    fontWeight: 500,
+    lineHeight: 1.2,
+    letterSpacing: -0.3,
+    color: "#FFFFFF",
+}
+
+const posHeroSub: React.CSSProperties = {
+    marginTop: 10,
+    fontSize: 15,
+    lineHeight: "23px",
+    color: L_ON_NAVY,
+    maxWidth: 460,
+}
+
+const posHeroIntro: React.CSSProperties = {
+    fontSize: 15,
+    lineHeight: "24px",
+    color: L_ON_NAVY,
+}
+
+/* The two step cards and the drivers card share one shape: white, radius 14,
+   a 4px top rule, a number-title-count header row, and a padded body. */
+
+const posCard: React.CSSProperties = {
+    background: L_CARD,
+    border: `1px solid ${L_BORDER_SOFT}`,
+    boxShadow: L_SHADOW,
+    borderRadius: 14,
+    overflow: "hidden",
+    marginBottom: 14,
+}
+
+const posCardRule: React.CSSProperties = {
+    height: 4,
+    background: L_ORANGE,
+}
+
+const posCardHeader: React.CSSProperties = {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 12,
+    padding: "18px 22px 0",
+}
+
+const posCardNumber: React.CSSProperties = {
+    fontSize: 26,
+    fontWeight: 500,
+    color: L_ORANGE,
+    lineHeight: 1,
+    flexShrink: 0,
+}
+
+const posCardCount: React.CSSProperties = {
     fontSize: 13,
-    textDecoration: "underline",
-    textUnderlineOffset: 4,
+    color: L_BLUE,
+    whiteSpace: "nowrap",
+    flexShrink: 0,
+    marginLeft: "auto",
+    paddingTop: 2,
+}
+
+const posCardBody: React.CSSProperties = {
+    padding: "0 22px 22px",
+}
+
+/* Bullet edits. Before and After stack, separated from the next edit by a
+   hairline and from nothing at all after the last one. */
+
+const posEdit: React.CSSProperties = {
+    paddingBottom: 18,
+    marginBottom: 18,
+    borderBottom: `1px solid ${L_HAIRLINE_SOFT}`,
+}
+
+const posEditLast: React.CSSProperties = {
+    paddingBottom: 0,
+    marginBottom: 0,
+    borderBottom: "none",
+}
+
+const posEditEyebrow: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    color: L_ORANGE,
+    marginBottom: 6,
+}
+
+const posBeforeText: React.CSSProperties = {
+    fontSize: 14,
+    lineHeight: "21px",
+    color: L_HINT,
+    textDecoration: "line-through",
+}
+
+const posAfterText: React.CSSProperties = {
+    fontSize: 15,
+    lineHeight: "23px",
+    color: L_NAVY,
+}
+
+/** The changed words inside an After bullet. */
+const diffMark: React.CSSProperties = {
+    background: L_PALE_BLUE,
+    borderRadius: 3,
+    padding: "0 2px",
+}
+
+const posWhyText: React.CSSProperties = {
+    marginTop: 10,
+    fontSize: 13,
+    lineHeight: "20px",
+    color: L_TEXT_2,
+}
+
+const posProse: React.CSSProperties = {
+    fontSize: 14,
+    lineHeight: "22px",
+    color: L_TEXT_2,
+}
+
+const posCopyBtn: React.CSSProperties = {
+    marginTop: 10,
+    padding: "6px 12px",
+    borderRadius: 8,
+    fontSize: 12,
+    fontWeight: 600,
+    fontFamily: "inherit",
     cursor: "pointer",
+    background: L_CARD,
+    border: `1px solid ${L_HAIRLINE}`,
+    color: L_NAVY,
+}
+
+const posCopyBtnDone: React.CSSProperties = {
+    border: `1px solid ${L_TEAL}`,
+    color: L_TEAL_INK,
+}
+
+/* Step 2's own pieces. */
+
+const posNeedRow: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
+    gap: 10,
+    marginBottom: 12,
 }
 
-const posChevron: React.CSSProperties = {
-    color: MUTED,
-    fontWeight: 900,
+const posNeedDot: React.CSSProperties = {
+    width: 8,
+    height: 8,
+    borderRadius: "50%",
+    background: L_ORANGE,
+    flexShrink: 0,
 }
 
-const posBody: React.CSSProperties = {
-    marginTop: 12,
+const posNeedText: React.CSSProperties = {
+    fontSize: 14,
+    fontWeight: 500,
+    color: L_NAVY,
 }
 
-const posPrimaryBulletText: React.CSSProperties = {
-    fontSize: 18,
-    lineHeight: "24px",
-    color: TEXT,
-    whiteSpace: "pre-wrap",
+const posSummaryBlock: React.CSSProperties = {
+    marginTop: 14,
+    background: L_PEACH_TINT,
+    borderRadius: 10,
+    padding: "14px 16px",
+}
+
+const posSummaryEyebrow: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    color: L_ORANGE,
+    marginBottom: 8,
+}
+
+const posSummaryText: React.CSSProperties = {
+    fontSize: 14,
+    lineHeight: "22px",
+    color: L_NAVY,
+}
+
+const posEvidenceBlock: React.CSSProperties = {
+    marginTop: 14,
+    background: L_PALE_BLUE,
+    borderRadius: 10,
+    padding: "14px 16px",
+}
+
+const posEvidenceEyebrow: React.CSSProperties = {
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    color: L_TEAL_INK,
+    marginBottom: 8,
+}
+
+/* Shared bullet row — evidence list and drivers list. */
+
+const posBulletRow: React.CSSProperties = {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 10,
+    marginBottom: 8,
+}
+
+const posBulletMark: React.CSSProperties = {
+    width: 6,
+    height: 6,
+    borderRadius: "50%",
+    background: L_ORANGE,
+    flexShrink: 0,
+    marginTop: 8,
+}
+
+const posBulletText: React.CSSProperties = {
+    fontSize: 14,
+    lineHeight: "22px",
+    color: L_NAVY,
+}
+
+const posEmptyLead: React.CSSProperties = {
+    fontSize: 14,
+    fontWeight: 500,
+    color: L_NAVY,
+    marginBottom: 6,
+}
+
+const posEmptyBody: React.CSSProperties = {
+    fontSize: 13,
+    lineHeight: "20px",
+    color: L_TEXT_2,
 }
 
 /* ---------- NETWORKING ---------- */
@@ -8275,8 +7446,8 @@ const jfCtaPair: React.CSSProperties = {
     minWidth: 200,
     padding: "15px 18px",
     borderRadius: 13,
-    background: L_PEACH,
-    color: L_NAVY,
+    background: L_NAVY,
+    color: "#FFFFFF",
     fontSize: 15,
     fontWeight: 900,
     fontFamily: "inherit",
@@ -8290,17 +7461,12 @@ const jfCtaPair: React.CSSProperties = {
 // icon, the title and the count, which is what lets the two cards be read at a
 // glance when they are stacked rather than side by side.
 
-const L_WHY_HEADER = "#17706F"
-const L_WHY_HEADER_ACCENT = "#9FE1CB"
-const L_RISK_HEADER = "#A32D2D"
-const L_RISK_HEADER_ACCENT = "#F7C1C1"
-
 // The advice block under an observation. Tinted, because "do this" is a
 // different kind of sentence from "here is what we found". Why only — the
 // risk card has no advice field behind it, so it has no advice palette.
-const L_WHY_ADVICE_BG = "#E1F5EE"
-const L_WHY_ADVICE_EYEBROW = "#0F6E56"
-const L_WHY_ADVICE_INK = "#04342C"
+const L_WHY_ADVICE_BG = L_PALE_BLUE
+const L_WHY_ADVICE_EYEBROW = L_TEAL_INK
+const L_WHY_ADVICE_INK = L_NAVY
 
 const jfPanelStack: React.CSSProperties = {
     display: "flex",
@@ -8317,29 +7483,37 @@ const jfPanel: React.CSSProperties = {
     overflow: "hidden",
 }
 
+// A 4px top rule instead of a filled bar. The fills were #17706F and #A32D2D
+// carrying white text; neither survives the new palette, where teal is #00B3B3
+// and red is #C4351B and white on either fails. The rule keeps the colour
+// coding and puts the heading back on white, where navy reads.
+const jfPanelRule: React.CSSProperties = {
+    height: 4,
+}
+
+// flex-start, not center: the row now aligns to the top of the label rather
+// than to the middle of a box whose height changed when the label grew a rule.
 const jfPanelHeader: React.CSSProperties = {
     display: "flex",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 12,
-    padding: "14px 22px",
+    padding: "18px 22px 0",
 }
 
-const jfPanelHeaderTitle: React.CSSProperties = {
-    fontSize: 18,
-    fontWeight: 500,
-    color: "#FFFFFF",
-    flex: 1,
-    minWidth: 0,
-}
-
+// marginLeft:auto is what pushes the count right. The label cannot take flex:1
+// for that job any more — see the note on sectionLabel.
 const jfPanelHeaderCount: React.CSSProperties = {
     fontSize: 13,
     whiteSpace: "nowrap",
     flexShrink: 0,
+    marginLeft: "auto",
+    paddingTop: 2,
 }
 
+// The label carries its own 14px bottom margin now, so the body no longer
+// pays for that gap a second time.
 const jfPanelBody: React.CSSProperties = {
-    padding: "20px 22px",
+    padding: "0 22px 20px",
 }
 
 // Hairlines between bullets, none after the last — a trailing rule with
@@ -8347,7 +7521,7 @@ const jfPanelBody: React.CSSProperties = {
 const jfBullet: React.CSSProperties = {
     paddingBottom: 16,
     marginBottom: 16,
-    borderBottom: "1px solid rgba(19,41,74,0.09)",
+    borderBottom: "1px solid rgba(8,32,63,0.09)",
 }
 
 const jfBulletLast: React.CSSProperties = {
@@ -8452,3 +7626,23 @@ const upgradeBtn: React.CSSProperties = {
     cursor: "pointer",
     color: "#0B1020",
 }
+
+/* ---------- FRAMER PROPERTY CONTROLS ---------- */
+
+// Exposes a "Logo" image slot in the Framer properties panel so the real
+// SIGNAL mark can be uploaded without touching this file. Two call sites read
+// it: the signed-out screen at 280px and the side nav at 150px.
+//
+// NO defaultValue, matching landingpage / trialjobfit / upgradepage, which all
+// declare this control the same way. There is nowhere to point one: the asset
+// in the repo (logo/SIGNAL_Logo_Transparent.png) is a local file Framer cannot
+// fetch, and inlining it as a data URI would add 153KB of base64 to a file
+// that is already 8,000 lines. Both call sites therefore render nothing until
+// the image is set, which is the one visible consequence of this change —
+// upload the logo in Framer Studio and both surfaces fill in at once.
+addPropertyControls(WRNSignalTabs, {
+    logo: {
+        type: ControlType.Image,
+        title: "Logo",
+    },
+})
