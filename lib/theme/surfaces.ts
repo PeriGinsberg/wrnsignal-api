@@ -21,11 +21,22 @@
 // COLOR-SYSTEM.md section 2, and it carries more weight on light than on dark.
 // Every value below was computed against its own surface, not judged by eye.
 //
-// PEACH IS ACTION, AND ONLY ACTION. On light, peach is not reachable through
-// `meaning`. It lives in `action`, so a status lookup cannot return it and the
-// rule is structural rather than a convention someone has to remember. The
-// attention MEANING keeps a darkened peach ink for text such as "none yet" and
-// overdue dates. See COLOR-SYSTEM.md section 6.9.
+// A PRIMARY ACTION IS SOLID NAVY. On light, `action.fill` is #08203F with white
+// ink at 16.30:1, and nothing else on a light screen is a filled navy button, so
+// "what do I click" stays unmistakable. This replaced a peach gradient: the brand
+// rule is that a primary button is solid navy and orange is reserved for rules,
+// section numbers, eyebrow labels and bullets, never a button fill.
+//
+// PEACH IS NOT REMOVED FROM THE LIGHT THEME, and a hex-level sweep for #FEB06A
+// would be wrong. It still carries `orb.peach`, `hero.accent`, and the warm glow
+// in `hero.background` — structural colour, none of it a button. What changed is
+// only that peach no longer means "press this". Peach is also still unreachable
+// through `meaning`, so a status lookup cannot return an action colour and the
+// separation stays structural rather than a convention someone has to remember.
+//
+// The attention MEANING is coral (#F26B52), a warm neighbour 21.8 dE from peach
+// but not the same hex — see section 6.11. It is warm, it is not peach, and it is
+// not an action. See COLOR-SYSTEM.md section 6.9.
 //
 // `current` IS NOT A STATUS. It is the one meaning that marks a position rather
 // than a state: where you are on a path, on a stepper. It is separate from
@@ -111,15 +122,27 @@ export type Surface = {
    * whole sweep.
    */
   orb: Record<"peach" | "blue" | "teal", { fill: string; ink: string; glow: string }>
-  /** The primary button: retained for callers not yet moved to `action`. */
-  primaryButton: { background: string; color: string }
+  /**
+   * DEAD ON LIGHT, retained on dark. Both of these were compatibility aliases
+   * for callers not yet moved to `action`, and a repo-wide grep found no such
+   * caller in any theme. LIGHT drops them; DARK still declares them, so they
+   * are optional rather than deleted outright. Do not add new consumers — use
+   * `action` / `action()`.
+   */
+  primaryButton?: { background: string; color: string }
   gradient: {
     /** The TODAY panel: deep navy with a warm glow off the top right. */
     hero: string
-    /** The act-now button on a hero card. */
-    warmAction: string
+    /** The act-now button on a hero card. Dead on light; see `primaryButton`. */
+    warmAction?: string
   }
 }
+
+// The lift under a raised card. Hoisted because the primary button reuses it as
+// its shadow, and the two must not drift: a navy button and a lifted card should
+// sit in the same light.
+const LIGHT_RAISED_SHADOW =
+  "0 2px 4px rgba(19,41,74,0.05), 0 10px 28px rgba(19,41,74,0.10)"
 
 export const LIGHT: Surface = {
   name: "light",
@@ -137,7 +160,7 @@ export const LIGHT: Surface = {
   // Navy tinted, never black. A black shadow on a blue ground reads as dirt.
   shadow: {
     card: "0 1px 2px rgba(19,41,74,0.04), 0 4px 12px rgba(19,41,74,0.06)",
-    raised: "0 2px 4px rgba(19,41,74,0.05), 0 10px 28px rgba(19,41,74,0.10)",
+    raised: LIGHT_RAISED_SHADOW,
   },
   // Primary text is the structural navy itself, which is what keeps the two
   // themes reading as one product rather than two apps. `muted` is #526C87
@@ -189,15 +212,24 @@ export const LIGHT: Surface = {
     flash: "rgba(31,111,168,0.20)",
   },
   inkOnAccent: "#FFFFFF",
-  // Navy on peach measures 6.11 at the darkest stop. The earlier light theme
-  // made this button solid navy because peach also had to carry the attention
-  // meaning and read washed out. Now that peach is action only, it works, and
-  // the whole design hangs on it.
+  // A PRIMARY ACTION IS SOLID NAVY: #08203F, white ink at 16.30:1 — the highest
+  // contrast pairing in either theme.
+  //
+  // This supersedes the peach gradient (#FEB06A to #F0913F with navy ink at
+  // 6.11). The brand rule is that a primary button is solid navy, and orange is
+  // reserved for rules, section numbers, eyebrow labels and bullets — never a
+  // button fill and never body text. Peach never measured well on white anyway:
+  // 1.81 as text, and `outlineBorder` had already been pushed off the gradient's
+  // dark end to #DE7620 just to clear the 3.0 a boundary needs.
+  //
+  // The ink is white and cannot be the navy the peach tier used: #13294A on
+  // #08203F is 1.12:1, invisible. The glow is the card's own raised shadow, so a
+  // button and a lifted card sit in the same navy-tinted light.
   action: {
-    fill: "linear-gradient(135deg, #FEB06A, #F0913F)",
-    ink: "#13294A",
-    glow: "0 2px 6px rgba(240,145,63,0.28), 0 8px 20px rgba(240,145,63,0.18)",
-    // THE OPTIONAL TIER IS PEACH TOO, and it took a structural fix to get
+    fill: "#08203F",
+    ink: "#FFFFFF",
+    glow: LIGHT_RAISED_SHADOW,
+    // THE OPTIONAL TIER IS STILL PEACH, and it took a structural fix to get
     // there rather than a new hex.
     //
     // `outlineInk` was #95500E, a darkened peach, and it read as amber — which
@@ -210,13 +242,19 @@ export const LIGHT: Surface = {
     // 500-candidate sweep, no exception.
     //
     // So the peach moves to where peach can actually live at full chroma — the
-    // BORDER — and the label takes the same navy the FILLED tier already uses.
-    // Both tiers now share one ink and one colour identity, and the tiers
-    // differ by fill versus border, which is what a tier should mean.
+    // BORDER — and the label takes navy. The tiers differ by fill versus
+    // border, which is what a tier should mean.
     //
     // The border deepens one stop past the gradient's dark end because #F0913F
     // measures 2.38 on white, under the 3.0 a non-text boundary needs. #DE7620
     // is the same hue family at 3.13.
+    //
+    // LEFT UNCHANGED when the filled tier went navy, deliberately. The only
+    // consumer of these two tokens is app/dashboard/network/profile/Field.tsx,
+    // where they paint a featured-field border and a pill badge — neither of
+    // them a button. Renavying the optional tier would repaint a non-button, so
+    // the two tiers no longer share an ink: filled is white on navy, outline is
+    // navy on white. Revisit if a real outline BUTTON ever appears.
     outlineBorder: "#DE7620",
     outlineInk: "#13294A",
     quietInk: "#1F6FA8",
@@ -249,12 +287,14 @@ export const LIGHT: Surface = {
       glow: "0 2px 6px rgba(22,96,92,0.30), 0 10px 26px rgba(22,96,92,0.22)",
     },
   },
-  primaryButton: { background: "linear-gradient(135deg, #FEB06A, #F0913F)", color: "#13294A" },
+  // `primaryButton` and `gradient.warmAction` are gone from light. Both were
+  // peach-gradient aliases with zero consumers repo-wide; keeping them would
+  // have left two stale copies of a value the theme no longer uses. Use
+  // `action` / `action()`.
   gradient: {
     hero:
       "radial-gradient(70% 90% at 88% 6%, rgba(254,176,106,0.16), transparent 62%), " +
       "radial-gradient(120% 140% at 12% 0%, #1B3A63 0%, #13294A 55%, #0E1F38 100%)",
-    warmAction: "linear-gradient(135deg, #FEB06A, #F0913F)",
   },
 }
 

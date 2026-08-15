@@ -321,12 +321,21 @@ it breaks, so that is the thing to check when applying, not the hex values.
 `GRAD_PRIMARY` (`#FEB06A` to `#51ADE5`) was built for a dark surface and reads washed out on
 white. It stays the dark theme's.
 
-An earlier draft of this section made the light primary button solid navy with white text,
-on the grounds that peach read washed out. **That is superseded.** The judgement was made
-while peach also had to serve as the attention meaning, which forced it to be legible as
-text and therefore darkened past the point where it looked like the brand. Now that peach is
-action only (§6.9) it can stay at full chroma and take navy ink at 6.11:1. The light primary
-is the peach gradient `#FEB06A` to `#F0913F` with navy `#13294A` ink.
+This section has been round-tripped once, and the history is worth keeping because it
+explains why the peach primary looked defensible for a while.
+
+An earlier draft made the light primary solid navy with white text, on the grounds that
+peach read washed out. A later draft superseded that: the first judgement had been made
+while peach also had to carry the attention meaning, which forced it to be legible as text
+and therefore darkened past the point where it looked like the brand. Once §6.11 moved
+attention to coral, peach was free to stay at full chroma and take navy ink at 6.11:1, so
+the primary became the peach gradient `#FEB06A` to `#F0913F`.
+
+**Both of those are now superseded. The light primary is solid navy `#08203F` with white
+ink at 16.30:1.** See §6.9. What the round trip missed is that the argument was always
+about contrast, and the brand rule is not a contrast argument: a primary button is solid
+navy, and orange is reserved for rules, section numbers, eyebrow labels and bullets. Peach
+at 6.11 cleared the bar and still broke the rule.
 
 ### 6.7 Token structure
 
@@ -381,38 +390,73 @@ Still open:
 - Whether dark is ever offered as a user choice, or stays an internal fallback.
 - Whether the coach surfaces adopt the light theme in stage 2 or keep their own treatment.
 
-### 6.9 Peach is action, and only action
+### 6.9 An action is solid navy (REWRITTEN 2026-08-15)
 
-The rule that the whole light theme hangs on: **an action is always a filled peach button,
-and peach appears nowhere else.** This makes "what do I click" unmistakable on a page with no
-other tappable-looking colour.
+The rule the light theme hangs on: **a primary action is always a solid navy button, and
+nothing else on a light screen is a filled navy button.** That is what makes "what do I
+click" unmistakable on a page with no other tappable-looking colour.
 
-It is enforced structurally, not by convention. On light, peach is **not reachable through
-`meaning`**. It lives in `action` and `orb.peach`, so a status lookup cannot return it:
+This section previously read *"an action is always a filled peach button, and peach appears
+nowhere else."* That is superseded. The brand rule is that a primary button is solid navy and
+orange is reserved for rules, section numbers, eyebrow labels and bullets — never a button
+fill, never body text. The peach primary cleared its contrast bar at 6.11 and still broke the
+rule, which is why contrast alone never settled it. See §6.6 for the full round trip.
 
 | Role | Token | Value |
 |---|---|---|
-| Action fill | `action.fill` | `linear-gradient(135deg, #FEB06A, #F0913F)` |
-| Action ink | `action.ink` | `#13294A`, 6.11 at the darkest stop |
-| Action glow | `action.glow` | `0 2px 6px rgba(240,145,63,0.28), 0 8px 20px rgba(240,145,63,0.18)` |
-| Optional tier border | `action.outlineBorder` | `#F0913F` |
-| Optional tier ink | `action.outlineInk` | `#95500E`, 6.12 on white |
-| Quiet inline link | `action.quietInk` | `#1F6FA8` |
+| Action fill | `action.fill` | `#08203F` |
+| Action ink | `action.ink` | `#FFFFFF`, **16.30** on the fill |
+| Action glow | `action.glow` | `0 2px 4px rgba(19,41,74,0.05), 0 10px 28px rgba(19,41,74,0.10)` — the card's own `shadow.raised` |
+| Optional tier border | `action.outlineBorder` | `#DE7620`, 3.13 on white |
+| Optional tier ink | `action.outlineInk` | `#13294A`, 14.55 on white |
+| Quiet inline link | `action.quietInk` | `#1F6FA8`, 5.39 on white |
 | Attention as TEXT | `meaning.attention.ink` | `#884133`, for "none yet" and overdue |
 | Attention as structure | `meaning.attention.accent` | `#F26B52`, for rails and frames only |
 
-**Attention and action have split on light and stay one colour on dark.** §1's "warm owns
-attention, and only attention" is still true of the dark theme. On light the sentence
-becomes two: peach owns *action* as a fill, and darkened peach owns *attention* as text. They
-never collide because they never appear in the same shape. This is the same reasoning that
-moved `PHASE.won` off `#FEB06A` to gold in §1, applied one level up.
+Three notes on that table.
+
+**The ink had to flip to white.** `#13294A` on `#08203F` is 1.12:1 — the peach tier's navy ink
+is invisible on a navy fill. This is not a preference.
+
+**The glow is the raised-card shadow, not a coloured one.** A navy button and a lifted card now
+sit in the same navy-tinted light, and the value is shared in code (`LIGHT_RAISED_SHADOW`) so
+the two cannot drift.
+
+**The optional tier is still peach and was deliberately left alone.** Its only consumer is
+`app/dashboard/network/profile/Field.tsx`, where `outlineBorder` and `outlineInk` paint a
+featured-field border and a pill badge — neither of them a button. Renavying the tier would
+repaint a non-button. So the two tiers no longer share an ink: filled is white on navy, outline
+is navy on white. Revisit when a real outline *button* appears.
+
+**PEACH IS NOT REMOVED FROM THE LIGHT THEME.** A hex-level sweep for `#FEB06A` would be wrong.
+It still legitimately carries:
+
+| Surviving peach | Where | Why it is not an action |
+|---|---|---|
+| `orb.peach.fill` | the network navigation orb | colour-by-domain on a nav tile, not a tier |
+| `hero.accent` | progress fills and eyebrow marks inside navy panels | structural, 8.06 on the hero |
+| `hero.background` | the `rgba(254,176,106,0.16)` warm bloom | a gradient stop, not a surface anyone presses |
+
+What changed is only that peach no longer means "press this". Peach remains **unreachable
+through `meaning`**, so a status lookup still cannot return an action colour and the separation
+stays structural rather than a convention someone has to remember.
+
+**Attention is coral, not peach, and this change does not touch it.** §6.11 already moved
+attention off `#FEB06A` to `#F26B52`. It is a warm neighbour 21.8 dE from peach, and it is not
+the same hex — worth stating because "the warm one" is now three different colours depending on
+which question is being asked.
 
 The action tiers, from the build plan:
 
-1. **Filled peach** means do this now.
+1. **Filled navy** means do this now.
 2. **Outline** means optional, for example "Apply" on a job that is only saved.
 3. **Nothing** means no action. The absence of a button, never a disabled one, because a
    greyed button still reads as a thing you failed to earn.
+
+**Two tokens were deleted from `LIGHT` in this pass**, `primaryButton` and
+`gradient.warmAction`. Both were peach-gradient compatibility aliases for callers not yet moved
+to `action`, and a repo-wide grep found no such caller in any theme. `DARK` still declares
+both, so they are optional on the `Surface` type rather than removed from it.
 
 ---
 
@@ -460,9 +504,15 @@ That worked, but it asked the reader to decode a shape before they could decode 
 it left the product with one warm colour doing two jobs.
 
 Attention is now **coral**, and the two are separated by hue as well as shape: 21.8 dE2000 from
-peach. One consequence worth noting: `action.outlineInk` is still `#95500E`, a darkened peach,
-so the optional-tier button and attention text are now 14.7 dE apart where they used to be the
-same value.
+peach.
+
+> **Amended 2026-08-15.** This paragraph used to end: *"`action.outlineInk` is still `#95500E`,
+> a darkened peach, so the optional-tier button and attention text are now 14.7 dE apart where
+> they used to be the same value."* That measured a value the code no longer holds —
+> `action.outlineInk` is `#13294A`, and the filled tier moved to navy entirely (§6.9). The
+> distance the sentence was reaching for is now trivially large and no longer the interesting
+> number: attention text `#884133` against optional-tier ink `#13294A` is a warm brown against a
+> structural navy. The pair that still has to be watched is attention versus error, below.
 
 | Role | Token | Value | Measured |
 |---|---|---|---|
@@ -504,6 +554,66 @@ heavier than attention, not merely a different hue from it.
 the gradient's lightest stop, under the bar. The fix is to read the DARK theme's attention ink
 `#FF9B80` (5.60 at the same stop) for text on a dark surface, which is what the dark theme is
 for. The rail keeps the light accent, because a 3px border only needs 3.0.
+
+---
+
+### 6.12 The paper surface (documented 2026-08-15, NOT in `surfaces.ts`)
+
+SIGNAL has a fourth surface that none of the tokens above describe: **warm off-white paper with
+a recruiter's marks on it.** It is the entry page's résumé preview card, and it is the whole
+visual basis of the planned cinematic recruiter-markup results build. It is a motif, not a
+status, so it sits outside `meaning` entirely.
+
+**It is deliberately NOT in `lib/theme/surfaces.ts` yet.** Two reasons, and they are worth
+recording so the next person does not "fix" the omission:
+
+1. **Framer cannot import from the React app.** Every Framer page is a standalone pasted code
+   component; the only non-`react`/`framer` import anywhere in `framer/` is a CDN URL. A
+   definition in `surfaces.ts` is unreachable from the surfaces that actually paint paper today.
+2. **There are zero React consumers.** No component in `app/` paints a paper background, a ruled
+   overlay, a handwriting font, or a margin scrawl. The engine *produces* the handwriting data
+   (`lib/jobfit/freeScanPerception.ts` → `result.perception`), but only
+   `framer/dev/trialjobfit.txt` renders it.
+
+Putting it in `surfaces.ts` now would create a **second** definition rather than a shared one.
+Paper lives in the shared Framer palette file, and it moves into `surfaces.ts` when the React
+cinematic build actually needs it.
+
+**The canonical values are the `HW` block from `framer/dev/trialjobfit.txt`.** It wins over the
+landing page's copy because it is the richer set, it carries the ruled lines, and it is the
+basis of the cinematic build. `framer/dev/landingpage.txt`'s `.wrn-paper` card is rerouted to it.
+
+| Role | Value | Usage |
+|---|---|---|
+| Paper surface | `#F7F5EF` | the card ground, warm off-white |
+| Paper ink | `#2A3647` | résumé body lines on the paper |
+| Ruled lines | `repeating-linear-gradient(to bottom, transparent 0, transparent 20px, rgba(90,80,60,0.07) 20px, rgba(90,80,60,0.07) 21px)` | the faint 20px rule |
+| Structural navy | `#13294A` | headings and CTA ink on paper |
+| Slate | `#8FA8C4` | secondary paper text and labels |
+| Mark, ink blue | `#51ADE5` | emphasis underline |
+| Mark, teal | `#218C8C` | neutral mark |
+| Mark, green dark / light | `#0F6E56` / `#5DCAA5` | tick marks, strong-fit accent |
+| Mark, orange / dark / light | `#E08A2B` / `#C2410C` / `#FEB06A` | margin scrawls, amber variant |
+| Mark, pink | `#FF7BC2` | scrawl accent |
+| Handwriting face | `'Caveat', cursive` | scrawls only |
+
+**Why paper cannot borrow `well`.** `well` is `#F4F8FB`, a cool recessed input. Paper is warm and
+raised. They are off-white for different reasons and read as different materials; mapping one to
+the other kills the metaphor the preview card is built on.
+
+**The two definitions currently drift on six values**, which is the whole reason for naming a
+winner:
+
+| Role | `landingpage.txt` | `trialjobfit.txt` `HW` (canonical) |
+|---|---|---|
+| Paper surface | `#F6F4EF` | `#F7F5EF` |
+| Body ink | `#2E2A22` (warm near-black) | `#2A3647` (blue-grey) |
+| Label | `#6A6253` | `slate #8FA8C4` |
+| Ruled lines | none | `rgba(90,80,60,0.07)` |
+| Green scrawl | `#1F8A4C` | `#0F6E56` / `#5DCAA5` |
+| Orange scrawl | `#F2963B` | `#E08A2B` / `#C2410C` |
+
+One value already agrees: the handwriting face is `'Caveat', cursive` in both.
 
 ---
 
