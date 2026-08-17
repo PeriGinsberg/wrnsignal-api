@@ -180,10 +180,20 @@ export default function LaneReviewPage() {
         </div>
       )}
 
-      {!lanes?.length ? (
+      {lanes === null ? (
+        // Load FAILED. This must not render the empty state: "no lanes" and
+        // "we could not ask" look identical to a reader but mean opposite
+        // things, and the empty copy would have you creating a lane you
+        // already own. The error banner above says what actually happened.
         <div style={{ ...card, padding: 32 }}>
           <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>
-            No lanes yet. Create one and run it to fill this queue.
+            Couldn&apos;t load your lanes. Reload to try again.
+          </p>
+        </div>
+      ) : lanes.length === 0 ? (
+        <div style={{ ...card, padding: 32 }}>
+          <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>
+            No lanes on this account yet. Create one and run it to fill this queue.
           </p>
         </div>
       ) : (
