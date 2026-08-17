@@ -419,35 +419,56 @@ export const POLICY: JobFitPolicy = {
 
     years: {
       patterns: [
-        // Range pattern — "0-2 years", "1-3 years", "0–2 years" etc.
-        // We capture the MINIMUM (first number). If min is 0, extractYearsRequired
-        // returns 0 which the caller treats as null (no meaningful minimum).
-        // `years?|yrs` matches singular "year" too — JDs commonly write
-        // "1 year of X experience" for a minimum-tenure clause.
-        /(\d+)\s*[-–]\s*\d+\s*\+?\s*(years?|yrs)\s*of\s*(experience|exp)/i,
-        /(\d+)\s*[-–]\s*\d+\s*\+?\s*(years?|yrs)/i,
+        // ---- RANGES. Always first so the MINIMUM wins over the max.
+        // Covers hyphen, en/em dash and "N to M": "0-2 years", "1–3 years",
+        // "1 to 3 years", "0-2+ years". We capture the MINIMUM (first number);
+        // a min of 0 is a real signal (entry-level) and extractYearsRequired
+        // now returns it rather than discarding it.
+        // `years?|yrs?` matches singular "year"/"yr" too — JDs commonly write
+        // "0-1 year of X experience" for an entry-level tenure clause.
+        // The optional ['’] absorbs "2-4 years' experience" (straight or curly).
+        /(\d+)\s*(?:[-–—]|\s+to\s+)\s*\d+\s*\+?\s*(?:years?|yrs?)['’]?\s*(?:of\s+)?(?:[a-z][a-z-]+\s+){0,4}(experience|exp)\b/i,
+        /(\d+)\s*(?:[-–—]|\s+to\s+)\s*\d+\s*\+?\s*(?:years?|yrs?)\b/i,
         // Parenthetical-digit fallback — catches "four (4) years of experience"
         // where the JD writes the number as a word but includes the digit in
         // parens. The plain (\d+)\s*(years?|yrs) patterns fail because `)`
         // isn't whitespace, so the digit isn't adjacent to "years". This
         // pattern explicitly consumes the parens.
-        /\(\s*(\d+)\s*\)\s*(years?|yrs)\s*of\s*(experience|exp)/i,
-        // Explicit minimum — supports "minimum N years" and "minimum of N years".
-        /minimum\s*(?:of\s*)?(\d+)\s*(years?|yrs)/i,
-        // Standard "N+ years of experience"
-        /(\d+)\+\s*(years?|yrs)\s*of\s*(experience|exp)/i,
-        // Plain "N years of experience" — only if no range present
-        /(\d+)\s*(years?|yrs)\s*of\s*(experience|exp)/i,
-        // Qualifier-tolerant "N years of [adjective(s)] experience" — catches
-        // prose phrasings like "two years of appropriate experience",
-        // "3 years of relevant experience" where 1-3 qualifier words sit between
-        // "of" and "experience". The lookbehind (?<!\d\s?[-–]\s?) is MANDATORY:
-        // it stops this from matching the MAX of an entry-level range
-        // ("0-2 years of sales experience" must NOT become a 2-year requirement
-        // — the range patterns above correctly read min=0 → null). Requires the
-        // literal "experience" token, so "two years of college" / "years of
-        // growth" do not match.
-        /(?<!\d\s?[-–]\s?)(\d+)\s*(years?|yrs)\s*of\s+(?:[a-z][a-z-]+\s+){0,3}(experience|exp)\b/i,
+        /\(\s*(\d+)\s*\)\s*(?:years?|yrs?)\s*of\s*(experience|exp)/i,
+        // Explicit minimum — "minimum N years", "minimum of N years",
+        // "at least N years", "min. N years".
+        // (?!\s*of\s+age) is MANDATORY: food-service and retail JDs open with
+        // "must be at least 18 years of age", which is a legal-age floor, not
+        // a tenure requirement. Without the guard that reads as an 18-year
+        // minimum (confirmed on prod row 9462ed5c, Cook @ First Watch).
+        /(?:minimum|at\s+least|min\.)\s*(?:of\s*)?(\d+)\s*\+?\s*(?:years?|yrs?)\b(?!\s*of\s+age)/i,
+        // ---- SINGLE FIGURES, with "of".
+        // "N years of experience", "N+ years of experience", and the
+        // qualifier-tolerant form where up to 4 words sit between "of" and
+        // "experience" — "4+ years of marketing or sales enablement
+        // experience", "2 years of appropriate experience". The `\+?` BEFORE
+        // the years token is what makes the "+" forms work at all: the old
+        // qualifier-tolerant pattern had no `\+`, so every "N+ years of
+        // <adjective> experience" JD fell through (the single largest miss
+        // class in the prod corpus).
+        //
+        // The lookbehind (?<!\d\s*[-–—]\s*) is MANDATORY: it stops this from
+        // matching the MAX of an entry-level range ("0-2 years of sales
+        // experience" must read min=0, not 2 — the range patterns above own
+        // that case). (?<!up\s+to\s+) blocks caps like "up to 2 years
+        // postgraduate experience maximum", which are ceilings, not floors.
+        // Requires the literal "experience" token, so "two years of college"
+        // and "years of growth" do not match.
+        /(?<!\d\s*[-–—]\s*)(?<!up\s+to\s+)(\d+)\s*\+?\s*[-–]?\s*(?:years?|yrs?)['’]?\s*of\s+(?:[a-z][a-z-]+\s+){0,4}(experience|exp)\b/i,
+        // ---- SINGLE FIGURES, no "of".
+        // "5 years property management experience", "2+ years experience",
+        // "1+ years' experience" (straight or curly apostrophe). Allows at
+        // most 2 intervening words — a tighter budget than the "of" form
+        // because there is no "of" anchor holding the phrase together, and a
+        // looser one starts eating "4-year degree ... and experience".
+        // Requires whitespace after the years token (not a hyphen) so
+        // "bachelor's from a 4-year college" cannot fire.
+        /(?<!\d\s*[-–—]\s*)(?<!up\s+to\s+)(\d+)\s*\+?\s*(?:years?|yrs?)['’]?\s+(?:[a-z][a-z-]+\s+){0,2}(experience|exp)\b/i,
       ],
     },
 

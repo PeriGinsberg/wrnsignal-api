@@ -1748,7 +1748,9 @@ const SECTION_HEADER_RULES: Array<{ pattern: RegExp; kind: SectionKind }> = [
   { pattern: /^(qualifications|requirements)$/, kind: "qualifications" },
   { pattern: /^(required|basic|minimum|preferred|additional|desired) (qualifications|requirements|skills|experience)$/, kind: "qualifications" },
   { pattern: /^what we('re| are) (looking for|seeking|after)$/, kind: "qualifications" },
-  { pattern: /^your profile$/, kind: "qualifications" },
+  { pattern: /^(your|the ideal candidate('s)?) profile$/, kind: "qualifications" },
+  { pattern: /^(desired|preferred|required|relevant) background( and experience| and skills| ?\/ ?experience)?$/, kind: "qualifications" },
+  { pattern: /^(background and experience|experience and (qualifications|background|skills))$/, kind: "qualifications" },
   { pattern: /^(about you|who you are|who we('re| are) looking for)$/, kind: "qualifications" },
   { pattern: /^(must have|nice to have|nice.to.have|must.have|must haves|nice.to.haves)$/, kind: "qualifications" },
   { pattern: /^(education|work experience|education\/previous experience|education\/experience|experience)$/, kind: "qualifications" },
@@ -2644,8 +2646,14 @@ function extractYearsRequired(jobText: string): number | null {
     const m = matchText.match(r)
     if (m && m[1]) {
       const v = parseInt(String(m[1]), 10)
-      // 0 minimum means entry-level — treat as no meaningful requirement
-      if (!Number.isNaN(v) && v > 0 && v <= 20) return v
+      // 0 is accepted: "0-2 years" is an explicit entry-level floor, which is
+      // a real (and useful) signal, not the absence of one. Every downstream
+      // consumer is gap-based (yearsRequired - yearsExperience) or thresholded
+      // at >= 3, so a 0 can never fire a tenure risk or a seniority gate. The
+      // one behavior change is RISK_AMBIGUOUS_ROLE (scoring.ts), which keys off
+      // `yearsRequired === null` and will no longer fire for a JD whose only
+      // concrete detail is its entry-level range — correct, since it stated one.
+      if (!Number.isNaN(v) && v >= 0 && v <= 20) return v
     }
   }
   return null

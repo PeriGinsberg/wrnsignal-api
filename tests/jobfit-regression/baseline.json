@@ -5,7 +5,7 @@
     "label": "40926a — Lily Stein / Director of Human Resources",
     "decision": "Pass",
     "score": 29,
-    "gateType": "none",
+    "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
       {
@@ -220,6 +220,11 @@
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "high",
         "weight": 0
+      },
+      {
+        "code": "RISK_SENIORITY_MISMATCH",
+        "severity": "medium",
+        "weight": 0
       }
     ],
     "scalars": {
@@ -262,7 +267,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 10,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -1095,17 +1100,7 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "high",
-        "weight": -11
-      },
-      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
-        "severity": "medium",
-        "weight": 0
-      },
-      {
-        "code": "RISK_SENIORITY_MISMATCH",
         "severity": "medium",
         "weight": 0
       }
@@ -1150,7 +1145,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 3,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -1258,11 +1253,11 @@
         },
         {
           "label": "penalty_sum",
-          "points": -11,
-          "note": "11"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 79,
+      "raw_score": 90,
       "clamped_score": 74
     }
   },
@@ -2766,7 +2761,7 @@
     "id": "batch-40926g",
     "label": "40926g — Tatum Sperling / Social Coordinator",
     "decision": "Apply",
-    "score": 93,
+    "score": 86,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -3484,6 +3479,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      },
+      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -3.9199999999999995
@@ -3531,7 +3531,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -3615,12 +3615,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -4,
-          "note": "3.9199999999999995"
+          "points": -11,
+          "note": "10.92"
         }
       ],
-      "raw_score": 93,
-      "clamped_score": 93
+      "raw_score": 86,
+      "clamped_score": 86
     }
   },
   "batch-40926h": {
@@ -6560,7 +6560,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 9,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -7799,7 +7799,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 3,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -8300,7 +8300,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 8,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -15171,7 +15171,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 3,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -16307,7 +16307,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 3,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -17222,7 +17222,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 3,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -17705,7 +17705,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -20099,7 +20099,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -22967,8 +22967,8 @@
     "id": "synthetic-0410al",
     "label": "[synthetic] 0410al — Nathan Chen / (no title)",
     "decision": "Pass",
-    "score": 29,
-    "gateType": "none",
+    "score": 15,
+    "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
       {
@@ -23268,15 +23268,13 @@
         "profile_unit_id": "ecd23bf2b46eb6fb"
       }
     ],
-    "why_codes": [
-      {
-        "code": "WHY_TOOL_PROOF",
-        "weight": 94,
-        "match_strength": "direct",
-        "match_key": "python"
-      }
-    ],
+    "why_codes": [],
     "risk_codes": [
+      {
+        "code": "RISK_EXPERIENCE",
+        "severity": "high",
+        "weight": -14
+      },
       {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "high",
@@ -23306,6 +23304,11 @@
         "code": "RISK_MISSING_TOOLS",
         "severity": "high",
         "weight": -8
+      },
+      {
+        "code": "RISK_SENIORITY_MISMATCH",
+        "severity": "medium",
+        "weight": 0
       }
     ],
     "scalars": {
@@ -23357,7 +23360,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 8,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -23436,12 +23439,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -8,
-          "note": "8"
+          "points": -22,
+          "note": "22"
         }
       ],
-      "raw_score": 29,
-      "clamped_score": 29
+      "raw_score": 15,
+      "clamped_score": 15
     }
   },
   "synthetic-0410am": {
@@ -24486,7 +24489,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -24582,7 +24585,7 @@
     "id": "synthetic-0410an",
     "label": "[synthetic] 0410an — Aiden Park / (no title)",
     "decision": "Pass",
-    "score": 44,
+    "score": 33,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -24939,6 +24942,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "high",
+        "weight": -11
+      },
+      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -24955,6 +24963,11 @@
       },
       {
         "code": "RISK_MISSING_PROOF",
+        "severity": "medium",
+        "weight": 0
+      },
+      {
+        "code": "RISK_SENIORITY_MISMATCH",
         "severity": "medium",
         "weight": 0
       }
@@ -25000,7 +25013,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 5,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -25080,12 +25093,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -8,
-          "note": "8.399999999999999"
+          "points": -19,
+          "note": "19.4"
         }
       ],
-      "raw_score": 44,
-      "clamped_score": 44
+      "raw_score": 33,
+      "clamped_score": 33
     }
   },
   "synthetic-0410b": {
@@ -26821,7 +26834,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -29286,7 +29299,7 @@
     "id": "synthetic-0410g",
     "label": "[synthetic] 0410g — Amara Johnson / (no title)",
     "decision": "Pass",
-    "score": 47,
+    "score": 36,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -29454,6 +29467,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "high",
+        "weight": -11
+      },
+      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -29477,6 +29495,11 @@
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
+      },
+      {
+        "code": "RISK_SENIORITY_MISMATCH",
+        "severity": "medium",
+        "weight": 0
       }
     ],
     "scalars": {
@@ -29524,7 +29547,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 4,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -29603,12 +29626,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -4,
-          "note": "4"
+          "points": -15,
+          "note": "15"
         }
       ],
-      "raw_score": 47,
-      "clamped_score": 47
+      "raw_score": 36,
+      "clamped_score": 36
     }
   },
   "synthetic-0410h": {
@@ -29616,7 +29639,7 @@
     "id": "synthetic-0410h",
     "label": "[synthetic] 0410h — Nathan Chen / (no title)",
     "decision": "Pass",
-    "score": 41,
+    "score": 27,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -29983,6 +30006,11 @@
     "why_codes": [],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "high",
+        "weight": -14
+      },
+      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "high",
         "weight": -30
@@ -30011,6 +30039,11 @@
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
+      },
+      {
+        "code": "RISK_SENIORITY_MISMATCH",
+        "severity": "medium",
+        "weight": 0
       }
     ],
     "scalars": {
@@ -30062,7 +30095,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 10,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -30141,12 +30174,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -10,
-          "note": "10"
+          "points": -24,
+          "note": "24"
         }
       ],
-      "raw_score": 41,
-      "clamped_score": 41
+      "raw_score": 27,
+      "clamped_score": 27
     }
   },
   "synthetic-0410i": {
@@ -31431,7 +31464,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "saas_tech",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -32350,7 +32383,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -33015,7 +33048,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -36507,7 +36540,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 3,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -36793,7 +36826,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -39116,7 +39149,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -39640,7 +39673,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -40998,7 +41031,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "saas_tech",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },

@@ -2902,8 +2902,8 @@
     "schema_version": 2,
     "id": "prod-0272f830-4058-4367-87c9-4ac2f1bf4b77",
     "label": "prod 0272f830 — Client Success Coordinator @ WebMD (2026-05-11)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 66,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -3106,11 +3106,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      },
-      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
@@ -3171,7 +3166,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": 1,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -3237,26 +3232,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
-          "points": -11,
-          "note": "11"
+          "points": -4,
+          "note": "4"
         }
       ],
-      "raw_score": 59,
-      "clamped_score": 55
+      "raw_score": 66,
+      "clamped_score": 66
     }
   },
   "prod-03837bd2-3c61-4882-8e6c-99d315ac9442": {
@@ -5296,7 +5291,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -9188,7 +9183,7 @@
     "id": "prod-05c18385-29a2-431b-b3e6-561fa767713d",
     "label": "prod 05c18385 — EIC Intern @ Cushman & Wakefield (2026-05-03)",
     "decision": "Pass",
-    "score": 47,
+    "score": 40,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -9588,6 +9583,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      },
+      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -9651,7 +9651,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -9720,12 +9720,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -6,
-          "note": "5.6"
+          "points": -13,
+          "note": "12.6"
         }
       ],
-      "raw_score": 47,
-      "clamped_score": 47
+      "raw_score": 40,
+      "clamped_score": 40
     }
   },
   "prod-0755adcd-3e1e-4f69-a68c-f41d1c0ff00c": {
@@ -15697,8 +15697,8 @@
     "schema_version": 2,
     "id": "prod-0a7c6a0f-c7bc-4bec-b134-3622bc52e83d",
     "label": "prod 0a7c6a0f — Marketing Operations & Events Coordinator @ Ripple Street (2026-06-05)",
-    "decision": "Review",
-    "score": 74,
+    "decision": "Apply",
+    "score": 84,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -15879,8 +15879,8 @@
     "risk_codes": [
       {
         "code": "RISK_EXPERIENCE",
-        "severity": "high",
-        "weight": -14
+        "severity": "medium",
+        "weight": -7
       },
       {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
@@ -15901,11 +15901,6 @@
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
-      },
-      {
-        "code": "RISK_SENIORITY_MISMATCH",
-        "severity": "medium",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -15950,7 +15945,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": 3,
+        "yearsRequired": 1,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -16026,16 +16021,16 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -18,
-          "note": "18"
+          "points": -11,
+          "note": "11"
         }
       ],
-      "raw_score": 77,
-      "clamped_score": 74
+      "raw_score": 84,
+      "clamped_score": 84
     }
   },
   "prod-0aa49330-c439-4a33-a71b-f60e1010bf5c": {
@@ -16684,7 +16679,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -16969,7 +16964,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -18083,8 +18078,8 @@
     "schema_version": 2,
     "id": "prod-0b254a91-5383-4309-9f33-c1a91f965877",
     "label": "prod 0b254a91 — Marketing and Graphics Coordinator @ CetraRuddy (2026-05-12)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 74,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -18502,11 +18497,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "high",
-        "weight": -11
-      },
-      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
@@ -18525,11 +18515,6 @@
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
-      },
-      {
-        "code": "RISK_SENIORITY_MISMATCH",
-        "severity": "medium",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -18581,7 +18566,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -18657,24 +18642,24 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
-          "points": -15,
-          "note": "15"
+          "points": -4,
+          "note": "4"
         }
       ],
-      "raw_score": 82,
-      "clamped_score": 55
+      "raw_score": 93,
+      "clamped_score": 74
     }
   },
   "prod-0bcfae29-2baa-4c3b-bc9f-216627fd6a9d": {
     "schema_version": 2,
     "id": "prod-0bcfae29-2baa-4c3b-bc9f-216627fd6a9d",
     "label": "prod 0bcfae29 — Quantitative Researcher, Early Career @ Aquatic Capital Management (2026-05-04)",
-    "decision": "Review",
-    "score": 74,
+    "decision": "Apply",
+    "score": 85,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -18789,18 +18774,7 @@
         "match_key": "python"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_EXPERIENCE",
-        "severity": "high",
-        "weight": -11
-      },
-      {
-        "code": "RISK_SENIORITY_MISMATCH",
-        "severity": "medium",
-        "weight": 0
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -18842,7 +18816,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 3,
+        "yearsRequired": null,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -18911,26 +18885,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -11,
-          "note": "11"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 74,
-      "clamped_score": 74
+      "raw_score": 85,
+      "clamped_score": 85
     }
   },
   "prod-0bcff4fd-7df8-4f8e-ba7c-2e89ad73422a": {
@@ -20054,7 +20028,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 1,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -27008,7 +26982,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -28743,7 +28717,7 @@
     "id": "prod-13428c0e-c928-4ca4-8532-a5b192d8dbb5",
     "label": "prod 13428c0e — Account Coordinator, Corporate @ M Booth (2026-06-12)",
     "decision": "Apply",
-    "score": 77,
+    "score": 84,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -28942,11 +28916,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      },
-      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
@@ -28997,7 +28966,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": 1,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -29077,12 +29046,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -15,
-          "note": "15.100000000000001"
+          "points": -8,
+          "note": "8.100000000000001"
         }
       ],
-      "raw_score": 77,
-      "clamped_score": 77
+      "raw_score": 84,
+      "clamped_score": 84
     }
   },
   "prod-13952337-76f8-4ef4-b761-5356b9aea5f7": {
@@ -32046,7 +32015,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -33896,8 +33865,8 @@
     "schema_version": 2,
     "id": "prod-18470bdb-90a6-4fe2-ae08-6e219a7dbc09",
     "label": "prod 18470bdb — Growth Marketing Analyst @ GeistM (2026-04-21)",
-    "decision": "Apply",
-    "score": 90,
+    "decision": "Priority Apply",
+    "score": 97,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -34412,13 +34381,7 @@
         "match_key": "excel"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -34465,7 +34428,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -34531,26 +34494,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -7,
-          "note": "7"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 90,
-      "clamped_score": 90
+      "raw_score": 97,
+      "clamped_score": 97
     }
   },
   "prod-1a4c42ae-df43-4bbf-8d2a-289157d48860": {
@@ -36104,7 +36067,7 @@
     "id": "prod-1d9199f4-88d7-433c-bb79-cef518aaf03e",
     "label": "prod 1d9199f4 — Biotech Analyst @ Alexander Chapman (2026-06-05)",
     "decision": "Pass",
-    "score": 41,
+    "score": 48,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -36291,11 +36254,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      },
-      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -36345,7 +36303,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 1,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -36452,12 +36410,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -7,
-          "note": "7"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 41,
-      "clamped_score": 41
+      "raw_score": 48,
+      "clamped_score": 48
     }
   },
   "prod-1d943db6-d6f2-4304-88d1-eabb5fae1460": {
@@ -36846,7 +36804,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": true,
         "mbaRequired": false
       },
@@ -36941,7 +36899,7 @@
     "id": "prod-1dca5bf1-bd05-49c8-aee6-05be8f7a7272",
     "label": "prod 1dca5bf1 — Associate Scientist @ Regeneron (2026-05-14)",
     "decision": "Apply",
-    "score": 91,
+    "score": 84,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -37109,6 +37067,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      },
+      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
@@ -37168,7 +37131,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -37267,12 +37230,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -4,
-          "note": "4"
+          "points": -11,
+          "note": "11"
         }
       ],
-      "raw_score": 91,
-      "clamped_score": 91
+      "raw_score": 84,
+      "clamped_score": 84
     }
   },
   "prod-1f02309b-02a7-40af-935b-5f7f31f1d75e": {
@@ -42350,6 +42313,11 @@
         "code": "RISK_MISSING_TOOLS",
         "severity": "high",
         "weight": -8
+      },
+      {
+        "code": "RISK_SENIORITY_MISMATCH",
+        "severity": "medium",
+        "weight": 0
       }
     ],
     "scalars": {
@@ -42401,7 +42369,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 3,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -46900,7 +46868,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 3,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -50202,7 +50170,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -54278,7 +54246,7 @@
     "id": "prod-294bdaa1-7036-4d78-9335-edf1c7e6733b",
     "label": "prod 294bdaa1 — Scientist, TS/MS - Device Assembly @ Eli Lilly and Company (2026-06-03)",
     "decision": "Apply",
-    "score": 91,
+    "score": 84,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -54470,6 +54438,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      },
+      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
@@ -54537,7 +54510,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": true,
         "mbaRequired": false
       },
@@ -54636,12 +54609,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -4,
-          "note": "4"
+          "points": -11,
+          "note": "11"
         }
       ],
-      "raw_score": 91,
-      "clamped_score": 91
+      "raw_score": 84,
+      "clamped_score": 84
     }
   },
   "prod-29bf0479-7329-4b2d-88ee-202d88bba397": {
@@ -56115,7 +56088,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -56475,7 +56448,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -61668,7 +61641,7 @@
     "id": "prod-2fb3325b-1f7a-4159-ae2d-31bf76760aad",
     "label": "prod 2fb3325b — Specialist, Client Service Management @ BNY (2026-05-17)",
     "decision": "Pass",
-    "score": 34,
+    "score": 45,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -61925,11 +61898,6 @@
     "why_codes": [],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "high",
-        "weight": -11
-      },
-      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "high",
         "weight": 0
@@ -61938,11 +61906,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_SENIORITY_MISMATCH",
-        "severity": "medium",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -61984,7 +61947,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -62072,12 +62035,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -19,
-          "note": "18.8"
+          "points": -8,
+          "note": "7.800000000000001"
         }
       ],
-      "raw_score": 34,
-      "clamped_score": 34
+      "raw_score": 45,
+      "clamped_score": 45
     }
   },
   "prod-2fb654cc-bcfb-4423-bb68-c8b9995bc303": {
@@ -62456,7 +62419,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -65706,7 +65669,7 @@
     "id": "prod-3142ce30-8828-4f1f-bb02-f4fa04191cdf",
     "label": "prod 3142ce30 — Digital Communications Specialist @ HiringCafe: Job Search Engine (2026-05-28)",
     "decision": "Review",
-    "score": 66,
+    "score": 73,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -66387,11 +66350,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      },
-      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -66439,7 +66397,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 1,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -66517,12 +66475,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -7,
-          "note": "7"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 66,
-      "clamped_score": 66
+      "raw_score": 73,
+      "clamped_score": 73
     }
   },
   "prod-3148a834-ca0d-478c-83fb-5a997f0e77f1": {
@@ -66530,7 +66488,7 @@
     "id": "prod-3148a834-ca0d-478c-83fb-5a997f0e77f1",
     "label": "prod 3148a834 — Biologics Process Research & Development Scientist @ Merck (2026-05-17)",
     "decision": "Apply",
-    "score": 87,
+    "score": 80,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -66682,6 +66640,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      },
+      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
@@ -66734,7 +66697,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -66833,12 +66796,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -8,
-          "note": "7.800000000000001"
+          "points": -15,
+          "note": "14.8"
         }
       ],
-      "raw_score": 87,
-      "clamped_score": 87
+      "raw_score": 80,
+      "clamped_score": 80
     }
   },
   "prod-316b48c8-f6f5-45be-90cd-42099f6a49b3": {
@@ -67229,7 +67192,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": true,
         "mbaRequired": false
       },
@@ -70894,7 +70857,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": 1,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -83251,7 +83214,7 @@
     "id": "prod-3c7567a1-1104-45a8-9e91-00d4dd179c57",
     "label": "prod 3c7567a1 — NYC Luxury Development Leasing Specialist @ Anywhere Real Estate Inc. (2026-05-14)",
     "decision": "Pass",
-    "score": 44,
+    "score": 37,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -83375,6 +83338,11 @@
     "why_codes": [],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      },
+      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -83428,7 +83396,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 3,
+        "yearsRequired": 5,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -83507,12 +83475,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": 0,
-          "note": "0"
+          "points": -7,
+          "note": "7"
         }
       ],
-      "raw_score": 44,
-      "clamped_score": 44
+      "raw_score": 37,
+      "clamped_score": 37
     }
   },
   "prod-3d486b05-1dd2-4b49-9d17-221445223544": {
@@ -84200,11 +84168,6 @@
     "why_codes": [],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      },
-      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "high",
         "weight": 0
@@ -84257,7 +84220,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -84342,12 +84305,12 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
@@ -84356,11 +84319,11 @@
         },
         {
           "label": "penalty_sum",
-          "points": -15,
-          "note": "14.8"
+          "points": -8,
+          "note": "7.800000000000001"
         }
       ],
-      "raw_score": 71,
+      "raw_score": 78,
       "clamped_score": 55
     }
   },
@@ -87730,7 +87693,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -90593,7 +90556,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 3,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -92844,6 +92807,11 @@
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
+      },
+      {
+        "code": "RISK_SENIORITY_MISMATCH",
+        "severity": "medium",
+        "weight": 0
       }
     ],
     "scalars": {
@@ -92887,7 +92855,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 3,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -95944,7 +95912,7 @@
     "id": "prod-45e9f82f-d9a6-40fd-9a17-b18906b602c2",
     "label": "prod 45e9f82f — Commercial Associate @ New Leaf Energy, Inc. (2026-04-14)",
     "decision": "Pass",
-    "score": 48,
+    "score": 41,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -96091,6 +96059,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      },
+      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -96154,7 +96127,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": true,
         "mbaRequired": false
       },
@@ -96237,12 +96210,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -10,
-          "note": "9.92"
+          "points": -17,
+          "note": "16.919999999999998"
         }
       ],
-      "raw_score": 48,
-      "clamped_score": 48
+      "raw_score": 41,
+      "clamped_score": 41
     }
   },
   "prod-46572a48-6d3f-48cf-8592-2efb92234ece": {
@@ -98218,7 +98191,7 @@
     "id": "prod-481a77b5-f9a7-4610-a507-f4429c3ee481",
     "label": "prod 481a77b5 — Customer Marketing Associate - Early Life @ FanDuel (2026-05-18)",
     "decision": "Apply",
-    "score": 93,
+    "score": 86,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -98976,6 +98949,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      },
+      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
@@ -99031,7 +99009,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -99129,12 +99107,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -4,
-          "note": "4"
+          "points": -11,
+          "note": "11"
         }
       ],
-      "raw_score": 93,
-      "clamped_score": 93
+      "raw_score": 86,
+      "clamped_score": 86
     }
   },
   "prod-4829c757-4198-4bb8-8d22-d90b477ff5b6": {
@@ -101333,7 +101311,7 @@
     "id": "prod-49055e73-59c8-4b41-85b1-1ab461f946fc",
     "label": "prod 49055e73 — Performance Engineer @ Altus Power (2026-05-03)",
     "decision": "Pass",
-    "score": 21,
+    "score": 24,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -101429,7 +101407,7 @@
       {
         "code": "RISK_EXPERIENCE",
         "severity": "high",
-        "weight": -14
+        "weight": -11
       },
       {
         "code": "RISK_FAMILY_MISMATCH",
@@ -101488,7 +101466,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 4,
+        "yearsRequired": 3,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -101571,12 +101549,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -14,
-          "note": "14"
+          "points": -11,
+          "note": "11"
         }
       ],
-      "raw_score": 21,
-      "clamped_score": 21
+      "raw_score": 24,
+      "clamped_score": 24
     }
   },
   "prod-490cee37-629f-4cb8-9df7-6e2c9bc1489a": {
@@ -104565,7 +104543,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 6,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -104659,8 +104637,8 @@
     "schema_version": 2,
     "id": "prod-4d59e4e1-b200-4678-a70c-d7c3155bddc7",
     "label": "prod 4d59e4e1 — Publicity Coordinator @ Roku (2026-04-21)",
-    "decision": "Priority Apply",
-    "score": 97,
+    "decision": "Apply",
+    "score": 90,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -105465,7 +105443,13 @@
         "match_key": "drafting_documentation"
       }
     ],
-    "risk_codes": [],
+    "risk_codes": [
+      {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      }
+    ],
     "scalars": {
       "job": {
         "analytics": {
@@ -105507,7 +105491,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -105573,26 +105557,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": 0,
-          "note": "0"
+          "points": -7,
+          "note": "7"
         }
       ],
-      "raw_score": 97,
-      "clamped_score": 97
+      "raw_score": 90,
+      "clamped_score": 90
     }
   },
   "prod-4df6de0d-1dae-4ead-a133-02eb8a79f8f0": {
@@ -109935,7 +109919,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 1,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -111386,7 +111370,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 6,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -115793,8 +115777,8 @@
     "schema_version": 2,
     "id": "prod-55fb7fe1-8e43-4ded-9e0d-d08b04ee1f5e",
     "label": "prod 55fb7fe1 — Junior Marketing Manager @ Court 15 (2026-05-18)",
-    "decision": "Review",
-    "score": 74,
+    "decision": "Apply",
+    "score": 89,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -116908,19 +116892,9 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "high",
-        "weight": -11
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "high",
         "weight": -8
-      },
-      {
-        "code": "RISK_SENIORITY_MISMATCH",
-        "severity": "medium",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -116970,7 +116944,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": 3,
+        "yearsRequired": 1,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -117064,16 +117038,16 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -19,
-          "note": "19"
+          "points": -8,
+          "note": "8"
         }
       ],
-      "raw_score": 78,
-      "clamped_score": 74
+      "raw_score": 89,
+      "clamped_score": 89
     }
   },
   "prod-561ab7d4-48f7-416d-ac04-e93427e633ce": {
@@ -117628,7 +117602,7 @@
     "id": "prod-565b9870-907b-4bae-a542-517f83b9ed28",
     "label": "prod 565b9870 — Associate Scientist @ Regeneron (2026-05-14)",
     "decision": "Apply",
-    "score": 91,
+    "score": 84,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -117796,6 +117770,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      },
+      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
@@ -117855,7 +117834,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -117954,12 +117933,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -4,
-          "note": "4"
+          "points": -11,
+          "note": "11"
         }
       ],
-      "raw_score": 91,
-      "clamped_score": 91
+      "raw_score": 84,
+      "clamped_score": 84
     }
   },
   "prod-568ff86c-1e6e-413a-970c-f0b72a1e220b": {
@@ -118853,6 +118832,11 @@
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
+      },
+      {
+        "code": "RISK_SENIORITY_MISMATCH",
+        "severity": "medium",
+        "weight": 0
       }
     ],
     "scalars": {
@@ -118896,7 +118880,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 3,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -123815,8 +123799,8 @@
     "schema_version": 2,
     "id": "prod-59ff6eea-f491-4109-b6db-1702e356d02e",
     "label": "prod 59ff6eea — AMP Financial Advisor Trainee @ Raymond James (2026-04-13)",
-    "decision": "Priority Apply",
-    "score": 97,
+    "decision": "Review",
+    "score": 74,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -124628,6 +124612,16 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "high",
+        "weight": -14
+      },
+      {
+        "code": "RISK_SENIORITY_MISMATCH",
+        "severity": "medium",
+        "weight": 0
+      },
+      {
         "code": "RISK_SUBFAMILY_MISMATCH",
         "severity": "low",
         "weight": 0
@@ -124676,7 +124670,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 3,
         "bachelorRequired": true,
         "mbaRequired": false
       },
@@ -124750,26 +124744,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
-          "points": 0,
-          "note": "0"
+          "points": -14,
+          "note": "14"
         }
       ],
-      "raw_score": 97,
-      "clamped_score": 97
+      "raw_score": 83,
+      "clamped_score": 74
     }
   },
   "prod-5a54a159-4f39-4443-8d5c-72933f925440": {
@@ -128896,8 +128890,8 @@
     "schema_version": 2,
     "id": "prod-5d6eb321-1fb8-431a-a174-852a61e571f7",
     "label": "prod 5d6eb321 — Consultant – Business Transformation and Innovation @ Campana & Schott Inc. (2026-06-10)",
-    "decision": "Apply",
-    "score": 79,
+    "decision": "Review",
+    "score": 72,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -129141,7 +129135,13 @@
         "match_key": "operations_execution"
       }
     ],
-    "risk_codes": [],
+    "risk_codes": [
+      {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      }
+    ],
     "scalars": {
       "job": {
         "analytics": {
@@ -129182,7 +129182,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -129275,26 +129275,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
-          "points": 0,
-          "note": "0"
+          "points": -7,
+          "note": "7"
         }
       ],
-      "raw_score": 79,
-      "clamped_score": 79
+      "raw_score": 72,
+      "clamped_score": 72
     }
   },
   "prod-606a2ebe-08ce-4761-b14f-5d50da48725d": {
@@ -133414,7 +133414,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -138193,7 +138193,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -139122,8 +139122,8 @@
     "schema_version": 2,
     "id": "prod-6536200a-0799-4de8-ad32-f4866607b11a",
     "label": "prod 6536200a — 3rd Party Audit & Lease Compliance Manager @ Ross (2026-06-09)",
-    "decision": "Review",
-    "score": 60,
+    "decision": "Pass",
+    "score": 53,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -139264,6 +139264,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      },
+      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
@@ -139313,7 +139318,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 5,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -139378,26 +139383,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Pass"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Pass"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Pass"
         },
         {
           "label": "penalty_sum",
-          "points": -4,
-          "note": "3.9199999999999995"
+          "points": -11,
+          "note": "10.92"
         }
       ],
-      "raw_score": 60,
-      "clamped_score": 60
+      "raw_score": 53,
+      "clamped_score": 53
     }
   },
   "prod-6570da7f-e162-45e7-b148-2b92cb17eeba": {
@@ -141388,7 +141393,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 10,
+        "yearsRequired": 7,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -151310,7 +151315,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 3,
         "bachelorRequired": true,
         "mbaRequired": false
       },
@@ -152887,7 +152892,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 6,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -156312,7 +156317,7 @@
     "id": "prod-734aecc1-f489-49c5-adce-1fac7ca644e7",
     "label": "prod 734aecc1 — Associate Scientist, Autoimmune Diseases @ Regeneron (2026-06-02)",
     "decision": "Apply",
-    "score": 88,
+    "score": 95,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -156464,11 +156469,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      },
-      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
@@ -156516,7 +156516,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -156615,12 +156615,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -7,
-          "note": "7"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 88,
-      "clamped_score": 88
+      "raw_score": 95,
+      "clamped_score": 95
     }
   },
   "prod-7380595b-93b7-4e42-83b3-967bc7026a74": {
@@ -157994,6 +157994,11 @@
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
+      },
+      {
+        "code": "RISK_SENIORITY_MISMATCH",
+        "severity": "medium",
+        "weight": 0
       }
     ],
     "scalars": {
@@ -158037,7 +158042,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 3,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -159343,7 +159348,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 4,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -160802,8 +160807,8 @@
     "schema_version": 2,
     "id": "prod-770621dd-c0a9-4e62-8bbb-54bc3d0e5dd4",
     "label": "prod 770621dd — Adjustments Analyst @ Human Interest (2026-05-11)",
-    "decision": "Review",
-    "score": 61,
+    "decision": "Pass",
+    "score": 54,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -161077,6 +161082,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      },
+      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -161124,7 +161134,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -161192,26 +161202,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Pass"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Pass"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Pass"
         },
         {
           "label": "penalty_sum",
-          "points": 0,
-          "note": "0"
+          "points": -7,
+          "note": "7"
         }
       ],
-      "raw_score": 61,
-      "clamped_score": 61
+      "raw_score": 54,
+      "clamped_score": 54
     }
   },
   "prod-788f5c06-cce5-4bc0-a195-5640c677bcfe": {
@@ -161373,7 +161383,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -161485,7 +161495,7 @@
     "id": "prod-78db8f95-b3da-4a71-ba9b-a58c0a77245e",
     "label": "prod 78db8f95 — Communications Coordinator @ ABM (2026-06-18)",
     "decision": "Review",
-    "score": 60,
+    "score": 74,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -161879,11 +161889,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "high",
-        "weight": -14
-      },
-      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -161902,11 +161907,6 @@
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
-      },
-      {
-        "code": "RISK_SENIORITY_MISMATCH",
-        "severity": "medium",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -161958,7 +161958,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": 3,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -162038,12 +162038,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -18,
-          "note": "18"
+          "points": -4,
+          "note": "4"
         }
       ],
-      "raw_score": 60,
-      "clamped_score": 60
+      "raw_score": 74,
+      "clamped_score": 74
     }
   },
   "prod-7941beef-ba42-40ec-baab-54d0e2a92be0": {
@@ -170330,7 +170330,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 8,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -183032,7 +183032,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -184605,8 +184605,8 @@
     "schema_version": 2,
     "id": "prod-874118f4-5039-4243-b99f-f6e39c6ed298",
     "label": "prod 874118f4 — Engineering Physicist 1 @ Fermilab (2026-05-04)",
-    "decision": "Review",
-    "score": 71,
+    "decision": "Apply",
+    "score": 82,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -184739,19 +184739,9 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "high",
-        "weight": -11
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
-      },
-      {
-        "code": "RISK_SENIORITY_MISMATCH",
-        "severity": "medium",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -184797,7 +184787,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 3,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -184866,26 +184856,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -15,
-          "note": "15"
+          "points": -4,
+          "note": "4"
         }
       ],
-      "raw_score": 71,
-      "clamped_score": 71
+      "raw_score": 82,
+      "clamped_score": 82
     }
   },
   "prod-878be66f-cbb6-438f-8598-4842bb21029c": {
@@ -189979,7 +189969,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 10,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -191421,7 +191411,7 @@
     "id": "prod-8be5c705-b01e-4726-8ccc-dbdb34b8be00",
     "label": "prod 8be5c705 — Investment Banking Consultant @ Accenture (2026-06-09)",
     "decision": "Apply",
-    "score": 89,
+    "score": 82,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -191751,6 +191741,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      },
+      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
@@ -191799,7 +191794,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -191906,12 +191901,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -8,
-          "note": "8.399999999999999"
+          "points": -15,
+          "note": "15.399999999999999"
         }
       ],
-      "raw_score": 89,
-      "clamped_score": 89
+      "raw_score": 82,
+      "clamped_score": 82
     }
   },
   "prod-8c866ddf-1a41-4b50-8929-689919074cf8": {
@@ -196402,7 +196397,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 1,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -197773,7 +197768,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -198062,11 +198057,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "high",
-        "weight": -11
-      },
-      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
@@ -198084,11 +198074,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_SENIORITY_MISMATCH",
-        "severity": "medium",
         "weight": 0
       }
     ],
@@ -198136,7 +198121,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 3,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -198221,12 +198206,12 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
@@ -198235,11 +198220,11 @@
         },
         {
           "label": "penalty_sum",
-          "points": -19,
-          "note": "19.4"
+          "points": -8,
+          "note": "8.399999999999999"
         }
       ],
-      "raw_score": 69,
+      "raw_score": 80,
       "clamped_score": 55
     }
   },
@@ -200586,7 +200571,7 @@
     "id": "prod-92b668df-5584-4ebd-80c9-f38d5edf6c59",
     "label": "prod 92b668df — Associate Researcher I - Molecular & Cell Biology - Genetics & Genomic Sciences @ Mount Sinai Health System (2026-06-23)",
     "decision": "Apply",
-    "score": 79,
+    "score": 86,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -200746,11 +200731,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      },
-      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
@@ -200799,7 +200779,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 1,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -200898,12 +200878,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -7,
-          "note": "7"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 79,
-      "clamped_score": 79
+      "raw_score": 86,
+      "clamped_score": 86
     }
   },
   "prod-92cb7db7-4311-4f72-ad78-55699c0a3e56": {
@@ -205479,7 +205459,7 @@
     "id": "prod-95f1df10-773b-42bc-87d6-1bf18d9f8c34",
     "label": "prod 95f1df10 — Analyst - Investment Portfolio Management @ MetLife (2026-04-13)",
     "decision": "Apply",
-    "score": 82,
+    "score": 93,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -206044,11 +206024,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "high",
-        "weight": -11
-      },
-      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
@@ -206057,11 +206032,6 @@
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
-      },
-      {
-        "code": "RISK_SENIORITY_MISMATCH",
-        "severity": "medium",
-        "weight": 0
       },
       {
         "code": "RISK_SUBFAMILY_MISMATCH",
@@ -206113,7 +206083,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -206201,12 +206171,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -15,
-          "note": "15"
+          "points": -4,
+          "note": "4"
         }
       ],
-      "raw_score": 82,
-      "clamped_score": 82
+      "raw_score": 93,
+      "clamped_score": 93
     }
   },
   "prod-96ae41d7-dc45-4c8a-8ad5-b36d3f57c854": {
@@ -207664,7 +207634,7 @@
     "id": "prod-97feb1f8-268b-46e9-8112-a41d87ce2a38",
     "label": "prod 97feb1f8 — Strategic Growth Manager @ Compass (2026-06-04)",
     "decision": "Pass",
-    "score": 54,
+    "score": 43,
     "gateType": "floor_review",
     "traceMissing": false,
     "requirement_units": [
@@ -207786,8 +207756,18 @@
         "weight": -11.8
       },
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "high",
+        "weight": -11
+      },
+      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "high",
+        "weight": 0
+      },
+      {
+        "code": "RISK_SENIORITY_MISMATCH",
+        "severity": "medium",
         "weight": 0
       }
     ],
@@ -207830,7 +207810,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 5,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -207915,12 +207895,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -12,
-          "note": "11.8"
+          "points": -23,
+          "note": "22.8"
         }
       ],
-      "raw_score": 54,
-      "clamped_score": 54
+      "raw_score": 43,
+      "clamped_score": 43
     }
   },
   "prod-9927588d-330a-44b0-ad07-93c36fbfc88e": {
@@ -211292,8 +211272,8 @@
     "schema_version": 2,
     "id": "prod-9d29d2f9-4af7-4efc-9099-1adb51861e9e",
     "label": "prod 9d29d2f9 — Full-Stack Engineer, Growth and Monetization Engineering @ Figma (2026-05-19)",
-    "decision": "Apply",
-    "score": 85,
+    "decision": "Review",
+    "score": 71,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -211754,6 +211734,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "high",
+        "weight": -14
+      },
+      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
@@ -211762,6 +211747,11 @@
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
+      },
+      {
+        "code": "RISK_SENIORITY_MISMATCH",
+        "severity": "medium",
+        "weight": 0
       }
     ],
     "scalars": {
@@ -211811,7 +211801,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 4,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -211885,26 +211875,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
-          "points": -4,
-          "note": "4"
+          "points": -18,
+          "note": "18"
         }
       ],
-      "raw_score": 85,
-      "clamped_score": 85
+      "raw_score": 71,
+      "clamped_score": 71
     }
   },
   "prod-9d4abf2c-35c7-4aa7-8bfe-b35d02f7c31b": {
@@ -218456,11 +218446,6 @@
     "why_codes": [],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      },
-      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "high",
         "weight": 0
@@ -218517,7 +218502,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -218602,12 +218587,12 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
@@ -218616,11 +218601,11 @@
         },
         {
           "label": "penalty_sum",
-          "points": -15,
-          "note": "15.399999999999999"
+          "points": -8,
+          "note": "8.399999999999999"
         }
       ],
-      "raw_score": 69,
+      "raw_score": 76,
       "clamped_score": 55
     }
   },
@@ -221412,7 +221397,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -222001,11 +221986,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "high",
-        "weight": -14
-      },
-      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.100000000000001
@@ -222029,11 +222009,6 @@
         "code": "RISK_SALES_SUBSEGMENT",
         "severity": "high",
         "weight": -10
-      },
-      {
-        "code": "RISK_SENIORITY_MISMATCH",
-        "severity": "medium",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -222094,7 +222069,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "advertising_media",
         "softCredentialDetail": null,
-        "yearsRequired": 3,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -222160,12 +222135,12 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_final",
@@ -222174,11 +222149,11 @@
         },
         {
           "label": "penalty_sum",
-          "points": -38,
-          "note": "38.315"
+          "points": -26,
+          "note": "26.1"
         }
       ],
-      "raw_score": 59,
+      "raw_score": 71,
       "clamped_score": 55
     }
   },
@@ -227725,7 +227700,7 @@
     "id": "prod-a8b4a5f8-4134-410d-90dc-f853730206db",
     "label": "prod a8b4a5f8 — Power Generation Engineer @ We Energies (WEC Energy Group) (2026-05-03)",
     "decision": "Pass",
-    "score": 33,
+    "score": 19,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -227828,6 +227803,11 @@
     "why_codes": [],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "high",
+        "weight": -14
+      },
+      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "high",
         "weight": -30
@@ -227836,6 +227816,11 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -3.9199999999999995
+      },
+      {
+        "code": "RISK_SENIORITY_MISMATCH",
+        "severity": "medium",
+        "weight": 0
       }
     ],
     "scalars": {
@@ -227879,7 +227864,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 5,
         "bachelorRequired": true,
         "mbaRequired": false
       },
@@ -227962,12 +227947,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -4,
-          "note": "3.9199999999999995"
+          "points": -18,
+          "note": "17.919999999999998"
         }
       ],
-      "raw_score": 33,
-      "clamped_score": 33
+      "raw_score": 19,
+      "clamped_score": 19
     }
   },
   "prod-a8c2dc35-1474-4f82-aed1-c056893f43be": {
@@ -228582,8 +228567,8 @@
     "schema_version": 2,
     "id": "prod-a99fa295-f412-4425-949e-054a56c33510",
     "label": "prod a99fa295 — Programmatic Media Coordinator @ Razorfish (2026-06-14)",
-    "decision": "Review",
-    "score": 73,
+    "decision": "Apply",
+    "score": 80,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -228956,11 +228941,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      },
-      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
@@ -229023,7 +229003,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 1,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -229089,26 +229069,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -11,
-          "note": "11"
+          "points": -4,
+          "note": "4"
         }
       ],
-      "raw_score": 73,
-      "clamped_score": 73
+      "raw_score": 80,
+      "clamped_score": 80
     }
   },
   "prod-abd762af-2a75-44d5-99ef-b48117282771": {
@@ -235132,7 +235112,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -235368,7 +235348,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -236657,7 +236637,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -237940,6 +237920,11 @@
         "weight": 0
       },
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      },
+      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "high",
         "weight": 0
@@ -237986,7 +237971,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -238085,11 +238070,11 @@
         },
         {
           "label": "penalty_sum",
-          "points": 0,
-          "note": "0"
+          "points": -7,
+          "note": "7"
         }
       ],
-      "raw_score": 68,
+      "raw_score": 61,
       "clamped_score": 55
     }
   },
@@ -239428,6 +239413,11 @@
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
+      },
+      {
+        "code": "RISK_SENIORITY_MISMATCH",
+        "severity": "medium",
+        "weight": 0
       }
     ],
     "scalars": {
@@ -239471,7 +239461,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 3,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -240564,8 +240554,8 @@
     "schema_version": 2,
     "id": "prod-b3e99f67-b91f-4722-ad54-2c9eace0064b",
     "label": "prod b3e99f67 — Consumer Growth Marketing Associate @ Via (2026-06-15)",
-    "decision": "Review",
-    "score": 74,
+    "decision": "Apply",
+    "score": 85,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -240937,11 +240927,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "high",
-        "weight": -11
-      },
-      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -3.9199999999999995
@@ -240950,11 +240935,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_SENIORITY_MISMATCH",
-        "severity": "medium",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -241001,7 +240981,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -241067,26 +241047,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -23,
-          "note": "22.72"
+          "points": -12,
+          "note": "11.72"
         }
       ],
-      "raw_score": 74,
-      "clamped_score": 74
+      "raw_score": 85,
+      "clamped_score": 85
     }
   },
   "prod-b474000b-79e6-4534-906d-c0f1f576aac5": {
@@ -244136,7 +244116,7 @@
     "label": "prod b6970e6e — Marketing Manager @ Fresh Tri (2026-06-02)",
     "decision": "Pass",
     "score": 55,
-    "gateType": "none",
+    "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
       {
@@ -244607,44 +244587,7 @@
         "profile_unit_id": "47ca125532595f5e"
       }
     ],
-    "why_codes": [
-      {
-        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
-        "weight": 88,
-        "match_strength": "adjacent",
-        "match_key": "consumer_research"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 96,
-        "match_strength": "direct",
-        "match_key": "analysis_reporting"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 97,
-        "match_strength": "direct",
-        "match_key": "communications_writing"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 98,
-        "match_strength": "direct",
-        "match_key": "content_execution"
-      },
-      {
-        "code": "WHY_EXECUTION_PROOF",
-        "weight": 78,
-        "match_strength": "adjacent",
-        "match_key": "operations_execution"
-      },
-      {
-        "code": "WHY_EXECUTION_PROOF",
-        "weight": 75,
-        "match_strength": "adjacent",
-        "match_key": "stakeholder_coordination"
-      }
-    ],
+    "why_codes": [],
     "risk_codes": [
       {
         "code": "RISK_EXPERIENCE",
@@ -244665,6 +244608,11 @@
         "code": "RISK_MISSING_TOOLS",
         "severity": "high",
         "weight": -8
+      },
+      {
+        "code": "RISK_SENIORITY_MISMATCH",
+        "severity": "medium",
+        "weight": 0
       }
     ],
     "scalars": {
@@ -244712,7 +244660,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 5,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -251588,7 +251536,7 @@
     "id": "prod-b81b031e-6dbb-421e-84f5-f9547a11890f",
     "label": "prod b81b031e — Account Executive @ Global Gateway Advisors (2026-04-20)",
     "decision": "Apply",
-    "score": 78,
+    "score": 85,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -252227,11 +252175,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      },
-      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
@@ -252278,7 +252221,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 1,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -252358,12 +252301,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -15,
-          "note": "15.399999999999999"
+          "points": -8,
+          "note": "8.399999999999999"
         }
       ],
-      "raw_score": 78,
-      "clamped_score": 78
+      "raw_score": 85,
+      "clamped_score": 85
     }
   },
   "prod-b8802e23-8df7-435e-966a-e0bebe90528b": {
@@ -257028,7 +256971,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -258513,7 +258456,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 3,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -260750,7 +260693,7 @@
     "id": "prod-bea07beb-eca0-4f33-8efe-e0a195e24948",
     "label": "prod bea07beb — Associate Scientist-Vaccines @ Pfizer (2026-06-03)",
     "decision": "Apply",
-    "score": 84,
+    "score": 91,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -260910,11 +260853,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      },
-      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
@@ -260978,7 +260916,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -261077,12 +261015,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -11,
-          "note": "11"
+          "points": -4,
+          "note": "4"
         }
       ],
-      "raw_score": 84,
-      "clamped_score": 84
+      "raw_score": 91,
+      "clamped_score": 91
     }
   },
   "prod-bf235391-a6bf-4df7-b59f-1c1f7eb844d2": {
@@ -261517,7 +261455,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -263356,7 +263294,7 @@
     "id": "prod-c35c03cf-5625-4743-9e25-a204f27c7d90",
     "label": "prod c35c03cf — Associate Scientist @ Regeneron (2026-06-02)",
     "decision": "Apply",
-    "score": 88,
+    "score": 95,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -263508,11 +263446,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      },
-      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
@@ -263560,7 +263493,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -263659,12 +263592,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -7,
-          "note": "7"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 88,
-      "clamped_score": 88
+      "raw_score": 95,
+      "clamped_score": 95
     }
   },
   "prod-c3bde1c4-c56e-45e0-b007-9c7ee3856435": {
@@ -265386,7 +265319,7 @@
     "id": "prod-c4e3e432-9d56-4f8f-b226-de4e6847a1c1",
     "label": "prod c4e3e432 — EIC Intern @ Cushman & Wakefield (2026-05-03)",
     "decision": "Review",
-    "score": 73,
+    "score": 66,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -265706,6 +265639,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      },
+      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -265759,7 +265697,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -265838,12 +265776,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -2,
-          "note": "1.6"
+          "points": -9,
+          "note": "8.6"
         }
       ],
-      "raw_score": 73,
-      "clamped_score": 73
+      "raw_score": 66,
+      "clamped_score": 66
     }
   },
   "prod-c4f0850b-fbd9-4304-8fe6-4ee2e26e5e98": {
@@ -267025,7 +266963,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -269074,7 +269012,7 @@
     "id": "prod-c7e6f252-45df-4d59-953b-b2cc005ba119",
     "label": "prod c7e6f252 — Associate Scientist - Protein Expression Science @ Regeneron (2026-05-14)",
     "decision": "Apply",
-    "score": 91,
+    "score": 84,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -269242,6 +269180,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      },
+      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
@@ -269301,7 +269244,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -269400,12 +269343,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -4,
-          "note": "4"
+          "points": -11,
+          "note": "11"
         }
       ],
-      "raw_score": 91,
-      "clamped_score": 91
+      "raw_score": 84,
+      "clamped_score": 84
     }
   },
   "prod-c80c85a0-6de5-4102-870c-0b9c2276d433": {
@@ -270133,7 +270076,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 6,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -270887,8 +270830,8 @@
     "schema_version": 2,
     "id": "prod-c94e1ff0-fe1f-4c7a-b520-48b8b3441c9d",
     "label": "prod c94e1ff0 — Manufacturing/Process Development Enginere @ Nextern (2026-05-04)",
-    "decision": "Review",
-    "score": 74,
+    "decision": "Apply",
+    "score": 85,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -270981,11 +270924,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "high",
-        "weight": -11
-      },
-      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
@@ -270994,11 +270932,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_SENIORITY_MISMATCH",
-        "severity": "medium",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -271041,7 +270974,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 3,
+        "yearsRequired": 1,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -271110,26 +271043,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -19,
-          "note": "19.4"
+          "points": -8,
+          "note": "8.399999999999999"
         }
       ],
-      "raw_score": 74,
-      "clamped_score": 74
+      "raw_score": 85,
+      "clamped_score": 85
     }
   },
   "prod-c9686e60-01fc-4f8e-a216-48e7775a550b": {
@@ -272121,7 +272054,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 5,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -273693,7 +273626,7 @@
     "id": "prod-cb598815-e0c1-47a1-ad4b-d31aeee31961",
     "label": "prod cb598815 — Coordinator, Artist & Label Relations @ TouchTunes (2026-06-19)",
     "decision": "Apply",
-    "score": 79,
+    "score": 90,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -274097,11 +274030,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "high",
-        "weight": -11
-      },
-      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
@@ -274110,11 +274038,6 @@
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
-      },
-      {
-        "code": "RISK_SENIORITY_MISMATCH",
-        "severity": "medium",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -274164,7 +274087,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -274244,12 +274167,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -15,
-          "note": "15"
+          "points": -4,
+          "note": "4"
         }
       ],
-      "raw_score": 79,
-      "clamped_score": 79
+      "raw_score": 90,
+      "clamped_score": 90
     }
   },
   "prod-cc93c647-6e39-4985-a4f4-e9211018ecf7": {
@@ -274943,7 +274866,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": true,
         "mbaRequired": false
       },
@@ -277970,7 +277893,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -281592,7 +281515,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -283226,7 +283149,7 @@
     "id": "prod-d30252f7-75ee-4db8-a6fd-3995b8394bef",
     "label": "prod d30252f7 — Associate Manufacturing - Day Shift @ Amgen (2026-06-08)",
     "decision": "Pass",
-    "score": 36,
+    "score": 29,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -283360,6 +283283,11 @@
     "why_codes": [],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      },
+      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -283421,7 +283349,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -283520,12 +283448,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -8,
-          "note": "8.399999999999999"
+          "points": -15,
+          "note": "15.399999999999999"
         }
       ],
-      "raw_score": 36,
-      "clamped_score": 36
+      "raw_score": 29,
+      "clamped_score": 29
     }
   },
   "prod-d327635d-3679-4dd5-b384-2eb1be6802fd": {
@@ -284763,7 +284691,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 1,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -285405,7 +285333,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -285679,7 +285607,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -286518,7 +286446,7 @@
     "id": "prod-d4c92b06-b4be-4de7-8c0d-330c5e4c341d",
     "label": "prod d4c92b06 — W8 Fresh Test Role @ [AUDIT-1778193303369] W8FreshCo (2026-05-07)",
     "decision": "Pass",
-    "score": 55,
+    "score": 48,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -286871,6 +286799,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      },
+      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -286934,7 +286867,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -287012,12 +286945,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -4,
-          "note": "4"
+          "points": -11,
+          "note": "11"
         }
       ],
-      "raw_score": 55,
-      "clamped_score": 55
+      "raw_score": 48,
+      "clamped_score": 48
     }
   },
   "prod-d4d2729b-7621-4f6b-a2e1-54659b0a40ff": {
@@ -296613,8 +296546,8 @@
     "schema_version": 2,
     "id": "prod-db32a71f-5c83-4d6a-ae13-67a1c4d6abe1",
     "label": "prod db32a71f — Associate Consultant @ Trinity Life Sciences (2026-06-23)",
-    "decision": "Apply",
-    "score": 90,
+    "decision": "Priority Apply",
+    "score": 97,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -296931,13 +296864,7 @@
         "match_key": "powerpoint"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -296981,7 +296908,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -297074,26 +297001,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -7,
-          "note": "7"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 90,
-      "clamped_score": 90
+      "raw_score": 97,
+      "clamped_score": 97
     }
   },
   "prod-dbdfff77-c95a-4675-a4cd-ffa7546209c3": {
@@ -305049,7 +304976,7 @@
     "id": "prod-def8515c-7a31-4841-81bf-6d51c70839f0",
     "label": "prod def8515c — Associate Scientist, Autoimmune Diseases @ Regeneron (2026-06-08)",
     "decision": "Apply",
-    "score": 88,
+    "score": 95,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -305201,11 +305128,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      },
-      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
@@ -305253,7 +305175,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -305352,12 +305274,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -7,
-          "note": "7"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 88,
-      "clamped_score": 88
+      "raw_score": 95,
+      "clamped_score": 95
     }
   },
   "prod-def991cf-9afb-46c6-a3f1-42b9323772b7": {
@@ -309187,6 +309109,11 @@
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
+      },
+      {
+        "code": "RISK_SENIORITY_MISMATCH",
+        "severity": "medium",
+        "weight": 0
       }
     ],
     "scalars": {
@@ -309230,7 +309157,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 3,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -309485,7 +309412,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -309770,7 +309697,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -319100,7 +319027,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -321045,9 +320972,9 @@
     "schema_version": 2,
     "id": "prod-e78408de-7367-4890-8c30-b109d678a3ef",
     "label": "prod e78408de — Consultant, Advisory Services @ IQVIA (2026-06-03)",
-    "decision": "Review",
-    "score": 71,
-    "gateType": "none",
+    "decision": "Pass",
+    "score": 55,
+    "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
       {
@@ -321364,31 +321291,22 @@
         "profile_unit_id": "e1d2056e97efd639"
       }
     ],
-    "why_codes": [
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 101,
-        "match_strength": "direct",
-        "match_key": "analysis_reporting"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 98,
-        "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 97,
-        "match_strength": "direct",
-        "match_key": "strategy_problem_solving"
-      }
-    ],
+    "why_codes": [],
     "risk_codes": [
+      {
+        "code": "RISK_EXPERIENCE",
+        "severity": "high",
+        "weight": -14
+      },
       {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
+      },
+      {
+        "code": "RISK_SENIORITY_MISMATCH",
+        "severity": "medium",
+        "weight": 0
       }
     ],
     "scalars": {
@@ -321433,7 +321351,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": "other_sales",
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 5,
         "bachelorRequired": true,
         "mbaRequired": false
       },
@@ -321526,26 +321444,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Pass"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Pass"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Pass"
         },
         {
           "label": "penalty_sum",
-          "points": 0,
-          "note": "0"
+          "points": -14,
+          "note": "14"
         }
       ],
-      "raw_score": 71,
-      "clamped_score": 71
+      "raw_score": 57,
+      "clamped_score": 55
     }
   },
   "prod-e7dfcde9-383f-490c-99c4-2b3a96560e31": {
@@ -327010,7 +326928,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -330233,7 +330151,7 @@
     "id": "prod-ec8c08ab-9f98-4e3f-897b-6c53335ea5cc",
     "label": "prod ec8c08ab — Graphic Designer @ Charlotte Hornets (2026-06-01)",
     "decision": "Apply",
-    "score": 93,
+    "score": 86,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -331041,6 +330959,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      },
+      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
@@ -331095,7 +331018,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -331171,12 +331094,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -4,
-          "note": "4"
+          "points": -11,
+          "note": "11"
         }
       ],
-      "raw_score": 93,
-      "clamped_score": 93
+      "raw_score": 86,
+      "clamped_score": 86
     }
   },
   "prod-ece04ef7-7713-4963-bc54-54e9744f0dae": {
@@ -334177,8 +334100,8 @@
     "schema_version": 2,
     "id": "prod-f08f2224-4eee-476a-850d-92be2d215b4e",
     "label": "prod f08f2224 — Assistant Social Strategist @ Blue Hour Studios (2026-05-21)",
-    "decision": "Review",
-    "score": 68,
+    "decision": "Apply",
+    "score": 79,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -334495,19 +334418,9 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "high",
-        "weight": -11
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "high",
         "weight": -8
-      },
-      {
-        "code": "RISK_SENIORITY_MISMATCH",
-        "severity": "medium",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -334553,7 +334466,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": 0,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -334619,26 +334532,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -19,
-          "note": "19"
+          "points": -8,
+          "note": "8"
         }
       ],
-      "raw_score": 68,
-      "clamped_score": 68
+      "raw_score": 79,
+      "clamped_score": 79
     }
   },
   "prod-f192b2de-65fc-41ec-9b32-cc16d4f01122": {
@@ -335391,9 +335304,9 @@
     "schema_version": 2,
     "id": "prod-f1ee8bb1-0397-4c8b-8af2-e27348667e0b",
     "label": "prod f1ee8bb1 — Social Media Specialist @ Lowes Foods (2026-05-26)",
-    "decision": "Pass",
-    "score": 55,
-    "gateType": "force_pass",
+    "decision": "Review",
+    "score": 74,
+    "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
       {
@@ -336087,12 +336000,37 @@
         "profile_unit_id": "f5a13d8a40f9d408"
       }
     ],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 99,
+        "match_strength": "direct",
+        "match_key": "analysis_reporting"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 107,
+        "match_strength": "direct",
+        "match_key": "brand_messaging"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 99,
+        "match_strength": "direct",
+        "match_key": "content_execution"
+      },
+      {
+        "code": "WHY_TOOL_PROOF",
+        "weight": 92,
+        "match_strength": "direct",
+        "match_key": "photoshop"
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_EXPERIENCE",
         "severity": "high",
-        "weight": -14
+        "weight": -11
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -336154,7 +336092,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 5,
+        "yearsRequired": 3,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -336221,21 +336159,21 @@
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Pass"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
-          "points": -18,
-          "note": "18"
+          "points": -15,
+          "note": "15"
         }
       ],
-      "raw_score": 79,
-      "clamped_score": 55
+      "raw_score": 82,
+      "clamped_score": 74
     }
   },
   "prod-f2ae3eed-014f-4617-b11c-47cb62959e07": {
@@ -336774,7 +336712,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 1,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -338999,7 +338937,7 @@
     "id": "prod-f43c1ca6-1ea8-4d91-bea6-27890c9ffd0a",
     "label": "prod f43c1ca6 — Analyst I Quality Assurance @ Bechman Couter Diagnostics (2026-05-04)",
     "decision": "Apply",
-    "score": 93,
+    "score": 86,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -339092,6 +339030,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_EXPERIENCE",
+        "severity": "medium",
+        "weight": -7
+      },
+      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
@@ -339137,7 +339080,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 2,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -339220,12 +339163,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": 0,
-          "note": "0"
+          "points": -7,
+          "note": "7"
         }
       ],
-      "raw_score": 93,
-      "clamped_score": 93
+      "raw_score": 86,
+      "clamped_score": 86
     }
   },
   "prod-f44f4b84-c895-4776-b5e6-aa291db95ad0": {
@@ -339834,7 +339777,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": null,
+        "yearsRequired": 0,
         "bachelorRequired": true,
         "mbaRequired": false
       },
