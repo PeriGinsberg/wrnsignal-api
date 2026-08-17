@@ -92,6 +92,7 @@ function daysAgo(iso: string | null): string {
 
 export default function LaneReviewPage() {
   const [lanes, setLanes] = useState<LaneSummary[] | null>(null)
+  const [profile, setProfile] = useState<{ id: string; name?: string | null; email?: string | null } | null>(null)
   const [laneId, setLaneId] = useState<string | null>(null)
   const [results, setResults] = useState<Result[] | null>(null)
   const [loading, setLoading] = useState(true)
@@ -103,6 +104,7 @@ export default function LaneReviewPage() {
       const j = await res.json().catch(() => ({}))
       if (!res.ok || !j.ok) { setError(j.error || "Could not load lanes"); setLoading(false); return }
       setLanes(j.lanes || [])
+      setProfile(j.profile ?? null)
       setLaneId((j.lanes || [])[0]?.id ?? null)
       setLoading(false)
     })()
@@ -195,6 +197,15 @@ export default function LaneReviewPage() {
           <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>
             No lanes on this account yet. Create one and run it to fill this queue.
           </p>
+          {profile && (
+            <p style={{ color: T.DIM, fontSize: 12, margin: "10px 0 0" }}>
+              Signed in as{" "}
+              <strong style={{ color: T.MUTED }}>{profile.name || profile.email || profile.id}</strong>
+              {profile.name && profile.email ? ` · ${profile.email}` : ""}
+              {" · "}
+              <span style={{ fontFamily: "ui-monospace, monospace" }}>{profile.id}</span>
+            </p>
+          )}
         </div>
       ) : (
         <>

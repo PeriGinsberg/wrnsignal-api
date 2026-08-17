@@ -18,6 +18,16 @@ export async function GET(req: NextRequest) {
     const { profileId } = await resolveCaller(req)
     const supabase = getSupabaseAdmin()
 
+    // Returned so an empty list can say WHOSE list is empty. Lanes are owned
+    // per profile and this app has many test accounts, so "no lanes" is nearly
+    // always a question of which account rather than of none existing — and an
+    // empty state that cannot tell you that sends you off creating a duplicate.
+    const { data: profile } = await supabase
+      .from("client_profiles")
+      .select("id, name, email")
+      .eq("id", profileId)
+      .maybeSingle()
+
     const { data, error } = await supabase
       .from("search_lanes")
       .select("id, name, active, titles, location, years_max")
@@ -38,7 +48,7 @@ export async function GET(req: NextRequest) {
       })
     )
 
-    return withCorsJson(req, { ok: true, lanes }, 200)
+    return withCorsJson(req, { ok: true, profile: profile ?? { id: profileId }, lanes }, 200)
   } catch (err: any) {
     const msg = err?.message || String(err)
     const status = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500
