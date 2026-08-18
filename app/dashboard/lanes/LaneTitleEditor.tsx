@@ -24,11 +24,14 @@ export function LaneTitleEditor({
   laneId,
   showConfig = true,
   onTitlesChange,
+  onActiveChange,
 }: {
   laneId: string
   showConfig?: boolean
   /** Fired after a successful save so a surrounding list can re-label itself. */
   onTitlesChange?: (titles: string[]) => void
+  /** Fired after the lane is paused or resumed. */
+  onActiveChange?: (active: boolean) => void
 }) {
   const [lane, setLane] = useState<LaneConfig | null>(null)
   const [loading, setLoading] = useState(true)
@@ -105,6 +108,34 @@ export function LaneTitleEditor({
     [lane, laneId, onTitlesChange]
   )
 
+  // Pausing is not deleting: the lane keeps every result it has found and its
+  // whole run history, and only stops being picked up by the nightly sweep,
+  // which selects active = true. That is why lanes are paused rather than
+  // removed when a client's search changes.
+  const setActive = useCallback(
+    async (next: boolean) => {
+      if (!lane) return
+      const previous = lane.active
+      setLane({ ...lane, active: next })
+      setSaving(true)
+      const res = await authFetch(`/api/lanes/${encodeURIComponent(laneId)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ active: next }),
+      })
+      setSaving(false)
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j.ok) {
+        setError(j.error || "Could not change the lane's status")
+        setLane((prev) => (prev ? { ...prev, active: previous } : prev))
+        return
+      }
+      setError(null)
+      setLane(j.lane)
+      onActiveChange?.(j.lane.active as boolean)
+    },
+    [lane, laneId, onActiveChange]
+  )
+
   const search = useCallback(async () => {
     const p = phrase.trim()
     if (!p) return
@@ -156,7 +187,27 @@ export function LaneTitleEditor({
             value={lane.exclusions?.title_keywords?.join(", ") || "none"}
             dim={!lane.exclusions?.title_keywords?.length}
           />
-          <ConfigFact label="Status" value={lane.active ? "active" : "paused"} dim={!lane.active} />
+          <div>
+            <div style={{ ...eyebrow, color: T.DIM, marginBottom: 4 }}>Status</div>
+            <button
+              type="button"
+              onClick={() => setActive(!lane.active)}
+              disabled={saving}
+              title={lane.active ? "Pause this lane — it stops running but keeps everything it has found" : "Resume the nightly run"}
+              style={{
+                background: "transparent",
+                border: `1px solid ${lane.active ? T.BORDER : T.ORANGE_BORDER}`,
+                borderRadius: 999,
+                padding: "3px 12px",
+                fontSize: 12,
+                fontWeight: 800,
+                cursor: saving ? "not-allowed" : "pointer",
+                color: lane.active ? T.SUCCESS : T.WRN_ORANGE,
+              }}
+            >
+              {lane.active ? "Active — pause" : "Paused — resume"}
+            </button>
+          </div>
         </div>
       )}
 

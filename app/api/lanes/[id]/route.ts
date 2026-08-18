@@ -2,12 +2,18 @@
 // GET   — one lane's full config, for the edit screen.
 // PATCH { titles: string[] } — replace the lane's title list.
 //
-// SCOPE. PATCH writes titles and nothing else. Keyword, location, years_max and
-// exclusions are shown on the edit screen but not writable here: each one has a
-// failure mode that needs its own guard (a bad location preset returns a fake
-// zero-result, a keyword can silently empty the lane), and a route that accepts
-// them all would have to grow those guards before it was safe. Titles are the
-// field title-discovery produces, so titles are what this accepts.
+// SCOPE. PATCH writes titles and active, and nothing else. Keyword, location,
+// years_max and exclusions are shown on the edit screen but not writable here:
+// each one has a failure mode that needs its own guard (a bad location preset
+// returns a fake zero-result, a keyword can silently empty the lane), and a
+// route that accepts them all would have to grow those guards before it was
+// safe.
+//
+// `active` is safe in a way those are not: it is a boolean with no bad value,
+// and setting it false only stops the nightly sweep picking the lane up (the
+// sweep selects active = true). Results and run history are untouched — pausing
+// is not deleting, which is why lanes are paused rather than deleted in the
+// first place (20260817_search_lanes.sql).
 
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
@@ -54,32 +60,52 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const { id } = await params
     const body = await req.json().catch(() => ({}))
 
-    if (!Array.isArray(body?.titles)) {
-      return withCorsJson(req, { ok: false, error: "titles must be an array" }, 400)
-    }
-    if (!body.titles.every((t: unknown) => typeof t === "string")) {
-      return withCorsJson(req, { ok: false, error: "titles must all be strings" }, 400)
-    }
-
-    // Normalise and dedupe server-side rather than trusting the screen: two
-    // titles differing only by case would be two board fetches returning the
-    // same jobs, and the runner folds them into one result anyway.
-    const seen = new Set<string>()
-    const titles: string[] = []
-    for (const raw of body.titles as string[]) {
-      const t = normTitle(raw)
-      if (!t || seen.has(t)) continue
-      seen.add(t)
-      titles.push(t)
+    // Each field is optional, but sending neither is a caller bug worth naming
+    // rather than a silent no-op write.
+    const wantsTitles = body?.titles !== undefined
+    const wantsActive = body?.active !== undefined
+    if (!wantsTitles && !wantsActive) {
+      return withCorsJson(req, { ok: false, error: "nothing to update — send titles, active, or both" }, 400)
     }
 
-    if (!titles.length) {
-      // A lane with no titles fetches nothing and looks, in the review queue,
-      // exactly like a lane that found nothing.
-      return withCorsJson(req, { ok: false, error: "a lane needs at least one title" }, 400)
+    const update: { titles?: string[]; active?: boolean } = {}
+
+    if (wantsActive) {
+      if (typeof body.active !== "boolean") {
+        return withCorsJson(req, { ok: false, error: "active must be true or false" }, 400)
+      }
+      update.active = body.active
     }
-    if (titles.length > MAX_TITLES) {
-      return withCorsJson(req, { ok: false, error: `at most ${MAX_TITLES} titles (got ${titles.length})` }, 400)
+
+    if (wantsTitles) {
+      if (!Array.isArray(body.titles)) {
+        return withCorsJson(req, { ok: false, error: "titles must be an array" }, 400)
+      }
+      if (!body.titles.every((t: unknown) => typeof t === "string")) {
+        return withCorsJson(req, { ok: false, error: "titles must all be strings" }, 400)
+      }
+
+      // Normalise and dedupe server-side rather than trusting the screen: two
+      // titles differing only by case would be two board fetches returning the
+      // same jobs, and the runner folds them into one result anyway.
+      const seen = new Set<string>()
+      const titles: string[] = []
+      for (const raw of body.titles as string[]) {
+        const t = normTitle(raw)
+        if (!t || seen.has(t)) continue
+        seen.add(t)
+        titles.push(t)
+      }
+
+      if (!titles.length) {
+        // A lane with no titles fetches nothing and looks, in the review queue,
+        // exactly like a lane that found nothing.
+        return withCorsJson(req, { ok: false, error: "a lane needs at least one title" }, 400)
+      }
+      if (titles.length > MAX_TITLES) {
+        return withCorsJson(req, { ok: false, error: `at most ${MAX_TITLES} titles (got ${titles.length})` }, 400)
+      }
+      update.titles = titles
     }
 
     const supabase = getSupabaseAdmin()
@@ -89,7 +115,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (error) return withCorsJson(req, { ok: false, error }, error === "Forbidden" ? 403 : 404)
     const { data, error: upErr } = await supabase
       .from("search_lanes")
-      .update({ titles })
+      .update(update)
       .eq("id", id)
       .select(LANE_FIELDS)
       .single()

@@ -15,9 +15,12 @@ import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { canAccessLaneOwner, laneScopeIds } from "@/lib/collab/laneAccess"
+import { runLane, type Lane } from "@/lib/laneRunner"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+// POST creates a lane and then runs it, which is several board requests.
+export const maxDuration = 300
 
 export async function OPTIONS(req: NextRequest) {
   return corsOptionsResponse(req.headers.get("origin"))
@@ -95,6 +98,140 @@ export async function GET(req: NextRequest) {
       },
       200
     )
+  } catch (err: any) {
+    const msg = err?.message || String(err)
+    const status = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500
+    return withCorsJson(req, { ok: false, error: msg }, status)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// POST — create a lane, and run it once
+// ---------------------------------------------------------------------------
+// Creating a lane and running it are one action from the coach's side: a lane
+// that exists but has never run is an empty queue, which looks exactly like a
+// lane that found nothing. So the create call runs it before returning, and
+// reports what the run found.
+//
+// A failed FIRST RUN does not fail the create. The lane is saved and correct;
+// the run can be retried by the nightly sweep or by hand, and rolling back a
+// good lane because a third party had a bad minute would be worse. The response
+// says which happened.
+
+const MAX_TITLES = 12
+const normTitle = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ")
+
+export async function POST(req: NextRequest) {
+  try {
+    const { profileId } = await resolveCaller(req)
+    const supabase = getSupabaseAdmin()
+    const body = await req.json().catch(() => ({}))
+
+    const clientProfileId = typeof body?.client_profile_id === "string" ? body.client_profile_id : null
+    if (!clientProfileId) return withCorsJson(req, { ok: false, error: "client_profile_id required" }, 400)
+    if (!(await canAccessLaneOwner(clientProfileId, profileId, "send", supabase))) {
+      return withCorsJson(req, { ok: false, error: "Forbidden" }, 403)
+    }
+
+    const name = String(body?.name ?? "").trim()
+    if (!name) return withCorsJson(req, { ok: false, error: "name required" }, 400)
+
+    if (!Array.isArray(body?.titles) || !body.titles.every((t: unknown) => typeof t === "string")) {
+      return withCorsJson(req, { ok: false, error: "titles must be an array of strings" }, 400)
+    }
+    const seen = new Set<string>()
+    const titles: string[] = []
+    for (const raw of body.titles as string[]) {
+      const t = normTitle(raw)
+      if (!t || seen.has(t)) continue
+      seen.add(t)
+      titles.push(t)
+    }
+    if (!titles.length) return withCorsJson(req, { ok: false, error: "a lane needs at least one title" }, 400)
+    if (titles.length > MAX_TITLES) {
+      return withCorsJson(req, { ok: false, error: `at most ${MAX_TITLES} titles (got ${titles.length})` }, 400)
+    }
+
+    // location must state a preset explicitly, including the null that means
+    // "no geographic filter". An absent key is a lane nobody scoped, and the
+    // runner refuses it rather than guessing in either direction.
+    const location = body?.location
+    if (!location || typeof location !== "object" || !("preset" in location)) {
+      return withCorsJson(
+        req,
+        { ok: false, error: 'location must state a preset — a preset key, or null for no geographic filter' },
+        400
+      )
+    }
+
+    const keywordRaw = typeof body?.keyword === "string" ? body.keyword.trim() : ""
+    const yearsMax = body?.years_max === null || body?.years_max === undefined ? null : Number(body.years_max)
+    if (yearsMax !== null && (!Number.isFinite(yearsMax) || yearsMax < 0)) {
+      return withCorsJson(req, { ok: false, error: "years_max must be a non-negative number or null" }, 400)
+    }
+
+    const { data: lane, error: insErr } = await supabase
+      .from("search_lanes")
+      .insert({
+        client_profile_id: clientProfileId,
+        name,
+        active: true,
+        titles,
+        // Empty string is rejected by the column CHECK; null is the one
+        // representation of "no keyword".
+        keyword: keywordRaw || null,
+        location,
+        years_max: yearsMax,
+        companies: Array.isArray(body?.companies) ? body.companies : [],
+        exclusions: body?.exclusions && typeof body.exclusions === "object" ? body.exclusions : {},
+      })
+      .select("*")
+      .single()
+    if (insErr) {
+      // The owner+name unique constraint is the one a coach can actually hit.
+      const conflict = /duplicate key|unique/i.test(insErr.message)
+      return withCorsJson(
+        req,
+        { ok: false, error: conflict ? `This client already has a lane called "${name}"` : insErr.message },
+        conflict ? 409 : 500
+      )
+    }
+
+    const runStart = Date.now()
+    let run: any = null
+    let runError: string | null = null
+    try {
+      const result = await runLane(lane as Lane, supabase)
+      run = {
+        added: result.added,
+        refreshed: result.refreshed,
+        found: result.perTitle.reduce((n, t) => n + t.kept, 0),
+        titles: result.perTitle,
+      }
+      await supabase.from("lane_runs").insert({
+        lane_id: (lane as any).id,
+        status: "ok",
+        trigger: "manual",
+        finished_at: new Date().toISOString(),
+        duration_ms: Date.now() - runStart,
+        titles_run: result.perTitle.length,
+        jobs_found: run.found,
+        jobs_added: result.added,
+        detail: result.perTitle,
+      })
+    } catch (err: any) {
+      runError = err?.message || String(err)
+      await supabase.from("lane_runs").insert({
+        lane_id: (lane as any).id,
+        status: "error",
+        trigger: "manual",
+        finished_at: new Date().toISOString(),
+        duration_ms: Date.now() - runStart,
+        error: String(runError).slice(0, 1000),
+      })
+    }
+
+    return withCorsJson(req, { ok: true, lane, run, run_error: runError }, 201)
   } catch (err: any) {
     const msg = err?.message || String(err)
     const status = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500

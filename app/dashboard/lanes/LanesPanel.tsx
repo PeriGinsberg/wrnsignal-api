@@ -32,17 +32,21 @@ import { useRouter } from "next/navigation"
 import { T, card, eyebrow } from "../../../lib/dashboard-theme"
 import { LaneResultRow } from "./LaneResultRow"
 import { LaneTitleEditor } from "./LaneTitleEditor"
+import { CreateLanePanel } from "./CreateLanePanel"
 import { authFetch, laneTabLabel, type LaneSummary, type Result } from "./laneApi"
 
 export function LanesPanel({
   clientProfileId = null,
   emptyHint,
+  clientName,
   onScore,
 }: {
   /** Narrow to one owner. Null lists everything in the caller's scope. */
   clientProfileId?: string | null
   /** What to say when there are no lanes; the caller knows whose screen this is. */
   emptyHint?: string
+  /** Whose record this is, for the create panel's copy. */
+  clientName?: string | null
   /**
    * Handle Score in place. Given when the mounting page owns a Source a Job tab.
    * Without it, Score navigates to the client record instead.
@@ -61,6 +65,9 @@ export function LanesPanel({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [editorOpen, setEditorOpen] = useState(false)
+
+  // Bumped after a lane is created, to re-read the list.
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     let live = true
@@ -85,7 +92,7 @@ export function LanesPanel({
     return () => {
       live = false
     }
-  }, [clientProfileId])
+  }, [clientProfileId, reloadKey])
 
   const loadQueue = useCallback(async (id: string) => {
     setResults(null)
@@ -197,6 +204,12 @@ export function LanesPanel({
             Couldn&apos;t load lanes. Reload to try again.
           </p>
         </div>
+      ) : lanes.length === 0 && clientProfileId ? (
+        <CreateLanePanel
+          clientProfileId={clientProfileId}
+          clientName={clientName}
+          onCreated={() => setReloadKey((k) => k + 1)}
+        />
       ) : lanes.length === 0 ? (
         <div style={{ ...card, padding: 32 }}>
           <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>
@@ -239,6 +252,11 @@ export function LanesPanel({
                   }}
                 >
                   {laneTabLabel(l, showClientNames)}
+                  {!l.active && (
+                    <span style={{ fontSize: 10, fontWeight: 900, color: T.WRN_ORANGE, letterSpacing: 0.4 }}>
+                      PAUSED
+                    </span>
+                  )}
                   <span
                     style={{
                       fontSize: 11, fontWeight: 900,
@@ -278,7 +296,13 @@ export function LanesPanel({
               </button>
               {editorOpen && (
                 <div style={{ marginTop: 12 }}>
-                  <LaneTitleEditor laneId={laneId} onTitlesChange={onTitlesChange} />
+                  <LaneTitleEditor
+                    laneId={laneId}
+                    onTitlesChange={onTitlesChange}
+                    onActiveChange={(active) =>
+                      setLanes((prev) => (prev ? prev.map((l) => (l.id === laneId ? { ...l, active } : l)) : prev))
+                    }
+                  />
                 </div>
               )}
             </div>

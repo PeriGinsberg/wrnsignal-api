@@ -1861,6 +1861,7 @@ export default function CoachClientPage() {
           </div>
           <LanesPanel
             clientProfileId={clientId}
+            clientName={clientProfile?.name || null}
             emptyHint={`No lanes for ${clientProfile?.name || "this client"} yet. Create one and run it to fill this queue.`}
             onScore={({ row, laneResultId: rid }) => {
               setSourceTitle(row.title || "")
