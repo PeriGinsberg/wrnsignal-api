@@ -308,6 +308,15 @@ export function LanesPanel({
                       if (laneId) loadQueue(laneId)
                       setReloadKey((k) => k + 1)
                     }}
+                    onDeleted={() => {
+                      // The selected lane is gone. Drop the selection and reload
+                      // so the tabs, the queue and the create panel all reflect
+                      // a lane list that no longer contains it.
+                      setLaneId(null)
+                      setResults(null)
+                      setEditorOpen(false)
+                      setReloadKey((k) => k + 1)
+                    }}
                   />
                 </div>
               )}

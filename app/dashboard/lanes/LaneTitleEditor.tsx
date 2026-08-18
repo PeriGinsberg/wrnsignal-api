@@ -26,6 +26,7 @@ export function LaneTitleEditor({
   onTitlesChange,
   onActiveChange,
   onRan,
+  onDeleted,
 }: {
   laneId: string
   showConfig?: boolean
@@ -35,11 +36,19 @@ export function LaneTitleEditor({
   onActiveChange?: (active: boolean) => void
   /** Fired after a manual run, so a surrounding queue can reload. */
   onRan?: () => void
+  /** Fired after the lane is deleted; it no longer exists when this runs. */
+  onDeleted?: () => void
 }) {
   const [lane, setLane] = useState<LaneConfig | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+
+  // Counts of what a delete would destroy, so the confirmation can name the
+  // cost. Null until the lane loads.
+  const [counts, setCounts] = useState<{ results: number; runs: number } | null>(null)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const [running, setRunning] = useState(false)
   const [runSummary, setRunSummary] = useState<string | null>(null)
@@ -67,6 +76,8 @@ export function LaneTitleEditor({
       }
       setError(null)
       setLane(j.lane)
+      setCounts(j.counts ?? null)
+      setConfirmingDelete(false)
       setLoading(false)
     })()
     return () => {
@@ -166,6 +177,22 @@ export function LaneTitleEditor({
     )
     onRan?.()
   }, [laneId, onRan])
+
+  // Two steps, and the second one names what goes. Pausing is the reversible
+  // answer and sits three controls away; anyone reaching for this has already
+  // decided the lane should not exist.
+  const deleteLane = useCallback(async () => {
+    setDeleting(true)
+    setError(null)
+    const res = await authFetch(`/api/lanes/${encodeURIComponent(laneId)}`, { method: "DELETE" })
+    const j = await res.json().catch(() => ({}))
+    setDeleting(false)
+    if (!res.ok || !j.ok) {
+      setError(j.error || "Could not delete this lane")
+      return
+    }
+    onDeleted?.()
+  }, [laneId, onDeleted])
 
   const search = useCallback(async () => {
     const p = phrase.trim()
@@ -318,7 +345,7 @@ export function LaneTitleEditor({
         ))}
       </section>
 
-      <section style={{ ...card, padding: "18px 20px" }}>
+      <section style={{ ...card, padding: "18px 20px", marginBottom: 14 }}>
         <div style={{ ...eyebrow, color: T.MUTED, marginBottom: 6 }}>Discover titles</div>
         <p style={{ fontSize: 12, color: T.MUTED, margin: "0 0 12px" }}>
           Enter a rough phrase. It is searched with this lane&apos;s keyword and location, and grouped by the
@@ -410,6 +437,58 @@ export function LaneTitleEditor({
           </>
         )}
       </section>
+
+      {/* Deliberately last, and visually separate. Pausing is the reversible
+          answer to "stop this lane" and lives up in the config strip; this is
+          the other question. */}
+      <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${T.BORDER_SOFT}` }}>
+        {!confirmingDelete ? (
+          <button
+            type="button"
+            onClick={() => setConfirmingDelete(true)}
+            style={{
+              background: "none", border: "none", padding: 0,
+              color: T.MUTED, fontSize: 12, fontWeight: 700, cursor: "pointer",
+            }}
+          >
+            Delete this lane
+          </button>
+        ) : (
+          <div style={{ ...card, padding: "14px 16px", borderColor: T.ERROR, background: T.ERROR_BG }}>
+            <p style={{ fontSize: 13, color: T.TEXT, margin: "0 0 4px", fontWeight: 700 }}>
+              Delete &ldquo;{lane.name}&rdquo; permanently?
+            </p>
+            <p style={{ fontSize: 12, color: T.MUTED, margin: "0 0 12px" }}>
+              {counts
+                ? `This also deletes ${counts.results} saved result${counts.results === 1 ? "" : "s"} and ${counts.runs} run record${counts.runs === 1 ? "" : "s"}, including anything still unreviewed. There is no undo.`
+                : "This also deletes every saved result and run record for the lane. There is no undo."}{" "}
+              To stop it running without losing any of that, pause it instead.
+            </p>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <button
+                type="button"
+                onClick={deleteLane}
+                disabled={deleting}
+                style={{
+                  background: T.ERROR, color: "#1a0505", border: "none", borderRadius: 11,
+                  padding: "9px 16px", fontSize: 13, fontWeight: 900,
+                  cursor: deleting ? "not-allowed" : "pointer", opacity: deleting ? 0.6 : 1,
+                }}
+              >
+                {deleting ? "Deleting…" : "Delete permanently"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(false)}
+                disabled={deleting}
+                style={{ background: "transparent", border: "none", color: T.DIM, fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

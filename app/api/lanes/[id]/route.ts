@@ -42,11 +42,20 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const { profileId } = await resolveCaller(req)
     const { id } = await params
+    const supabase = getSupabaseAdmin()
     // read, not configure: seeing a lane's config is what the edit screen and
     // the client-record tab both need before they can show anything.
-    const { lane, error } = await loadAuthorizedLane(id, profileId, "read", getSupabaseAdmin(), LANE_FIELDS)
+    const { lane, error } = await loadAuthorizedLane(id, profileId, "read", supabase, LANE_FIELDS)
     if (error) return withCorsJson(req, { ok: false, error }, error === "Forbidden" ? 403 : 404)
-    return withCorsJson(req, { ok: true, lane }, 200)
+
+    // What deleting this lane would destroy. Returned with the config so a
+    // confirmation can name the cost instead of asking "are you sure".
+    const [{ count: results }, { count: runs }] = await Promise.all([
+      supabase.from("lane_results").select("id", { count: "exact", head: true }).eq("lane_id", id),
+      supabase.from("lane_runs").select("id", { count: "exact", head: true }).eq("lane_id", id),
+    ])
+
+    return withCorsJson(req, { ok: true, lane, counts: { results: results ?? 0, runs: runs ?? 0 } }, 200)
   } catch (err: any) {
     const msg = err?.message || String(err)
     const s = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500
@@ -122,6 +131,57 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (upErr) throw new Error(`Update failed: ${upErr.message}`)
 
     return withCorsJson(req, { ok: true, lane: data }, 200)
+  } catch (err: any) {
+    const msg = err?.message || String(err)
+    const s = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500
+    return withCorsJson(req, { ok: false, error: msg }, s)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// DELETE — remove the lane, its results and its run history
+// ---------------------------------------------------------------------------
+// The original schema said lanes are paused, not deleted, precisely because a
+// lane carries the record of what it already found. That still holds for a lane
+// a client might come back to — pause is the reversible answer and it is one
+// click away on the same screen.
+//
+// This is for the other case: a lane created by mistake, or for a search that
+// was never theirs. Both lane_results and lane_runs are ON DELETE CASCADE, so
+// the row going takes its results and history with it. There is no undo, which
+// is why the counts are returned before the fact by GET and reported again here.
+
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { profileId } = await resolveCaller(req)
+    const { id } = await params
+    const supabase = getSupabaseAdmin()
+
+    const { lane, error } = await loadAuthorizedLane(id, profileId, "configure", supabase, LANE_FIELDS)
+    if (error) return withCorsJson(req, { ok: false, error }, error === "Forbidden" ? 403 : 404)
+
+    // Counted BEFORE the delete: afterwards the rows are gone and the answer
+    // would always be zero, which tells the caller nothing about what it cost.
+    const [{ count: results }, { count: runs }] = await Promise.all([
+      supabase.from("lane_results").select("id", { count: "exact", head: true }).eq("lane_id", id),
+      supabase.from("lane_runs").select("id", { count: "exact", head: true }).eq("lane_id", id),
+    ])
+
+    const { error: delErr } = await supabase.from("search_lanes").delete().eq("id", id)
+    if (delErr) throw new Error(`Delete failed: ${delErr.message}`)
+
+    return withCorsJson(
+      req,
+      {
+        ok: true,
+        deleted: {
+          lane: { id, name: (lane as any).name },
+          results: results ?? 0,
+          runs: runs ?? 0,
+        },
+      },
+      200
+    )
   } catch (err: any) {
     const msg = err?.message || String(err)
     const s = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500
