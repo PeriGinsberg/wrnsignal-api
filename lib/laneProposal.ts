@@ -98,7 +98,11 @@ const TITLE_SPLIT = /\s*(?:[,;/|]|\band\b|\bor\b|\n)\s*/i
 // the caller prints what it dropped.
 export const MAX_TITLES = 8
 
-export function deriveTitles(targetRoles: string | null): { titles: string[]; dropped: string[] } {
+export function deriveTitles(targetRoles: string | null): {
+  titles: string[]
+  dropped: string[]
+  discarded: string[]
+} {
   const parts = String(targetRoles || "")
     .split(TITLE_SPLIT)
     .map((s) =>
@@ -108,13 +112,36 @@ export function deriveTitles(targetRoles: string | null): { titles: string[]; dr
         .replace(/^(?:a|an|the|roles?\s+in|entry[- ]level)\s+/i, "")
         .trim()
     )
-    // A single word like "operations" is a sector, not a title; queried alone
-    // it returns the whole board. Two words is the floor for a role name.
-    .filter((s) => s.length > 2 && /\s/.test(s))
+    .filter(Boolean)
+
+  // A coordinated list can share one head noun. "trademark, copyright, IP, and
+  // data privacy associate" is four roles, not one: only the final entry carries
+  // the noun and the rest borrow it. Splitting on commas alone left three bare
+  // modifiers that the two-word floor then threw away, so a client asking for
+  // four things got a lane searching one.
+  //
+  // Only bare single-word entries borrow, and only when the last entry has a
+  // head to lend. An entry that already names a role ("supply chain coordinator")
+  // is left exactly as written.
+  const last = parts[parts.length - 1] ?? ""
+  const head = last.includes(" ") ? last.split(/\s+/).pop()! : null
+  const expanded = parts.map((part, i) => {
+    if (i === parts.length - 1 || !head) return part
+    if (part.includes(" ") || part.length < 2) return part
+    return `${part} ${head}`
+  })
+
+  // A single word like "operations" is a sector, not a title; queried alone it
+  // returns the whole board. Two words is the floor for a role name — but what
+  // fails that floor is now REPORTED rather than dropped on the floor, because a
+  // title silently vanishing is indistinguishable from one never asked for.
+  const ok = (t: string) => t.length > 2 && /\s/.test(t)
+  const usable = expanded.filter(ok)
+  const discarded = expanded.filter((t) => !ok(t))
 
   const seen = new Set<string>()
-  const unique = parts.filter((t) => (seen.has(t) ? false : (seen.add(t), true)))
-  return { titles: unique.slice(0, MAX_TITLES), dropped: unique.slice(MAX_TITLES) }
+  const unique = usable.filter((t) => (seen.has(t) ? false : (seen.add(t), true)))
+  return { titles: unique.slice(0, MAX_TITLES), dropped: unique.slice(MAX_TITLES), discarded }
 }
 
 // ---------------------------------------------------------------------------
@@ -232,7 +259,11 @@ const STAGE_YEARS_MAX: Record<string, number | null> = {
   executive: null, // no ceiling — a stated minimum is never the reason to skip
 }
 
-const DEGREE_LINE = /\b(bachelor|b\.?s\.?|b\.?a\.?|master|m\.?s\.?|mba|associate)\b/i
+// Which lines can carry a graduation year. A law student's JD line is the one
+// that dates their clock, and its absence here let a 2024 bachelor's outrank a
+// 2027 Juris Doctor — ageing a current student by three years.
+const DEGREE_LINE =
+  /\b(bachelor|b\.?s\.?|b\.?a\.?|master|m\.?s\.?|mba|associate|juris|j\.?d\.?|ll\.?m\.?|ph\.?d\.?|doctorate)\b/i
 
 export function deriveYearsMax(resumeText: string, careerStage: string | null) {
   const gradYears = String(resumeText || "")
@@ -528,7 +559,7 @@ export async function proposeLane(
     .filter(Boolean)
     .join("\n")
 
-  const { titles, dropped } = deriveTitles(src.targetRoles)
+  const { titles, dropped, discarded } = deriveTitles(src.targetRoles)
   const sectors = scoreSectors(sectorText)
   // Only sectors with real evidence are eligible at all. Everything downstream —
   // the offline pick and the board's choice — draws from this list, so a client
@@ -563,6 +594,12 @@ export async function proposeLane(
   }
 
   if (dropped.length) flags.push(`${dropped.length} title(s) over the ${MAX_TITLES} cap were not proposed: ${dropped.join(", ")}`)
+  if (discarded.length) {
+    flags.push(
+      `Could not turn ${discarded.length} entr${discarded.length === 1 ? "y" : "ies"} from the target roles into a title: ` +
+        `${discarded.join(", ")}. A single word is a sector, not a role, and searching one returns the whole board.`
+    )
+  }
   if (loc.unsupported.length) {
     flags.push(
       `${loc.unsupported.join(", ")} ${loc.unsupported.length === 1 ? "is a market" : "are markets"} with no location preset. ` +
