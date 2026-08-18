@@ -165,7 +165,7 @@ async function main() {
   console.log(`  titles:     ${proposal.titles.length ? proposal.titles.join(" | ") : "(none)"}`)
   console.log(`  keyword:    ${proposal.keyword ?? "(none)"}`)
   console.log(
-    `  location:   ${proposal.location.preset ? `${proposal.location.preset} ${proposal.location.radius_miles}mi` : "(no filter — nationwide)"}`
+    `  location:   ${proposal.location.presets.length ? `${proposal.location.presets.join(", ")} @ ${proposal.location.radius_miles}mi` : "(no filter — nationwide)"}`
   )
   console.log(`  years_max:  ${proposal.years_max ?? "none"}`)
   console.log(`  exclusions: ${JSON.stringify(proposal.exclusions)}`)

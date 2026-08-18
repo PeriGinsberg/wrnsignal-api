@@ -31,9 +31,10 @@ export type Lane = {
   active: boolean
   titles: string[]
   keyword: string | null
-  // preset: null means no geographic filter (nationwide). Absent is NOT the
-  // same thing — see resolvePreset().
-  location: { preset?: string | null; radius_miles?: number; days_posted?: number }
+  // presets: [] means no geographic filter (nationwide). Absent is NOT the same
+  // thing — see resolvePresets(). `preset` is the pre-2026-08-18 single-market
+  // shape, still read so old rows keep working.
+  location: { presets?: string[]; preset?: string | null; radius_miles?: number; days_posted?: number }
   years_max: number | null
   companies: string[]
   exclusions: { companies?: string[]; title_keywords?: string[] }
@@ -76,27 +77,31 @@ const int = (v: unknown): number | null =>
   v === null || v === undefined || v === "" || Number.isNaN(Number(v)) ? null : Math.round(Number(v))
 
 /**
- * The lane's location, as three distinct states rather than two.
+ * The lane's markets, as three distinct states rather than two.
  *
- *   {"preset": "nyc"}   → that preset
- *   {"preset": null}    → no geographic filter; the search runs nationwide
- *   {}                  → rejected
+ *   {"presets": ["nyc", "miami"]}  → those markets, ORed by the board
+ *   {"presets": []}                → no geographic filter; runs nationwide
+ *   {}                             → rejected
  *
  * The third case is the one worth spelling out. `location` defaults to '{}' at
  * the column level, so a lane inserted without one lands here, and both of the
- * other answers are wrong for it: defaulting to nyc silently narrows a lane
+ * other answers are wrong for it: defaulting to a market silently narrows a lane
  * nobody scoped, and defaulting to nationwide silently widens it. Neither
  * failure shows up in the results — you get plausible jobs either way — so the
  * lane has to say which it meant.
+ *
+ * The single-market `preset` shape predates 2026-08-18 and is normalised here
+ * rather than migrated away in the readers, so exactly one place knows both
+ * shapes exist.
  */
-export function resolvePreset(l: Lane): string | null {
-  if (!l.location || !("preset" in l.location)) {
-    throw new Error(
-      `lane "${l.name}" has no location.preset. Set {"preset": "nyc", "radius_miles": 25} ` +
-        `for a metro search, or {"preset": null} for no geographic filter.`
-    )
-  }
-  return l.location.preset ?? null
+export function resolvePresets(l: Lane): string[] {
+  const loc = l.location || {}
+  if (Array.isArray(loc.presets)) return loc.presets
+  if ("preset" in loc) return loc.preset == null ? [] : [loc.preset]
+  throw new Error(
+    `lane "${l.name}" has no location.presets. Set {"presets": ["nyc"], "radius_miles": 25} ` +
+      `for a metro search, or {"presets": []} for no geographic filter.`
+  )
 }
 
 /**
@@ -201,7 +206,7 @@ export async function runLane(
     onTitle?: (o: TitleOutcome) => void
   } = {}
 ): Promise<LaneRunResult> {
-  const preset = resolvePreset(lane)
+  const presets = resolvePresets(lane)
   const radius = lane.location?.radius_miles ?? 25
   const days = opts.days ?? lane.location?.days_posted ?? 29
   const pages = opts.pages ?? 1
@@ -215,7 +220,7 @@ export async function runLane(
     const query = queryFor(title, lane.keyword)
     const { rows, total } = await fetchJobs({
       query,
-      location: preset,
+      locations: presets,
       radiusMiles: radius,
       days,
       seniority: LANE_SENIORITY,

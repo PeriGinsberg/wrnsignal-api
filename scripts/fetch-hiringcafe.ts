@@ -29,8 +29,9 @@ function arg(name: string, fallback?: string): string | undefined {
 async function main() {
   const opts = {
     query: arg("query", "sports coordinator")!,
-    // --location none searches with no geographic filter.
-    location: arg("location", "nyc") === "none" ? null : arg("location", "nyc")!,
+    // --location none searches with no geographic filter; otherwise a
+    // comma-separated list of preset keys.
+    locations: arg("location", "nyc") === "none" ? [] : arg("location", "nyc")!.split(",").map((x) => x.trim()).filter(Boolean),
     radiusMiles: Number(arg("radius", "25")),
     days: Number(arg("days", "29")),
     seniority: arg("seniority", "No Prior Experience Required,Entry Level,Mid Level")!
@@ -55,7 +56,7 @@ async function main() {
   }
 
   console.log(
-    `query="${opts.query}" location=${opts.location} radius=${opts.radiusMiles}mi ` +
+    `query="${opts.query}" locations=${opts.locations.join(",") || "(none)"} radius=${opts.radiusMiles}mi ` +
       `days=${opts.days} seniority=[${opts.seniority.join(", ")}]`
   )
   console.log(`${total} total, ${rows.length} fetched\n`)

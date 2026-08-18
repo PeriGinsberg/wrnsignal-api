@@ -62,21 +62,27 @@ export async function GET(req: NextRequest) {
     // no geographic filter, and an absent key — which is a lane nobody scoped
     // and must not be guessed at in either direction.
     const location = (lane as any).location || {}
-    if (!("preset" in location)) {
+    const presets: string[] = Array.isArray(location.presets)
+      ? location.presets
+      : "preset" in location
+        ? location.preset == null
+          ? []
+          : [location.preset]
+        : (null as any)
+    if (presets === null) {
       return withCorsJson(
         req,
-        { ok: false, error: 'lane has no location.preset — set a preset, or null for no geographic filter' },
+        { ok: false, error: 'lane has no location.presets — set markets, or [] for no geographic filter' },
         400
       )
     }
-    const preset: string | null = location.preset ?? null
     const radiusMiles: number = location.radius_miles ?? 25
     const keyword: string | null = (lane as any).keyword ?? null
 
     const query = queryFor(phrase, keyword)
     const { rows, total } = await fetchJobs({
       query,
-      location: preset,
+      locations: presets,
       radiusMiles,
       days: DAYS,
       seniority: SENIORITY,
@@ -108,7 +114,7 @@ export async function GET(req: NextRequest) {
         ok: true,
         query,
         keyword,
-        location: preset === null ? null : { preset, radius_miles: radiusMiles },
+        location: presets.length ? { presets, radius_miles: radiusMiles } : null,
         // fetched vs available: one page of a larger set is a sample, and a
         // count presented without that distinction reads as the whole board.
         fetched: rows.length,

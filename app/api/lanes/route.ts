@@ -152,16 +152,21 @@ export async function POST(req: NextRequest) {
       return withCorsJson(req, { ok: false, error: `at most ${MAX_TITLES} titles (got ${titles.length})` }, 400)
     }
 
-    // location must state a preset explicitly, including the null that means
-    // "no geographic filter". An absent key is a lane nobody scoped, and the
-    // runner refuses it rather than guessing in either direction.
+    // location must state its markets explicitly, including the empty list that
+    // means "no geographic filter". An absent key is a lane nobody scoped, and
+    // the runner refuses it rather than guessing in either direction.
     const location = body?.location
-    if (!location || typeof location !== "object" || !("preset" in location)) {
+    const hasPresets = location && typeof location === "object" && Array.isArray((location as any).presets)
+    const hasLegacy = location && typeof location === "object" && "preset" in (location as any)
+    if (!hasPresets && !hasLegacy) {
       return withCorsJson(
         req,
-        { ok: false, error: 'location must state a preset — a preset key, or null for no geographic filter' },
+        { ok: false, error: 'location must state presets — a list of market keys, or [] for no geographic filter' },
         400
       )
+    }
+    if (hasPresets && !(location as any).presets.every((x: unknown) => typeof x === "string")) {
+      return withCorsJson(req, { ok: false, error: "location.presets must all be strings" }, 400)
     }
 
     const keywordRaw = typeof body?.keyword === "string" ? body.keyword.trim() : ""

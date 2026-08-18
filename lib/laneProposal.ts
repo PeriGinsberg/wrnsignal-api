@@ -133,9 +133,22 @@ const PRESET_ALIASES: Record<string, string[]> = {
   washington_dc: ["washington dc", "washington, d.c.", "d.c.", "dc metro", "dmv"],
 }
 
+// Regions are genuinely several markets, so they only became representable when
+// a lane stopped being one preset. Mapping "South Florida" to a single city was
+// refused earlier for good reason — it silently dropped two thirds of what the
+// client asked for. As a set it is simply true.
+const REGION_ALIASES: Record<string, string[]> = {
+  "south florida": ["miami", "fort_lauderdale", "west_palm_beach", "boca_raton"],
+  "southeast florida": ["miami", "fort_lauderdale", "west_palm_beach", "boca_raton"],
+  "tri-county": ["miami", "fort_lauderdale", "west_palm_beach"],
+  "bay area": ["san_francisco"],
+  "dmv": ["washington_dc"],
+  "socal": ["los_angeles"],
+}
+
 // Cities clients name often. Recognised only so an unsupported one can be
-// named in the output; none of these are searchable until someone adds a full
-// Google Places payload to LOCATIONS.
+// named in the output; none of these are searchable until someone adds a
+// payload sourced from /api/searchLocation to LOCATIONS.
 const KNOWN_CITIES = [
   "san diego", "los angeles", "san francisco", "bay area", "seattle", "portland",
   "denver", "austin", "dallas", "houston", "chicago", "atlanta", "nashville",
@@ -150,32 +163,42 @@ const RELOCATION = /\b(anywhere|nationwide|open to relocat\w*|willing to relocat
 export function deriveLocation(locationText: string, resumeText: string) {
   const presets = Object.keys(LOCATIONS)
 
+  // EVERY market the client names, not the first. A client who says "Miami or
+  // Chicago" means both, and the board ORs them in one search, so there is no
+  // reason left to make them choose.
   const named: string[] = []
+  const add = (p: string) => {
+    if (presets.includes(p) && !named.includes(p)) named.push(p)
+  }
   for (const [preset, aliases] of Object.entries(PRESET_ALIASES)) {
-    if (!presets.includes(preset)) continue
-    if (aliases.some((a) => countTerm(locationText, a) > 0)) named.push(preset)
+    if (aliases.some((a) => countTerm(locationText, a) > 0)) add(preset)
+  }
+  // Regions expand to their markets, after the explicit cities so a client who
+  // names both keeps the city they actually said at the front of the list.
+  for (const [region, expansion] of Object.entries(REGION_ALIASES)) {
+    if (countTerm(locationText, region) > 0) expansion.forEach(add)
   }
 
   const unsupported = KNOWN_CITIES.filter(
     (c) =>
       countTerm(locationText, c) > 0 &&
-      !Object.entries(PRESET_ALIASES).some(([p, aliases]) => named.includes(p) && aliases.includes(c))
+      !Object.entries(PRESET_ALIASES).some(([p, aliases]) => named.includes(p) && aliases.includes(c)) &&
+      !Object.entries(REGION_ALIASES).some(([r, exp]) => r === c && exp.some((p) => named.includes(p)))
   )
 
   const relocating = RELOCATION.test(locationText) || RELOCATION.test(resumeText)
 
-  // A client who named no searchable market gets no geographic filter, which
-  // the lane can now express as preset null. This is a real answer for
-  // "Anywhere" and a partial one for a client who named only markets we have
-  // no preset for — the caller flags that second case, because nationwide is
-  // wider than what they asked for, not narrower.
-  const preset = named[0] ?? null
+  // A client who named no searchable market gets no geographic filter, which a
+  // lane expresses as an empty list. This is a real answer for "Anywhere" and a
+  // partial one for a client who named only markets we have no preset for — the
+  // caller flags that second case, because nationwide is wider than what they
+  // asked for, not narrower.
 
-  // 50 miles for a client who will relocate or commute into a metro; 25 for
-  // one anchored to the city itself. Irrelevant when preset is null.
+  // 50 miles for a client who will relocate or commute into a metro; 25 for one
+  // anchored to a single named city. Irrelevant when the list is empty.
   const radius_miles = relocating || named.length !== 1 ? 50 : 25
 
-  return { preset, radius_miles, named, unsupported, relocating, presets }
+  return { chosen: named, radius_miles, named, unsupported, relocating, presets }
 }
 
 // ---------------------------------------------------------------------------
@@ -263,7 +286,7 @@ export type Probe = { title: string; query: string; fetched: number; available: 
 export async function probeTitles(
   titles: string[],
   keyword: string | null,
-  preset: string | null,
+  presets: string[],
   radiusMiles: number
 ): Promise<Probe[]> {
   const out: Probe[] = []
@@ -271,7 +294,7 @@ export async function probeTitles(
     const query = queryFor(title, keyword)
     const { rows, total } = await fetchJobs({
       query,
-      location: preset,
+      locations: presets,
       radiusMiles,
       days: PROBE_DAYS,
       seniority: PROBE_SENIORITY,
@@ -361,7 +384,7 @@ export type KeywordScore = {
 export async function scoreKeywords(
   titles: string[],
   candidates: string[],
-  preset: string | null,
+  presets: string[],
   radiusMiles: number
 ): Promise<{ baseline: KeywordScore; scored: KeywordScore[]; chosen: KeywordScore }> {
   const build = (keyword: string | null, cells: Probe[], baselineCells: Probe[] | null): KeywordScore => {
@@ -398,12 +421,12 @@ export async function scoreKeywords(
     }
   }
 
-  const baselineCells = await probeTitles(titles, null, preset, radiusMiles)
+  const baselineCells = await probeTitles(titles, null, presets, radiusMiles)
   const baseline = build(null, baselineCells, null)
 
   const scored: KeywordScore[] = []
   for (const k of candidates.slice(0, MAX_KEYWORD_CANDIDATES)) {
-    scored.push(build(k, await probeTitles(titles, k, preset, radiusMiles), baselineCells))
+    scored.push(build(k, await probeTitles(titles, k, presets, radiusMiles), baselineCells))
   }
 
   // The board's job here is to VETO, not to rank. Every candidate that survives
@@ -441,7 +464,7 @@ export type ProposedLane = {
   active: boolean
   titles: string[]
   keyword: string | null
-  location: { preset: string | null; radius_miles?: number }
+  location: { presets: string[]; radius_miles?: number }
   years_max: number | null
   companies: string[]
   exclusions: { companies?: string[]; title_keywords?: string[] }
@@ -497,7 +520,15 @@ export async function proposeLane(
   const loc = deriveLocation(locationText, String(src.resumeText || ""))
   const years = deriveYearsMax(String(src.resumeText || ""), src.careerStage)
   const exclusions = deriveExclusions(src.careerStage, years.years_max)
-  const scope = loc.preset ? loc.preset.toUpperCase() : "Anywhere"
+  // The name says where. One market names itself; several are summarised,
+  // because "MIAMI + FORT_LAUDERDALE + WEST_PALM_BEACH + BOCA_RATON" is not a
+  // name anybody wants on a tab.
+  const scope =
+    loc.chosen.length === 0
+      ? "Anywhere"
+      : loc.chosen.length === 1
+        ? loc.chosen[0].toUpperCase()
+        : `${loc.chosen.length} markets`
 
   const proposal: ProposedLane = {
     client_profile_id: src.clientProfileId,
@@ -505,9 +536,9 @@ export async function proposeLane(
     active: true,
     titles,
     keyword: resumeKeyword,
-    // radius_miles is omitted when there is no preset: carrying a radius next to
-    // a null preset invites someone to read it as a constraint that applies.
-    location: loc.preset ? { preset: loc.preset, radius_miles: loc.radius_miles } : { preset: null },
+    // radius_miles is omitted when there are no markets: carrying a radius next
+    // to an empty list invites someone to read it as a constraint that applies.
+    location: loc.chosen.length ? { presets: loc.chosen, radius_miles: loc.radius_miles } : { presets: [] },
     years_max: years.years_max,
     companies: [],
     exclusions,
@@ -517,8 +548,8 @@ export async function proposeLane(
   if (loc.unsupported.length) {
     flags.push(
       `${loc.unsupported.join(", ")} ${loc.unsupported.length === 1 ? "is a market" : "are markets"} with no location preset. ` +
-        (loc.preset
-          ? `This lane searches ${loc.preset} only.`
+        (loc.chosen.length
+          ? `This lane searches ${loc.chosen.join(", ")}.`
           : `This lane searches nationwide, which is WIDER than asked for — expect results in states nobody named.`)
     )
   }
@@ -528,7 +559,7 @@ export async function proposeLane(
 
   if (opts.probe && titles.length) {
     // The resume nominates candidates; the board picks the winner.
-    const scoring = await scoreKeywords(titles, sectors.map((s) => s.keyword), loc.preset, loc.radius_miles)
+    const scoring = await scoreKeywords(titles, sectors.map((s) => s.keyword), loc.chosen, loc.radius_miles)
     proposal.keyword = scoring.chosen.keyword
 
     const cells = scoring.chosen.cells

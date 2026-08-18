@@ -14,7 +14,7 @@ export type LaneSummary = {
   active: boolean
   titles: string[]
   keyword: string | null
-  location: { preset?: string | null; radius_miles?: number }
+  location: { presets?: string[]; preset?: string | null; radius_miles?: number }
   years_max: number | null
   unreviewed: number
   // Present because a list can now span people; null when the owner profile
@@ -34,7 +34,7 @@ export type LaneConfig = {
   active: boolean
   titles: string[]
   keyword: string | null
-  location: { preset?: string | null; radius_miles?: number }
+  location: { presets?: string[]; preset?: string | null; radius_miles?: number }
   years_max: number | null
   companies: string[]
   exclusions: { companies?: string[]; title_keywords?: string[] }
@@ -119,11 +119,21 @@ export function daysAgo(iso: string | null): string {
   return `${d}d ago`
 }
 
-/** How a lane's location reads on screen. Three states, as in the runner. */
+/**
+ * How a lane's markets read on screen. Three states, as in the runner, and the
+ * pre-2026-08-18 single-market shape normalised alongside them.
+ */
 export function locationLabel(l: LaneSummary["location"]): string {
-  if (!l || !("preset" in l)) return "not set"
-  if (l.preset === null) return "no location filter (nationwide)"
-  return `${l.preset}${l.radius_miles ? ` · ${l.radius_miles}mi` : ""}`
+  const presets = Array.isArray(l?.presets)
+    ? l.presets
+    : l && "preset" in l
+      ? l.preset == null
+        ? []
+        : [l.preset]
+      : null
+  if (presets === null) return "not set"
+  if (!presets.length) return "no location filter (nationwide)"
+  return `${presets.join(", ")}${l?.radius_miles ? ` · ${l.radius_miles}mi` : ""}`
 }
 
 /**

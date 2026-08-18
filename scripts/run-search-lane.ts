@@ -36,7 +36,7 @@
 import { createClient } from "@supabase/supabase-js"
 import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
-import { runLane, type Lane, type TitleOutcome } from "../lib/laneRunner"
+import { runLane, resolvePresets, type Lane, type TitleOutcome } from "../lib/laneRunner"
 
 function loadEnvLocal() {
   for (const name of [".env.local", ".env.development.local"]) {
@@ -96,15 +96,17 @@ async function listLanes() {
 async function runOneLane(l: Lane, opts: { dryRun: boolean; days: number; pages: number }) {
   if (!l.active) console.log(`(lane is paused — running anyway because it was named explicitly)\n`)
 
-  const preset = l.location && "preset" in l.location ? l.location.preset ?? null : undefined
+  let markets: string
+  try {
+    const presets = resolvePresets(l)
+    markets = presets.length ? `${presets.join(", ")} @ ${l.location?.radius_miles ?? 25}mi` : "(no filter — nationwide)"
+  } catch (e: any) {
+    markets = `(not set — will error: ${e.message})`
+  }
   console.log(`lane: ${l.name}  (${l.id})`)
   console.log(`  titles:     ${l.titles.join(" | ")}`)
   console.log(`  keyword:    ${l.keyword ?? "(none)"}`)
-  console.log(
-    `  location:   ${
-      preset === undefined ? "(not set — will error)" : preset === null ? "(no filter — nationwide)" : `${preset} ${l.location?.radius_miles ?? 25}mi`
-    }, posted ≤ ${opts.days}d`
-  )
+  console.log(`  location:   ${markets}, posted ≤ ${opts.days}d`)
   console.log(`  years_max:  ${l.years_max ?? "none"}`)
   console.log(`  companies:  ${l.companies?.length ? l.companies.join(", ") : "(no restriction)"}`)
   console.log(`  exclusions: ${JSON.stringify(l.exclusions || {})}`)

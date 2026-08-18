@@ -22,7 +22,7 @@ type Proposal = {
   name: string
   titles: string[]
   keyword: string | null
-  location: { preset: string | null; radius_miles?: number }
+  location: { presets: string[]; radius_miles?: number }
   years_max: number | null
   companies: string[]
   exclusions: { companies?: string[]; title_keywords?: string[] }

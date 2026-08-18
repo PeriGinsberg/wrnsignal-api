@@ -524,17 +524,19 @@ export const SENIORITY_LEVELS = [
 export type SearchOpts = {
   query: string
   /**
-   * A LOCATIONS preset key, or null for no geographic filter at all.
+   * LOCATIONS preset keys. One search covers all of them.
    *
-   * null is not "everywhere near nothing" — it omits the `locations` key from
-   * searchState entirely, which the backend accepts and answers with the
-   * unrestricted result set. Verified against the live endpoint: "baseball
-   * scouting" returns 7 nationwide and 0 within 50mi of NYC, with no ssrError
-   * either way. Sending `locations: []` behaves identically, but omission is
-   * what we send, because an empty array is the shape most likely to acquire a
-   * different meaning in a future backend release.
+   * The backend ORs them: "operations coordinator" returns 87 in Miami and 167
+   * in Chicago, and 250 for the pair — the union, minus the handful of postings
+   * that match both. Verified against the live endpoint 2026-08-18.
+   *
+   * An EMPTY array means no geographic filter at all, and omits the `locations`
+   * key from searchState entirely rather than sending `locations: []`. Both
+   * behave identically today; omission is what we send, because an empty array
+   * is the shape most likely to acquire a different meaning in a future backend
+   * release.
    */
-  location: keyof typeof LOCATIONS | string | null
+  locations: string[]
   radiusMiles: number
   days: number
   seniority: string[]
@@ -548,30 +550,29 @@ export function buildSearchState(opts: SearchOpts): Record<string, any> {
     sortBy: "default",
   }
 
-  // No location: omit the key. Note this is reachable ONLY via an explicit
-  // null — an unrecognised preset name still throws below rather than quietly
+  // No locations: omit the key. Reachable ONLY via an explicitly empty array —
+  // an unrecognised preset name still throws below rather than quietly
   // degrading into a nationwide search, because a lane that was meant to be
   // local and silently went national returns plausible jobs in the wrong state.
-  if (opts.location === null) return base
+  if (!opts.locations.length) return base
 
-  const place = LOCATIONS[opts.location]
-  if (!place) {
-    throw new Error(
-      `Unknown location "${opts.location}". Known: ${Object.keys(LOCATIONS).join(", ")}. ` +
-        `Add a full Google Places entry to LOCATIONS — a partial one returns a fake zero-result. ` +
-        `Pass null for no location filter.`
-    )
-  }
-  return {
-    locations: [
-      {
-        ...place,
-        // A locality takes a radius; states/countries take flexible_regions instead.
-        options: { radius: opts.radiusMiles, radius_unit: "miles", ignore_radius: false },
-      },
-    ],
-    ...base,
-  }
+  const places = opts.locations.map((key) => {
+    const place = LOCATIONS[key]
+    if (!place) {
+      throw new Error(
+        `Unknown location "${key}". Known: ${Object.keys(LOCATIONS).join(", ")}. ` +
+          `Add a payload sourced from /api/searchLocation — a hand-built one returns a fake zero-result. ` +
+          `Pass an empty array for no location filter.`
+      )
+    }
+    return {
+      ...place,
+      // A locality takes a radius; states/countries take flexible_regions instead.
+      options: { radius: opts.radiusMiles, radius_unit: "miles", ignore_radius: false },
+    }
+  })
+
+  return { locations: places, ...base }
 }
 
 export async function resolveBuildId(): Promise<string> {
