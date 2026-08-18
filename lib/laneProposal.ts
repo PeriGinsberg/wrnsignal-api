@@ -111,8 +111,26 @@ export function deriveTitles(targetRoles: string | null): { titles: string[]; dr
 // (fetch-hiringcafe.ts, note 3). So a city the client named that has no preset
 // is not a location this lane can search — it has to be reported, not
 // approximated with the nearest preset we happen to have.
+// Order matters only when a client names more than one market: deriveLocation
+// takes the first match, because a lane searches one place. The flag naming the
+// markets it could not cover is what keeps that visible.
 const PRESET_ALIASES: Record<string, string[]> = {
   nyc: ["nyc", "new york", "new york city", "manhattan", "brooklyn", "ny metro", "tri-state"],
+  miami: ["miami", "miami-dade", "coral gables", "brickell"],
+  boca_raton: ["boca raton", "boca"],
+  fort_lauderdale: ["fort lauderdale", "ft lauderdale", "ft. lauderdale", "broward"],
+  west_palm_beach: ["west palm beach", "palm beach", "palm beach county"],
+  los_angeles: ["los angeles", "la metro", "socal", "southern california", "santa monica"],
+  chicago: ["chicago", "chicagoland"],
+  boston: ["boston", "cambridge ma", "greater boston"],
+  san_francisco: ["san francisco", "sf", "bay area", "silicon valley"],
+  atlanta: ["atlanta", "atl"],
+  dallas: ["dallas", "dfw", "dallas-fort worth", "fort worth"],
+  denver: ["denver", "front range"],
+  philadelphia: ["philadelphia", "philly"],
+  phoenix: ["phoenix", "scottsdale", "tempe"],
+  seattle: ["seattle", "puget sound", "bellevue"],
+  washington_dc: ["washington dc", "washington, d.c.", "d.c.", "dc metro", "dmv"],
 }
 
 // Cities clients name often. Recognised only so an unsupported one can be
@@ -302,7 +320,16 @@ const NO_OP_RETENTION = 0.9
 // keyword picked "entertainment" (7% of baseline) over "marketing" (69%) for a
 // client whose own words ranked marketing first — technically the most
 // selective, and wrong.
-const MIN_RETENTION = 0.2
+//
+// Set at 0.10 rather than 0.20 deliberately. Retention cannot distinguish "cut
+// hard because the titles are generic" from "cut hard because the sector is
+// wrong": on a lane of generic titles (account manager, manager brand
+// marketing) the keyword "sports" keeps 13% and is doing exactly its job, while
+// "entertainment" keeps 9% on creative-internship titles and is simply the
+// wrong sector. 0.20 rejected both; 0.10 keeps the first and still rejects the
+// second. It is a threshold fitted to observed cases, not a law — the candidate
+// table is returned with every proposal so the coach can overrule it.
+const MIN_RETENTION = 0.10
 
 // A keyword that leaves fewer than this many postings across ALL titles has
 // not narrowed the lane, it has closed it.

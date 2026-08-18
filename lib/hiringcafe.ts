@@ -43,7 +43,27 @@ const HEADERS = {
   "accept-language": "en-US,en;q=0.9",
 }
 
-// Full Google Places payloads. See note 3 above — do not trim these.
+// Place payloads, verbatim. See note 3 above — do not trim these.
+//
+// SOURCING. Everything below `nyc` came from hiring.cafe's own location index:
+//   GET https://hiringcafe.com/api/searchLocation?query=<city>
+// which is the endpoint their search box uses, and returns a `placeDetail`
+// object in exactly the shape searchState wants. That is the only source worth
+// using: a payload assembled by hand, or a place id remembered rather than
+// looked up, does not fail loudly — the backend answers HTTP 200 with zero
+// results and an ssrError, which reads exactly like a legitimate empty search.
+//
+// Each entry below was then verified by running a real search against it
+// (query "marketing", 25mi, posted <= 29d) and requiring a non-zero count with
+// no ssrError. Counts at the time of adding, 2026-08-18: miami 312,
+// boca_raton 222, fort_lauderdale 228, west_palm_beach 131, los_angeles 773,
+// chicago 865, boston 505, san_francisco 597, atlanta 558, dallas 697,
+// denver 340, philadelphia 438, phoenix 355, seattle 314, washington_dc 725.
+//
+// `nyc` predates this and uses a Google place id (ChIJ...) rather than the
+// index id these carry. Both are accepted; nyc is left exactly as it was
+// because it is proven in production and re-sourcing a working payload buys
+// nothing.
 export const LOCATIONS: Record<string, any> = {
   nyc: {
     formatted_address: "New York, NY, USA",
@@ -55,6 +75,441 @@ export const LOCATIONS: Record<string, any> = {
       { long_name: "New York", short_name: "NY", types: ["administrative_area_level_1", "political"] },
       { long_name: "United States", short_name: "US", types: ["country", "political"] },
     ],
+  },
+  miami: {
+    "id": "Qhk1yZQBoEtHp_8Ur63o",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Miami",
+        "short_name": "Miami",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Florida",
+        "short_name": "FL",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 25.77427,
+        "lon": -80.19366,
+      },
+    },
+    "formatted_address": "Miami, FL, US",
+    "population": 441003,
+  },
+  boca_raton: {
+    "id": "yhk1yZQBoEtHp_8Ur6vo",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Boca Raton",
+        "short_name": "Boca Raton",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Florida",
+        "short_name": "FL",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 26.35869,
+        "lon": -80.0831,
+      },
+    },
+    "formatted_address": "Boca Raton, FL, US",
+    "population": 93235,
+  },
+  fort_lauderdale: {
+    "id": "ZBk1yZQBoEtHp_8Ur6zo",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Fort Lauderdale",
+        "short_name": "Fort Lauderdale",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Florida",
+        "short_name": "FL",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 26.12231,
+        "lon": -80.14338,
+      },
+    },
+    "formatted_address": "Fort Lauderdale, FL, US",
+    "population": 178590,
+  },
+  west_palm_beach: {
+    "id": "iBk1yZQBoEtHp_8Ur67o",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "West Palm Beach",
+        "short_name": "West Palm Beach",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Florida",
+        "short_name": "FL",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 26.71534,
+        "lon": -80.05337,
+      },
+    },
+    "formatted_address": "West Palm Beach, FL, US",
+    "population": 106779,
+  },
+  los_angeles: {
+    "id": "1hk1yZQBoEtHp_8Uv-yX",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Los Angeles",
+        "short_name": "Los Angeles",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "California",
+        "short_name": "CA",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 34.05223,
+        "lon": -118.24368,
+      },
+    },
+    "formatted_address": "Los Angeles, CA, US",
+    "population": 3898747,
+  },
+  chicago: {
+    "id": "kRk1yZQBoEtHp_8UuM0Y",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Chicago",
+        "short_name": "Chicago",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Illinois",
+        "short_name": "IL",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 41.85003,
+        "lon": -87.65005,
+      },
+    },
+    "formatted_address": "Chicago, IL, US",
+    "population": 2696555,
+  },
+  boston: {
+    "id": "6hk1yZQBoEtHp_8UuNAZ",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Boston",
+        "short_name": "Boston",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Massachusetts",
+        "short_name": "MA",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 42.35843,
+        "lon": -71.05977,
+      },
+    },
+    "formatted_address": "Boston, MA, US",
+    "population": 675647,
+  },
+  san_francisco: {
+    "id": "6xk1yZQBoEtHp_8Uv-2X",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "San Francisco",
+        "short_name": "San Francisco",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "California",
+        "short_name": "CA",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 37.77493,
+        "lon": -122.41942,
+      },
+    },
+    "formatted_address": "San Francisco, CA, US",
+    "population": 864816,
+  },
+  atlanta: {
+    "id": "xhk1yZQBoEtHp_8Ur67o",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Atlanta",
+        "short_name": "Atlanta",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Georgia",
+        "short_name": "GA",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 33.749,
+        "lon": -84.38798,
+      },
+    },
+    "formatted_address": "Atlanta, GA, US",
+    "population": 463878,
+  },
+  dallas: {
+    "id": "mRk1yZQBoEtHp_8UuMQX",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Dallas",
+        "short_name": "Dallas",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Texas",
+        "short_name": "TX",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 32.78306,
+        "lon": -96.80667,
+      },
+    },
+    "formatted_address": "Dallas, TX, US",
+    "population": 1300092,
+  },
+  denver: {
+    "id": "FRk1yZQBoEtHp_8Uv--X",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Denver",
+        "short_name": "Denver",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Colorado",
+        "short_name": "CO",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 39.73915,
+        "lon": -104.9847,
+      },
+    },
+    "formatted_address": "Denver, CO, US",
+    "population": 715522,
+  },
+  philadelphia: {
+    "id": "4Bk1yZQBoEtHp_8UuMAW",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Philadelphia",
+        "short_name": "Philadelphia",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Pennsylvania",
+        "short_name": "PA",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 39.95238,
+        "lon": -75.16362,
+      },
+    },
+    "formatted_address": "Philadelphia, PA, US",
+    "population": 1576251,
+  },
+  phoenix: {
+    "id": "VBk1yZQBoEtHp_8Uv-qX",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Phoenix",
+        "short_name": "Phoenix",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Arizona",
+        "short_name": "AZ",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 33.44838,
+        "lon": -112.07404,
+      },
+    },
+    "formatted_address": "Phoenix, AZ, US",
+    "population": 1608139,
+  },
+  seattle: {
+    "id": "FRk1yZQBoEtHp_8Uv_eZ",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Seattle",
+        "short_name": "Seattle",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Washington",
+        "short_name": "WA",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 47.60621,
+        "lon": -122.33207,
+      },
+    },
+    "formatted_address": "Seattle, WA, US",
+    "population": 737015,
+  },
+  washington_dc: {
+    "id": "XRk1yZQBoEtHp_8Ur6vo",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Washington",
+        "short_name": "Washington",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "District of Columbia",
+        "short_name": "DC",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 38.89511,
+        "lon": -77.03637,
+      },
+    },
+    "formatted_address": "Washington, DC, US",
+    "population": 689545,
   },
 }
 
