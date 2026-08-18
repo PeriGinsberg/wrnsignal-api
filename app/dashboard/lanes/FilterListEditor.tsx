@@ -6,10 +6,11 @@
 // company keywords, excluded company keywords — because they are the same
 // control with different labels, and four hand-rolled copies would drift.
 //
-// Values are sent to the board verbatim. Industry labels in particular are
-// exact-match ("Education" and "Higher Education" are different values), so the
-// input does not normalise case or punctuation beyond trimming; guessing at what
-// a coach meant would produce a filter that matches nothing while looking right.
+// Values are sent to the board verbatim, trimmed and nothing else. The board
+// matches a single word as a word-prefix and case-insensitively, so "education"
+// already covers Higher Education and Vocational Education; a multi-word term
+// has to equal a whole label. Normalising here would break the second case
+// without helping the first.
 
 import { useState } from "react"
 import { T, eyebrow, input } from "../../../lib/dashboard-theme"

@@ -545,10 +545,24 @@ export type SearchOpts = {
    * Board-side filters. Each is optional and an EMPTY array means no restriction
    * on that axis, never "match nothing" — an empty array is simply not sent.
    *
-   * Industry values are exact labels off enriched_company_data.industries, and
-   * the vocabulary is loose: "Education" and "Higher Education" are different
-   * values, and excluding one does not exclude the other. Verified against the
-   * live endpoint 2026-08-18 — on "baseball operations" (26 results):
+   * MATCHING IS BY WORD PREFIX, not exact label. Measured against the live
+   * endpoint on "baseball operations baseball" (26 results):
+   *
+   *   ["Education"]         14   also drops "Higher Education" employers
+   *   ["Educ"]              14   a prefix of a word in the label matches
+   *   ["ducation"]          26   mid-word substrings do NOT match
+   *   ["EDUCATION"]         14   case-insensitive
+   *   ["Higher"]            21   single word, prefix
+   *   ["Higher Education"]  21   multi-word, exact label
+   *   ["Higher Ed"]         26   multi-word must be exact — a prefix will not do
+   *
+   * So a single word matches any label containing a word starting with it, and a
+   * multi-word term has to equal a whole label. One consequence worth knowing:
+   * ["education"] alone covered Education, Higher Education, Vocational
+   * Education, E-Learning and Academic Research employers on that query — the
+   * same 14 as listing all six labels.
+   *
+   * Verified against the live endpoint 2026-08-18 — on "baseball operations" (26 results):
    * industries 15, excludedIndustries 14, companyKeywords 13,
    * excludedCompanyKeywords 15. Each was confirmed by the count MOVING, because
    * a field this backend does not recognise is ignored in silence.

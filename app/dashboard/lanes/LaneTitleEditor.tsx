@@ -381,9 +381,10 @@ export function LaneTitleEditor({
           Board filters {savingFilters && <span style={{ color: T.DIM, fontWeight: 500 }}>· saving…</span>}
         </div>
         <p style={{ fontSize: 12, color: T.MUTED, margin: "0 0 14px" }}>
-          These narrow the search itself, so filtered jobs never reach the queue. Industry names must match the
-          board exactly — &ldquo;Education&rdquo; and &ldquo;Higher Education&rdquo; are different values, and
-          excluding one does not exclude the other.
+          These narrow the search itself, so filtered jobs never reach the queue. A single word matches any
+          industry containing a word starting with it — &ldquo;education&rdquo; covers Higher Education, Vocational
+          Education and the rest, so one term is usually enough. Two or more words must match a whole industry
+          name exactly: &ldquo;Higher Education&rdquo; works, &ldquo;Higher Ed&rdquo; matches nothing.
         </p>
 
         <FilterListEditor

@@ -13,11 +13,19 @@
 -- same person come to disagree. Lanes inherit at creation and can then be
 -- edited, because inheritance is a starting point, not a binding.
 --
--- VALUES ARE EXACT BOARD LABELS, not free text. hiring.cafe matches the strings
--- on enriched_company_data.industries — "Higher Education" and "Education" are
--- different values and excluding one does not exclude the other. Sampled from
--- 356 stored lane_results, 225 distinct labels are in use, so this is a loose
--- vocabulary rather than a closed taxonomy and cannot be a CHECK constraint.
+-- VALUES ARE BOARD LABELS, matched loosely. Sampled from 356 stored
+-- lane_results, 225 distinct labels are in use, so this is an open vocabulary
+-- rather than a closed taxonomy and cannot be a CHECK constraint.
+--
+-- CORRECTION 2026-08-18, after this migration was applied: the paragraph here
+-- originally said values are EXACT matches and that excluding "Education" would
+-- not exclude "Higher Education". That was asserted without testing and is
+-- wrong. Measured against the live endpoint, a SINGLE-word term matches any
+-- label containing a word starting with it, case-insensitively — ["Education"]
+-- and even ["Educ"] both drop Higher Education employers — while a MULTI-word
+-- term must equal a whole label, so "Higher Education" matches and "Higher Ed"
+-- matches nothing. Mid-word substrings never match. Nothing in the DDL depends
+-- on this; only the advice did.
 --
 -- Probed before writing (dev, zydrqckpwidipwbhrfgd):
 --   client_profiles           EXISTS
