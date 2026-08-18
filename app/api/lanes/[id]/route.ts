@@ -12,6 +12,7 @@
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
+import { loadAuthorizedLane } from "@/lib/collab/laneAccess"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -31,22 +32,14 @@ export async function OPTIONS(req: NextRequest) {
   return corsOptionsResponse(req.headers.get("origin"))
 }
 
-async function loadOwnedLane(id: string, profileId: string) {
-  const supabase = getSupabaseAdmin()
-  const { data } = await supabase.from("search_lanes").select(LANE_FIELDS).eq("id", id).maybeSingle()
-  if (!data) return { error: "Lane not found", status: 404 as const, lane: null }
-  if ((data as any).client_profile_id !== profileId) {
-    return { error: "Forbidden", status: 403 as const, lane: null }
-  }
-  return { error: null, status: 200 as const, lane: data as any }
-}
-
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { profileId } = await resolveCaller(req)
     const { id } = await params
-    const { error, status, lane } = await loadOwnedLane(id, profileId)
-    if (error) return withCorsJson(req, { ok: false, error }, status)
+    // read, not configure: seeing a lane's config is what the edit screen and
+    // the client-record tab both need before they can show anything.
+    const { lane, error } = await loadAuthorizedLane(id, profileId, "read", getSupabaseAdmin(), LANE_FIELDS)
+    if (error) return withCorsJson(req, { ok: false, error }, error === "Forbidden" ? 403 : 404)
     return withCorsJson(req, { ok: true, lane }, 200)
   } catch (err: any) {
     const msg = err?.message || String(err)
@@ -89,10 +82,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return withCorsJson(req, { ok: false, error: `at most ${MAX_TITLES} titles (got ${titles.length})` }, 400)
     }
 
-    const { error, status } = await loadOwnedLane(id, profileId)
-    if (error) return withCorsJson(req, { ok: false, error }, status)
-
     const supabase = getSupabaseAdmin()
+    // configure: titles decide what this lane will ever find, so a view-only or
+    // annotate-only coach must not reach this.
+    const { error } = await loadAuthorizedLane(id, profileId, "configure", supabase, LANE_FIELDS)
+    if (error) return withCorsJson(req, { ok: false, error }, error === "Forbidden" ? 403 : 404)
     const { data, error: upErr } = await supabase
       .from("search_lanes")
       .update({ titles })

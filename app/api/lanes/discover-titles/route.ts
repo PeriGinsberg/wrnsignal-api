@@ -20,6 +20,7 @@
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
+import { loadAuthorizedLane } from "@/lib/collab/laneAccess"
 import { SENIORITY_LEVELS, fetchJobs, queryFor } from "@/lib/hiringcafe"
 
 export const runtime = "nodejs"
@@ -45,15 +46,17 @@ export async function GET(req: NextRequest) {
     if (!phrase) return withCorsJson(req, { ok: false, error: "phrase required" }, 400)
 
     const supabase = getSupabaseAdmin()
-    const { data: lane } = await supabase
-      .from("search_lanes")
-      .select("id, client_profile_id, titles, keyword, location")
-      .eq("id", laneId)
-      .maybeSingle()
-    if (!lane) return withCorsJson(req, { ok: false, error: "Lane not found" }, 404)
-    if ((lane as any).client_profile_id !== profileId) {
-      return withCorsJson(req, { ok: false, error: "Forbidden" }, 403)
-    }
+    // read: discovery only searches the board. It shows what a lane COULD find
+    // without changing what it will find, so it sits at the same level as
+    // viewing the lane rather than at configure.
+    const { lane, error: accessErr } = await loadAuthorizedLane(
+      laneId,
+      profileId,
+      "read",
+      supabase,
+      "id, client_profile_id, titles, keyword, location"
+    )
+    if (accessErr) return withCorsJson(req, { ok: false, error: accessErr }, accessErr === "Forbidden" ? 403 : 404)
 
     // Three location states, as in the runner: a preset, an explicit null for
     // no geographic filter, and an absent key — which is a lane nobody scoped

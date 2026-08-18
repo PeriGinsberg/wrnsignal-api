@@ -17,6 +17,7 @@ import ProfilePersonasTab, { type ClientProfileFull, type ClientPersonaFull } fr
 import { NotesTab, type NoteType, type NotePriority } from "./NotesTab"
 import { AddNotePanel } from "./AddNotePanel"
 import { ClientHeaderStrip } from "./dashboard/ClientHeaderStrip"
+import { LanesPanel } from "../../../lanes/LanesPanel"
 import type { LifecycleStatus } from "../../LifecycleStatusPill"
 import { ApplicationStatusEditPill } from "./ApplicationStatusEditPill"
 import type { ApplicationStatus } from "../../../../_lib/applicationStatuses"
@@ -38,7 +39,7 @@ import { describeClientStatus } from "@/lib/coachRecommendations"
 // retained (data is preserved; only the surface is gone).
 // "engagements" added for the attached-package snapshots (Client Engagement UI).
 // "history" added for the read-only event timeline (Client Event Log UI).
-type Tab = "dashboard" | "tracker" | "source" | "notes" | "analysis" | "engagements" | "library" | "history"
+type Tab = "dashboard" | "tracker" | "source" | "lanes" | "notes" | "analysis" | "engagements" | "library" | "history"
 
 // Status filter buckets exposed to Job Tracker tab via URL ?status= param
 // or in-app tile click. "all" = no filter.
@@ -592,6 +593,7 @@ export default function CoachClientPage() {
     { id: "dashboard", label: "Dashboard" },
     { id: "tracker", label: "Job Tracker" },
     { id: "source", label: "Source a Job" },
+    { id: "lanes", label: "Lanes" },
     { id: "notes", label: "Notes" },
     { id: "analysis", label: "Profile & Personas" },
     { id: "engagements", label: "Engagements" },
@@ -1780,6 +1782,26 @@ export default function CoachClientPage() {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* TAB 2b — Lanes: this client's standing searches and their queues.
+          Same components as /dashboard/lanes, scoped to one owner — see
+          LanesPanel. Sourcing a job by hand (the tab before this one) and a lane
+          finding one on a schedule end in the same place, so they sit together. */}
+      {tab === "lanes" && (
+        <div>
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ ...eyebrow, color: T.MUTED, marginBottom: 6 }}>Search lanes</div>
+            <p style={{ fontSize: 13, color: T.MUTED, margin: 0 }}>
+              Standing searches for {clientProfile?.name || "this client"}. Push sends a job to their dashboard,
+              exactly as sourcing one by hand does.
+            </p>
+          </div>
+          <LanesPanel
+            clientProfileId={clientId}
+            emptyHint={`No lanes for ${clientProfile?.name || "this client"} yet. Create one and run it to fill this queue.`}
+          />
         </div>
       )}
 

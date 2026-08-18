@@ -3,14 +3,20 @@
 // PATCH { id, action, reason?, note? } — record a decision on one result.
 //
 // OWNERSHIP. lane_results has no client_profile_id of its own; it is reached
-// through its lane. Both handlers therefore verify the lane belongs to the
-// caller BEFORE touching results, and the PATCH re-verifies through the row's
-// own lane rather than trusting a lane id from the client. RLS exists on both
-// tables but service-role bypasses it, so this check is the real guard.
+// through its lane. Both handlers therefore authorize the lane BEFORE touching
+// results, and the PATCH authorizes through the row's OWN lane rather than
+// trusting a lane id from the client. RLS exists on both tables but
+// service-role bypasses it, so this check is the real guard.
+//
+// "Authorize" means own lane OR a lane of a client you actively coach at a
+// sufficient access level (lib/collab/laneAccess.ts) — reviewing needs
+// 'annotate', because a push or dismiss is a judgement recorded on the client's
+// behalf.
 
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
+import { canAccessLaneOwner, loadAuthorizedLane } from "@/lib/collab/laneAccess"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -43,15 +49,14 @@ export async function GET(req: NextRequest) {
     const laneId = new URL(req.url).searchParams.get("lane_id")
     if (!laneId) return withCorsJson(req, { ok: false, error: "lane_id required" }, 400)
 
-    const { data: lane } = await supabase
-      .from("search_lanes")
-      .select("id, name, client_profile_id")
-      .eq("id", laneId)
-      .maybeSingle()
-    if (!lane) return withCorsJson(req, { ok: false, error: "Lane not found" }, 404)
-    if (lane.client_profile_id !== profileId) {
-      return withCorsJson(req, { ok: false, error: "Forbidden" }, 403)
-    }
+    const { lane, error: accessErr } = await loadAuthorizedLane(
+      laneId,
+      profileId,
+      "read",
+      supabase,
+      "id, name, client_profile_id"
+    )
+    if (accessErr) return withCorsJson(req, { ok: false, error: accessErr }, accessErr === "Forbidden" ? 403 : 404)
 
     // action IS NULL is the queue. Newest posting first — a job posted today
     // is worth more of the reviewer's attention than one from three weeks ago.
@@ -110,7 +115,9 @@ export async function PATCH(req: NextRequest) {
       .maybeSingle()
     if (!row) return withCorsJson(req, { ok: false, error: "Result not found" }, 404)
     const owner = (row as any).search_lanes?.client_profile_id
-    if (owner !== profileId) return withCorsJson(req, { ok: false, error: "Forbidden" }, 403)
+    if (!(await canAccessLaneOwner(owner, profileId, "review", supabase))) {
+      return withCorsJson(req, { ok: false, error: "Forbidden" }, 403)
+    }
 
     const { data, error } = await supabase
       .from("lane_results")
