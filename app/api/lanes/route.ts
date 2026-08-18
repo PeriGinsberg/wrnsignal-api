@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await supabase
       .from("search_lanes")
-      .select("id, name, active, titles, location, years_max")
+      .select("id, name, active, titles, keyword, location, years_max")
       .eq("client_profile_id", profileId)
       .order("created_at", { ascending: true })
     if (error) throw new Error(`Lanes failed: ${error.message}`)

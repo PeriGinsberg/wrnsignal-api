@@ -60,11 +60,27 @@ type Lane = {
   name: string
   active: boolean
   titles: string[]
+  keyword: string | null
   location: { preset?: string; radius_miles?: number; days_posted?: number }
   years_max: number | null
   companies: string[]
   exclusions: { companies?: string[]; title_keywords?: string[] }
 }
+
+/**
+ * The query actually sent to the board: the lane's title with the lane's
+ * keyword appended.
+ *
+ * Appended unconditionally, including to titles that already contain the word
+ * — "sports coordinator" with keyword "sports" is sent as "sports coordinator
+ * sports". That looks wrong and is deliberate: skipping the append for titles
+ * that happen to contain the keyword would make a lane's behaviour depend on
+ * its titles' wording in a way nobody can see from the config, and two titles
+ * meaning the same thing would query differently. The run log prints the real
+ * query per title so the redundancy is visible rather than inferred.
+ */
+const queryFor = (title: string, keyword: string | null) =>
+  keyword?.trim() ? `${title} ${keyword.trim()}` : title
 
 function arg(name: string, fallback?: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`)
@@ -201,6 +217,7 @@ async function runLane(laneId: string, opts: { dryRun: boolean; days: number; pa
 
   console.log(`lane: ${l.name}  (${l.id})`)
   console.log(`  titles:     ${l.titles.join(" | ")}`)
+  console.log(`  keyword:    ${l.keyword ?? "(none)"}`)
   console.log(`  location:   ${preset} ${radius}mi, posted ≤ ${days}d`)
   console.log(`  years_max:  ${l.years_max ?? "none"}`)
   console.log(`  companies:  ${l.companies?.length ? l.companies.join(", ") : "(no restriction)"}`)
@@ -213,8 +230,9 @@ async function runLane(laneId: string, opts: { dryRun: boolean; days: number; pa
   const perTitle: Array<{ title: string; total: number; kept: number; dropped: Record<string, number> }> = []
 
   for (const title of l.titles) {
+    const query = queryFor(title, l.keyword)
     const { rows, total } = await fetchJobs({
-      query: title,
+      query,
       location: preset,
       radiusMiles: radius,
       days,
@@ -237,7 +255,7 @@ async function runLane(laneId: string, opts: { dryRun: boolean; days: number; pa
     // simply un-fetched. A cap that isn't stated reads as full coverage.
     const capped = total > rows.length
     console.log(
-      `  "${title}" → ${rows.length} fetched of ${total} available, ` +
+      `  "${query}" → ${rows.length} fetched of ${total} available, ` +
         `${kept.length} pass filters, ${fresh} new to this run` +
         (dropStr ? `  [dropped: ${dropStr}]` : "") +
         (capped ? `  ⚠ capped at ${opts.pages} page(s) — pass --pages to go deeper` : "")
