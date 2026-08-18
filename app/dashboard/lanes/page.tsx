@@ -12,6 +12,7 @@
 // list of seventy, so the removal has to happen on click, not on response.
 
 import { useCallback, useEffect, useState } from "react"
+import Link from "next/link"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
 import { T, card, eyebrow, textarea, select, selectOption } from "../../../lib/dashboard-theme"
 
@@ -241,6 +242,23 @@ export default function LaneReviewPage() {
                 </button>
               )
             })}
+            {/* The only route to the edit screen. Sits with the picker rather
+                than in the header because it acts on the SELECTED lane, and a
+                header link would read as applying to the page. */}
+            {laneId && (
+              <Link
+                href={`/dashboard/lanes/${laneId}/edit`}
+                style={{
+                  display: "flex", alignItems: "center",
+                  padding: "9px 14px", borderRadius: 12,
+                  fontSize: 13, fontWeight: 700, textDecoration: "none",
+                  border: `1px dashed ${T.BORDER_SOFT}`,
+                  color: T.MUTED,
+                }}
+              >
+                Edit titles
+              </Link>
+            )}
           </div>
 
           {results === null ? (

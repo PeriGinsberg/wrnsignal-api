@@ -8,6 +8,14 @@
  *   npx tsx scripts/run-search-lane.ts --lane <uuid> --dry-run   # fetch + filter, no writes
  *   npx tsx scripts/run-search-lane.ts --list                    # lanes with counts
  *   npx tsx scripts/run-search-lane.ts --lane <uuid> --days 14
+ *   npx tsx scripts/run-search-lane.ts --lane-json <path>        # a lane that isn't saved yet
+ *
+ * --lane-json runs a lane config from a file (propose-search-lane.ts --json
+ * writes one) instead of loading a row. It is always a dry run: there is no
+ * lane row for lane_results.lane_id to reference, so writing is not a policy
+ * choice here, it is impossible. The point is that a proposal is tested by the
+ * same filter code that runs saved lanes — a second implementation of
+ * applyLaneFilters would let a proposal pass a check the real runner fails.
  *
  * Hits whatever SUPABASE_URL points to in .env.local.
  *
@@ -26,9 +34,9 @@
  */
 
 import { createClient } from "@supabase/supabase-js"
-import { existsSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
-import { fetchJobs, SENIORITY_LEVELS, type JobRow } from "./fetch-hiringcafe"
+import { fetchJobs, SENIORITY_LEVELS, queryFor, type JobRow } from "../lib/hiringcafe"
 
 function loadEnvLocal() {
   for (const name of [".env.local", ".env.development.local"]) {
@@ -61,26 +69,17 @@ type Lane = {
   active: boolean
   titles: string[]
   keyword: string | null
-  location: { preset?: string; radius_miles?: number; days_posted?: number }
+  // preset: null means no geographic filter (nationwide). Absent is NOT the
+  // same thing — see resolvePreset().
+  location: { preset?: string | null; radius_miles?: number; days_posted?: number }
   years_max: number | null
   companies: string[]
   exclusions: { companies?: string[]; title_keywords?: string[] }
 }
 
-/**
- * The query actually sent to the board: the lane's title with the lane's
- * keyword appended.
- *
- * Appended unconditionally, including to titles that already contain the word
- * — "sports coordinator" with keyword "sports" is sent as "sports coordinator
- * sports". That looks wrong and is deliberate: skipping the append for titles
- * that happen to contain the keyword would make a lane's behaviour depend on
- * its titles' wording in a way nobody can see from the config, and two titles
- * meaning the same thing would query differently. The run log prints the real
- * query per title so the redundancy is visible rather than inferred.
- */
-const queryFor = (title: string, keyword: string | null) =>
-  keyword?.trim() ? `${title} ${keyword.trim()}` : title
+// queryFor lives in lib/hiringcafe.ts — four callers have to agree on it. The
+// run log below prints the real query per title, so the keyword redundancy it
+// documents stays visible rather than inferred.
 
 function arg(name: string, fallback?: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`)
@@ -203,14 +202,34 @@ async function listLanes() {
   }
 }
 
-async function runLane(laneId: string, opts: { dryRun: boolean; days: number; pages: number }) {
-  const { data: lane, error } = await sb.from("search_lanes").select("*").eq("id", laneId).single()
-  if (error) throw new Error(`lane ${laneId}: ${error.message}`)
-  const l = lane as Lane
+/**
+ * The lane's location, as three distinct states rather than two.
+ *
+ *   {"preset": "nyc"}   → that preset
+ *   {"preset": null}    → no geographic filter; the search runs nationwide
+ *   {}                  → rejected
+ *
+ * The third case is the one worth spelling out. `location` defaults to '{}' at
+ * the column level, so a lane inserted without one lands here, and both of the
+ * other answers are wrong for it: defaulting to nyc silently narrows a lane
+ * nobody scoped, and defaulting to nationwide silently widens it. Neither
+ * failure shows up in the results — you get plausible jobs either way — so the
+ * lane has to say which it meant.
+ */
+function resolvePreset(l: Lane): string | null {
+  if (!l.location || !("preset" in l.location)) {
+    throw new Error(
+      `lane "${l.name}" has no location.preset. Set {"preset": "nyc", "radius_miles": 25} ` +
+        `for a metro search, or {"preset": null} for no geographic filter.`
+    )
+  }
+  return l.location.preset ?? null
+}
 
+async function runLane(l: Lane, opts: { dryRun: boolean; days: number; pages: number }) {
   if (!l.active) console.log(`(lane is paused — running anyway because it was named explicitly)\n`)
 
-  const preset = l.location?.preset || "nyc"
+  const preset = resolvePreset(l)
   const radius = l.location?.radius_miles ?? 25
   const days = opts.days ?? l.location?.days_posted ?? 29
   const seniority = [...SENIORITY_LEVELS].slice(0, 3) // through Mid Level
@@ -218,7 +237,9 @@ async function runLane(laneId: string, opts: { dryRun: boolean; days: number; pa
   console.log(`lane: ${l.name}  (${l.id})`)
   console.log(`  titles:     ${l.titles.join(" | ")}`)
   console.log(`  keyword:    ${l.keyword ?? "(none)"}`)
-  console.log(`  location:   ${preset} ${radius}mi, posted ≤ ${days}d`)
+  console.log(
+    `  location:   ${preset === null ? "(no filter — nationwide)" : `${preset} ${radius}mi`}, posted ≤ ${days}d`
+  )
   console.log(`  years_max:  ${l.years_max ?? "none"}`)
   console.log(`  companies:  ${l.companies?.length ? l.companies.join(", ") : "(no restriction)"}`)
   console.log(`  exclusions: ${JSON.stringify(l.exclusions || {})}`)
@@ -305,22 +326,65 @@ function printTable(rows: Array<ReturnType<typeof toRow>>) {
   }
 }
 
+async function loadLane(laneId: string): Promise<Lane> {
+  const { data, error } = await sb.from("search_lanes").select("*").eq("id", laneId).single()
+  if (error) throw new Error(`lane ${laneId}: ${error.message}`)
+  return data as Lane
+}
+
+/**
+ * A proposal read off disk. Defaults fill the columns the DB would have
+ * defaulted, so an unsaved lane and a saved one reach applyLaneFilters in the
+ * same shape — a missing `companies` must arrive as [] ("no restriction"), not
+ * as undefined.
+ */
+function laneFromFile(path: string): Lane {
+  const raw = JSON.parse(readFileSync(path, "utf8"))
+  if (!Array.isArray(raw.titles) || !raw.titles.length) throw new Error(`${path}: lane has no titles`)
+  return {
+    id: `(unsaved: ${path})`,
+    client_profile_id: raw.client_profile_id ?? "(none)",
+    name: raw.name ?? "(unnamed proposal)",
+    active: raw.active ?? true,
+    titles: raw.titles,
+    keyword: raw.keyword ?? null,
+    location: raw.location ?? {},
+    years_max: raw.years_max ?? null,
+    companies: raw.companies ?? [],
+    exclusions: raw.exclusions ?? {},
+  }
+}
+
 async function main() {
   if (process.argv.includes("--list")) return listLanes()
 
+  const laneFile = arg("lane-json")
   const laneId = arg("lane")
-  if (!laneId) {
-    console.error("usage: run-search-lane.ts --lane <uuid> [--dry-run] [--days N] [--pages N]\n       run-search-lane.ts --list")
+  if (!laneFile && !laneId) {
+    console.error(
+      "usage: run-search-lane.ts --lane <uuid> [--dry-run] [--days N] [--pages N]\n" +
+        "       run-search-lane.ts --lane-json <path> [--days N] [--pages N]\n" +
+        "       run-search-lane.ts --list"
+    )
     process.exit(1)
   }
-  await runLane(laneId, {
-    dryRun: process.argv.includes("--dry-run"),
+
+  const lane = laneFile ? laneFromFile(laneFile) : await loadLane(laneId!)
+  await runLane(lane, {
+    // An unsaved lane has no id to write results against, so --dry-run is not
+    // optional there; forcing it beats accepting the flag and ignoring it.
+    dryRun: Boolean(laneFile) || process.argv.includes("--dry-run"),
     days: Number(arg("days", "29")),
     pages: Number(arg("pages", "1")),
   })
 }
 
-main().catch((e) => {
-  console.error(e.message)
-  process.exit(1)
-})
+// Guarded so this file can be imported without running the CLI. Nothing
+// imports it today — queryFor moved to lib/hiringcafe.ts — but the guard costs
+// nothing and its absence is the kind of thing you discover at the worst time.
+if (require.main === module) {
+  main().catch((e) => {
+    console.error(e.message)
+    process.exit(1)
+  })
+}
