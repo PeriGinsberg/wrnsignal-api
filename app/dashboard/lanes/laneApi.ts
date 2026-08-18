@@ -83,18 +83,7 @@ export type Discovery = {
   titles: Found[]
 }
 
-// Mirrors lane_results_reason_valid, last changed in
-// 20260817_lane_result_drop_wrong_employer.sql. Slugs are stored; labels are
-// for reading. Order is roughly how often each one gets used, so the common
-// calls are the shortest travel.
-export const REASONS: Array<{ value: string; label: string }> = [
-  { value: "too_senior", label: "Too senior" },
-  { value: "wrong_function", label: "Wrong function" },
-  { value: "wrong_industry", label: "Wrong industry" },
-  { value: "wrong_location", label: "Wrong location" },
-  { value: "right_employer_wrong_level", label: "Right employer, wrong level" },
-  { value: "doesnt_meet_requirements", label: "Doesn't meet requirements" },
-]
+export { LANE_REASONS as REASONS } from "../../../lib/laneReasons"
 
 async function getToken() {
   const { data: { session } } = await getSupabaseBrowser().auth.getSession()

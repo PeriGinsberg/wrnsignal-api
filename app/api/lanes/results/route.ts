@@ -16,23 +16,11 @@
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
+import { REASON_VALUES } from "@/lib/laneReasons"
 import { canAccessLaneOwner, loadAuthorizedLane } from "@/lib/collab/laneAccess"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-
-// Must stay in step with lane_results_reason_valid, last changed in
-// 20260817_lane_result_drop_wrong_employer.sql. Duplicated deliberately: the
-// database rejects a bad value regardless, and this turns that rejection into a
-// clear 400 instead of a 500 from a constraint violation.
-const REASONS = new Set([
-  "too_senior",
-  "wrong_function",
-  "wrong_industry",
-  "wrong_location",
-  "right_employer_wrong_level",
-  "doesnt_meet_requirements",
-])
 
 const RESULT_FIELDS =
   "id, lane_id, job_id, matched_title, title, company, apply_url, location, workplace_type, " +
@@ -96,7 +84,7 @@ export async function PATCH(req: NextRequest) {
     if (action === "dismiss" && !reason) {
       return withCorsJson(req, { ok: false, error: "reason required to dismiss" }, 400)
     }
-    if (action === "dismiss" && !REASONS.has(reason!)) {
+    if (action === "dismiss" && !REASON_VALUES.has(reason!)) {
       return withCorsJson(req, { ok: false, error: `unknown reason: ${reason}` }, 400)
     }
     // A push carries no reason: reusing dismissal vocabulary on an approval
