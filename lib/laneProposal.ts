@@ -66,10 +66,24 @@ export function scoreSectors(text: string) {
     .sort((a, b) => b.score - a.score) // stable: ties keep SECTOR_TERMS order
 }
 
-// Below this, the evidence is a passing mention rather than the client's
-// sector, and a wrong keyword is worse than none: it is appended to EVERY
-// title the lane queries, so it narrows the entire lane, not one query.
-export const KEYWORD_MIN_SCORE = 3
+// Below this, the evidence is a passing mention rather than the client's field,
+// and no amount of board checking can rescue it: a keyword is appended to EVERY
+// title the lane queries, so a wrong one narrows the entire lane, not one query.
+//
+// This gates NOMINATION, not just the offline pick. The board can only choose
+// among candidates it is given, so handing it weakly-evidenced sectors meant it
+// dutifully picked the least-bad of them. Observed on real profiles: Zoe's top
+// sector scored 1 and the rule still proposed "finance"; Josh's scored 6 and it
+// proposed "healthcare" on evidence of 4.
+//
+// Set at 10 because that is where the data actually separates. A sector a client
+// genuinely works in scores far higher than one merely mentioned:
+//   Catherine  marketing 42, entertainment 10, finance 6
+//   Aiden      baseball 18, sports 13, entertainment 7, marketing 1
+//   Josh       entertainment 6, healthcare 4, finance 4
+//   Zoe        healthcare 1, finance 1, marketing 1
+// The gap between a field and a mention sits at 7-to-13 and 6-to-10.
+export const MIN_SECTOR_EVIDENCE = 10
 
 // ---------------------------------------------------------------------------
 // Titles
@@ -516,7 +530,11 @@ export async function proposeLane(
 
   const { titles, dropped } = deriveTitles(src.targetRoles)
   const sectors = scoreSectors(sectorText)
-  const resumeKeyword = sectors.length && sectors[0].score >= KEYWORD_MIN_SCORE ? sectors[0].keyword : null
+  // Only sectors with real evidence are eligible at all. Everything downstream —
+  // the offline pick and the board's choice — draws from this list, so a client
+  // with no clear field gets no keyword rather than the least-bad guess.
+  const eligible = sectors.filter((x) => x.score >= MIN_SECTOR_EVIDENCE)
+  const resumeKeyword = eligible.length ? eligible[0].keyword : null
   const loc = deriveLocation(locationText, String(src.resumeText || ""))
   const years = deriveYearsMax(String(src.resumeText || ""), src.careerStage)
   const exclusions = deriveExclusions(src.careerStage, years.years_max)
@@ -554,12 +572,20 @@ export async function proposeLane(
     )
   }
   if (!titles.length) flags.push("No usable titles came out of the client's target roles.")
+  if (!eligible.length) {
+    const top = sectors[0]
+    flags.push(
+      top
+        ? `No keyword proposed: the strongest sector in this profile is "${top.keyword}" at ${top.score}, below the ${MIN_SECTOR_EVIDENCE} needed to call it the client's field. The lane searches titles alone — wider, and honest about it.`
+        : `No keyword proposed: nothing in this profile names a sector. The lane searches titles alone.`
+    )
+  }
 
   let probe: ProposalResult["probe"] = null
 
   if (opts.probe && titles.length) {
     // The resume nominates candidates; the board picks the winner.
-    const scoring = await scoreKeywords(titles, sectors.map((s) => s.keyword), loc.chosen, loc.radius_miles)
+    const scoring = await scoreKeywords(titles, eligible.map((s) => s.keyword), loc.chosen, loc.radius_miles)
     proposal.keyword = scoring.chosen.keyword
 
     const cells = scoring.chosen.cells
