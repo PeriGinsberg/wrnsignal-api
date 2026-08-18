@@ -25,6 +25,7 @@ export function LaneTitleEditor({
   showConfig = true,
   onTitlesChange,
   onActiveChange,
+  onRan,
 }: {
   laneId: string
   showConfig?: boolean
@@ -32,11 +33,16 @@ export function LaneTitleEditor({
   onTitlesChange?: (titles: string[]) => void
   /** Fired after the lane is paused or resumed. */
   onActiveChange?: (active: boolean) => void
+  /** Fired after a manual run, so a surrounding queue can reload. */
+  onRan?: () => void
 }) {
   const [lane, setLane] = useState<LaneConfig | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+
+  const [running, setRunning] = useState(false)
+  const [runSummary, setRunSummary] = useState<string | null>(null)
 
   const [phrase, setPhrase] = useState("")
   const [searching, setSearching] = useState(false)
@@ -136,6 +142,31 @@ export function LaneTitleEditor({
     [lane, laneId, onActiveChange]
   )
 
+  // Run now. The nightly sweep would get here eventually; this is for when the
+  // titles just changed and nobody wants to wait until morning to see whether
+  // the change was any good.
+  const runNow = useCallback(async () => {
+    setRunning(true)
+    setRunSummary(null)
+    setError(null)
+    const res = await authFetch(`/api/lanes/${encodeURIComponent(laneId)}/run`, { method: "POST" })
+    const j = await res.json().catch(() => ({}))
+    setRunning(false)
+    if (!res.ok || !j.ok) {
+      setError(j.error || "The run failed")
+      return
+    }
+    // `found` counts everything the lane surfaced, `added` only what was new to
+    // it. A healthy lane reports added 0 for days, so collapsing the two would
+    // make a working lane look dead.
+    const { found, added, refreshed } = j.run
+    setRunSummary(
+      `Found ${found} job${found === 1 ? "" : "s"} · ${added} new to this lane · ${refreshed} already here` +
+        (j.was_paused ? " · lane is still paused, this run was manual" : "")
+    )
+    onRan?.()
+  }, [laneId, onRan])
+
   const search = useCallback(async () => {
     const p = phrase.trim()
     if (!p) return
@@ -208,6 +239,38 @@ export function LaneTitleEditor({
               {lane.active ? "Active — pause" : "Paused — resume"}
             </button>
           </div>
+          <div>
+            <div style={{ ...eyebrow, color: T.DIM, marginBottom: 4 }}>Run</div>
+            <button
+              type="button"
+              onClick={runNow}
+              disabled={running || saving}
+              title="Search the board for this lane now, instead of waiting for tonight"
+              style={{
+                background: "transparent",
+                border: `1px solid ${T.BORDER}`,
+                borderRadius: 999,
+                padding: "3px 12px",
+                fontSize: 12,
+                fontWeight: 800,
+                cursor: running || saving ? "not-allowed" : "pointer",
+                color: running ? T.DIM : T.WRN_BLUE,
+              }}
+            >
+              {running ? "Running…" : "Run now"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {runSummary && (
+        <div
+          style={{
+            ...card, padding: "10px 14px", marginBottom: 14,
+            borderColor: T.SUCCESS, background: T.SUCCESS_BG, color: T.TEXT, fontSize: 13,
+          }}
+        >
+          {runSummary}
         </div>
       )}
 

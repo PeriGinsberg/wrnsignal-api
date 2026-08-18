@@ -288,3 +288,54 @@ export async function runLane(
     written: written?.length ?? 0,
   }
 }
+
+/**
+ * Run a lane and record the attempt, whichever way it goes.
+ *
+ * Every caller that runs a lane must also log it — the cron, the create call,
+ * the CLI, and now the Run now button — and a caller that forgets leaves a lane
+ * that appears never to have run. Sharing it is what stops the fourth copy
+ * drifting from the first.
+ *
+ * Never throws: a run that fails is a logged fact, not an exception for the
+ * caller to re-handle. The cron does NOT use this, deliberately — it writes its
+ * row before running so a function killed mid-lane still leaves a visible
+ * failure, which is a different guarantee than this one.
+ */
+export async function runLaneLogged(
+  lane: Lane,
+  supabase: SupabaseClient,
+  trigger: "cron" | "manual"
+): Promise<
+  | { ok: true; result: LaneRunResult; found: number }
+  | { ok: false; error: string }
+> {
+  const startedAt = Date.now()
+  try {
+    const result = await runLane(lane, supabase)
+    const found = result.perTitle.reduce((n, t) => n + t.kept, 0)
+    await supabase.from("lane_runs").insert({
+      lane_id: lane.id,
+      status: "ok",
+      trigger,
+      finished_at: new Date().toISOString(),
+      duration_ms: Date.now() - startedAt,
+      titles_run: result.perTitle.length,
+      jobs_found: found,
+      jobs_added: result.added,
+      detail: result.perTitle,
+    })
+    return { ok: true, result, found }
+  } catch (err: any) {
+    const error = err?.message || String(err)
+    await supabase.from("lane_runs").insert({
+      lane_id: lane.id,
+      status: "error",
+      trigger,
+      finished_at: new Date().toISOString(),
+      duration_ms: Date.now() - startedAt,
+      error: String(error).slice(0, 1000),
+    })
+    return { ok: false, error }
+  }
+}

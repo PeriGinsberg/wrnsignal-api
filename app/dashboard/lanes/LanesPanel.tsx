@@ -302,6 +302,12 @@ export function LanesPanel({
                     onActiveChange={(active) =>
                       setLanes((prev) => (prev ? prev.map((l) => (l.id === laneId ? { ...l, active } : l)) : prev))
                     }
+                    onRan={() => {
+                      // The queue below just changed underneath us, and so did
+                      // the tab's unreviewed count.
+                      if (laneId) loadQueue(laneId)
+                      setReloadKey((k) => k + 1)
+                    }}
                   />
                 </div>
               )}

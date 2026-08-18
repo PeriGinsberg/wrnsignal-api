@@ -15,7 +15,7 @@ import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { canAccessLaneOwner, laneScopeIds } from "@/lib/collab/laneAccess"
-import { runLane, type Lane } from "@/lib/laneRunner"
+import { runLaneLogged, type Lane } from "@/lib/laneRunner"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -202,39 +202,16 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const runStart = Date.now()
-    let run: any = null
-    let runError: string | null = null
-    try {
-      const result = await runLane(lane as Lane, supabase)
-      run = {
-        added: result.added,
-        refreshed: result.refreshed,
-        found: result.perTitle.reduce((n, t) => n + t.kept, 0),
-        titles: result.perTitle,
-      }
-      await supabase.from("lane_runs").insert({
-        lane_id: (lane as any).id,
-        status: "ok",
-        trigger: "manual",
-        finished_at: new Date().toISOString(),
-        duration_ms: Date.now() - runStart,
-        titles_run: result.perTitle.length,
-        jobs_found: run.found,
-        jobs_added: result.added,
-        detail: result.perTitle,
-      })
-    } catch (err: any) {
-      runError = err?.message || String(err)
-      await supabase.from("lane_runs").insert({
-        lane_id: (lane as any).id,
-        status: "error",
-        trigger: "manual",
-        finished_at: new Date().toISOString(),
-        duration_ms: Date.now() - runStart,
-        error: String(runError).slice(0, 1000),
-      })
-    }
+    const outcome = await runLaneLogged(lane as Lane, supabase, "manual")
+    const run = outcome.ok
+      ? {
+          added: outcome.result.added,
+          refreshed: outcome.result.refreshed,
+          found: outcome.found,
+          titles: outcome.result.perTitle,
+        }
+      : null
+    const runError = outcome.ok ? null : outcome.error
 
     return withCorsJson(req, { ok: true, lane, run, run_error: runError }, 201)
   } catch (err: any) {
