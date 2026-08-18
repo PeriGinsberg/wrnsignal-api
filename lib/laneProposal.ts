@@ -292,6 +292,18 @@ export const MAX_KEYWORD_CANDIDATES = 3
 // baseball" → 26 of 26).
 const NO_OP_RETENTION = 0.9
 
+// Below this share, the keyword is not narrowing, it is gutting. A relative
+// floor as well as the absolute one below, because "enough postings left" and
+// "kept a sensible share of what the titles find" are different questions: 28
+// postings is a fine lane in isolation and a bad trade when the titles were
+// finding 418.
+//
+// This floor is why the rule changed. Preferring the MOST selective qualifying
+// keyword picked "entertainment" (7% of baseline) over "marketing" (69%) for a
+// client whose own words ranked marketing first — technically the most
+// selective, and wrong.
+const MIN_RETENTION = 0.2
+
 // A keyword that leaves fewer than this many postings across ALL titles has
 // not narrowed the lane, it has closed it.
 const MIN_SURVIVING_FETCHED = 5
@@ -332,6 +344,8 @@ export async function scoreKeywords(
     let disqualifiedBecause: string | null = null
     if (keyword !== null) {
       if (retention > NO_OP_RETENTION) disqualifiedBecause = `no-op — keeps ${(retention * 100).toFixed(0)}% of baseline`
+      else if (retention < MIN_RETENTION)
+        disqualifiedBecause = `over-narrows — keeps only ${(retention * 100).toFixed(0)}% of baseline`
       else if (totalFetched < MIN_SURVIVING_FETCHED) disqualifiedBecause = `leaves only ${totalFetched} posting(s)`
       else if (live.length && zeroed.length / live.length > MAX_ZERO_FRACTION)
         disqualifiedBecause = `zeroes ${zeroed.length} of ${live.length} live titles`
@@ -357,10 +371,17 @@ export async function scoreKeywords(
     scored.push(build(k, await probeTitles(titles, k, preset, radiusMiles), baselineCells))
   }
 
-  // Most selective keyword that is still alive. Ties keep candidate order,
-  // which is resume-evidence order, so the client's own sector breaks a tie.
-  const qualified = scored.filter((s) => s.qualified).sort((a, b) => a.retention - b.retention)
-  return { baseline, scored, chosen: qualified[0] ?? baseline }
+  // The board's job here is to VETO, not to rank. Every candidate that survives
+  // the band narrows meaningfully without gutting the lane, and among keywords
+  // that all work the board has no opinion worth having about which sector the
+  // client belongs to — their own resume does. So the first survivor wins, and
+  // `scored` is in resume-evidence order.
+  //
+  // The rejected alternative was "most selective survivor", which reads as
+  // rigorous and is not: it treats a keyword that throws away 93% of the results
+  // as better than one that throws away 31%, purely because it cut more.
+  const chosen = scored.find((s) => s.qualified)
+  return { baseline, scored, chosen: chosen ?? baseline }
 }
 
 
