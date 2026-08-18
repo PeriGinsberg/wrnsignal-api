@@ -15,8 +15,8 @@ import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-// Must stay in step with lane_results_reason_valid, last widened in
-// 20260817_lane_result_reason_wrong_industry.sql. Duplicated deliberately: the
+// Must stay in step with lane_results_reason_valid, last changed in
+// 20260817_lane_result_drop_wrong_employer.sql. Duplicated deliberately: the
 // database rejects a bad value regardless, and this turns that rejection into a
 // clear 400 instead of a 500 from a constraint violation.
 const REASONS = new Set([
@@ -24,7 +24,6 @@ const REASONS = new Set([
   "wrong_function",
   "wrong_industry",
   "wrong_location",
-  "wrong_employer",
   "right_employer_wrong_level",
   "doesnt_meet_requirements",
 ])
