@@ -98,46 +98,82 @@ const TITLE_SPLIT = /\s*(?:[,;/|]|\band\b|\bor\b|\n)\s*/i
 // the caller prints what it dropped.
 export const MAX_TITLES = 8
 
+// A role name is short. Measured across every genuine title derived from the 93
+// production profiles that state target roles: 97% are six words or fewer, and
+// every single title above six words is a sentence fragment — "i want a job with
+// the mlb", "put in my dues. my ultimate goal in 5-10 years is to grow in a front
+// office role". The ceiling is where the data separates, not a guess.
+const MAX_TITLE_WORDS = 6
+
+/**
+ * Some profiles store target_roles as a serialised list rather than free text.
+ * Both shapes occur in production:
+ *
+ *   ["Energy Analyst", "Grid / Systems roles", "Project / Modeling roles"]
+ *   {"marketing internships","creative design internships"}
+ *
+ * Split as prose, those leave quotes and brackets inside the titles, which then
+ * go to the board verbatim — one lane was about to search for `"grid analyst"]`.
+ */
+function unwrapSerialisedList(raw: string): string {
+  const s = raw.trim()
+  if (!(s.startsWith("[") || s.startsWith("{"))) return raw
+  try {
+    const parsed = JSON.parse(s)
+    if (Array.isArray(parsed) && parsed.every((x) => typeof x === "string")) return parsed.join(", ")
+  } catch {
+    // Postgres array literals are not JSON. Fall through and strip instead.
+  }
+  return s
+}
+
 export function deriveTitles(targetRoles: string | null): {
   titles: string[]
   dropped: string[]
   discarded: string[]
 } {
-  const parts = String(targetRoles || "")
+  const parts = unwrapSerialisedList(String(targetRoles || ""))
+    // Brackets, braces, quotes and parentheses never belong inside a query. They
+    // arrive from serialised lists that did not parse, and from asides like
+    // "Real Estate (Development, Investment) Internships" — where dropping the
+    // punctuation and keeping the words is what the client meant.
+    .replace(/[\[\]{}"()]/g, " ")
     .split(TITLE_SPLIT)
     .map((s) =>
       s
         .toLowerCase()
         .replace(/[."]+$/g, "")
+        // Stripping punctuation leaves gaps: "Real Estate (Development"
+        // becomes "real estate  development" with two spaces, which is a
+        // different query from the one anybody meant.
+        .replace(/\s+/g, " ")
         .replace(/^(?:a|an|the|roles?\s+in|entry[- ]level)\s+/i, "")
         .trim()
     )
     .filter(Boolean)
 
-  // A coordinated list can share one head noun. "trademark, copyright, IP, and
-  // data privacy associate" is four roles, not one: only the final entry carries
-  // the noun and the rest borrow it. Splitting on commas alone left three bare
-  // modifiers that the two-word floor then threw away, so a client asking for
-  // four things got a lane searching one.
+  // Head-borrowing was tried here and REMOVED. The idea was that a coordinated
+  // list shares one head noun — "trademark, copyright, IP, and data privacy
+  // associate" being four roles — so bare entries borrowed the last entry's
+  // final word. It fixed that profile and invented titles for 14 of the 93
+  // production profiles: "analyst analyst" from "Associate, Analyst, Business
+  // Analyst", "business fall" from "Business or Marketing Internships - Fall",
+  // "marketing nightlife", "hrbp operations". The last word of the last entry is
+  // as often a sector, a season or a repeat as it is a shared noun, and a
+  // fabricated title is worse than a missing one: a coach can see that
+  // "trademark" is absent, but has to already know the field to see that
+  // "analyst management" was never asked for.
   //
-  // Only bare single-word entries borrow, and only when the last entry has a
-  // head to lend. An entry that already names a role ("supply chain coordinator")
-  // is left exactly as written.
-  const last = parts[parts.length - 1] ?? ""
-  const head = last.includes(" ") ? last.split(/\s+/).pop()! : null
-  const expanded = parts.map((part, i) => {
-    if (i === parts.length - 1 || !head) return part
-    if (part.includes(" ") || part.length < 2) return part
-    return `${part} ${head}`
-  })
+  // What a bare entry does now is what it did before — get reported as
+  // unusable, by name, in `discarded`.
 
   // A single word like "operations" is a sector, not a title; queried alone it
-  // returns the whole board. Two words is the floor for a role name — but what
-  // fails that floor is now REPORTED rather than dropped on the floor, because a
+  // returns the whole board. Two words is the floor, six is the ceiling, and
+  // what fails either is REPORTED rather than dropped on the floor, because a
   // title silently vanishing is indistinguishable from one never asked for.
-  const ok = (t: string) => t.length > 2 && /\s/.test(t)
-  const usable = expanded.filter(ok)
-  const discarded = expanded.filter((t) => !ok(t))
+  const ok = (t: string) => t.length > 2 && /\s/.test(t) && t.split(/\s+/).length <= MAX_TITLE_WORDS
+  const usable = parts.filter(ok)
+  const discarded = parts.filter((t) => !ok(t))
 
   const seen = new Set<string>()
   const unique = usable.filter((t) => (seen.has(t) ? false : (seen.add(t), true)))
