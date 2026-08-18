@@ -22,7 +22,7 @@ import { type SupabaseClient } from "@supabase/supabase-js"
 import { verifyCoachAccess } from "./access"
 
 /** Coach access level required for each kind of act on someone else's lane. */
-export type LaneAct = "read" | "review" | "configure"
+export type LaneAct = "read" | "review" | "configure" | "send"
 
 // read      — see the lane, its results, run discovery
 // review    — push/dismiss a result. 'annotate' because that is what reviewing
@@ -31,10 +31,15 @@ export type LaneAct = "read" | "review" | "configure"
 // configure — change the lane's titles. 'full' because titles decide what the
 //             lane will ever find; a coach who may comment on results should
 //             not silently redirect the search that produces them.
+// send      — score a result and put it on the client's tracker. 'full' to match
+//             /api/coach/recommend-job, which refuses anything less. Checked
+//             here as well so the button can be disabled up front: discovering
+//             you lack access AFTER pasting a job description is a wasted trip.
 const LEVEL_FOR: Record<LaneAct, string> = {
   read: "view",
   review: "annotate",
   configure: "full",
+  send: "full",
 }
 
 /**

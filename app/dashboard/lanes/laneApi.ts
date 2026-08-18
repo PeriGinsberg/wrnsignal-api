@@ -22,6 +22,9 @@ export type LaneSummary = {
   client_name: string | null
   client_email: string | null
   is_own: boolean
+  // May the caller score a result onto this client's tracker? Requires full
+  // coach access, the same bar /api/coach/recommend-job enforces.
+  can_send: boolean
 }
 
 export type LaneConfig = {

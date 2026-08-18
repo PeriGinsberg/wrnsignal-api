@@ -14,7 +14,7 @@
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
-import { laneScopeIds } from "@/lib/collab/laneAccess"
+import { canAccessLaneOwner, laneScopeIds } from "@/lib/collab/laneAccess"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -45,6 +45,15 @@ export async function GET(req: NextRequest) {
       .in("id", owners)
     const byId = new Map((profiles ?? []).map((p: any) => [p.id, p]))
 
+    // Whether the caller may score a result onto this owner's tracker. Resolved
+    // per OWNER rather than per lane: the answer is a property of the coaching
+    // relationship, and a coach with twenty lanes for one client should not cost
+    // twenty access checks.
+    const canSend = new Map<string, boolean>()
+    for (const owner of owners) {
+      canSend.set(owner, await canAccessLaneOwner(owner, profileId, "send", supabase))
+    }
+
     const { data, error } = await supabase
       .from("search_lanes")
       .select("id, client_profile_id, name, active, titles, keyword, location, years_max")
@@ -68,6 +77,7 @@ export async function GET(req: NextRequest) {
           client_name: owner?.name ?? null,
           client_email: owner?.email ?? null,
           is_own: l.client_profile_id === profileId,
+          can_send: canSend.get(l.client_profile_id) ?? false,
         }
       })
     )

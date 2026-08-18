@@ -15,8 +15,20 @@
 // Rows are removed optimistically and restored if the write fails. A queue that
 // re-renders the row you just judged is the fastest way to lose your place in a
 // list of seventy, so the removal has to happen on click, not on response.
+//
+// Scoring is not a decision and writes nothing: the row stays in the queue until
+// something is actually sent to the client's tracker. Only Dismiss removes a row
+// here.
+//
+// Where Score goes depends on who is mounting this. Inside a client record the
+// parent owns the Source a Job tab, so it passes onScore and switches tab in
+// place — instant, and the queue is still there when you come back. On the
+// all-clients page there is no such tab, so Score navigates to the client's
+// record with the job carried in the query string. The lane result id goes along
+// too, so that a successful send can mark the row it came from.
 
 import { useCallback, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { T, card, eyebrow } from "../../../lib/dashboard-theme"
 import { LaneResultRow } from "./LaneResultRow"
 import { LaneTitleEditor } from "./LaneTitleEditor"
@@ -25,12 +37,19 @@ import { authFetch, laneTabLabel, type LaneSummary, type Result } from "./laneAp
 export function LanesPanel({
   clientProfileId = null,
   emptyHint,
+  onScore,
 }: {
   /** Narrow to one owner. Null lists everything in the caller's scope. */
   clientProfileId?: string | null
   /** What to say when there are no lanes; the caller knows whose screen this is. */
   emptyHint?: string
+  /**
+   * Handle Score in place. Given when the mounting page owns a Source a Job tab.
+   * Without it, Score navigates to the client record instead.
+   */
+  onScore?: (args: { row: Result; laneResultId: string; clientProfileId: string }) => void
 }) {
+  const router = useRouter()
   // A list that spans people needs the owner on each tab; a single client's
   // record does not, because it would be the same name every time.
   const showClientNames = clientProfileId === null
@@ -84,8 +103,8 @@ export function LanesPanel({
     if (laneId) loadQueue(laneId)
   }, [laneId, loadQueue])
 
-  const act = useCallback(
-    async (row: Result, action: "push" | "dismiss", reason: string | null, note: string | null) => {
+  const dismiss = useCallback(
+    async (row: Result, reason: string, note: string | null) => {
       const index = results?.findIndex((r) => r.id === row.id) ?? -1
       setResults((prev) => (prev ? prev.filter((r) => r.id !== row.id) : prev))
       setLanes((prev) =>
@@ -94,7 +113,7 @@ export function LanesPanel({
 
       const res = await authFetch("/api/lanes/results", {
         method: "PATCH",
-        body: JSON.stringify({ id: row.id, action, reason, note }),
+        body: JSON.stringify({ id: row.id, action: "dismiss", reason, note }),
       })
       if (res.ok) return
 
@@ -113,6 +132,30 @@ export function LanesPanel({
       )
     },
     [results, laneId]
+  )
+
+  // Score: carry the job to the scoring screen. No write — see the header.
+  const score = useCallback(
+    (row: Result) => {
+      const owner = lanes?.find((l) => l.id === laneId)?.client_profile_id
+      if (!owner) return
+      if (onScore) {
+        onScore({ row, laneResultId: row.id, clientProfileId: owner })
+        return
+      }
+      // The JD box is deliberately left empty: the board never gives us a job
+      // description (its longest text field is a 194-character summary), and
+      // scoring a summary would produce a real-looking score off two sentences.
+      const qs = new URLSearchParams({
+        tab: "source",
+        sc_title: row.title ?? "",
+        sc_company: row.company ?? "",
+        sc_url: row.apply_url ?? "",
+        lane_result: row.id,
+      })
+      router.push(`/dashboard/coach/clients/${owner}?${qs.toString()}`)
+    },
+    [lanes, laneId, onScore, router]
   )
 
   // Titles changed under us, so the tab's title count is stale and the queue may
@@ -254,7 +297,13 @@ export function LanesPanel({
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {results.map((r) => (
-                <LaneResultRow key={r.id} row={r} onAct={act} />
+                <LaneResultRow
+                  key={r.id}
+                  row={r}
+                  canSend={lane?.can_send ?? false}
+                  onScore={score}
+                  onDismiss={dismiss}
+                />
               ))}
             </div>
           )}

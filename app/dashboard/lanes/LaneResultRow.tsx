@@ -1,10 +1,16 @@
 "use client"
 
-// One reviewable job, with its push/dismiss drawer.
+// One reviewable job: score it, or dismiss it with a reason.
 //
-// Lifted verbatim out of the lanes review page when the same queue had to render
-// inside a coach's client record. Behaviour is unchanged; only the surrounding
-// page differs, which is the point of it being a component.
+// Score does NOT decide anything. It carries the job to the Source a Job tab to
+// be scored against the client's profile, and the row stays in this queue until
+// something is actually sent to the client's tracker. That is why only Dismiss
+// opens a drawer here — the note that accompanies a recommendation belongs on
+// the scoring screen, next to the score it is about.
+//
+// Score needs full coach access, because sending is what it leads to. The button
+// is disabled without it rather than failing after a job description has been
+// pasted.
 
 import { useState } from "react"
 import { T, card, eyebrow, textarea, select, selectOption } from "../../../lib/dashboard-theme"
@@ -12,14 +18,17 @@ import { REASONS, money, daysAgo, type Result } from "./laneApi"
 
 export function LaneResultRow({
   row,
-  onAct,
+  canSend,
+  onScore,
+  onDismiss,
 }: {
   row: Result
-  onAct: (r: Result, a: "push" | "dismiss", reason: string | null, note: string | null) => void
+  canSend: boolean
+  onScore: (r: Result) => void
+  onDismiss: (r: Result, reason: string, note: string | null) => void
 }) {
-  // Which panel is open, if any. Both actions can carry a note, so both open
-  // the same drawer; dismiss additionally requires a reason before it commits.
-  const [open, setOpen] = useState<null | "push" | "dismiss">(null)
+  // Only dismiss has a drawer, and only because its reason is required.
+  const [open, setOpen] = useState(false)
   const [reason, setReason] = useState("")
   const [note, setNote] = useState("")
 
@@ -28,9 +37,9 @@ export function LaneResultRow({
     row.min_yoe == null ? "Not stated" : row.min_yoe === 0 ? "0 yrs" : `${row.min_yoe}+ yrs`
   const tools = (row.tools ?? []).filter(Boolean)
 
-  const commit = (action: "push" | "dismiss") => {
-    if (action === "dismiss" && !reason) return
-    onAct(row, action, action === "dismiss" ? reason : null, note.trim() || null)
+  const commitDismiss = () => {
+    if (!reason) return
+    onDismiss(row, reason, note.trim() || null)
   }
 
   return (
@@ -97,19 +106,22 @@ export function LaneResultRow({
       )}
 
       {/* Actions */}
-      {open === null ? (
-        <div style={{ display: "flex", gap: 8 }}>
+      {!open ? (
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <button
-            onClick={() => setOpen("push")}
+            onClick={() => onScore(row)}
+            disabled={!canSend}
+            title={canSend ? "Score this against the client's profile" : "Full coach access is required to score and send"}
             style={{
               background: T.WRN_ORANGE, color: T.INK_ON_ACCENT, border: "none",
-              borderRadius: 11, padding: "9px 16px", fontSize: 13, fontWeight: 900, cursor: "pointer",
+              borderRadius: 11, padding: "9px 16px", fontSize: 13, fontWeight: 900,
+              cursor: canSend ? "pointer" : "not-allowed", opacity: canSend ? 1 : 0.45,
             }}
           >
-            Push
+            Score
           </button>
           <button
-            onClick={() => setOpen("dismiss")}
+            onClick={() => setOpen(true)}
             style={{
               background: "transparent", color: T.MUTED,
               border: `1px solid ${T.BORDER_SOFT}`,
@@ -126,8 +138,7 @@ export function LaneResultRow({
             borderTop: `1px solid ${T.BORDER_SOFT}`, paddingTop: 14,
           }}
         >
-          {open === "dismiss" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <label htmlFor={`reason-${row.id}`} style={{ ...eyebrow, fontSize: 10, color: T.MUTED }}>
                 Reason
               </label>
@@ -142,8 +153,7 @@ export function LaneResultRow({
                   <option key={o.value} value={o.value} style={selectOption}>{o.label}</option>
                 ))}
               </select>
-            </div>
-          )}
+          </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <label htmlFor={`note-${row.id}`} style={{ ...eyebrow, fontSize: 10, color: T.MUTED }}>
@@ -154,28 +164,28 @@ export function LaneResultRow({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={2}
-              placeholder={open === "push" ? "Why this one is worth a look…" : "Anything the reason list misses…"}
+              placeholder="Anything the reason list misses…"
               style={{ ...textarea, minHeight: 58 }}
             />
           </div>
 
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <button
-              onClick={() => commit(open)}
-              disabled={open === "dismiss" && !reason}
+              onClick={commitDismiss}
+              disabled={!reason}
               style={{
-                background: open === "push" ? T.WRN_ORANGE : T.GLASS,
-                color: open === "push" ? T.INK_ON_ACCENT : T.TEXT,
-                border: open === "push" ? "none" : `1px solid ${T.BORDER}`,
+                background: T.GLASS,
+                color: T.TEXT,
+                border: `1px solid ${T.BORDER}`,
                 borderRadius: 11, padding: "9px 16px", fontSize: 13, fontWeight: 900,
-                cursor: open === "dismiss" && !reason ? "not-allowed" : "pointer",
-                opacity: open === "dismiss" && !reason ? 0.45 : 1,
+                cursor: !reason ? "not-allowed" : "pointer",
+                opacity: !reason ? 0.45 : 1,
               }}
             >
-              {open === "push" ? "Push" : "Dismiss"}
+              Dismiss
             </button>
             <button
-              onClick={() => { setOpen(null); setReason(""); setNote("") }}
+              onClick={() => { setOpen(false); setReason(""); setNote("") }}
               style={{
                 background: "transparent", border: "none", color: T.DIM,
                 fontSize: 12, fontWeight: 700, cursor: "pointer", padding: "9px 4px",
@@ -183,9 +193,7 @@ export function LaneResultRow({
             >
               Cancel
             </button>
-            {open === "dismiss" && !reason && (
-              <span style={{ fontSize: 11, color: T.DIM }}>Pick a reason first</span>
-            )}
+            {!reason && <span style={{ fontSize: 11, color: T.DIM }}>Pick a reason first</span>}
           </div>
         </div>
       )}

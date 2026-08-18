@@ -265,6 +265,16 @@ export default function CoachClientPage() {
 
   // Job Tracker status filter. Set by metrics-tile click on dashboard or
   // by ?status= URL param on entry.
+  // Prefill carried by Score from a lane result. The job description is
+  // deliberately NOT among these — the board has no job description to give, so
+  // the coach pastes it. Read once on mount, as initialTab is.
+  const [initialSource] = useState(() => ({
+    title: searchParams.get("sc_title") || "",
+    company: searchParams.get("sc_company") || "",
+    url: searchParams.get("sc_url") || "",
+    laneResult: searchParams.get("lane_result") || null,
+  }))
+
   const initialStatus = searchParams.get("status") as StatusFilter | null
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(
     initialStatus && STATUS_FILTERS.includes(initialStatus) ? initialStatus : "all"
@@ -299,6 +309,9 @@ export default function CoachClientPage() {
   const [sourceCompany, setSourceCompany] = useState("")
   const [sourceTitle, setSourceTitle] = useState("")
   const [sourceJD, setSourceJD] = useState("")
+  // Set when the job on the Source form arrived from a lane result, so a
+  // successful send can mark that row. Null for a hand-pasted job.
+  const [laneResultId, setLaneResultId] = useState<string | null>(null)
   const [selectedPersona, setSelectedPersona] = useState("")
   const [running, setRunning] = useState(false)
   const [runResult, setRunResult] = useState<any>(null)
@@ -513,8 +526,20 @@ export default function CoachClientPage() {
     }
   }
 
+  // Apply the Score prefill on first mount only. Not a dependency-driven effect:
+  // re-running it would overwrite whatever the coach has since typed.
+  useEffect(() => {
+    if (!initialSource.title && !initialSource.company && !initialSource.url) return
+    setSourceTitle(initialSource.title)
+    setSourceCompany(initialSource.company)
+    setSourceUrl(initialSource.url)
+    setLaneResultId(initialSource.laneResult)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   function clearSourceForm() {
     setSourceUrl(''); setSourceCompany(''); setSourceTitle(''); setSourceJD('')
+    setLaneResultId(null)
     {
       const active = clientPersonas.filter(p => !p.archived_at)
       setSelectedPersona(active.find(p => p.is_default)?.id || active[0]?.id || '')
@@ -579,6 +604,17 @@ export default function CoachClientPage() {
       if (res.ok) {
         setSendSuccess(true)
         setRunSuccess(true)
+        // The row leaves the lane queue only now, because sending is the
+        // decision. A failure here is not surfaced as a send failure: the
+        // recommendation did reach the client, and telling the coach otherwise
+        // would invite them to send it twice.
+        if (laneResultId) {
+          await authFetch("/api/lanes/results", {
+            method: "PATCH",
+            body: JSON.stringify({ id: laneResultId, action: "push" }),
+          }).catch(() => {})
+          setLaneResultId(null)
+        }
         await loadAll({ silent: true })
         setTimeout(() => clearSourceForm(), 3000)
       } else {
@@ -1259,6 +1295,31 @@ export default function CoachClientPage() {
         <div style={{ maxWidth: 700 }}>
           <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 16 }}>SOURCE A JOB FOR {clientProfile?.name?.toUpperCase() || "CLIENT"}</div>
 
+          {laneResultId && (
+            <div
+              style={{
+                ...card, padding: "12px 16px", marginBottom: 16,
+                borderColor: T.ORANGE_BORDER, background: T.WARNING_BG,
+                fontSize: 13, color: T.TEXT,
+              }}
+            >
+              From a lane result — title, company and link are filled in.{" "}
+              <strong>Paste the job description</strong> to score it: the job board only supplies a
+              two-sentence summary, which is not enough to score against.
+              {sourceUrl && (
+                <>
+                  {" "}
+                  <a href={sourceUrl} target="_blank" rel="noopener noreferrer" style={{ color: T.WRN_BLUE, fontWeight: 800 }}>
+                    Open posting ↗
+                  </a>
+                </>
+              )}
+              <div style={{ color: T.DIM, fontSize: 12, marginTop: 6 }}>
+                This job stays in the lane queue until you send it to the client.
+              </div>
+            </div>
+          )}
+
           {/* Step indicator */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
             {[
@@ -1801,6 +1862,17 @@ export default function CoachClientPage() {
           <LanesPanel
             clientProfileId={clientId}
             emptyHint={`No lanes for ${clientProfile?.name || "this client"} yet. Create one and run it to fill this queue.`}
+            onScore={({ row, laneResultId: rid }) => {
+              setSourceTitle(row.title || "")
+              setSourceCompany(row.company || "")
+              setSourceUrl(row.apply_url || "")
+              // Empty on purpose — the board gives no job description, so this
+              // is the one field the coach has to supply.
+              setSourceJD("")
+              setLaneResultId(rid)
+              setRunResult(null); setShowAnnotation(false); setSendSuccess(false); setRunError("")
+              setTab("source")
+            }}
           />
         </div>
       )}
