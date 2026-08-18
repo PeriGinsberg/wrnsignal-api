@@ -1855,8 +1855,8 @@ export default function CoachClientPage() {
           <div style={{ marginBottom: 18 }}>
             <div style={{ ...eyebrow, color: T.MUTED, marginBottom: 6 }}>Search lanes</div>
             <p style={{ fontSize: 13, color: T.MUTED, margin: 0 }}>
-              Standing searches for {clientProfile?.name || "this client"}. Push sends a job to their dashboard,
-              exactly as sourcing one by hand does.
+              Standing searches for {clientProfile?.name || "this client"}, run nightly. Score takes a job to
+              Source a Job to be scored against their profile; it stays in the queue here until you send it.
             </p>
           </div>
           <LanesPanel
