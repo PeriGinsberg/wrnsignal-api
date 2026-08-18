@@ -4,6 +4,10 @@
     {
       "path": "/api/internal/monitor/artifact-writes",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/internal/lanes/run-due",
+      "schedule": "0 9 * * *"
     }
   ]
 }
