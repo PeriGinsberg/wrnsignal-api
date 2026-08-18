@@ -333,7 +333,15 @@ const MIN_RETENTION = 0.10
 
 // A keyword that leaves fewer than this many postings across ALL titles has
 // not narrowed the lane, it has closed it.
-const MIN_SURVIVING_FETCHED = 5
+//
+// Raised from 5 to 10 after the relative floor alone let a keyword through on a
+// technicality: on a lane whose titles already contain "baseball", the keyword
+// "baseball" is a measured no-op (100% retention) and is rightly rejected, which
+// promoted "sports" — surviving on 5 postings. Five is not a queue; it is a
+// rounding error that happens to clear a threshold. At 10 that candidate falls
+// too and the lane gets no keyword, which is the correct answer when the titles
+// already say the sector.
+const MIN_SURVIVING_FETCHED = 10
 
 // Killing outright more than this share of the titles that DO return something
 // disqualifies a keyword, however good its ratio looks on the survivors.
