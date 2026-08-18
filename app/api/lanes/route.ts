@@ -169,6 +169,37 @@ export async function POST(req: NextRequest) {
       return withCorsJson(req, { ok: false, error: "location.presets must all be strings" }, 400)
     }
 
+    // Board filters. Four optional string lists; anything else is rejected
+    // rather than coerced, because a filter silently dropped is a lane quietly
+    // searching wider than the coach believes.
+    const FILTER_KEYS = ["industries", "excluded_industries", "company_keywords", "excluded_company_keywords"] as const
+    const filters: Record<string, string[]> = {}
+    const rawFilters = body?.filters && typeof body.filters === "object" ? body.filters : null
+    if (rawFilters) {
+      for (const key of FILTER_KEYS) {
+        const v = (rawFilters as any)[key]
+        if (v === undefined || v === null) continue
+        if (!Array.isArray(v) || !v.every((x: unknown) => typeof x === "string")) {
+          return withCorsJson(req, { ok: false, error: `filters.${key} must be an array of strings` }, 400)
+        }
+        const cleaned = v.map((x: string) => x.trim()).filter(Boolean)
+        if (cleaned.length) filters[key] = cleaned
+      }
+    } else {
+      // No filters supplied: inherit the client's standing industry preference,
+      // which is what makes "this client never wants school jobs" hold for every
+      // lane rather than only the one where somebody remembered.
+      const { data: prof } = await supabase
+        .from("client_profiles")
+        .select("target_industries, excluded_industries")
+        .eq("id", clientProfileId)
+        .maybeSingle()
+      const inc = ((prof as any)?.target_industries ?? []) as string[]
+      const exc = ((prof as any)?.excluded_industries ?? []) as string[]
+      if (inc.length) filters.industries = inc
+      if (exc.length) filters.excluded_industries = exc
+    }
+
     const keywordRaw = typeof body?.keyword === "string" ? body.keyword.trim() : ""
     const yearsMax = body?.years_max === null || body?.years_max === undefined ? null : Number(body.years_max)
     if (yearsMax !== null && (!Number.isFinite(yearsMax) || yearsMax < 0)) {
@@ -189,6 +220,7 @@ export async function POST(req: NextRequest) {
         years_max: yearsMax,
         companies: Array.isArray(body?.companies) ? body.companies : [],
         exclusions: body?.exclusions && typeof body.exclusions === "object" ? body.exclusions : {},
+        filters,
       })
       .select("*")
       .single()

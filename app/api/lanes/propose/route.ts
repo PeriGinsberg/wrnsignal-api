@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
     const supabase = getSupabaseAdmin()
     const { data: profile } = await supabase
       .from("client_profiles")
-      .select("id, name, email, target_roles, target_locations, preferred_locations, profile_text, resume_text")
+      .select("id, name, email, target_roles, target_locations, preferred_locations, profile_text, resume_text, target_industries, excluded_industries")
       .eq("id", clientProfileId)
       .maybeSingle()
     if (!profile) return withCorsJson(req, { ok: false, error: "Client not found" }, 404)
@@ -70,6 +70,8 @@ export async function GET(req: NextRequest) {
         resumeText: (profile as any).resume_text ?? null,
         careerStage: (targeting as any)?.career_stage ?? null,
         primaryOtherDescription: (targeting as any)?.primary_other_description ?? null,
+        targetIndustries: (profile as any).target_industries ?? [],
+        excludedIndustries: (profile as any).excluded_industries ?? [],
       },
       { probe }
     )

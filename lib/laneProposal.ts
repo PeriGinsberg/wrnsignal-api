@@ -332,7 +332,14 @@ export async function probeTitles(
   titles: string[],
   keyword: string | null,
   presets: string[],
-  radiusMiles: number
+  radiusMiles: number,
+  /**
+   * The board filters the lane will carry. Passed through so the counts a coach
+   * reviews are counts for the search the lane will ACTUALLY run — probing
+   * unfiltered and then saving a filtered lane would put numbers on screen that
+   * the lane can never reproduce.
+   */
+  filters: SearchFilters = {}
 ): Promise<Probe[]> {
   const out: Probe[] = []
   for (const title of titles) {
@@ -344,6 +351,7 @@ export async function probeTitles(
       days: PROBE_DAYS,
       seniority: PROBE_SENIORITY,
       pages: 1,
+      ...filters,
     })
     // One page, same as a default run. total > fetched means the board has more
     // than this page holds — the title is not under-performing, it is truncated,
@@ -430,7 +438,8 @@ export async function scoreKeywords(
   titles: string[],
   candidates: string[],
   presets: string[],
-  radiusMiles: number
+  radiusMiles: number,
+  filters: SearchFilters = {}
 ): Promise<{ baseline: KeywordScore; scored: KeywordScore[]; chosen: KeywordScore }> {
   const build = (keyword: string | null, cells: Probe[], baselineCells: Probe[] | null): KeywordScore => {
     const totalFetched = cells.reduce((n, c) => n + c.fetched, 0)
@@ -466,12 +475,12 @@ export async function scoreKeywords(
     }
   }
 
-  const baselineCells = await probeTitles(titles, null, presets, radiusMiles)
+  const baselineCells = await probeTitles(titles, null, presets, radiusMiles, filters)
   const baseline = build(null, baselineCells, null)
 
   const scored: KeywordScore[] = []
   for (const k of candidates.slice(0, MAX_KEYWORD_CANDIDATES)) {
-    scored.push(build(k, await probeTitles(titles, k, presets, radiusMiles), baselineCells))
+    scored.push(build(k, await probeTitles(titles, k, presets, radiusMiles, filters), baselineCells))
   }
 
   // The board's job here is to VETO, not to rank. Every candidate that survives
@@ -501,6 +510,17 @@ export type ProposalSources = {
   resumeText: string | null
   careerStage: string | null
   primaryOtherDescription: string | null
+  /** The client's standing industry preference. Lanes inherit it at creation. */
+  targetIndustries?: string[]
+  excludedIndustries?: string[]
+}
+
+/** camelCase, as searchState wants it. */
+export type SearchFilters = {
+  industries?: string[]
+  excludedIndustries?: string[]
+  companyKeywords?: string[]
+  excludedCompanyKeywords?: string[]
 }
 
 export type ProposedLane = {
@@ -513,6 +533,13 @@ export type ProposedLane = {
   years_max: number | null
   companies: string[]
   exclusions: { companies?: string[]; title_keywords?: string[] }
+  /** Board-side filters, snake_case as the column stores them. */
+  filters: {
+    industries?: string[]
+    excluded_industries?: string[]
+    company_keywords?: string[]
+    excluded_company_keywords?: string[]
+  }
 }
 
 export type ProposalResult = {
@@ -591,6 +618,13 @@ export async function proposeLane(
     years_max: years.years_max,
     companies: [],
     exclusions,
+    // Inherited from the profile. "Not education" is a fact about the client,
+    // not about one search, so a lane starts where the profile already stands
+    // and the coach edits from there.
+    filters: {
+      ...(src.targetIndustries?.length ? { industries: src.targetIndustries } : {}),
+      ...(src.excludedIndustries?.length ? { excluded_industries: src.excludedIndustries } : {}),
+    },
   }
 
   if (dropped.length) flags.push(`${dropped.length} title(s) over the ${MAX_TITLES} cap were not proposed: ${dropped.join(", ")}`)
@@ -609,6 +643,18 @@ export async function proposeLane(
     )
   }
   if (!titles.length) flags.push("No usable titles came out of the client's target roles.")
+  if (src.excludedIndustries?.length || src.targetIndustries?.length) {
+    flags.push(
+      `Inherited from the profile: ` +
+        [
+          src.targetIndustries?.length ? `only ${src.targetIndustries.join(", ")}` : "",
+          src.excludedIndustries?.length ? `never ${src.excludedIndustries.join(", ")}` : "",
+        ]
+          .filter(Boolean)
+          .join("; ") +
+        `. Every count below already has these applied.`
+    )
+  }
   if (!eligible.length) {
     const top = sectors[0]
     flags.push(
@@ -622,7 +668,10 @@ export async function proposeLane(
 
   if (opts.probe && titles.length) {
     // The resume nominates candidates; the board picks the winner.
-    const scoring = await scoreKeywords(titles, eligible.map((s) => s.keyword), loc.chosen, loc.radius_miles)
+    const scoring = await scoreKeywords(titles, eligible.map((s) => s.keyword), loc.chosen, loc.radius_miles, {
+      industries: src.targetIndustries,
+      excludedIndustries: src.excludedIndustries,
+    })
     proposal.keyword = scoring.chosen.keyword
 
     const cells = scoring.chosen.cells

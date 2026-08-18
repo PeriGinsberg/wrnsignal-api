@@ -38,6 +38,19 @@ export type LaneConfig = {
   years_max: number | null
   companies: string[]
   exclusions: { companies?: string[]; title_keywords?: string[] }
+  filters?: LaneFilters | null
+}
+
+/**
+ * Board-side filters, snake_case as the column stores them. Distinct from
+ * `exclusions`: these are sent to the board so the rows never arrive, while
+ * exclusions drop rows the board already returned.
+ */
+export type LaneFilters = {
+  industries?: string[]
+  excluded_industries?: string[]
+  company_keywords?: string[]
+  excluded_company_keywords?: string[]
 }
 
 export type Result = {

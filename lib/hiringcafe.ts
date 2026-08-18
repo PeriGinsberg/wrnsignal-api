@@ -540,15 +540,49 @@ export type SearchOpts = {
   radiusMiles: number
   days: number
   seniority: string[]
+
+  /**
+   * Board-side filters. Each is optional and an EMPTY array means no restriction
+   * on that axis, never "match nothing" — an empty array is simply not sent.
+   *
+   * Industry values are exact labels off enriched_company_data.industries, and
+   * the vocabulary is loose: "Education" and "Higher Education" are different
+   * values, and excluding one does not exclude the other. Verified against the
+   * live endpoint 2026-08-18 — on "baseball operations" (26 results):
+   * industries 15, excludedIndustries 14, companyKeywords 13,
+   * excludedCompanyKeywords 15. Each was confirmed by the count MOVING, because
+   * a field this backend does not recognise is ignored in silence.
+   */
+  industries?: string[]
+  excludedIndustries?: string[]
+  /** Matched against the employer, not the posting. */
+  companyKeywords?: string[]
+  excludedCompanyKeywords?: string[]
+  /** How multiple companyKeywords combine. The board accepts AND and OR. */
+  companyKeywordsBooleanOperator?: "AND" | "OR"
 }
 
 export function buildSearchState(opts: SearchOpts): Record<string, any> {
-  const base = {
+  const base: Record<string, any> = {
     searchQuery: opts.query,
     dateFetchedPastNDays: opts.days,
     seniorityLevel: opts.seniority,
     sortBy: "default",
   }
+
+  // Omit an empty filter rather than sending []. Both behave the same today, but
+  // an empty array is the shape most likely to acquire a meaning later, and a
+  // searchState carrying only what was actually asked for is the one you can
+  // read back off a failing run.
+  if (opts.industries?.length) base.industries = opts.industries
+  if (opts.excludedIndustries?.length) base.excludedIndustries = opts.excludedIndustries
+  if (opts.companyKeywords?.length) {
+    base.companyKeywords = opts.companyKeywords
+    if (opts.companyKeywordsBooleanOperator) {
+      base.companyKeywordsBooleanOperator = opts.companyKeywordsBooleanOperator
+    }
+  }
+  if (opts.excludedCompanyKeywords?.length) base.excludedCompanyKeywords = opts.excludedCompanyKeywords
 
   // No locations: omit the key. Reachable ONLY via an explicitly empty array —
   // an unrecognised preset name still throws below rather than quietly

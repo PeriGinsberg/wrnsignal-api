@@ -23,7 +23,8 @@ import { loadAuthorizedLane } from "@/lib/collab/laneAccess"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-const LANE_FIELDS = "id, client_profile_id, name, active, titles, keyword, location, years_max, companies, exclusions"
+const LANE_FIELDS =
+  "id, client_profile_id, name, active, titles, keyword, location, years_max, companies, exclusions, filters"
 
 // Every title is one board fetch on every run, so the list is a cost, not just
 // a preference. The limit is generous enough that nobody hits it by accident
@@ -73,11 +74,33 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // rather than a silent no-op write.
     const wantsTitles = body?.titles !== undefined
     const wantsActive = body?.active !== undefined
-    if (!wantsTitles && !wantsActive) {
-      return withCorsJson(req, { ok: false, error: "nothing to update — send titles, active, or both" }, 400)
+    const wantsFilters = body?.filters !== undefined
+    if (!wantsTitles && !wantsActive && !wantsFilters) {
+      return withCorsJson(req, { ok: false, error: "nothing to update — send titles, active, filters, or any combination" }, 400)
     }
 
-    const update: { titles?: string[]; active?: boolean } = {}
+    const update: { titles?: string[]; active?: boolean; filters?: Record<string, string[]> } = {}
+
+    if (wantsFilters) {
+      // Whole-object replace, not a merge: a coach clearing every industry must
+      // be able to, and a merge makes removal impossible to express.
+      const raw = body.filters
+      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+        return withCorsJson(req, { ok: false, error: "filters must be an object" }, 400)
+      }
+      const FILTER_KEYS = ["industries", "excluded_industries", "company_keywords", "excluded_company_keywords"] as const
+      const filters: Record<string, string[]> = {}
+      for (const key of FILTER_KEYS) {
+        const v = (raw as any)[key]
+        if (v === undefined || v === null) continue
+        if (!Array.isArray(v) || !v.every((x: unknown) => typeof x === "string")) {
+          return withCorsJson(req, { ok: false, error: `filters.${key} must be an array of strings` }, 400)
+        }
+        const cleaned = v.map((x: string) => x.trim()).filter(Boolean)
+        if (cleaned.length) filters[key] = cleaned
+      }
+      update.filters = filters
+    }
 
     if (wantsActive) {
       if (typeof body.active !== "boolean") {

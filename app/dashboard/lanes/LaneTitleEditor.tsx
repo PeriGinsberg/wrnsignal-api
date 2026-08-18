@@ -18,7 +18,8 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { T, card, eyebrow, input, btnPrimary, btnSecondary } from "../../../lib/dashboard-theme"
-import { authFetch, locationLabel, type Discovery, type LaneConfig } from "./laneApi"
+import { authFetch, locationLabel, type Discovery, type LaneConfig, type LaneFilters } from "./laneApi"
+import { FilterListEditor } from "./FilterListEditor"
 
 export function LaneTitleEditor({
   laneId,
@@ -49,6 +50,8 @@ export function LaneTitleEditor({
   const [counts, setCounts] = useState<{ results: number; runs: number } | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+
+  const [savingFilters, setSavingFilters] = useState(false)
 
   const [running, setRunning] = useState(false)
   const [runSummary, setRunSummary] = useState<string | null>(null)
@@ -194,6 +197,32 @@ export function LaneTitleEditor({
     onDeleted?.()
   }, [laneId, onDeleted])
 
+  // All four board filters save through one call, because they are one column
+  // and PATCH replaces the object wholesale — a per-list write would have the
+  // last one silently erase the others.
+  const saveFilters = useCallback(
+    async (next: LaneFilters) => {
+      if (!lane) return
+      const previous = lane.filters ?? {}
+      setLane({ ...lane, filters: next })
+      setSavingFilters(true)
+      const res = await authFetch(`/api/lanes/${encodeURIComponent(laneId)}`, {
+        method: "PATCH",
+        body: JSON.stringify({ filters: next }),
+      })
+      setSavingFilters(false)
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j.ok) {
+        setError(j.error || "Could not save that filter change")
+        setLane((prev) => (prev ? { ...prev, filters: previous } : prev))
+        return
+      }
+      setError(null)
+      setLane(j.lane)
+    },
+    [lane, laneId]
+  )
+
   const search = useCallback(async () => {
     const p = phrase.trim()
     if (!p) return
@@ -214,6 +243,8 @@ export function LaneTitleEditor({
 
   if (loading) return <p style={{ color: T.MUTED, fontSize: 13 }}>Loading lane…</p>
   if (!lane) return <p style={{ color: T.ERROR, fontSize: 13 }}>{error || "Lane not found"}</p>
+
+  const filters: LaneFilters = lane.filters ?? {}
 
   return (
     <div>
@@ -343,6 +374,52 @@ export function LaneTitleEditor({
             </button>
           </div>
         ))}
+      </section>
+
+      <section style={{ ...card, padding: "18px 20px", marginBottom: 14 }}>
+        <div style={{ ...eyebrow, color: T.MUTED, marginBottom: 6 }}>
+          Board filters {savingFilters && <span style={{ color: T.DIM, fontWeight: 500 }}>· saving…</span>}
+        </div>
+        <p style={{ fontSize: 12, color: T.MUTED, margin: "0 0 14px" }}>
+          These narrow the search itself, so filtered jobs never reach the queue. Industry names must match the
+          board exactly — &ldquo;Education&rdquo; and &ldquo;Higher Education&rdquo; are different values, and
+          excluding one does not exclude the other.
+        </p>
+
+        <FilterListEditor
+          label="Industries"
+          hint="Only these industries. Empty means no restriction."
+          values={filters.industries ?? []}
+          placeholder="Sports"
+          disabled={savingFilters}
+          onChange={(v) => saveFilters({ ...filters, industries: v })}
+        />
+        <FilterListEditor
+          label="Excluded industries"
+          hint="Never these. Usually inherited from the client's profile."
+          values={filters.excluded_industries ?? []}
+          placeholder="Higher Education"
+          tone="negative"
+          disabled={savingFilters}
+          onChange={(v) => saveFilters({ ...filters, excluded_industries: v })}
+        />
+        <FilterListEditor
+          label="Company keywords"
+          hint="Matched against the employer, not the job title — a way to say “sports organisations” rather than “jobs with sports in the name”."
+          values={filters.company_keywords ?? []}
+          placeholder="sports"
+          disabled={savingFilters}
+          onChange={(v) => saveFilters({ ...filters, company_keywords: v })}
+        />
+        <FilterListEditor
+          label="Excluded company keywords"
+          hint="Never employers matching these."
+          values={filters.excluded_company_keywords ?? []}
+          placeholder="university"
+          tone="negative"
+          disabled={savingFilters}
+          onChange={(v) => saveFilters({ ...filters, excluded_company_keywords: v })}
+        />
       </section>
 
       <section style={{ ...card, padding: "18px 20px", marginBottom: 14 }}>

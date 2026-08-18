@@ -26,6 +26,12 @@ type Proposal = {
   years_max: number | null
   companies: string[]
   exclusions: { companies?: string[]; title_keywords?: string[] }
+  filters?: {
+    industries?: string[]
+    excluded_industries?: string[]
+    company_keywords?: string[]
+    excluded_company_keywords?: string[]
+  }
 }
 
 type ProposalResponse = {
@@ -86,6 +92,10 @@ export function CreateLanePanel({
         years_max: data.proposal.years_max,
         companies: data.proposal.companies,
         exclusions: data.proposal.exclusions,
+        // Sent explicitly. Omitting it would make the route fall back to the
+        // profile — the same values today, but a coach who cleared a filter in
+        // review would watch it reappear.
+        filters: data.proposal.filters ?? {},
       }),
     })
     const j = await res.json().catch(() => ({}))
@@ -227,6 +237,12 @@ export function CreateLanePanel({
           label="Excluded title words"
           value={data!.proposal.exclusions?.title_keywords?.join(", ") || "none"}
         />
+        {!!data!.proposal.filters?.industries?.length && (
+          <Fact label="Industries" value={data!.proposal.filters!.industries!.join(", ")} />
+        )}
+        {!!data!.proposal.filters?.excluded_industries?.length && (
+          <Fact label="Excluded industries" value={data!.proposal.filters!.excluded_industries!.join(", ")} />
+        )}
       </div>
       <p style={{ fontSize: 12, color: T.DIM, margin: "0 0 16px" }}>{data!.evidence.yearsRule}</p>
 

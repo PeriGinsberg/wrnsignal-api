@@ -22,6 +22,7 @@ import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { loadAuthorizedLane } from "@/lib/collab/laneAccess"
 import { SENIORITY_LEVELS, fetchJobs, queryFor } from "@/lib/hiringcafe"
+import { toSearchFilters } from "@/lib/laneRunner"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -54,7 +55,7 @@ export async function GET(req: NextRequest) {
       profileId,
       "read",
       supabase,
-      "id, client_profile_id, titles, keyword, location"
+      "id, client_profile_id, titles, keyword, location, filters"
     )
     if (accessErr) return withCorsJson(req, { ok: false, error: accessErr }, accessErr === "Forbidden" ? 403 : 404)
 
@@ -87,6 +88,9 @@ export async function GET(req: NextRequest) {
       days: DAYS,
       seniority: SENIORITY,
       pages: 1,
+      // The lane's own board filters, so discovery lists titles this lane can
+      // actually surface rather than titles it would have found without them.
+      ...toSearchFilters((lane as any).filters),
     })
 
     // Group on core_job_title — the board's own normalisation. Grouping on the

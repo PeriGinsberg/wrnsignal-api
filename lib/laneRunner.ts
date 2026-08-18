@@ -37,7 +37,28 @@ export type Lane = {
   location: { presets?: string[]; preset?: string | null; radius_miles?: number; days_posted?: number }
   years_max: number | null
   companies: string[]
+  // Applied by US, after the fetch, against rows the board already sent.
   exclusions: { companies?: string[]; title_keywords?: string[] }
+  // Sent TO the board, so the rows never arrive. Same word in English, opposite
+  // machine — see 20260818_industry_filters.sql.
+  filters?: LaneFilters | null
+}
+
+export type LaneFilters = {
+  industries?: string[]
+  excluded_industries?: string[]
+  company_keywords?: string[]
+  excluded_company_keywords?: string[]
+}
+
+/** snake_case in the column, camelCase in searchState. One place knows both. */
+export function toSearchFilters(f: LaneFilters | null | undefined) {
+  return {
+    industries: f?.industries ?? [],
+    excludedIndustries: f?.excluded_industries ?? [],
+    companyKeywords: f?.company_keywords ?? [],
+    excludedCompanyKeywords: f?.excluded_company_keywords ?? [],
+  }
 }
 
 export type TitleOutcome = {
@@ -225,6 +246,7 @@ export async function runLane(
       days,
       seniority: LANE_SENIORITY,
       pages,
+      ...toSearchFilters(lane.filters),
     })
     const { kept, dropped } = applyLaneFilters(rows, lane)
 
