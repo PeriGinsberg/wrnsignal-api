@@ -42,12 +42,14 @@ type Result = {
   posted_at: string | null
 }
 
-// Mirrors lane_results_reason_valid in 20260817_lane_result_actions.sql.
-// Slugs are stored; labels are for reading. Order is roughly how often each
-// one gets used, so the common calls are the shortest travel.
+// Mirrors lane_results_reason_valid, last widened in
+// 20260817_lane_result_reason_wrong_industry.sql. Slugs are stored; labels are
+// for reading. Order is roughly how often each one gets used, so the common
+// calls are the shortest travel.
 const REASONS: Array<{ value: string; label: string }> = [
   { value: "too_senior", label: "Too senior" },
   { value: "wrong_function", label: "Wrong function" },
+  { value: "wrong_industry", label: "Wrong industry" },
   { value: "wrong_location", label: "Wrong location" },
   { value: "wrong_employer", label: "Wrong employer" },
   { value: "right_employer_wrong_level", label: "Right employer, wrong level" },
