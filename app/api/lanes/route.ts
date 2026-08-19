@@ -60,7 +60,11 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await supabase
       .from("search_lanes")
-      .select("id, client_profile_id, name, active, titles, keyword, location, years_max")
+      // `filters` is here because LaneSummary declares it. A typed field the list
+      // never populates reads as "no filters set" to anything that defaults it,
+      // which is the same silent-wrongness the column being missing from the run
+      // paths caused.
+      .select("id, client_profile_id, name, active, titles, keyword, location, years_max, filters")
       .in("client_profile_id", owners)
       .order("created_at", { ascending: true })
     if (error) throw new Error(`Lanes failed: ${error.message}`)
