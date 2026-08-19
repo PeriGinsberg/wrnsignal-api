@@ -14,6 +14,7 @@
 // authorize first and propose second.
 
 import { fetchJobs, queryFor, LOCATIONS, SENIORITY_LEVELS } from "./hiringcafe"
+import { commitmentTypesFromJobType } from "./laneCommitment"
 
 // ---------------------------------------------------------------------------
 // Sector keywords
@@ -549,6 +550,8 @@ export type ProposalSources = {
   /** The client's standing industry preference. Lanes inherit it at creation. */
   targetIndustries?: string[]
   excludedIndustries?: string[]
+  /** client_profiles.job_type — translated, not passed through. */
+  jobType?: string | null
 }
 
 /** camelCase, as searchState wants it. */
@@ -557,6 +560,7 @@ export type SearchFilters = {
   excludedIndustries?: string[]
   companyKeywords?: string[]
   excludedCompanyKeywords?: string[]
+  commitmentTypes?: string[]
 }
 
 export type ProposedLane = {
@@ -575,6 +579,7 @@ export type ProposedLane = {
     excluded_industries?: string[]
     company_keywords?: string[]
     excluded_company_keywords?: string[]
+    commitment_types?: string[]
   }
 }
 
@@ -635,6 +640,8 @@ export async function proposeLane(
   // The name says where. One market names itself; several are summarised,
   // because "MIAMI + FORT_LAUDERDALE + WEST_PALM_BEACH + BOCA_RATON" is not a
   // name anybody wants on a tab.
+  const commitments = commitmentTypesFromJobType(src.jobType)
+
   const scope =
     loc.chosen.length === 0
       ? "Anywhere"
@@ -660,6 +667,9 @@ export async function proposeLane(
     filters: {
       ...(src.targetIndustries?.length ? { industries: src.targetIndustries } : {}),
       ...(src.excludedIndustries?.length ? { excluded_industries: src.excludedIndustries } : {}),
+      // A client who says Full-time should not be shown internships every
+      // night. Translated from the profile's vocabulary to the board's.
+      ...(commitments.length ? { commitment_types: commitments } : {}),
     },
   }
 
@@ -679,6 +689,17 @@ export async function proposeLane(
     )
   }
   if (!titles.length) flags.push("No usable titles came out of the client's target roles.")
+  if (commitments.length) {
+    flags.push(
+      `Commitment inherited from the profile's job type (${src.jobType}): ${commitments.join(", ")}. ` +
+        `Postings of other kinds — internships, seasonal work — will not reach the queue.`
+    )
+  } else if (src.jobType) {
+    flags.push(
+      `Job type "${src.jobType}" set no commitment filter, so every kind of posting reaches the queue — ` +
+        `internships and seasonal work included.`
+    )
+  }
   if (src.excludedIndustries?.length || src.targetIndustries?.length) {
     flags.push(
       `Inherited from the profile: ` +
@@ -707,6 +728,7 @@ export async function proposeLane(
     const scoring = await scoreKeywords(titles, eligible.map((s) => s.keyword), loc.chosen, loc.radius_miles, {
       industries: src.targetIndustries,
       excludedIndustries: src.excludedIndustries,
+      commitmentTypes: commitments,
     })
     proposal.keyword = scoring.chosen.keyword
 

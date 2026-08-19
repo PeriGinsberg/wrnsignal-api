@@ -49,6 +49,8 @@ export type LaneFilters = {
   excluded_industries?: string[]
   company_keywords?: string[]
   excluded_company_keywords?: string[]
+  /** Board spelling only — see lib/laneCommitment.ts. */
+  commitment_types?: string[]
 }
 
 /** snake_case in the column, camelCase in searchState. One place knows both. */
@@ -58,6 +60,7 @@ export function toSearchFilters(f: LaneFilters | null | undefined) {
     excludedIndustries: f?.excluded_industries ?? [],
     companyKeywords: f?.company_keywords ?? [],
     excludedCompanyKeywords: f?.excluded_company_keywords ?? [],
+    commitmentTypes: f?.commitment_types ?? [],
   }
 }
 

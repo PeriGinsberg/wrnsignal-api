@@ -19,6 +19,7 @@ import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { loadAuthorizedLane } from "@/lib/collab/laneAccess"
+import { toBoardCommitment } from "@/lib/laneCommitment"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -88,7 +89,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
         return withCorsJson(req, { ok: false, error: "filters must be an object" }, 400)
       }
-      const FILTER_KEYS = ["industries", "excluded_industries", "company_keywords", "excluded_company_keywords"] as const
+      const FILTER_KEYS = ["industries", "excluded_industries", "company_keywords", "excluded_company_keywords", "commitment_types"] as const
       const filters: Record<string, string[]> = {}
       for (const key of FILTER_KEYS) {
         const v = (raw as any)[key]
@@ -96,7 +97,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         if (!Array.isArray(v) || !v.every((x: unknown) => typeof x === "string")) {
           return withCorsJson(req, { ok: false, error: `filters.${key} must be an array of strings` }, 400)
         }
-        const cleaned = v.map((x: string) => x.trim()).filter(Boolean)
+        let cleaned = v.map((x: string) => x.trim()).filter(Boolean)
+        // See the POST handler: an unrecognised commitment type empties the
+        // lane rather than being ignored, so it is refused here.
+        if (key === "commitment_types") {
+          const bad = cleaned.filter((x) => !toBoardCommitment(x))
+          if (bad.length) {
+            return withCorsJson(
+              req,
+              { ok: false, error: `unknown commitment type(s): ${bad.join(", ")}. Use one of Full Time, Part Time, Internship, Contract, Temporary, Seasonal, Volunteer.` },
+              400
+            )
+          }
+          cleaned = cleaned.map((x) => toBoardCommitment(x)!)
+        }
         if (cleaned.length) filters[key] = cleaned
       }
       update.filters = filters

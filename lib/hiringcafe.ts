@@ -574,6 +574,19 @@ export type SearchOpts = {
   excludedCompanyKeywords?: string[]
   /** How multiple companyKeywords combine. The board accepts AND and OR. */
   companyKeywordsBooleanOperator?: "AND" | "OR"
+
+  /**
+   * Full Time / Part Time / Internship / Contract / Temporary / Seasonal /
+   * Volunteer. Case-insensitive, but the SPACED spelling only: "Full-time"
+   * returns zero, as does any unrecognised value.
+   *
+   * That makes this filter unlike the others here. An unknown industry or
+   * company keyword simply fails to match inside an OR and the lane still
+   * returns its remaining results; an unknown commitment type filters the lane
+   * to nothing, which is indistinguishable from a quiet week. Values must come
+   * from lib/laneCommitment.ts rather than from user text.
+   */
+  commitmentTypes?: string[]
 }
 
 export function buildSearchState(opts: SearchOpts): Record<string, any> {
@@ -597,6 +610,7 @@ export function buildSearchState(opts: SearchOpts): Record<string, any> {
     }
   }
   if (opts.excludedCompanyKeywords?.length) base.excludedCompanyKeywords = opts.excludedCompanyKeywords
+  if (opts.commitmentTypes?.length) base.commitmentTypes = opts.commitmentTypes
 
   // No locations: omit the key. Reachable ONLY via an explicitly empty array —
   // an unrecognised preset name still throws below rather than quietly

@@ -20,6 +20,7 @@ import { useCallback, useEffect, useState } from "react"
 import { T, card, eyebrow, input, btnPrimary, btnSecondary } from "../../../lib/dashboard-theme"
 import { authFetch, locationLabel, type Discovery, type LaneConfig, type LaneFilters } from "./laneApi"
 import { FilterListEditor } from "./FilterListEditor"
+import { BOARD_COMMITMENTS } from "../../../lib/laneCommitment"
 
 export function LaneTitleEditor({
   laneId,
@@ -174,11 +175,12 @@ export function LaneTitleEditor({
     // it. A healthy lane reports added 0 for days, so collapsing the two would
     // make a working lane look dead.
     const { found, added, refreshed } = j.run
+    // The lane list holds the last-run line; it is now out of date.
+    onRan?.()
     setRunSummary(
       `Found ${found} job${found === 1 ? "" : "s"} · ${added} new to this lane · ${refreshed} already here` +
         (j.was_paused ? " · lane is still paused, this run was manual" : "")
     )
-    onRan?.()
   }, [laneId, onRan])
 
   // Two steps, and the second one names what goes. Pausing is the reversible
@@ -386,6 +388,40 @@ export function LaneTitleEditor({
           Education and the rest, so one term is usually enough. Two or more words must match a whole industry
           name exactly: &ldquo;Higher Education&rdquo; works, &ldquo;Higher Ed&rdquo; matches nothing.
         </p>
+
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ ...eyebrow, color: T.MUTED, marginBottom: 4 }}>Commitment</div>
+          <p style={{ fontSize: 12, color: T.DIM, margin: "0 0 8px" }}>
+            Inherited from the client&apos;s job type. Select none to accept every kind of posting — including
+            internships and seasonal work.
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {BOARD_COMMITMENTS.map((c) => {
+              const on = (filters.commitment_types ?? []).includes(c)
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  disabled={savingFilters}
+                  onClick={() => {
+                    const cur = filters.commitment_types ?? []
+                    const next = on ? cur.filter((x) => x !== c) : [...cur, c]
+                    saveFilters({ ...filters, commitment_types: next })
+                  }}
+                  style={{
+                    fontSize: 12, fontWeight: 700, borderRadius: 999, padding: "4px 12px",
+                    cursor: savingFilters ? "not-allowed" : "pointer",
+                    background: on ? T.GLASS : "transparent",
+                    border: `1px solid ${on ? T.ORANGE_BORDER : T.BORDER_SOFT}`,
+                    color: on ? T.TEXT : T.MUTED,
+                  }}
+                >
+                  {c}
+                </button>
+              )
+            })}
+          </div>
+        </div>
 
         <FilterListEditor
           label="Industries"

@@ -55,7 +55,7 @@ const SPACING_MS = 15_000
 const MIN_LANE_MS = 35_000
 
 const LANE_FIELDS =
-  "id, client_profile_id, name, active, titles, keyword, location, years_max, companies, exclusions"
+  "id, client_profile_id, name, active, titles, keyword, location, years_max, companies, exclusions, filters"
 
 function getSupabaseAdmin(): SupabaseClient {
   const url = process.env.SUPABASE_URL

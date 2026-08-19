@@ -95,7 +95,12 @@ export async function loadAuthorizedLane(
   profileId: string,
   act: LaneAct,
   supabase: SupabaseClient,
-  columns = "id, client_profile_id, name, active, titles, keyword, location, years_max, companies, exclusions"
+  // `filters` MUST be here. It was omitted, so every run that loaded a lane
+  // through this helper applied no board filters at all — the lane stored them,
+  // the edit screen showed them, and the nightly run ignored them. Nothing about
+  // that failure is visible in the results: you get more jobs, which looks like
+  // a good night.
+  columns = "id, client_profile_id, name, active, titles, keyword, location, years_max, companies, exclusions, filters"
 ): Promise<{ lane: any; error: null } | { lane: null; error: "Lane not found" | "Forbidden" }> {
   const { data } = await supabase.from("search_lanes").select(columns).eq("id", laneId).maybeSingle()
   if (!data) return { lane: null, error: "Lane not found" }

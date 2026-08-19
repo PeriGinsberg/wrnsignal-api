@@ -31,6 +31,7 @@ type Proposal = {
     excluded_industries?: string[]
     company_keywords?: string[]
     excluded_company_keywords?: string[]
+    commitment_types?: string[]
   }
 }
 
@@ -237,6 +238,9 @@ export function CreateLanePanel({
           label="Excluded title words"
           value={data!.proposal.exclusions?.title_keywords?.join(", ") || "none"}
         />
+        {!!data!.proposal.filters?.commitment_types?.length && (
+          <Fact label="Commitment" value={data!.proposal.filters!.commitment_types!.join(", ")} />
+        )}
         {!!data!.proposal.filters?.industries?.length && (
           <Fact label="Industries" value={data!.proposal.filters!.industries!.join(", ")} />
         )}

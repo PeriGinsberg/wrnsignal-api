@@ -16,6 +16,7 @@ import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { canAccessLaneOwner, laneScopeIds } from "@/lib/collab/laneAccess"
 import { runLaneLogged, type Lane } from "@/lib/laneRunner"
+import { commitmentTypesFromJobType, toBoardCommitment } from "@/lib/laneCommitment"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -64,8 +65,10 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: true })
     if (error) throw new Error(`Lanes failed: ${error.message}`)
 
-    // Queue depth per lane. Counted here rather than joined so the number
-    // means the same thing as the review page's own filter — action IS NULL.
+    // Queue depth per lane, and the last run. A lane that has stopped running
+    // and a lane finding nothing look identical from a queue count alone, which
+    // is the whole reason lane_runs exists — so the count never travels without
+    // it.
     const lanes = await Promise.all(
       (data ?? []).map(async (l: any) => {
         const { count } = await supabase
@@ -73,10 +76,19 @@ export async function GET(req: NextRequest) {
           .select("id", { count: "exact", head: true })
           .eq("lane_id", l.id)
           .is("action", null)
+        const { data: lastRun } = await supabase
+          .from("lane_runs")
+          .select("status, trigger, started_at, jobs_found, jobs_added, error")
+          .eq("lane_id", l.id)
+          .order("started_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
         const owner = byId.get(l.client_profile_id)
         return {
           ...l,
           unreviewed: count ?? 0,
+          last_run: lastRun ?? null,
           client_name: owner?.name ?? null,
           client_email: owner?.email ?? null,
           is_own: l.client_profile_id === profileId,
@@ -172,7 +184,7 @@ export async function POST(req: NextRequest) {
     // Board filters. Four optional string lists; anything else is rejected
     // rather than coerced, because a filter silently dropped is a lane quietly
     // searching wider than the coach believes.
-    const FILTER_KEYS = ["industries", "excluded_industries", "company_keywords", "excluded_company_keywords"] as const
+    const FILTER_KEYS = ["industries", "excluded_industries", "company_keywords", "excluded_company_keywords", "commitment_types"] as const
     const filters: Record<string, string[]> = {}
     const rawFilters = body?.filters && typeof body.filters === "object" ? body.filters : null
     if (rawFilters) {
@@ -182,7 +194,21 @@ export async function POST(req: NextRequest) {
         if (!Array.isArray(v) || !v.every((x: unknown) => typeof x === "string")) {
           return withCorsJson(req, { ok: false, error: `filters.${key} must be an array of strings` }, 400)
         }
-        const cleaned = v.map((x: string) => x.trim()).filter(Boolean)
+        let cleaned = v.map((x: string) => x.trim()).filter(Boolean)
+        // A commitment type outside the closed set does not narrow the lane, it
+        // empties it. Reject rather than store something that silently returns
+        // nothing every night.
+        if (key === "commitment_types") {
+          const bad = cleaned.filter((x) => !toBoardCommitment(x))
+          if (bad.length) {
+            return withCorsJson(
+              req,
+              { ok: false, error: `unknown commitment type(s): ${bad.join(", ")}. Use one of Full Time, Part Time, Internship, Contract, Temporary, Seasonal, Volunteer.` },
+              400
+            )
+          }
+          cleaned = cleaned.map((x) => toBoardCommitment(x)!)
+        }
         if (cleaned.length) filters[key] = cleaned
       }
     } else {
@@ -191,13 +217,17 @@ export async function POST(req: NextRequest) {
       // lane rather than only the one where somebody remembered.
       const { data: prof } = await supabase
         .from("client_profiles")
-        .select("target_industries, excluded_industries")
+        .select("target_industries, excluded_industries, job_type")
         .eq("id", clientProfileId)
         .maybeSingle()
       const inc = ((prof as any)?.target_industries ?? []) as string[]
       const exc = ((prof as any)?.excluded_industries ?? []) as string[]
       if (inc.length) filters.industries = inc
       if (exc.length) filters.excluded_industries = exc
+      // "Full-time" on the profile means "Full Time" to the board. Translated,
+      // never passed through — the profile's own spelling matches nothing.
+      const commitments = commitmentTypesFromJobType((prof as any)?.job_type)
+      if (commitments.length) filters.commitment_types = commitments
     }
 
     const keywordRaw = typeof body?.keyword === "string" ? body.keyword.trim() : ""
