@@ -33,7 +33,7 @@ import { T, card, eyebrow } from "../../../lib/dashboard-theme"
 import { LaneResultRow } from "./LaneResultRow"
 import { LaneTitleEditor } from "./LaneTitleEditor"
 import { CreateLanePanel } from "./CreateLanePanel"
-import { authFetch, laneTabLabel, type LaneSummary, type Result } from "./laneApi"
+import { authFetch, laneTabLabel, lastRunLabel, type LaneSummary, type Result } from "./laneApi"
 
 export function LanesPanel({
   clientProfileId = null,
@@ -270,6 +270,24 @@ export function LanesPanel({
               )
             })}
           </div>
+
+          {/* When this lane last ran. A queue with nothing in it means one of
+              two very different things — the lane found nothing, or the lane
+              stopped running — and only this line tells them apart. */}
+          {lane && (
+            <p
+              style={{
+                fontSize: 12,
+                color: lane.last_run?.status === "error" ? T.ERROR : T.DIM,
+                margin: "-8px 0 14px",
+              }}
+            >
+              Last run: {lastRunLabel(lane.last_run)}
+              {lane.last_run?.trigger === "manual" ? " (run by hand)" : ""}
+              {lane.last_run?.error ? ` — ${lane.last_run.error.slice(0, 90)}` : ""}
+              {!lane.active && " · paused, so it will not run tonight"}
+            </p>
+          )}
 
           {/* Titles and discovery, collapsed by default. The queue is the reason
               you came; editing what feeds it is the occasional trip. */}

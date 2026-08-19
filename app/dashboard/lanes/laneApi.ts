@@ -25,6 +25,33 @@ export type LaneSummary = {
   // May the caller score a result onto this client's tracker? Requires full
   // coach access, the same bar /api/coach/recommend-job enforces.
   can_send: boolean
+  /** The most recent run, or null if the lane has never run. */
+  last_run: LaneRun | null
+}
+
+export type LaneRun = {
+  status: "ok" | "error" | "skipped"
+  trigger: "cron" | "manual"
+  started_at: string
+  jobs_found: number | null
+  jobs_added: number | null
+  error: string | null
+}
+
+/**
+ * How a run reads on one line.
+ *
+ * `found` and `added` stay separate: a healthy lane reports 0 added for days,
+ * so collapsing them would make a working lane look dead — the same reason the
+ * columns are separate.
+ */
+export function lastRunLabel(r: LaneRun | null): string {
+  if (!r) return "never run"
+  const mins = Math.round((Date.now() - new Date(r.started_at).getTime()) / 60000)
+  const when = mins < 60 ? `${mins}m ago` : mins < 1440 ? `${Math.round(mins / 60)}h ago` : `${Math.round(mins / 1440)}d ago`
+  if (r.status === "error") return `failed ${when}`
+  if (r.status === "skipped") return `skipped ${when} — the sweep ran out of time`
+  return `${when} · ${r.jobs_found ?? 0} found · ${r.jobs_added ?? 0} new`
 }
 
 export type LaneConfig = {
@@ -51,6 +78,7 @@ export type LaneFilters = {
   excluded_industries?: string[]
   company_keywords?: string[]
   excluded_company_keywords?: string[]
+  commitment_types?: string[]
 }
 
 export type Result = {
