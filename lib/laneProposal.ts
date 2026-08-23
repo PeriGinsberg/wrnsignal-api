@@ -209,6 +209,29 @@ const PRESET_ALIASES: Record<string, string[]> = {
   phoenix: ["phoenix", "scottsdale", "tempe"],
   seattle: ["seattle", "puget sound", "bellevue"],
   washington_dc: ["washington dc", "washington, d.c.", "d.c.", "dc metro", "dmv"],
+  columbus: ["columbus"],
+  cleveland: ["cleveland"],
+  cincinnati: ["cincinnati", "cincy"],
+  indianapolis: ["indianapolis", "indy"],
+  detroit: ["detroit", "metro detroit"],
+  minneapolis: ["minneapolis", "twin cities", "st. paul", "saint paul"],
+  st_louis: ["st. louis", "st louis", "saint louis", "stl"],
+  kansas_city: ["kansas city", "kc metro"],
+  milwaukee: ["milwaukee"],
+  pittsburgh: ["pittsburgh"],
+  charlotte: ["charlotte"],
+  nashville: ["nashville", "middle tennessee"],
+  austin: ["austin"],
+  houston: ["houston"],
+  san_diego: ["san diego"],
+  // Resolves to Portland OR, the preset. A client meaning Portland ME gets the
+  // wrong coast, which is why the alias list stops at the two unambiguous
+  // spellings rather than reaching for "portland, maine" too.
+  portland: ["portland", "pdx"],
+  salt_lake_city: ["salt lake city", "salt lake", "slc"],
+  // St. Petersburg is inside a 25-mile radius of Tampa, so the preset covers a
+  // client who names it.
+  tampa: ["tampa", "tampa bay", "st. petersburg", "saint petersburg"],
 }
 
 // Regions are genuinely several markets, so they only became representable when
@@ -224,9 +247,13 @@ const REGION_ALIASES: Record<string, string[]> = {
   "socal": ["los_angeles"],
 }
 
-// Cities clients name often. Recognised only so an unsupported one can be
-// named in the output; none of these are searchable until someone adds a
-// payload sourced from /api/searchLocation to LOCATIONS.
+// Cities clients name often. A superset of the searchable ones: an entry here
+// that also has a PRESET_ALIASES alias is covered and drops out of
+// `unsupported` below, and an entry that does not is reported by name rather
+// than approximated with the nearest preset. Making one of the latter
+// searchable means adding a payload sourced from /api/searchLocation to
+// LOCATIONS, plus the alias — the preset alone leaves the city still listed
+// here as uncovered.
 const KNOWN_CITIES = [
   "san diego", "los angeles", "san francisco", "bay area", "seattle", "portland",
   "denver", "austin", "dallas", "houston", "chicago", "atlanta", "nashville",

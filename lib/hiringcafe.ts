@@ -53,12 +53,32 @@ const HEADERS = {
 // looked up, does not fail loudly — the backend answers HTTP 200 with zero
 // results and an ssrError, which reads exactly like a legitimate empty search.
 //
+// A city name alone is not enough to pick from what that endpoint returns —
+// it answers "Columbus" with nine localities across nine states, and
+// "Portland" with Oregon and Maine. Match on the locality name AND the
+// administrative_area_level_1 short_name, and take the entry only when
+// exactly one candidate matches.
+//
 // Each entry below was then verified by running a real search against it
 // (query "marketing", 25mi, posted <= 29d) and requiring a non-zero count with
-// no ssrError. Counts at the time of adding, 2026-08-18: miami 312,
-// boca_raton 222, fort_lauderdale 228, west_palm_beach 131, los_angeles 773,
-// chicago 865, boston 505, san_francisco 597, atlanta 558, dallas 697,
-// denver 340, philadelphia 438, phoenix 355, seattle 314, washington_dc 725.
+// no ssrError. That check is now tests/lanes/location-presets-check.ts, which
+// runs every preset here through runLane() — re-run it after adding one.
+// Counts at the time of adding, 2026-08-18: miami 312, boca_raton 222,
+// fort_lauderdale 228, west_palm_beach 131, los_angeles 773, chicago 865,
+// boston 505, san_francisco 597, atlanta 558, dallas 697, denver 340,
+// philadelphia 438, phoenix 355, seattle 314, washington_dc 725. Added
+// 2026-08-23: columbus 214, cleveland 195, cincinnati 186, indianapolis 138,
+// detroit 262, minneapolis 344, st_louis 221, kansas_city 278, milwaukee 158,
+// pittsburgh 158, charlotte 379, nashville 268, austin 455, houston 480,
+// san_diego 211, portland 215, salt_lake_city 231, tampa 271.
+//
+// A non-zero count proves the payload parsed; it does not prove the radius
+// landed on the right city. The 2026-08-23 batch was additionally checked by
+// reading the returned rows' own locations back: every on-site row sat in the
+// expected state bar the metro's cross-border suburbs — Erlanger KY under
+// cincinnati, Windsor ON under detroit, Overland Park KS under kansas_city,
+// Fort Mill SC under charlotte, Vancouver WA under portland. Those neighbours
+// are the evidence the centre is right, which is the part a count cannot show.
 //
 // `nyc` predates this and uses a Google place id (ChIJ...) rather than the
 // index id these carry. Both are accepted; nyc is left exactly as it was
@@ -510,6 +530,528 @@ export const LOCATIONS: Record<string, any> = {
     },
     "formatted_address": "Washington, DC, US",
     "population": 689545,
+  },
+  columbus: {
+    "id": "Chk1yZQBoEtHp_8UuL4W",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Columbus",
+        "short_name": "Columbus",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Ohio",
+        "short_name": "OH",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 39.96118,
+        "lon": -82.99879,
+      },
+    },
+    "formatted_address": "Columbus, OH, US",
+    "population": 905748,
+  },
+  cleveland: {
+    "id": "NBk1yZQBoEtHp_8UuOAc",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Cleveland",
+        "short_name": "Cleveland",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Ohio",
+        "short_name": "OH",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 41.4995,
+        "lon": -81.69541,
+      },
+    },
+    "formatted_address": "Cleveland, OH, US",
+    "population": 388072,
+  },
+  cincinnati: {
+    "id": "Axk1yZQBoEtHp_8UuL4W",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Cincinnati",
+        "short_name": "Cincinnati",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Ohio",
+        "short_name": "OH",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 39.12711,
+        "lon": -84.51439,
+      },
+    },
+    "formatted_address": "Cincinnati, OH, US",
+    "population": 309317,
+  },
+  indianapolis: {
+    "id": "EBk1yZQBoEtHp_8Ur7Lp",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Indianapolis",
+        "short_name": "Indianapolis",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Indiana",
+        "short_name": "IN",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 39.76838,
+        "lon": -86.15804,
+      },
+    },
+    "formatted_address": "Indianapolis, IN, US",
+    "population": 887642,
+  },
+  detroit: {
+    "id": "IRk1yZQBoEtHp_8UuNQa",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Detroit",
+        "short_name": "Detroit",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Michigan",
+        "short_name": "MI",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 42.33143,
+        "lon": -83.04575,
+      },
+    },
+    "formatted_address": "Detroit, MI, US",
+    "population": 677116,
+  },
+  minneapolis: {
+    "id": "5hk1yZQBoEtHp_8UuNYa",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Minneapolis",
+        "short_name": "Minneapolis",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Minnesota",
+        "short_name": "MN",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 44.97997,
+        "lon": -93.26384,
+      },
+    },
+    "formatted_address": "Minneapolis, MN, US",
+    "population": 410939,
+  },
+  st_louis: {
+    "id": "dhk1yZQBoEtHp_8Ur7nq",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "St. Louis",
+        "short_name": "St. Louis",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Missouri",
+        "short_name": "MO",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 38.62727,
+        "lon": -90.19789,
+      },
+    },
+    "formatted_address": "St. Louis, MO, US",
+    "population": 315685,
+  },
+  kansas_city: {
+    "id": "0xk1yZQBoEtHp_8Ur7jq",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Kansas City",
+        "short_name": "Kansas City",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Missouri",
+        "short_name": "MO",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 39.09973,
+        "lon": -94.57857,
+      },
+    },
+    "formatted_address": "Kansas City, MO, US",
+    "population": 475378,
+  },
+  milwaukee: {
+    "id": "mBk1yZQBoEtHp_8Uv-iW",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Milwaukee",
+        "short_name": "Milwaukee",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Wisconsin",
+        "short_name": "WI",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 43.0389,
+        "lon": -87.90647,
+      },
+    },
+    "formatted_address": "Milwaukee, WI, US",
+    "population": 600155,
+  },
+  pittsburgh: {
+    "id": "_hk1yZQBoEtHp_8Uv-SW",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Pittsburgh",
+        "short_name": "Pittsburgh",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Pennsylvania",
+        "short_name": "PA",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 40.44062,
+        "lon": -79.99589,
+      },
+    },
+    "formatted_address": "Pittsburgh, PA, US",
+    "population": 304391,
+  },
+  charlotte: {
+    "id": "QRk1yZQBoEtHp_8UuLsV",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Charlotte",
+        "short_name": "Charlotte",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "North Carolina",
+        "short_name": "NC",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 35.22709,
+        "lon": -80.84313,
+      },
+    },
+    "formatted_address": "Charlotte, NC, US",
+    "population": 874579,
+  },
+  nashville: {
+    "id": "NBk1yZQBoEtHp_8UuMMX",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Nashville",
+        "short_name": "Nashville",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Tennessee",
+        "short_name": "TN",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 36.16589,
+        "lon": -86.78444,
+      },
+    },
+    "formatted_address": "Nashville, TN, US",
+    "population": 689447,
+  },
+  austin: {
+    "id": "3xk1yZQBoEtHp_8UuMMX",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Austin",
+        "short_name": "Austin",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Texas",
+        "short_name": "TX",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 30.26715,
+        "lon": -97.74306,
+      },
+    },
+    "formatted_address": "Austin, TX, US",
+    "population": 931830,
+  },
+  houston: {
+    "id": "Vxk1yZQBoEtHp_8UuMUX",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Houston",
+        "short_name": "Houston",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Texas",
+        "short_name": "TX",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 29.76328,
+        "lon": -95.36327,
+      },
+    },
+    "formatted_address": "Houston, TX, US",
+    "population": 2304580,
+  },
+  san_diego: {
+    "id": "5xk1yZQBoEtHp_8Uv-2X",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "San Diego",
+        "short_name": "San Diego",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "California",
+        "short_name": "CA",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 32.71571,
+        "lon": -117.16472,
+      },
+    },
+    "formatted_address": "San Diego, CA, US",
+    "population": 1394928,
+  },
+  portland: {
+    "id": "uRk1yZQBoEtHp_8Uv_SY",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Portland",
+        "short_name": "Portland",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Oregon",
+        "short_name": "OR",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 45.52345,
+        "lon": -122.67621,
+      },
+    },
+    "formatted_address": "Portland, OR, US",
+    "population": 652503,
+  },
+  salt_lake_city: {
+    "id": "pBk1yZQBoEtHp_8Uv_WY",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Salt Lake City",
+        "short_name": "Salt Lake City",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Utah",
+        "short_name": "UT",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 40.76078,
+        "lon": -111.89105,
+      },
+    },
+    "formatted_address": "Salt Lake City, UT, US",
+    "population": 192672,
+  },
+  tampa: {
+    "id": "QRk1yZQBoEtHp_8Ur67o",
+    "types": ["locality"],
+    "address_components": [
+      {
+        "long_name": "Tampa",
+        "short_name": "Tampa",
+        "types": ["locality"],
+      },
+      {
+        "long_name": "Florida",
+        "short_name": "FL",
+        "types": ["administrative_area_level_1"],
+      },
+      {
+        "long_name": "United States",
+        "short_name": "US",
+        "types": ["country"],
+      },
+    ],
+    "geometry": {
+      "location": {
+        "lat": 27.94752,
+        "lon": -82.45843,
+      },
+    },
+    "formatted_address": "Tampa, FL, US",
+    "population": 384959,
   },
 }
 
