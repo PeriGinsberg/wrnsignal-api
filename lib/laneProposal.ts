@@ -348,9 +348,19 @@ const DEGREE_LINE =
 // no colon and no "expected", so a rule keyed on "expected graduation" or on
 // punctuation misses both. What it still excludes is prose, where a word
 // follows instead — "graduation ceremony volunteer, 2024".
+//
+// "expected" near a year counts too, with no "graduation" word anywhere. That
+// is Jordan Bergman's resume on dev — "Bachelor of Arts in Economics" on one
+// line, "Expected May 2026 | GPA: 3.6/4.0" on the next — which found no year at
+// all and so got years_max null: a current student whose lane filtered nothing
+// by stated minimum. Bounded to 20 characters so it reads a date rather than
+// the next thing on the line, and it does accept "Expected start date June
+// 2026", which on a resume is rare enough to be worth the student it rescues.
 const MONTH = "jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec"
 const GRAD_DATE_LINE = new RegExp(
-  `\\bgraduation\\b\\s*(?:[:\\-–—]|(?:${MONTH})|(?:19|20)\\d{2})|\\bclass\\s+of\\b|\\bgraduating\\b`,
+  `\\bgraduation\\b\\s*(?:[:\\-–—]|(?:${MONTH})|(?:19|20)\\d{2})` +
+    `|\\bexpected\\b[^\\n]{0,20}?\\b(?:19|20)\\d{2}\\b` +
+    `|\\bclass\\s+of\\b|\\bgraduating\\b`,
   "i"
 )
 
