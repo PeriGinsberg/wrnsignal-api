@@ -326,13 +326,32 @@ const STAGE_YEARS_MAX: Record<string, number | null> = {
 // Which lines can carry a graduation year. A law student's JD line is the one
 // that dates their clock, and its absence here let a 2024 bachelor's outrank a
 // 2027 Juris Doctor — ageing a current student by three years.
+//
+// `associate` is a degree AND one of the commonest words in a student's work
+// history, so it needs the degree context after it. Bare, it matched "Marketing
+// Associate Intern, Acme Brands — May 2026 – August 2026" and read 2026 as a
+// graduation, which is how a May 2027 student came out dated 2026. "Associate
+// Producer", "Sales Associate" and "Associate Director" did the same.
 const DEGREE_LINE =
-  /\b(bachelor|b\.?s\.?|b\.?a\.?|master|m\.?s\.?|mba|associate|juris|j\.?d\.?|ll\.?m\.?|ph\.?d\.?|doctorate)\b/i
+  /\b(bachelor|b\.?s\.?|b\.?a\.?|master|m\.?s\.?|mba|juris|j\.?d\.?|ll\.?m\.?|ph\.?d\.?|doctorate)\b|\bassociate(?:['’]?s)?\s+(?:of|in|degree)\b/i
+
+// The line that states the date is usually NOT the degree line — "Bachelor of
+// Science in Marketing" and "Expected Graduation: May 2027" are two lines, and
+// only the first carried a degree token. So the true year was dropped while a
+// job line was kept, and nothing outranked the wrong one. Reading these as
+// degree lines is the other half of that fix: with 2027 in the pool, the max
+// below picks it even if a stray line still slips through.
+//
+// Bare "graduation" counts only before a colon or dash — the label form of a
+// date. Looser, it would take the year off prose like "graduation ceremony
+// volunteer, 2024".
+const GRAD_DATE_LINE =
+  /\b(?:expected|anticipated)\s+graduation\b|\bgraduation\s*[:\-–—]|\bclass\s+of\b|\bgraduating\b/i
 
 export function deriveYearsMax(resumeText: string, careerStage: string | null) {
   const gradYears = String(resumeText || "")
     .split(/\r?\n/)
-    .filter((line) => DEGREE_LINE.test(line))
+    .filter((line) => DEGREE_LINE.test(line) || GRAD_DATE_LINE.test(line))
     .flatMap((line) => (line.match(/\b(19|20)\d{2}\b/g) || []).map(Number))
     .filter((y) => y >= 1980 && y <= new Date().getFullYear() + 6)
 
