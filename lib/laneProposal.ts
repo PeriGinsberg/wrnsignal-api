@@ -342,11 +342,17 @@ const DEGREE_LINE =
 // degree lines is the other half of that fix: with 2027 in the pool, the max
 // below picks it even if a stray line still slips through.
 //
-// Bare "graduation" counts only before a colon or dash — the label form of a
-// date. Looser, it would take the year off prose like "graduation ceremony
-// volunteer, 2024".
-const GRAD_DATE_LINE =
-  /\b(?:expected|anticipated)\s+graduation\b|\bgraduation\s*[:\-–—]|\bclass\s+of\b|\bgraduating\b/i
+// "graduation" counts when a date follows it — a colon, a dash, a month or a
+// year. That is the shape every real dev resume uses, and they do NOT use the
+// one an author guesses: two of sixteen write "Exp. Graduation May 2026", with
+// no colon and no "expected", so a rule keyed on "expected graduation" or on
+// punctuation misses both. What it still excludes is prose, where a word
+// follows instead — "graduation ceremony volunteer, 2024".
+const MONTH = "jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec"
+const GRAD_DATE_LINE = new RegExp(
+  `\\bgraduation\\b\\s*(?:[:\\-–—]|(?:${MONTH})|(?:19|20)\\d{2})|\\bclass\\s+of\\b|\\bgraduating\\b`,
+  "i"
+)
 
 export function deriveYearsMax(resumeText: string, careerStage: string | null) {
   const gradYears = String(resumeText || "")
