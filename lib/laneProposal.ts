@@ -323,17 +323,74 @@ const STAGE_YEARS_MAX: Record<string, number | null> = {
   executive: null, // no ceiling — a stated minimum is never the reason to skip
 }
 
-// Which lines can carry a graduation year. A law student's JD line is the one
-// that dates their clock, and its absence here let a 2024 bachelor's outrank a
-// 2027 Juris Doctor — ageing a current student by three years.
+// The EDUCATION section, when the resume has one. Years are read from the whole
+// section rather than from lines that look like a degree, because matching a
+// line is what got Alex Schwartz wrong: his date sits on the school line, which
+// carries no degree word at all —
+//
+//   EDUCATION
+//   Indiana University – Kelley School of Business | Bloomington, IN   May 2027
+//   Bachelor of Science in Business, Major: Finance | Study Abroad: IES Abroad
+//     Barcelona, Spain (Spring 2026)
+//
+// so the true year was dropped and the only line that did match handed over a
+// STUDY ABROAD term. A May 2027 student came out "graduated 2026". Reading the
+// section takes both years and lets the max settle it.
+//
+// Adding university/college to DEGREE_LINE would also have found his 2027, and
+// is a trap: those words appear in work history — a peer tutor and a capstone
+// on this very resume — and inferProfileGradYear (extract.ts) already excludes
+// them for exactly that reason, having been bitten by "University of Florida,
+// 2025" on a recruiter's client line.
+//
+// Falls back to the whole text when there is no EDUCATION header to find, and
+// again when the section holds no year, so an unstructured resume is no worse
+// off than before.
+const EDU_HEADER =
+  /^\s*(?:education(?:\s*(?:[&]|and)\s*(?:certifications?|training))?|academics?|academic background)\s*:?\s*$/i
+const OTHER_HEADER =
+  /^\s*(?:(?:professional|relevant|work|industry)?\s*experience|employment(?: history)?|internships?|career (?:history|experience)|academic projects?|projects?|leadership(?:\s*(?:[&]|and)\s*(?:activities|involvement))?|activities|involvement|extracurricular(?:\s*activities)?|volunteer(?:\s*(?:experience|work))?|community(?:\s*(?:service|involvement))?|affiliations?|certifications?|(?:technical\s*)?skills(?:\s*(?:[&]|and)\s*(?:tools|interests))?|tools(?:\s*(?:[&]|and)\s*systems)?|interests|awards(?:\s*(?:[&]|and)\s*honors)?|honors(?:\s*(?:[&]|and)\s*awards)?|hobbies|core competencies|summary|objective|profile|references|publications|coursework|training|additional(?:\s*information)?)\s*[:&]?\s*$/i
+
+function extractEducationText(resumeText: string): string {
+  if (!resumeText) return ""
+  let inEducation = false
+  const kept: string[] = []
+  for (const raw of resumeText.split(/\r?\n/)) {
+    const line = raw.trim()
+    if (!line) continue
+    if (EDU_HEADER.test(line)) {
+      inEducation = true
+      continue
+    }
+    if (OTHER_HEADER.test(line)) {
+      inEducation = false
+      continue
+    }
+    if (inEducation) kept.push(raw)
+  }
+  return kept.join("\n").trim()
+}
+
+const yearsIn = (text: string): number[] =>
+  (text.match(/\b(?:19|20)\d{2}\b/g) || [])
+    .map(Number)
+    .filter((y) => y >= 1980 && y <= new Date().getFullYear() + 6)
+
+// FALLBACK PATH ONLY, for a resume with no EDUCATION header. Which lines can
+// carry a graduation year. A law student's JD line is the one that dates their
+// clock, and its absence here let a 2024 bachelor's outrank a 2027 Juris
+// Doctor — ageing a current student by three years.
 //
 // `associate` is a degree AND one of the commonest words in a student's work
 // history, so it needs the degree context after it. Bare, it matched "Marketing
 // Associate Intern, Acme Brands — May 2026 – August 2026" and read 2026 as a
 // graduation, which is how a May 2027 student came out dated 2026. "Associate
 // Producer", "Sales Associate" and "Associate Director" did the same.
+// The bare initials are ambiguous too: "MS" is a master's and also Microsoft.
+// "MS Excel, Tableau — certified 2025" on a skills line read 2025 as a
+// graduation. Same denylist idea as `associate` needing its degree context.
 const DEGREE_LINE =
-  /\b(bachelor|b\.?s\.?|b\.?a\.?|master|m\.?s\.?|mba|juris|j\.?d\.?|ll\.?m\.?|ph\.?d\.?|doctorate)\b|\bassociate(?:['’]?s)?\s+(?:of|in|degree)\b/i
+  /\b(bachelor|b\.?s\.?|b\.?a\.?|master|m\.?s\.?(?!\s*(?:excel|word|office|outlook|powerpoint|project|teams|access|sql|visio|dynamics|sharepoint))|mba|juris|j\.?d\.?|ll\.?m\.?|ph\.?d\.?|doctorate)\b|\bassociate(?:['’]?s)?\s+(?:of|in|degree)\b/i
 
 // The line that states the date is usually NOT the degree line — "Bachelor of
 // Science in Marketing" and "Expected Graduation: May 2027" are two lines, and
@@ -365,11 +422,21 @@ const GRAD_DATE_LINE = new RegExp(
 )
 
 export function deriveYearsMax(resumeText: string, careerStage: string | null) {
-  const gradYears = String(resumeText || "")
-    .split(/\r?\n/)
-    .filter((line) => DEGREE_LINE.test(line) || GRAD_DATE_LINE.test(line))
-    .flatMap((line) => (line.match(/\b(19|20)\d{2}\b/g) || []).map(Number))
-    .filter((y) => y >= 1980 && y <= new Date().getFullYear() + 6)
+  const text = String(resumeText || "")
+
+  // The section first; the line scan only when it has nothing to say.
+  const educationText = extractEducationText(text)
+  let gradYears = educationText ? yearsIn(educationText) : []
+  let source = "education section"
+  if (!gradYears.length) {
+    gradYears = yearsIn(
+      text
+        .split(/\r?\n/)
+        .filter((line) => DEGREE_LINE.test(line) || GRAD_DATE_LINE.test(line))
+        .join("\n")
+    )
+    source = "degree lines"
+  }
 
   if (gradYears.length) {
     // Latest degree, not the first: the most recent graduation is the one that
@@ -378,7 +445,10 @@ export function deriveYearsMax(resumeText: string, careerStage: string | null) {
     const since = Math.max(0, new Date().getFullYear() - grad)
     return {
       years_max: since + HEADROOM_YEARS,
-      rule: `graduated ${grad} → ${since}y since + ${HEADROOM_YEARS}y headroom`,
+      // The source is in the rule because this is the string a coach reads when
+      // the number looks wrong, and "which lines did it even look at" is the
+      // first question — the one that took four wrong fixes to ask about Alex.
+      rule: `graduated ${grad} [${source}] → ${since}y since + ${HEADROOM_YEARS}y headroom`,
     }
   }
 
