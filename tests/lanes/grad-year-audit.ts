@@ -27,6 +27,10 @@ const PROD_REF = "ejhnokcnahauvrcbcmic"
 const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || ""
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
 const showLines = process.argv.includes("--lines")
+// Every row, not just the ones that moved. "Nothing moved" is only good news if
+// the rows that did not move were already right, and that cannot be read off a
+// count — it needs the corpus printed.
+const showAll = process.argv.includes("--all")
 
 if (!url || !key) {
   console.error(
@@ -85,6 +89,16 @@ const gradOf = (rule: string) => /graduated (\d{4})/.exec(rule)?.[1] ?? "—"
 const INTERESTING =
   /\b(bachelor|master|mba|associate|juris|doctorate|ph\.?d|graduat\w*|class of|university|college|expected)\b/i
 
+function printLines(r: any) {
+  const lines = String(r.resume_text)
+    .split(/\r?\n/)
+    .map((l: string) => l.trim())
+    .filter((l: string) => l && INTERESTING.test(l))
+    .slice(0, 8)
+  for (const l of lines) console.log(`           | ${l.slice(0, 110)}`)
+  if (!lines.length) console.log(`           | (no degree/graduation/year line in this resume)`)
+}
+
 async function main() {
   const supabase = createClient(url, key, { auth: { persistSession: false } })
 
@@ -101,8 +115,12 @@ async function main() {
   if (tErr) throw new Error(`candidate_targeting: ${tErr.message}`)
   const stageOf = new Map((targeting || []).map((t: any) => [t.profile_id, t.career_stage ?? null]))
 
-  const rows = (data || []).filter((r: any) => String(r.resume_text || "").trim().length > 40)
-  console.log(`${rows.length} client profiles on dev with a resume\n`)
+  const all = (data || []) as any[]
+  const rows = all.filter((r: any) => String(r.resume_text || "").trim().length > 40)
+  console.log(
+    `${all.length} client profiles on dev with a resume; ` +
+      `${rows.length} long enough to derive from (>40 chars)\n`
+  )
 
   let moved = 0
   let gainedYear = 0
@@ -130,15 +148,16 @@ async function main() {
       )
       console.log(`         before: ${before.rule}`)
       console.log(`         after:  ${after.rule}`)
-      if (showLines) {
-        const lines = String(r.resume_text)
-          .split(/\r?\n/)
-          .map((l: string) => l.trim())
-          .filter((l: string) => l && INTERESTING.test(l))
-          .slice(0, 8)
-        for (const l of lines) console.log(`           | ${l.slice(0, 110)}`)
-      }
+      if (showLines) printLines(r)
       console.log()
+    } else if (showAll) {
+      console.log(
+        `same   ${String(r.name || r.id).slice(0, 34).padEnd(34)} ` +
+          `grad ${gradOf(after.rule).padEnd(5)}       ` +
+          `years_max ${String(after.years_max).padStart(4)}         ` +
+          `[stage: ${stage ?? "null"}]  ${after.rule}`
+      )
+      if (showLines) printLines(r)
     }
   }
 
