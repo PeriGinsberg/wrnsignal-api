@@ -21,9 +21,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { T, card, eyebrow, input, btnPrimary, btnSecondary } from "../../../lib/dashboard-theme"
 import { authFetch, locationLabel, type Discovery, type LaneConfig, type LaneFilters } from "./laneApi"
-import { FilterListEditor } from "./FilterListEditor"
-import { BOARD_COMMITMENTS } from "../../../lib/laneCommitment"
-import { POSTING_WINDOWS, POSTING_WINDOW_DAYS, postingWindowLabel } from "../../../lib/lanePostingWindow"
+import { BoardFiltersEditor, PostedWithinField, YearsMaxField } from "./LaneCriteria"
 
 export function LaneTitleEditor({
   laneId,
@@ -469,83 +467,11 @@ export function LaneTitleEditor({
       </section>
 
       <section style={{ ...card, padding: "18px 20px", marginBottom: 14 }}>
-        <div style={{ ...eyebrow, color: T.MUTED, marginBottom: 6 }}>
-          Board filters {savingFilters && <span style={{ color: T.DIM, fontWeight: 500 }}>· saving…</span>}
-        </div>
-        <p style={{ fontSize: 12, color: T.MUTED, margin: "0 0 14px" }}>
-          These narrow the search itself, so filtered jobs never reach the queue. A single word matches any
-          industry containing a word starting with it — &ldquo;education&rdquo; covers Higher Education, Vocational
-          Education and the rest, so one term is usually enough. Two or more words must match a whole industry
-          name exactly: &ldquo;Higher Education&rdquo; works, &ldquo;Higher Ed&rdquo; matches nothing.
-        </p>
-
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ ...eyebrow, color: T.MUTED, marginBottom: 4 }}>Commitment</div>
-          <p style={{ fontSize: 12, color: T.DIM, margin: "0 0 8px" }}>
-            Inherited from the client&apos;s job type. Select none to accept every kind of posting — including
-            internships and seasonal work.
-          </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {BOARD_COMMITMENTS.map((c) => {
-              const on = (filters.commitment_types ?? []).includes(c)
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  disabled={savingFilters}
-                  onClick={() => {
-                    const cur = filters.commitment_types ?? []
-                    const next = on ? cur.filter((x) => x !== c) : [...cur, c]
-                    saveFilters({ ...filters, commitment_types: next })
-                  }}
-                  style={{
-                    fontSize: 12, fontWeight: 700, borderRadius: 999, padding: "4px 12px",
-                    cursor: savingFilters ? "not-allowed" : "pointer",
-                    background: on ? T.GLASS : "transparent",
-                    border: `1px solid ${on ? T.ORANGE_BORDER : T.BORDER_SOFT}`,
-                    color: on ? T.TEXT : T.MUTED,
-                  }}
-                >
-                  {c}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        <FilterListEditor
-          label="Industries"
-          hint="Only these industries. Empty means no restriction."
-          values={filters.industries ?? []}
-          placeholder="Sports"
+        <BoardFiltersEditor
+          filters={filters}
           disabled={savingFilters}
-          onChange={(v) => saveFilters({ ...filters, industries: v })}
-        />
-        <FilterListEditor
-          label="Excluded industries"
-          hint="Never these. Usually inherited from the client's profile."
-          values={filters.excluded_industries ?? []}
-          placeholder="Higher Education"
-          tone="negative"
-          disabled={savingFilters}
-          onChange={(v) => saveFilters({ ...filters, excluded_industries: v })}
-        />
-        <FilterListEditor
-          label="Company keywords"
-          hint="Matched against the employer, not the job title — a way to say “sports organisations” rather than “jobs with sports in the name”."
-          values={filters.company_keywords ?? []}
-          placeholder="sports"
-          disabled={savingFilters}
-          onChange={(v) => saveFilters({ ...filters, company_keywords: v })}
-        />
-        <FilterListEditor
-          label="Excluded company keywords"
-          hint="Never employers matching these."
-          values={filters.excluded_company_keywords ?? []}
-          placeholder="university"
-          tone="negative"
-          disabled={savingFilters}
-          onChange={(v) => saveFilters({ ...filters, excluded_company_keywords: v })}
+          saving={savingFilters}
+          onChange={saveFilters}
         />
       </section>
 
@@ -754,123 +680,6 @@ export function LaneTitleEditor({
           </div>
         )}
       </div>
-    </div>
-  )
-}
-
-/**
- * The years ceiling.
- *
- * Committed on blur or Enter rather than on every keystroke: saving as you type
- * would send "1" on the way to "12", and a lane briefly filtered at one year is
- * a run that drops most of the board.
- *
- * Empty means no ceiling, which is a real value and the only way to remove one.
- * Anything that is not a whole number of years is refused by putting the lane's
- * own value back, so the box can never disagree with what was saved.
- *
- * Its caller keys it on the saved value, so a save landing (or being rolled
- * back) re-seeds the draft without this component watching for it.
- */
-function YearsMaxField({
-  value,
-  disabled,
-  onCommit,
-}: {
-  value: number | null
-  disabled: boolean
-  onCommit: (v: number | null) => void
-}) {
-  const asText = (v: number | null) => (v == null ? "" : String(v))
-  const [draft, setDraft] = useState(asText(value))
-
-  const commit = () => {
-    const t = draft.trim()
-    if (t === "") {
-      if (value !== null) onCommit(null)
-      return
-    }
-    const n = Number(t)
-    if (!Number.isInteger(n) || n < 0) {
-      setDraft(asText(value))
-      return
-    }
-    if (n !== value) onCommit(n)
-  }
-
-  return (
-    <div>
-      <div style={{ ...eyebrow, color: T.DIM, marginBottom: 4 }}>Years max</div>
-      <input
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") (e.target as HTMLInputElement).blur()
-          if (e.key === "Escape") setDraft(asText(value))
-        }}
-        disabled={disabled}
-        inputMode="numeric"
-        placeholder="no ceiling"
-        aria-label="Years max"
-        title="Drop postings asking for more years than this. Empty means no ceiling. Postings that never state a minimum are kept either way."
-        style={{ ...input, height: 30, width: 104, padding: "0 10px", borderRadius: 9 }}
-      />
-    </div>
-  )
-}
-
-/**
- * How far back the lane looks.
- *
- * Saves on change, unlike the years box: there is no half-typed state to guard
- * against when every value is one of five.
- *
- * The null case is a database where the column has not been added yet. It is
- * rendered as the window every lane used to run at rather than as a blank, so
- * the control never claims the lane is set to something it is not.
- */
-function PostedWithinField({
-  value,
-  disabled,
-  onChange,
-}: {
-  value: number | null
-  disabled: boolean
-  onChange: (days: number) => void
-}) {
-  const known = value != null && POSTING_WINDOW_DAYS.has(value)
-  return (
-    <div>
-      <div style={{ ...eyebrow, color: T.DIM, marginBottom: 4 }}>Posted within</div>
-      <select
-        value={known ? String(value) : ""}
-        onChange={(e) => {
-          const n = Number(e.target.value)
-          if (POSTING_WINDOW_DAYS.has(n)) onChange(n)
-        }}
-        disabled={disabled}
-        aria-label="Posted within"
-        title="Only jobs posted inside this window. It is sent to the board, so anything older never reaches the queue."
-        style={
-          {
-            ...input,
-            height: 30,
-            width: "auto",
-            padding: "0 8px",
-            borderRadius: 9,
-            cursor: "pointer",
-            colorScheme: "dark",
-          } as React.CSSProperties
-        }
-      >
-        {!known && <option value="">{postingWindowLabel(value)}</option>}
-        {POSTING_WINDOWS.map((w) => (
-          <option key={w.days} value={w.days}>
-            {w.label}
-          </option>
-        ))}
-      </select>
     </div>
   )
 }

@@ -22,7 +22,7 @@ import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { canAccessLaneOwner } from "@/lib/collab/laneAccess"
-import { proposeLane } from "@/lib/laneProposal"
+import { PROBE_DAYS, proposeLane } from "@/lib/laneProposal"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -82,6 +82,10 @@ export async function GET(req: NextRequest) {
       {
         ok: true,
         client: { id: (profile as any).id, name: (profile as any).name, email: (profile as any).email },
+        // The window the probe counts were measured over. Returned rather than
+        // assumed by the screen, which would otherwise hardcode a second copy
+        // of it and be wrong the day this changes.
+        probe_days: PROBE_DAYS,
         ...result,
       },
       200

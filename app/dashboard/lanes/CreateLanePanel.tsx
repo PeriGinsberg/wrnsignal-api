@@ -10,11 +10,20 @@
 // The proposal call is slow — one board request per title for a baseline, plus
 // one per title per candidate keyword — so the button says so before it is
 // pressed, and the waiting state says what is happening rather than spinning.
+//
+// THE CRITERIA ARE EDITABLE HERE, and that is the point of the screen rather
+// than a convenience. Saving runs the lane once, immediately, and years_max,
+// the posting window and the board filters are all applied when a run WRITES
+// rows. Tightening them afterwards does nothing to what is already queued. So a
+// lane saved wide lands several hundred jobs in the review queue on day one and
+// the only way back out is to clear the queue. The first run is the one that has
+// to be right, which is why these sit above the Save button and not behind it.
 
 import { useCallback, useState } from "react"
 import { T, card, eyebrow, input, btnPrimary, btnSecondary } from "../../../lib/dashboard-theme"
-import { authFetch, locationLabel } from "./laneApi"
-import { DEFAULT_POSTING_WINDOW_DAYS, postingWindowLabel } from "../../../lib/lanePostingWindow"
+import { authFetch, locationLabel, type LaneFilters } from "./laneApi"
+import { DEFAULT_POSTING_WINDOW_DAYS } from "../../../lib/lanePostingWindow"
+import { BoardFiltersEditor, PostedWithinField, YearsMaxField } from "./LaneCriteria"
 
 type TitleProbe = { title: string; query: string; fetched: number; available: number; capped: boolean }
 
@@ -40,6 +49,8 @@ type ProposalResponse = {
   proposal: Proposal
   evidence: { yearsRule: string; sectors: Array<{ keyword: string; score: number }>; keywordFromResume: string | null }
   probe: null | { chosenKeyword: string | null; keywordChanged: boolean; titles: TitleProbe[]; droppedZero: string[] }
+  /** The window the probe counts were measured over, so the screen need not assume one. */
+  probe_days: number
   flags: string[]
 }
 
@@ -60,6 +71,9 @@ export function CreateLanePanel({
   const [name, setName] = useState("")
   const [keyword, setKeyword] = useState("")
   const [titles, setTitles] = useState<string[]>([])
+  const [yearsMax, setYearsMax] = useState<number | null>(null)
+  const [daysPosted, setDaysPosted] = useState<number>(DEFAULT_POSTING_WINDOW_DAYS)
+  const [filters, setFilters] = useState<LaneFilters>({})
 
   const propose = useCallback(async () => {
     setPhase("proposing")
@@ -75,6 +89,12 @@ export function CreateLanePanel({
     setName(j.proposal.name)
     setKeyword(j.proposal.keyword ?? "")
     setTitles(j.proposal.titles)
+    // Seeded from the proposal, then owned by the coach. The window is the one
+    // place the proposal has no opinion, so it starts at the default every lane
+    // gets.
+    setYearsMax(j.proposal.years_max ?? null)
+    setDaysPosted(DEFAULT_POSTING_WINDOW_DAYS)
+    setFilters(j.proposal.filters ?? {})
     setPhase("review")
   }, [clientProfileId])
 
@@ -91,16 +111,17 @@ export function CreateLanePanel({
         // Empty input means no keyword. There is one representation of that.
         keyword: keyword.trim() || null,
         location: data.proposal.location,
-        // Sent rather than left to the column default, so the window shown in
-        // review below is the window the lane is actually created with.
-        days_posted: DEFAULT_POSTING_WINDOW_DAYS,
-        years_max: data.proposal.years_max,
+        // All three come from the criteria box, not the proposal, because the
+        // whole point of that box is that the coach gets to overrule the
+        // derivation before the first run rather than after it.
+        days_posted: daysPosted,
+        years_max: yearsMax,
         companies: data.proposal.companies,
         exclusions: data.proposal.exclusions,
         // Sent explicitly. Omitting it would make the route fall back to the
         // profile — the same values today, but a coach who cleared a filter in
         // review would watch it reappear.
-        filters: data.proposal.filters ?? {},
+        filters,
       }),
     })
     const j = await res.json().catch(() => ({}))
@@ -115,7 +136,7 @@ export function CreateLanePanel({
       setError(`Lane created, but its first run failed: ${j.run_error}. The nightly sweep will retry it.`)
     }
     onCreated()
-  }, [data, clientProfileId, name, keyword, titles, onCreated])
+  }, [data, clientProfileId, name, keyword, titles, yearsMax, daysPosted, filters, onCreated])
 
   // --- idle -----------------------------------------------------------------
   if (phase === "idle" || phase === "proposing") {
@@ -150,6 +171,11 @@ export function CreateLanePanel({
   // --- review ---------------------------------------------------------------
   const probe = data?.probe
   const countFor = (t: string) => probe?.titles.find((p) => p.title === t)
+  // Only the titles still on the draft: removing one has to remove its share of
+  // the estimate, or the number stops describing the lane being saved.
+  const boardMatches = (probe?.titles ?? [])
+    .filter((p) => titles.includes(p.title))
+    .reduce((n, p) => n + (p.available || 0), 0)
 
   return (
     <div style={{ ...card, padding: 24 }}>
@@ -232,28 +258,56 @@ export function CreateLanePanel({
         </p>
       )}
 
+      {/* How big this lane is before anything narrows it. Summed across titles,
+          so a job matching two of them counts twice; it is a magnitude, not an
+          inventory, and magnitude is the thing worth knowing before you save. */}
+      {probe && boardMatches > 0 && (
+        <p
+          style={{
+            fontSize: 12,
+            color: boardMatches > 200 ? T.GOLD : T.MUTED,
+            margin: "10px 0 0",
+          }}
+        >
+          Across these titles the board reports {boardMatches} matches over the last {data!.probe_days} days, a job
+          matching two titles counted twice. Treat it as the ceiling on the first run: the criteria below only
+          bring it down, and the default two-week window is already narrower than this measurement.
+        </p>
+      )}
+
+      {/* What the coach cannot change here. Location and the title-word
+          exclusions stay read-only for the same reason they do on the edit
+          screen: a bad location preset returns a convincing zero-result rather
+          than an error. */}
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap", margin: "16px 0 4px" }}>
         <Fact label="Location" value={locationLabel(data!.proposal.location)} />
-        <Fact
-          label="Years max"
-          value={data!.proposal.years_max == null ? "no ceiling" : String(data!.proposal.years_max)}
-        />
-        <Fact label="Posted within" value={postingWindowLabel(DEFAULT_POSTING_WINDOW_DAYS)} />
         <Fact
           label="Excluded title words"
           value={data!.proposal.exclusions?.title_keywords?.join(", ") || "none"}
         />
-        {!!data!.proposal.filters?.commitment_types?.length && (
-          <Fact label="Commitment" value={data!.proposal.filters!.commitment_types!.join(", ")} />
-        )}
-        {!!data!.proposal.filters?.industries?.length && (
-          <Fact label="Industries" value={data!.proposal.filters!.industries!.join(", ")} />
-        )}
-        {!!data!.proposal.filters?.excluded_industries?.length && (
-          <Fact label="Excluded industries" value={data!.proposal.filters!.excluded_industries!.join(", ")} />
-        )}
       </div>
       <p style={{ fontSize: 12, color: T.DIM, margin: "0 0 16px" }}>{data!.evidence.yearsRule}</p>
+
+      <section
+        style={{
+          border: `1px solid ${T.ORANGE_BORDER}`,
+          borderRadius: 14,
+          padding: "16px 18px",
+          margin: "0 0 16px",
+        }}
+      >
+        <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 6 }}>Search criteria</div>
+        <p style={{ fontSize: 12, color: T.MUTED, margin: "0 0 14px" }}>
+          Set these before you save. Saving runs the lane straight away, and these decide what that run puts in
+          the review queue. They apply as a run writes rows, so tightening them later leaves everything already
+          queued exactly where it is. The posting window is the strongest lever.
+        </p>
+        <div style={{ display: "flex", gap: 28, flexWrap: "wrap", marginBottom: 18 }}>
+          <YearsMaxField value={yearsMax} disabled={phase === "saving"} onCommit={setYearsMax} />
+          <PostedWithinField value={daysPosted} disabled={phase === "saving"} onChange={setDaysPosted} />
+        </div>
+        <BoardFiltersEditor filters={filters} disabled={phase === "saving"} onChange={setFilters} />
+      </section>
 
       {(data?.flags.length ?? 0) > 0 && (
         <div style={{ ...card, padding: "12px 14px", background: T.WARNING_BG, borderColor: T.ORANGE_BORDER, marginBottom: 16 }}>
