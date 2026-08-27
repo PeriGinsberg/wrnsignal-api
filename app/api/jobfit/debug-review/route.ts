@@ -25,9 +25,35 @@
 
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { isDevEnvironment } from "../../../../lib/devOnly"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
+
+// ── Dev-only gate ────────────────────────────────────────────────────────
+// This route takes a jobfit_run_id and returns the referenced user's
+// profile_text and resume_text. It has no auth of any kind, by design — it
+// was a local debugging aid. Reachable in production it is an unauthenticated
+// PII disclosure: anyone holding a run UUID gets that person's résumé.
+//
+// TWO guards, because they fail in different directions:
+//
+//   NODE_ENV          — closes the route on every deployed build. Next.js sets
+//                       this to "production" for prod AND preview deploys, so
+//                       both are covered. Matches the existing test-key gate in
+//                       ../route.ts.
+//   isDevEnvironment  — closes it whenever the app is pointed at prod Supabase,
+//                       even from a local machine where NODE_ENV=development.
+//                       That is the case NODE_ENV alone cannot catch, and it is
+//                       the one that actually leaks prod PII. See lib/devOnly.ts.
+//
+// Returns 404, not 403: a 403 confirms the route exists.
+function blockedInProd(req: Request): Response | null {
+  if (process.env.NODE_ENV === "production" || !isDevEnvironment()) {
+    return withCorsJson(req, { error: "Not found" }, 404)
+  }
+  return null
+}
 
 export async function OPTIONS(req: Request) {
   return corsOptionsResponse(req.headers.get("origin"))
@@ -130,6 +156,9 @@ Return ONLY valid JSON matching this schema. No markdown, no preamble.
 
 // ── Main handler ─────────────────────────────────────────────────────────
 export async function POST(req: Request) {
+  const blocked = blockedInProd(req)
+  if (blocked) return blocked
+
   try {
     const body = await req.json()
 
