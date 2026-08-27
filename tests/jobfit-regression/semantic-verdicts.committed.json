@@ -1,0 +1,537 @@
+{
+  "0372f1cc05fad323bd96056b43f4cc1e8bb46406dce16ea974dc74c7aec30c20": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Data visualization tools (Tableau, matplotlib, seaborn) are different from financial modeling in Excel and PowerPoint; they serve different purposes and require different skill sets."
+  },
+  "075e156553548101a53c3ba6aa83ad51b752bed56e8e7b882fc93e06a7ddf1c6": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Graphic design and client management for small businesses is a different domain entirely from investment planning, financial analysis, capital markets, and supply chain optimization in a consulting co"
+  },
+  "08617e85883ba74846e06db4294185f7ecdeb6e4dbda99030010232b53417000": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The candidate's generic data visualization and exploratory analysis skills do not demonstrate specialized expertise in capital markets analytics, asset management systems, or clinical advertising opti"
+  },
+  "0942b27f3fa8c5033274bba3986f9ff6cef9f3781ce6ac6b41a49754b1788f25": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The candidate's marketing experience (digital, social media, brand strategy) is generic marketing skills without evidence of work in household essentials, personal care, food products, or the clinical"
+  },
+  "0b81f2ab18687d867db174e708c7b7966cc600e6306042fdceb4cb2128671fef": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The evidence describes general statistical analysis and machine learning coursework/internships, but provides no concrete evidence of designing and executing A/B testing frameworks with statistical ri"
+  },
+  "1110c85d40148cf9656c7a415ab7ec9d3a3c4ff7ae99a147dd4c7386291cc5e8": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The requirement describes company funding and revenue metrics for financial/investment tools, not a job responsibility; the candidate evidence shows digital marketing analytics work unrelated to engin"
+  },
+  "126b69e29d072bed614ed0394c54fad458b0853aff38d08c48d2927b6d325571": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Project management and coordination is a generic transferable skill that does not demonstrate specialized expertise in clinical asset management, capital markets analysis, or logistics domain knowledg"
+  },
+  "1537b4174bed55da6ab0faaff7c651827c47f3c7ccd2ea27f49a3d89403c5940": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The evidence describes a data science/ML background with no mention of a degree in Finance, Economics, Accounting, or related field; the requirement is for a specific educational credential, not trans"
+  },
+  "186bae02213de5d70b15454b3d7732069b88d99aea28189fcfa11f4c1b8b3166": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Academic statistical analysis is generic and lacks the specialized domain expertise required for A/B testing frameworks, model evaluation, and multi-segment user testing in engineering contexts."
+  },
+  "18ca9cd1b68e431a997829dc75824df332fed43ad6a2bbe36f0d59bd39dca448": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Healthcare clinical and administrative competencies do not transfer to investment strategy, financial planning, or global capital markets asset management work."
+  },
+  "1eba993bc578f629b9563459e5eb831513c0f3c20b163f320ef2e255f3224542": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Data visualization tool proficiency is a generic technical skill that does not demonstrate experience leading multi-million dollar analytics projects or domain expertise in content valuation, churn pr"
+  },
+  "1ed92a1c78602f6121ddc9d601df9dc1c895cbf052cc2a57ca93f583a577aa19": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The job requirement describes company background/context, not a job responsibility, while the candidate evidence is a generic skill unrelated to product management in FinTech."
+  },
+  "1f780f784ff32822023617eac21b7d3a30677ff6b60e4c70470c45d116952336": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Exploratory data analysis on large datasets is a generic data skill that does not demonstrate A/B testing framework design, statistical hypothesis testing, or multi-segment user evaluation—the special"
+  },
+  "204a884c7bea242b5cb77fc51ccea957a75dbe0bff40e4ab3ec69e8a053e2b3c": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Data visualization tools are generic technical skills unrelated to clinical product development methodology, patient-focused consumer research, or brand portfolio management in healthcare/home care ca"
+  },
+  "21fe55379570e4ee5a1a8fa39e60abbd4d5eea4fc7b328aa1dc8c64b54cb9fbc": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The requirement describes a company's business model (funding, revenue, financial planning tools for creators); the candidate evidence describes entry-level data analyst skills with no demonstrated ex"
+  },
+  "248218db8a940a4ad2b1ebc15264704484fea3f700d23ffd4b79621f4ae36a5e": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Academic statistical analysis is generic quantitative work fundamentally different from specialized capital markets analytics, asset management systems, and clinical advertising optimization at enterp"
+  },
+  "24a187ad54dad79c10d9b7294b3cd9a3e63d99c37b9db507e060fc2be7438611": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The requirement describes company business model and funding/revenue metrics, not a job skill or responsibility; the candidate evidence describes workshop facilitation in data visualization, which is "
+  },
+  "257bc1bef867bdd13a770e2e023c1b34bc2777d11ae24ad0ab82f7bdcbe6bf83": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Supply chain analysis and inventory management are fundamentally different domains from market analysis reporting and strategic asset management portfolio maintenance required for global expansion ini"
+  },
+  "27c370cd94ad93e46b724b49cb7004ef97e475598a3fa788324cbe16cde23c29": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Mechanical engineering and manufacturing experience does not demonstrate clinical asset management and capital markets analysis expertise in logistics, which requires specialized financial and strateg"
+  },
+  "28df97269d7e019c90adc507636f80ce67efeb4a18a7c4576ef0578b718c9209": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Statistical analysis and hypothesis testing is a skill/method, not evidence of holding a Bachelor's degree in Finance, Economics, Accounting, or a related field."
+  },
+  "29136ddc4c3efb3eba6889ef6c4ab4ba283f8e99267aab7d91f1078ed722e94b": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Building Tableau dashboards for production metrics is a generic analytics/BI skill unrelated to clinical product development methodology, patient-focused consumer research, or brand portfolio manageme"
+  },
+  "2bdcaa368cb81079aac51c2decad4d272fd86c310527fad6978e433dcff2073f": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Generic 'Research and Data Analysis' is a transferable skill lacking evidence of specialized work in investment software, capital markets, asset management, or complex enterprise financial systems imp"
+  },
+  "2ca994436624d5d9d0fc9271b1a618597c20f1816126afdd5197a37ba828baa5": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Literature reviews and nursing student leadership have no connection to capital markets technology, trading algorithms, or financial regulatory compliance work."
+  },
+  "2d851bea3e4a95520ed2fee02533c02694f3e8ced46bc10c2455fd512279da07": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The evidence lists generic technical skills (programming, ML frameworks, data tools) without demonstrating domain-specific experience in financial modeling, market research, or investment due diligenc"
+  },
+  "2e05e44549efde25851d8ca7d1c7a5cb88bf338b5215b1551ce3f8f4a67eade2": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Sentiment analysis using data science is a generic analytical technique unrelated to the clinical product development approach, patient-focused consumer needs assessment, and brand portfolio managemen"
+  },
+  "304e46a72aef671f6e1a1008b09c311401d9c0929a085554a52025cbf06294e3": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "R programming and statistical analysis are generic technical skills that do not demonstrate experience leading multi-million dollar projects or domain-specific work in content valuation, churn predict"
+  },
+  "33eb41e5c9762be86db90fa7b5b9aef7f41731d94b999fdf7f331c5e58d945f1": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Supply chain analysis and inventory management are fundamentally different from preparing comprehensive market analysis reports and managing strategic asset portfolios for global expansion—different d"
+  },
+  "3606930040577e8cb9f501bebb81dc38b86e03a9513c900c7dcd171b294bb2b8": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The requirement describes a company's business model (aerospace/defense contracting and capital markets), not a job function, while the evidence describes a generic technical skill (Python scripting) "
+  },
+  "365ddd83045bb69b33fa6eecc5329b778c7a6ee88e68c1d019feee0054b2fad3": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Predictive modeling for customer lifetime value is a generic quantitative skill unrelated to the clinical product development approach and patient-focused consumer needs assessment required for health"
+  },
+  "3703cfb3c13009c24009f2455199a9195cb5e8fdccec4d49bdba960f316e5d43": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Education and coursework demonstrate foundational data science knowledge but provide no evidence of actually leading multi-million dollar projects, managing content valuation, churn prediction, or int"
+  },
+  "38b78b717c984134c05712a2bf509b480588e377d621572d2965b0e39ade5674": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Data science coursework demonstrates quantitative and statistical skills but provides no evidence of financial modeling, Excel proficiency, or PowerPoint skills specific to asset management work."
+  },
+  "38d8dec1bc6f71f4730aee7ee14720f8ce59a8e650c2099386177ca6624bc8fe": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The requirement demands specialized financial planning, capital markets expertise, and asset management across business units; the candidate evidence shows only generic HR competencies with no financi"
+  },
+  "390ee7d8f8ff6acc5b67f5e8725416c1591fa546c6f729def9fe11e7494509f4": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Candidate's experience is in pharmaceutical/clinical production optimization and regulatory compliance, not in investment analysis, financial planning, capital markets, or asset management for logisti"
+  },
+  "39daa805457b9dfdf7e5431960bd4e2935822176dbae0870a252c6b3125c7f8c": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The requirement describes the company's business model (funding, revenue, financial planning tools for creators), not a job skill; the candidate evidence shows generic marketing analytics work unrelat"
+  },
+  "3b7d497381a17fce85e22fc573fce275b4593c3852814a49eeb5fac409d76712": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The requirement describes clinical product development and patient-focused consumer needs strategy in healthcare/home care brands, while the evidence lists only technical data science and programming "
+  },
+  "3cf343b1a5d8a36a5f56ef7e37a4dc9d3de7019b1cfef5a9ebeee9544cd512db": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Intern-level data collection and basic statistical analysis on education datasets is fundamentally different from leading multi-million dollar projects in content valuation, churn prediction, and inte"
+  },
+  "42f11f7ba08ed1b5da03ba7b785e159dde31f28d406afcd993783e8ba3418b7b": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Nursing research data collection is a different domain (healthcare) from capital markets technology and algorithmic trading, with no evidence of financial markets, trading systems, or regulatory compl"
+  },
+  "44bd66d84a178a65449251826c108475e26030b3e33f5f4a59b87afa0912567a": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Supply chain and procurement analytics do not demonstrate the specialized financial services, investment planning, capital markets, or financial reporting expertise required for this product managemen"
+  },
+  "450fe58d55faa4b3fdfb7d3cdcbbf7706a9cc0a5225fbb33d4ce1c93cb03ef63": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Candidate has manufacturing and supply chain optimization experience, but no evidence of investment banking, financial planning, capital markets solutions, or asset management work in logistics infras"
+  },
+  "45a90349288867ec5b8881d0231894aafccf8589a2081dd74c7168b0898ee928": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The requirement describes Unilever's corporate history and financial scale, not a marketing job duty; the candidate evidence describes generic market research skills unrelated to this company backgrou"
+  },
+  "473cca90ae2e5d75cd212c81179b3639259e18ecbb72d051b7ca70369c83ec3d": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Clinical research protocol documentation is a different domain (healthcare/clinical trials) from capital markets technology, trading algorithms, and regulatory compliance for financial institutions; t"
+  },
+  "48182547039836f2619d850c63d99560d97950540fbf494970828ae96b462292": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Academic statistical analysis and ML classification in R do not demonstrate specialized capital markets analytics, asset management systems, or clinical advertising optimization work required for this"
+  },
+  "4e3e950d4db7768c7e1eee1d9d8b742e5bacb5bbe74a991b62e4996c7f78a077": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Research and Data Analysis is a generic skill that does not demonstrate the specialized cross-functional collaboration on policy development, risk mitigation, and regulatory compliance across jurisdic"
+  },
+  "4fa757ead40cc10d360f8eea366a7005b973c01581fdfd26e1d5a7a55f9367da": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The evidence lists generic technical skills and competencies but provides no concrete evidence of actually leading multi-million dollar projects, performing content valuation, building churn predictio"
+  },
+  "51adda5e01bf5c5b8c13caab050fe982b81c45da24bcf9a8a470fec2800bd6f3": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Literature reviews and research presentations are generic academic skills unrelated to capital markets technology, trading algorithms, regulatory compliance reporting, or asset management systems."
+  },
+  "5224d1905cc619b02736d5b5008487f824d3525381e6f12df6d93f4ca7d3ab61": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The requirement describes a company's business model and funding/revenue metrics, not a job responsibility; the candidate evidence shows academic research assistance unrelated to investment tools, fin"
+  },
+  "59d3fdd686edf66c36cfac1b371c0740eb82444f99527caa57f7b3016f48fd9f": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Education and coursework demonstrate foundational knowledge but provide no evidence of actually designing and executing A/B testing frameworks or conducting statistical evaluation across user segments"
+  },
+  "5dea9657da4e616bbd737e287769f04fe636bbe885aaae50a294cef08c1234d9": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Generic project management and data analysis skills do not demonstrate specialized expertise in investment/financial planning for logistics infrastructure, capital markets solutions, or asset manageme"
+  },
+  "5e7290c4a1764ffeaccea7fbab87aa7fffa49e5df6952725862fce6efefc4cb6": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Statistical analysis skills are generic quantitative methods that do not demonstrate experience with investment/financial planning tools, content creator platforms, or the specific domain knowledge re"
+  },
+  "612949acdf151876c3381cdbdea1141a0282b12a6fe7fa32de856dbf51c55870": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Nursing research data collection is a different domain entirely from FinTech product management experience, with no demonstrated knowledge of financial services, investment platforms, or fintech innov"
+  },
+  "61f7e56b7d60516d44d5bf9c7026522d02809c8da629c7a3a266d1313c08c264": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Healthcare data analysis and quality assurance is a different domain with no demonstrated experience in investment strategies, financial planning, capital markets, or asset management."
+  },
+  "64fddbad996f44a57a5db9152ef55fdf2788a736236839c443757b07b6fdd727": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Coordinating ML/data workshops is a generic training activity unrelated to clinical product development, patient-focused consumer needs assessment, or brand asset management in healthcare/home care ca"
+  },
+  "6c0a967afb3fda551b583ad01f177175c41075fe362962dc71ba5877c836ca85": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Project management and cross-functional coordination are generic skills that do not demonstrate specialized expertise in clinical asset management, capital markets analysis, or logistics consulting."
+  },
+  "6c2acf4344d0414efb46dfbe67b595ed1a97d67dee0ef1b00f54db31a6d13b18": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The requirement describes company financial performance and business model (funding, revenue, product domain); the candidate evidence describes student team leadership and workshop coordination with n"
+  },
+  "6e039e87f2ac5d343f7749b6aa20b761e5885500da2b2f2405927c6bead636fa": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Creating dashboards and exploratory data analysis are generic data skills that do not demonstrate the specialized capability to design A/B testing frameworks with statistical rigor or evaluate models "
+  },
+  "6e7faac8c6ec446bc70147232b5dee6fa9f9db33534ddda50cf6de4495d074c6": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The requirement describes the company's business model and product specialization (household essentials, personal care, food with clinical excellence), not a marketing task; the candidate evidence sho"
+  },
+  "74e65b93d39aef6f3e483101956835c8c69b12beafbe044760102d7e9a2acc42": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Supply chain metrics dashboards are a different domain from financial services, investment planning, capital markets, and accounting workflows that the requirement specifies."
+  },
+  "7c6fce382325af349198330bf3c3fd98c52cf00f59f41a0c8433c0cd0bcd9cfb": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The requirement describes clinical/patient-focused product development and brand portfolio management in healthcare/consumer categories, while the evidence shows manufacturing operations analysis and "
+  },
+  "7e20ba30dd6ea102d766dbc7e785f9bd798dfc8472f564c6a3fc4577449ad2ec": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Coursework in manufacturing and operations is generic foundational knowledge, not demonstrated experience in clinical asset management, capital markets analysis, or logistics consulting with actual cl"
+  },
+  "826f2eea8e63897af4f6bd342559b8d1839962a9c183be0d62375cc8d09d068f": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The requirement describes a company's business model (aerospace/defense contracting, capital markets, government contracts), not a job function or technical capability, while the candidate evidence sh"
+  },
+  "8343846b93624c9f7923508466ff35f25ddd5a2751c343c20d1b082c732d1b76": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Candidate has clinical nursing experience in healthcare settings; the job requires specialized product management expertise in capital markets technology, trading algorithms, and regulatory compliance"
+  },
+  "853bf33b4218398f528244b5cd71066f578f8e263e0bff8ac960cd40435e6142": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Social media analytics reporting is a generic marketing/communications skill unrelated to financial planning tools, investment platforms, or fintech domain expertise that the requirement describes."
+  },
+  "858a9c913f4f6447d1f3a9c06e8bfde06add622da01d8f08d42e934f436ec06e": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "CAD, statistical analysis, and process improvement are generic technical skills with no demonstrated experience in investment analysis, financial planning, capital markets, or asset management for log"
+  },
+  "88640eff93fddf5dedba722637da395396ce7febe121e9b1d5dff30628c1da8a": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Candidate's supply chain and logistics operations experience does not demonstrate the financial services, investment planning, capital markets, or accounting workflow expertise required for this produ"
+  },
+  "8b2ce21f46cbf7283dc99f8929bb25b52b6d8af9f9180eba1b06e7db8c0af819": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Candidate's nursing and patient care experience is in a completely different domain from capital markets technology, trading algorithms, and financial regulatory compliance."
+  },
+  "90e1df0460471882db48c4f133d6a7203a558de98b371915e7c990c467e27c1e": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Candidate's competencies are in clinical psychology and counseling; the requirement is for VR/AR infrastructure development, which requires software engineering, systems architecture, or related techn"
+  },
+  "92e877dbfd726a1829dd3c58a9d431871be219de5b67c0d245c429cc89f9c3d9": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Data Science is a different field from Finance, Economics, or Accounting; while it involves quantitative skills, it does not provide the domain-specific financial knowledge required for asset manageme"
+  },
+  "93ab9cd7d697291f62c82db7f302d77aa533e84148b25917c8fc022aedf793c4": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Statistical analysis on educational datasets is generic quantitative work in a different domain; it does not demonstrate experience with content valuation, churn prediction, or market expansion analys"
+  },
+  "9647662463c1087a592b0a9f4441589df1815e9a0740927245c53cc477affe8a": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Preparing research materials and literature reviews is generic support work that does not demonstrate cross-functional collaboration on policy development, risk mitigation, or regulatory compliance wi"
+  },
+  "a1b9e91c51fb11b6ead0c1b0354712d6f9c911a73c6691697e915ece0b4d061a": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Candidate has automotive supply chain and procurement experience, not healthcare infrastructure investment, capital markets analysis for medical equipment, or clinical facility asset management."
+  },
+  "a3ee14fe3df7c39fdbd89d82e830dd9384b0c51b22dda8e8b50d6ccd3f8b85e5": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Healthcare nursing research experience does not demonstrate FinTech product management, financial platform development, or investment/financial planning domain expertise."
+  },
+  "a924c8fdab861b65c31a62d8277e0481ccdd166d9604b039784a93afae57ae62": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Candidate has manufacturing engineering and process optimization experience, not clinical asset management, capital markets analysis, or logistics consulting work required for this specialized consult"
+  },
+  "aa60d1cb0635d472c03f822ca143aae92cabdae506a4ad7ed87888fe6c3a63ab": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The evidence lists technical skills and competencies but provides no information about educational credentials or degree attainment in Finance, Economics, Accounting, or related fields."
+  },
+  "ab535bb73da833e97c8676d17fc0612e1f106dcb81729c92075a274ae259d758": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Supply chain management and procurement experience does not demonstrate patient safety standards or infection control protocol maintenance, which are clinical healthcare domain competencies."
+  },
+  "af1cb4ca24506483565bf515f5fc8c89be66a123157baed04aedea5eba798abb": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The evidence shows general statistical analysis and ML implementation in academia, but provides no evidence of designing A/B testing frameworks, executing user segment testing, or applying statistical"
+  },
+  "b04a102b5e77f8b3a746bfaee7a34bf6c025e61ccc8e6a68b8dea4b4d6858977": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Candidate's data science and machine learning background does not demonstrate the clinical product development approach, patient-centric consumer insights, or brand portfolio management in healthcare/"
+  },
+  "b2794d65da3ceebe26aad05446e902390bd9bfb1fd68c8ca866272f414c066da": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Publishing a data science research paper on sentiment analysis is a generic technical skill unrelated to clinical product development, patient-focused consumer needs assessment, or brand portfolio man"
+  },
+  "b2e09483b38c548fc09175d43f2c9047f3129ba3e558edf2a6ed3b6d56275681": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Psychology research assistance involving survey data and literature reviews is fundamentally different from cross-functional collaboration on HR policy development, legal compliance, and regulatory ma"
+  },
+  "b3c48c644ede5f324cd58901aa0a40350808b8f0ef113e971c68d06da5b027d2": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Candidate is a new graduate with academic projects and coursework, not someone who has led multi-million dollar analytics projects in content valuation, churn prediction, or international market expan"
+  },
+  "b7db74c86c3b98416664f1ed263bf438be8962ebd63714e883e00a349a74722f": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Statistical analysis using SPSS for research publications is a generic analytical skill unrelated to VR/AR infrastructure planning and development, which requires specialized knowledge of immersive te"
+  },
+  "b9d0f0a405df2554a22cb4968d2041ae6ed23fb26d5050292391139a04bda5da": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Client communication and project management are generic transferable skills that do not demonstrate the specialized domain expertise required in investment planning, financial analysis, supply chain o"
+  },
+  "baf0c66fa87c4d42d07b89d143babf94a55fcb55f397db0ec2d08faff019d9ed": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Candidate's data science and machine learning background does not demonstrate experience with financial modeling, market research, or investment due diligence in asset management — the specialized dom"
+  },
+  "bf522a9c6771043ee11257d5655474076b66605154b3c990b8f25cf26d5fd8d7": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Candidate demonstrates data science and engineering skills (Python, ML, big data) but provides no evidence of financial modeling, Excel proficiency, or PowerPoint skills required for asset management "
+  },
+  "c2902068fe1471a14a1773ee5718cc62a277ea2ea4fc030d364a801071308367": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Generic data analysis and process improvement skills do not demonstrate specialized expertise in clinical asset management, capital markets analysis, or logistics consulting required to serve 500+ com"
+  },
+  "c96fad4b8b1aa461a432178341e980dbb2f9d4f7fab85af5bfa6bbcbb6f87ed1": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Statistical analysis and hypothesis testing is a generic quantitative skill that does not demonstrate the clinical product development approach, patient-focused consumer insights, or brand portfolio m"
+  },
+  "caafc89c1127b81d92da7392a9ddfe9ac9e67ef66695eda03578bbedcc4937ba": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Statistical analysis and hypothesis testing is a generic quantitative skill that does not demonstrate the specialized work of financial modeling, market research, or due diligence in asset management."
+  },
+  "ce75b80d96d78a5b3ed2c0e557472b994ef2e121b60c2bf0473195f20db936be": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Manufacturing logistics and vendor management are generic operational skills that do not demonstrate the specialized financial planning, capital markets analysis, or healthcare infrastructure asset ma"
+  },
+  "d0afba2084cd9daee7e9c3857807cd56fa3117563368b95f0e79b55e535cd2c8": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The requirement describes clinical/patient-focused product development and brand portfolio management in healthcare/home care; the evidence shows generic predictive modeling and engagement metrics wor"
+  },
+  "d308f916387ca2bf644b0ce000dcc22a87901a77a97957bcce7047507c86c012": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The requirement describes Unilever's corporate history and financial scale, not a marketing job responsibility; the candidate evidence shows marketing skills and experience but does not demonstrate kn"
+  },
+  "d41ed09c8df3ece40d51f25ddd12c719322e4385f60a264bb7524ac7ad4a11b0": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Statistical analysis and hypothesis testing is a different analytical domain from financial modeling in Excel/PowerPoint, which requires specific skills in building valuation models, projections, and "
+  },
+  "d8319210b62b5b5047a71b2eb379b2b648b6d4673901958c1f38d29b3f120ca5": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The job requirement describes company funding and revenue metrics, not a job duty; the candidate evidence shows statistical analysis skills unrelated to understanding or working with financial metrics"
+  },
+  "d9d1c6a0fcca114e826c7f8f558284565a00678dd9a3208d7efecd3ca1e8a9a5": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "A data science degree with coursework in machine learning and statistics demonstrates quantitative skills but not the specialized domain experience in financial modeling, market research, or investmen"
+  },
+  "db10f487b9ba12729b54940e56acd11f56b6b8284e468d44e42c0d95d854eb5a": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Candidate's expertise is in data science, machine learning, and programming (Python, R, SQL), not financial modeling, Excel-based valuation, or asset management analysis required for this finance role"
+  },
+  "dd5cb82bbbd3dbae4eac1babc4c7502cfee6c14d47655dc4c770fd51c5463ce6": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Data visualization tool proficiency is a generic technical skill that does not demonstrate the specialized work of developing financial models, conducting market research, or performing due diligence "
+  },
+  "df56763b941420c000eeb1e6893244c0ebcd18d37b101b1abc2fc08956dcfa15": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Data visualization tool proficiency is a technical skill unrelated to holding a Bachelor's degree in Finance, Economics, Accounting, or a related field."
+  },
+  "df752607ee3bf56dd9e0a93d456f20e11aa95cbb5efa929ca1b0c544f4e852a1": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Candidate's healthcare operations and clinical data experience does not demonstrate investment strategy, financial planning, or global capital markets expertise required for asset management finance r"
+  },
+  "e30fa5b5ad34834337ce8a5881fd3e3410828dbfcdd230a87e626518710db46b": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Candidate has nursing clinical experience with no evidence of FinTech, financial services, investment platforms, or product management work in any domain."
+  },
+  "ea688b8b22447b48e7710f915bbba9c14200eb46810127b85609553a7b075082": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Generic 'Research & Data Analysis' is a transferable skill that does not demonstrate specialized experience in capital markets technology, trading algorithms, regulatory compliance reporting, or asset"
+  },
+  "eacc622610dce9a10bbf5215b210cdefe67702677824a7e803d72120e0a5f0b1": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "A/B testing on booking conversion rates at a travel platform is generic analytics work in a different domain, not the clinical product development approach or patient-focused consumer needs assessment"
+  },
+  "ebb7d5a0e8f0d08065abb9fa5b738b1da8b52205f6e5c1d18ea8cad44d177fc1": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Education in data science coursework demonstrates foundational technical skills but provides no evidence of actual work experience in capital markets analytics, asset management systems, clinical adve"
+  },
+  "edbc21619658ee6b60fc1a5132872552d92c90c0294d9733e4391e6cf3180d69": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Logistics optimization and vendor management in manufacturing are generic operational skills that do not demonstrate specialized healthcare knowledge of patient safety standards, infection control pro"
+  },
+  "f205d6a53c81aa9ce714c340084fc3a7fb1c865f6900b8a94229b43170e057ec": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The candidate's experience in social psychology research and statistical analysis does not demonstrate work building VR/AR infrastructure, which requires specialized software engineering and systems a"
+  },
+  "f6467639b8c26e50c45f7f9b712e1c56db008c8e55fda16c3abe2ba85086358a": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Candidate has generic data science and ML skills with no demonstrated experience in capital markets analytics, asset management systems, clinical advertising, or healthcare content recommendation doma"
+  },
+  "f6a5b871d48606056941cd609ecf2241efe5c208cefac8d1395420295f1f8549": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "HR analytics and operations experience does not satisfy requirements for investment planning, capital markets expertise, corporate development, or asset management across social networking, VR, and me"
+  },
+  "f898b414d5b536062822519db81d04bfccf2d4f5f2e38e7216e1c1d66959fcbf": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "The requirement describes the company's business model (funding, revenue, financial planning tools for creators), not a job duty; the candidate evidence shows generic dashboard development unrelated t"
+  },
+  "f90eb976d84a58f7091d876f86339e33326fe2ffa0b70980ac20a5dc4e95ddfd": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "Exploratory data analysis on generic datasets does not demonstrate specialized expertise in capital markets analytics, asset management systems, or clinical advertising optimization required for this "
+  },
+  "fd1a666b082cc6b99a4dae8894082b8e3fa7f3e5fe84363212928ae5e86ea8cf": {
+    "satisfies": false,
+    "confidence": "high",
+    "reason": "SPSS proficiency is a generic statistical tool skill that does not demonstrate the specialized domain expertise in investment strategy, financial planning, capital markets, or asset management require"
+  }
+}

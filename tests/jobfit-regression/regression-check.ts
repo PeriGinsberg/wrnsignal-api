@@ -17,12 +17,24 @@
 //     within tolerance bands and DO NOT fail the run (exit 0).
 // A schema_version mismatch is refused with a re-baseline instruction (exit 2).
 //
-// FRESH-CHECKOUT WRINKLE (known, not a bug): the 21 batch cases
-// (issues/040926ProdIssues.csv) AND the frozen semantic verdicts
-// (semantic-verdicts.local.json) are LOCAL-ONLY / gitignored (PII + repo
-// convention). On a clean checkout the harness runs 47 cases (41 synthetic +
-// 6 retest) and surfaces the 21 batch baseline entries as missing (HARD). This
-// machine has both local files present, so all 68 run. See README "Local-only".
+// LOCAL-ONLY SOURCES / CI MODE: the 21 batch cases
+// (issues/040926ProdIssues.csv) and the 628-case prod corpus
+// (prod-corpus.local.json) are LOCAL-ONLY / gitignored (real candidate PII).
+// A dev machine has them and runs all 68 core + 628 prod cases.
+//
+//   CI unset  — an absent source is a HARD failure: its baseline entries show
+//               up as missing and the run exits 1. This is deliberate. Locally,
+//               a source that vanished means a broken checkout, not a pass.
+//
+//   CI=true   — an absent source is reported as SKIPPED with a case count and
+//               its baseline entries are excluded from the comparison. Only
+//               sources on LOCAL_ONLY_SOURCES may be skipped this way; a
+//               committed source that fails to produce cases is still HARD.
+//
+// The frozen semantic verdicts are NOT a skippable source: the subset reached
+// by committed cases lives in the TRACKED semantic-verdicts.committed.json, so
+// the synthetic + retest cases score identically with or without the local
+// cache. See lib/semantic-cache.ts and extract-committed-verdicts.ts.
 //
 // USAGE:
 //   npx tsx tests/jobfit-regression/regression-check.ts
@@ -53,7 +65,7 @@ import { join } from "node:path"
 import { runJobFit } from "../../app/api/_lib/jobfitEvaluator"
 import { mapClientProfileToOverrides } from "../../app/api/_lib/jobfitProfileAdapter"
 import { runBatch } from "./run-csv-in-process"
-import { frozenSemanticOption } from "./lib/semantic-cache"
+import { frozenSemanticOption, verdictSourceStatus } from "./lib/semantic-cache"
 import {
   type CaseSnapshot,
   type SnapshotDiff,
@@ -92,6 +104,23 @@ const SYNTHETIC_CSV_PATH = join(
 // => prod suite skipped entirely (clean checkout stays the fast 68-case gate).
 const PROD_FIXTURE_PATH = join(__dirname, "prod-corpus.local.json")
 const PROD_BASELINE_PATH = join(__dirname, "baseline-prod.json")
+
+// ── CI mode ──────────────────────────────────────────────────────────────────
+// Exactly `CI === "true"`, not merely "CI is set to something", so a stray
+// CI=0 / CI=false in a local shell cannot silently soften the gate.
+const IS_CI = process.env.CI === "true"
+
+// The only sources whose absence CI is allowed to forgive, each paired with the
+// baseline-id prefix its cases carry. Anything not listed here is committed and
+// must produce its cases in every environment.
+const LOCAL_ONLY_SOURCES: Array<{ name: string; path: string; idPrefix: string }> = [
+  { name: "batch CSV (issues/040926ProdIssues.csv)", path: BATCH_CSV_PATH, idPrefix: "batch-" },
+]
+
+type SkippedSource = { name: string; idPrefix: string; baselineCases: number }
+
+// 4 case sources overall: batch CSV, synthetic CSV, inline retests, prod corpus.
+const TOTAL_SOURCES = 4
 
 // Run one of the inline retest cases through runJobFit and return a snapshot.
 async function runRetestCase(c: typeof RETEST_CASES[number]): Promise<CaseSnapshot> {
@@ -133,7 +162,7 @@ async function runRetestCase(c: typeof RETEST_CASES[number]): Promise<CaseSnapsh
 }
 
 // Build the live snapshot map from all 26 cases.
-async function collectLiveSnapshots(): Promise<Record<string, CaseSnapshot>> {
+export async function collectLiveSnapshots(): Promise<Record<string, CaseSnapshot>> {
   const out: Record<string, CaseSnapshot> = {}
 
   // Batch cases from the production issues CSV. Skip silently when the
@@ -234,9 +263,19 @@ function writeBaseline(path: string, snapshots: Record<string, CaseSnapshot>) {
 function compareSuite(
   suiteName: string,
   live: Record<string, CaseSnapshot>,
-  baseline: Record<string, CaseSnapshot>
+  baselineRaw: Record<string, CaseSnapshot>,
+  skipped: SkippedSource[] = []
 ): boolean {
-  const versions = new Set(Object.values(baseline).map((s: any) => s?.schema_version ?? 1))
+  // CI only: drop the baseline entries belonging to an absent local-only
+  // source so they are not reported as missing. Every other baseline entry is
+  // still compared, so this narrows the case LIST without ever softening the
+  // per-case diff for a case that did run.
+  const baseline: Record<string, CaseSnapshot> = {}
+  for (const [id, snap] of Object.entries(baselineRaw)) {
+    if (skipped.some((sk) => id.startsWith(sk.idPrefix))) continue
+    baseline[id] = snap
+  }
+  const versions = new Set(Object.values(baselineRaw).map((s: any) => s?.schema_version ?? 1))
   if (!(versions.size === 1 && versions.has(SCHEMA_VERSION))) {
     console.error(
       `\n✗ [${suiteName}] Baseline schema version mismatch.\n` +
@@ -268,7 +307,15 @@ function compareSuite(
   const softOnlyCases = perCase.filter((c) => c.hard.length === 0 && c.soft.length > 0)
   const hardFail = hardCases.length > 0 || newCases.length > 0 || missingCases.length > 0
 
-  console.log(`── suite: ${suiteName} (${liveIds.size} live, ${baselineIds.size} baseline) ──`)
+  const skippedCases = skipped.reduce((n, sk) => n + sk.baselineCases, 0)
+  console.log(
+    `── suite: ${suiteName} (${liveIds.size} live, ${baselineIds.size} baseline` +
+      (skippedCases > 0 ? `, ${skippedCases} skipped` : "") +
+      `) ──`
+  )
+  for (const sk of skipped) {
+    console.log(`  ○ skipped source: ${sk.name} — ${sk.baselineCases} baseline case(s) not run (CI=true)`)
+  }
   if (newCases.length > 0) {
     console.log(`✗ [${suiteName}] New cases not in baseline (HARD):`)
     for (const id of newCases) console.log("  + " + id + " — " + live[id].label)
@@ -312,6 +359,34 @@ async function main() {
   console.log("Running jobfit regression check...")
   const t0 = Date.now()
 
+  // Which local-only sources are absent? In CI these become SKIPPED; with CI
+  // unset the list stays empty and their baseline cases fail as missing.
+  const absentSources = LOCAL_ONLY_SOURCES.filter((src) => !existsSync(src.path))
+  const coreSkipped: SkippedSource[] = []
+  if (IS_CI && absentSources.length > 0) {
+    const baselinePeek = readBaseline(BASELINE_PATH) ?? {}
+    for (const src of absentSources) {
+      coreSkipped.push({
+        name: src.name,
+        idPrefix: src.idPrefix,
+        baselineCases: Object.keys(baselinePeek).filter((id) => id.startsWith(src.idPrefix)).length,
+      })
+    }
+  } else if (!IS_CI && absentSources.length > 0) {
+    console.log(
+      `  ! ${absentSources.length} local-only source(s) absent and CI is not "true" — ` +
+        `their baseline cases will fail as missing:`
+    )
+    for (const src of absentSources) console.log(`      ${src.name}`)
+    console.log("")
+  }
+
+  const verdicts = verdictSourceStatus()
+  console.log(
+    `  semantic verdicts: ${verdicts.committed} committed` +
+      (verdicts.local > 0 ? ` + ${verdicts.local} local` : " + 0 local (CI/clean checkout)")
+  )
+
   // Core 68-case suite (always). Prod corpus (4th source) only when the
   // local-only fixture is present.
   const core = await collectLiveSnapshots()
@@ -332,10 +407,18 @@ async function main() {
     }
   }
   const ms = Date.now() - t0
+  const skippedSourceCount = coreSkipped.length + (prodExists ? 0 : 1)
+  const skippedCaseCount = coreSkipped.reduce((n, sk) => n + sk.baselineCases, 0)
   console.log(
     `Ran ${Object.keys(core).length} core` +
       (prodExists ? ` + ${Object.keys(prod).length} prod` : "") +
-      ` cases in ${(ms / 1000).toFixed(1)}s\n`
+      ` cases in ${(ms / 1000).toFixed(1)}s`
+  )
+  console.log(
+    `Sources: ${TOTAL_SOURCES} total, ${skippedSourceCount} skipped` +
+      (skippedCaseCount > 0 ? ` (${skippedCaseCount} core case(s) held back)` : "") +
+      (IS_CI ? "  [CI mode]" : "") +
+      "\n"
   )
 
   if (updateBaseline) {
@@ -365,7 +448,7 @@ async function main() {
     )
     process.exit(2)
   }
-  let hardFail = compareSuite("core", core, coreBaseline)
+  let hardFail = compareSuite("core", core, coreBaseline, coreSkipped)
 
   if (prodExists) {
     const prodBaseline = readBaseline(PROD_BASELINE_PATH)
@@ -378,7 +461,7 @@ async function main() {
     }
     hardFail = compareSuite("prod", prod, prodBaseline) || hardFail
   } else {
-    console.log("── suite: prod — fixture absent (prod-corpus.local.json) → skipped ──\n")
+    console.log("── suite: prod — fixture absent (prod-corpus.local.json) → skipped, 0 cases ──\n")
   }
 
   if (hardFail) {
@@ -390,7 +473,13 @@ async function main() {
   console.log("✓ All suites pass (no HARD changes).")
 }
 
-main().catch((e) => {
-  console.error("Fatal error in regression-check:", e)
-  process.exit(2)
-})
+// Only auto-run when executed directly, so extract-committed-verdicts.ts can
+// import collectLiveSnapshots and trace the exact cases CI runs. Filename-based
+// for tsx/CJS interop, matching run-csv-in-process.ts.
+const isMainEntryPoint = (process.argv[1] || "").replace(/\\/g, "/").endsWith("/regression-check.ts")
+if (isMainEntryPoint) {
+  main().catch((e) => {
+    console.error("Fatal error in regression-check:", e)
+    process.exit(2)
+  })
+}
