@@ -1,0 +1,69 @@
+# CI for wrnsignal-api.
+#
+# Gate order is deliberate: cheapest and broadest first, so a type error fails in
+# ~1 min instead of after the 4-minute JobFit replay.
+#
+# NO SECRETS. Not an oversight — a requirement. Every suite here must pass with
+# ANTHROPIC_API_KEY and the Supabase keys unset:
+#   - The JobFit engine's three LLM paths (semanticRelevance, llmResumeExtractor,
+#     extractJobSignalsLLM) each bail out when their key is missing, and the test
+#     harness passes allowLive:false besides, so nothing reaches api.anthropic.com.
+#   - The Supabase-backed scripts (inspect-prod-runs, build-prod-corpus) are not
+#     part of any suite invoked below.
+# If a future change makes a suite need a secret, fix the suite — do not add the
+# secret here. A CI run that can spend money on a fork PR is not a gate.
+name: CI
+
+on:
+  push:
+    branches: [dev]
+  pull_request:
+
+# A second push to the same branch cancels the first — the older run's verdict is
+# already stale.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: typecheck + tests + jobfit regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      # Read by regression-check.ts: absent local-only sources (the PII batch CSV
+      # and the prod corpus, both gitignored) are reported as SKIPPED rather than
+      # failing as missing baseline cases. Every case that DOES run is still
+      # diffed at full strength. GitHub sets CI=true anyway; set explicitly so the
+      # dependency is visible where someone editing this file will see it.
+      CI: "true"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node 24 to match the Vercel project's runtime (Node.js Version: 24.x).
+      # Keep these in step: a version skew here means CI is not testing what
+      # production builds.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Component tests (vitest)
+        run: npm run test:components
+
+      - name: Engine tests (tsx scripts)
+        run: npm run test:engine
+
+      # Replays the JobFit scoring engine over every committed case and diffs
+      # against baseline.json. Deterministic offline: the semantic layer reads
+      # semantic-verdicts.committed.json (tracked) with allowLive:false.
+      - name: JobFit regression
+        run: npx tsx tests/jobfit-regression/regression-check.ts
