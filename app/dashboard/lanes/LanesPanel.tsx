@@ -326,6 +326,12 @@ export function LanesPanel({
                       if (laneId) loadQueue(laneId)
                       setReloadKey((k) => k + 1)
                     }}
+                    onQueueCleared={() => {
+                      // Same two things are stale, for the opposite reason: the
+                      // queue is now empty and the tab still shows its old count.
+                      if (laneId) loadQueue(laneId)
+                      setReloadKey((k) => k + 1)
+                    }}
                     onDeleted={() => {
                       // The selected lane is gone. Drop the selection and reload
                       // so the tabs, the queue and the create panel all reflect

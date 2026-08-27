@@ -23,13 +23,14 @@ import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { loadAuthorizedLane } from "@/lib/collab/laneAccess"
 import { SENIORITY_LEVELS, fetchJobs, queryFor } from "@/lib/hiringcafe"
 import { toSearchFilters } from "@/lib/laneRunner"
+import { LEGACY_POSTING_WINDOW_DAYS } from "@/lib/lanePostingWindow"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-// Same window and seniority band the runner uses, for the same reason the
-// keyword and location come from the lane.
-const DAYS = 29
+// Same seniority band the runner uses, for the same reason the keyword,
+// location and posting window all come from the lane: a discovery result found
+// under different search conditions lists titles the lane can never surface.
 const SENIORITY = [...SENIORITY_LEVELS].slice(0, 3) // through Mid Level
 
 export async function OPTIONS(req: NextRequest) {
@@ -55,7 +56,7 @@ export async function GET(req: NextRequest) {
       profileId,
       "read",
       supabase,
-      "id, client_profile_id, titles, keyword, location, filters"
+      "id, client_profile_id, titles, keyword, location, days_posted, filters"
     )
     if (accessErr) return withCorsJson(req, { ok: false, error: accessErr }, accessErr === "Forbidden" ? 403 : 404)
 
@@ -79,13 +80,16 @@ export async function GET(req: NextRequest) {
     }
     const radiusMiles: number = location.radius_miles ?? 25
     const keyword: string | null = (lane as any).keyword ?? null
+    // The lane's own window. A lane looking back 24 hours must not be offered
+    // titles that only exist in a month of backlog.
+    const days: number = (lane as any).days_posted ?? LEGACY_POSTING_WINDOW_DAYS
 
     const query = queryFor(phrase, keyword)
     const { rows, total } = await fetchJobs({
       query,
       locations: presets,
       radiusMiles,
-      days: DAYS,
+      days,
       seniority: SENIORITY,
       pages: 1,
       // The lane's own board filters, so discovery lists titles this lane can
@@ -119,6 +123,7 @@ export async function GET(req: NextRequest) {
         query,
         keyword,
         location: presets.length ? { presets, radius_miles: radiusMiles } : null,
+        days,
         // fetched vs available: one page of a larger set is a sample, and a
         // count presented without that distinction reads as the whole board.
         fetched: rows.length,

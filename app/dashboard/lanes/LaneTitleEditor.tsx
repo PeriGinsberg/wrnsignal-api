@@ -1,11 +1,13 @@
 "use client"
 
-// Lane titles, and the discovery control that fills them.
+// A lane's setup: what it searches for, how it filters, and how it is cleaned up.
 //
-// Titles are the only writable field — see app/api/lanes/[id]/route.ts for why.
-// The rest of the config is shown because you cannot judge a title without it:
-// the same phrase searched with a keyword and without one returns different
-// jobs, and a title that looks wrong is often a keyword that is.
+// Titles, board filters, the years ceiling and the posting window are writable.
+// Keyword and location are shown but not editable here, because each one can
+// silently empty a lane and needs a guard the PATCH route does not have yet
+// (app/api/lanes/[id]/route.ts). They are still shown, because you cannot judge
+// a title without them: the same phrase searched with a keyword and without one
+// returns different jobs, and a title that looks wrong is often a keyword that is.
 //
 // Every title change saves immediately rather than accumulating behind a Save
 // button. Discovery is a loop — search, add, search again — and a dirty-state
@@ -21,6 +23,7 @@ import { T, card, eyebrow, input, btnPrimary, btnSecondary } from "../../../lib/
 import { authFetch, locationLabel, type Discovery, type LaneConfig, type LaneFilters } from "./laneApi"
 import { FilterListEditor } from "./FilterListEditor"
 import { BOARD_COMMITMENTS } from "../../../lib/laneCommitment"
+import { POSTING_WINDOWS, POSTING_WINDOW_DAYS, postingWindowLabel } from "../../../lib/lanePostingWindow"
 
 export function LaneTitleEditor({
   laneId,
@@ -28,6 +31,7 @@ export function LaneTitleEditor({
   onTitlesChange,
   onActiveChange,
   onRan,
+  onQueueCleared,
   onDeleted,
 }: {
   laneId: string
@@ -38,6 +42,8 @@ export function LaneTitleEditor({
   onActiveChange?: (active: boolean) => void
   /** Fired after a manual run, so a surrounding queue can reload. */
   onRan?: () => void
+  /** Fired after the unreviewed queue is cleared. Same refresh a run needs. */
+  onQueueCleared?: () => void
   /** Fired after the lane is deleted; it no longer exists when this runs. */
   onDeleted?: () => void
 }) {
@@ -48,14 +54,22 @@ export function LaneTitleEditor({
 
   // Counts of what a delete would destroy, so the confirmation can name the
   // cost. Null until the lane loads.
-  const [counts, setCounts] = useState<{ results: number; runs: number } | null>(null)
+  const [counts, setCounts] = useState<{ results: number; unreviewed: number; runs: number } | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
+  // Clearing the queue is the reversible-ish answer to a hundred stale rows, so
+  // it gets its own confirmation rather than sharing the delete one.
+  const [confirmingClear, setConfirmingClear] = useState(false)
+  const [clearing, setClearing] = useState(false)
+
   const [savingFilters, setSavingFilters] = useState(false)
+  const [savingConfig, setSavingConfig] = useState(false)
 
   const [running, setRunning] = useState(false)
-  const [runSummary, setRunSummary] = useState<string | null>(null)
+  // What just happened, whatever it was: a run, or a queue clear. One slot,
+  // because they are two ways of finishing the same trip to this screen.
+  const [notice, setNotice] = useState<string | null>(null)
 
   const [phrase, setPhrase] = useState("")
   const [searching, setSearching] = useState(false)
@@ -82,6 +96,8 @@ export function LaneTitleEditor({
       setLane(j.lane)
       setCounts(j.counts ?? null)
       setConfirmingDelete(false)
+      setConfirmingClear(false)
+      setNotice(null)
       setLoading(false)
     })()
     return () => {
@@ -162,7 +178,7 @@ export function LaneTitleEditor({
   // the change was any good.
   const runNow = useCallback(async () => {
     setRunning(true)
-    setRunSummary(null)
+    setNotice(null)
     setError(null)
     const res = await authFetch(`/api/lanes/${encodeURIComponent(laneId)}/run`, { method: "POST" })
     const j = await res.json().catch(() => ({}))
@@ -177,7 +193,9 @@ export function LaneTitleEditor({
     const { found, added, refreshed } = j.run
     // The lane list holds the last-run line; it is now out of date.
     onRan?.()
-    setRunSummary(
+    // The queue just grew, so the count the clear control names is stale.
+    setCounts((prev) => (prev ? { ...prev, results: prev.results + added, unreviewed: prev.unreviewed + added } : prev))
+    setNotice(
       `Found ${found} job${found === 1 ? "" : "s"} · ${added} new to this lane · ${refreshed} already here` +
         (j.was_paused ? " · lane is still paused, this run was manual" : "")
     )
@@ -198,6 +216,57 @@ export function LaneTitleEditor({
     }
     onDeleted?.()
   }, [laneId, onDeleted])
+
+  // years_max and the posting window. One writer for both: they are two fields
+  // on the same row and each save is a whole PATCH, so a second copy of this
+  // would differ from the first the moment either one needed a fix.
+  //
+  // Optimistic like the rest of the screen, restoring only the keys it touched
+  // rather than the whole lane, so a title save landing at the same moment is
+  // not rolled back by this one failing.
+  const saveConfig = useCallback(
+    async (patch: { years_max?: number | null; days_posted?: number }) => {
+      if (!lane) return
+      const previous = { years_max: lane.years_max, days_posted: lane.days_posted }
+      setLane({ ...lane, ...patch })
+      setSavingConfig(true)
+      const res = await authFetch(`/api/lanes/${encodeURIComponent(laneId)}`, {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+      })
+      setSavingConfig(false)
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j.ok) {
+        setError(j.error || "Could not save that change")
+        setLane((prev) => (prev ? { ...prev, ...previous } : prev))
+        return
+      }
+      setError(null)
+      setLane(j.lane)
+    },
+    [lane, laneId]
+  )
+
+  // Empty the queue without judging it. Rows are marked cleared rather than
+  // deleted, so the next run refreshes them in place instead of putting them
+  // straight back; see app/api/lanes/[id]/queue/route.ts. Anything already
+  // pushed or dismissed is untouched, which is the whole point of clearing
+  // rather than deleting the lane.
+  const clearQueue = useCallback(async () => {
+    setClearing(true)
+    setError(null)
+    const res = await authFetch(`/api/lanes/${encodeURIComponent(laneId)}/queue`, { method: "DELETE" })
+    const j = await res.json().catch(() => ({}))
+    setClearing(false)
+    if (!res.ok || !j.ok) {
+      setError(j.error || "Could not clear the queue")
+      return
+    }
+    setConfirmingClear(false)
+    setCounts((prev) => (prev ? { ...prev, unreviewed: 0 } : prev))
+    setNotice(`Cleared ${j.cleared} unreviewed job${j.cleared === 1 ? "" : "s"}. Reviewed rows were left alone.`)
+    onQueueCleared?.()
+  }, [laneId, onQueueCleared])
 
   // All four board filters save through one call, because they are one column
   // and PATCH replaces the object wholesale — a per-list write would have the
@@ -267,12 +336,33 @@ export function LaneTitleEditor({
         </div>
       )}
 
-      {/* Read-only context. These shape every search below. */}
+      {/* What every search below is shaped by. Keyword and location are shown
+          rather than editable; the two that are editable sit among them because
+          a ceiling and a window are read the same way you read the rest. */}
       {showConfig && (
-        <div style={{ ...card, padding: "16px 18px", marginBottom: 14, display: "flex", gap: 28, flexWrap: "wrap" }}>
+        <div
+          style={{
+            ...card, padding: "16px 18px", marginBottom: 14,
+            display: "flex", gap: 28, flexWrap: "wrap", alignItems: "flex-start",
+          }}
+        >
           <ConfigFact label="Keyword" value={lane.keyword ?? "none"} dim={!lane.keyword} />
           <ConfigFact label="Location" value={locationLabel(lane.location)} />
-          <ConfigFact label="Years max" value={lane.years_max == null ? "no ceiling" : String(lane.years_max)} />
+          <YearsMaxField
+            // Keyed on the saved value so the box re-seeds itself from the lane
+            // whenever that changes, including a rollback. The alternative is an
+            // effect mirroring a prop into state, which is the same thing with a
+            // render in between.
+            key={`years-max-${lane.years_max ?? "none"}`}
+            value={lane.years_max}
+            disabled={savingConfig}
+            onCommit={(v) => saveConfig({ years_max: v })}
+          />
+          <PostedWithinField
+            value={lane.days_posted}
+            disabled={savingConfig}
+            onChange={(v) => saveConfig({ days_posted: v })}
+          />
           <ConfigFact
             label="Excluded title words"
             value={lane.exclusions?.title_keywords?.join(", ") || "none"}
@@ -323,14 +413,14 @@ export function LaneTitleEditor({
         </div>
       )}
 
-      {runSummary && (
+      {notice && (
         <div
           style={{
             ...card, padding: "10px 14px", marginBottom: 14,
             borderColor: T.SUCCESS, background: T.SUCCESS_BG, color: T.TEXT, fontSize: 13,
           }}
         >
-          {runSummary}
+          {notice}
         </div>
       )}
 
@@ -553,21 +643,82 @@ export function LaneTitleEditor({
       </section>
 
       {/* Deliberately last, and visually separate. Pausing is the reversible
-          answer to "stop this lane" and lives up in the config strip; this is
-          the other question. */}
+          answer to "stop this lane" and lives up in the config strip; these are
+          the other two questions, in increasing order of how much they cost.
+          Clearing empties the queue and keeps everything else; deleting keeps
+          nothing. */}
       <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${T.BORDER_SOFT}` }}>
-        {!confirmingDelete ? (
-          <button
-            type="button"
-            onClick={() => setConfirmingDelete(true)}
-            style={{
-              background: "none", border: "none", padding: 0,
-              color: T.MUTED, fontSize: 12, fontWeight: 700, cursor: "pointer",
-            }}
-          >
-            Delete this lane
-          </button>
-        ) : (
+        {!confirmingClear && !confirmingDelete && (
+          <div style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={() => setConfirmingClear(true)}
+              disabled={counts?.unreviewed === 0}
+              title={
+                counts?.unreviewed === 0
+                  ? "Nothing is waiting to be reviewed"
+                  : "Take every unreviewed job out of the queue, keeping the lane and everything already reviewed"
+              }
+              style={{
+                background: "none", border: "none", padding: 0,
+                color: counts?.unreviewed === 0 ? T.DIM : T.MUTED,
+                fontSize: 12, fontWeight: 700,
+                cursor: counts?.unreviewed === 0 ? "not-allowed" : "pointer",
+              }}
+            >
+              Clear the unreviewed queue
+              {counts ? ` (${counts.unreviewed})` : ""}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(true)}
+              style={{
+                background: "none", border: "none", padding: 0,
+                color: T.MUTED, fontSize: 12, fontWeight: 700, cursor: "pointer",
+              }}
+            >
+              Delete this lane
+            </button>
+          </div>
+        )}
+
+        {confirmingClear && (
+          <div style={{ ...card, padding: "14px 16px", borderColor: T.ORANGE_BORDER, background: T.WARNING_BG }}>
+            <p style={{ fontSize: 13, color: T.TEXT, margin: "0 0 4px", fontWeight: 700 }}>
+              {counts
+                ? `Clear ${counts.unreviewed} unreviewed job${counts.unreviewed === 1 ? "" : "s"} from this queue?`
+                : "Clear every unreviewed job from this queue?"}
+            </p>
+            <p style={{ fontSize: 12, color: T.MUTED, margin: "0 0 12px" }}>
+              The lane keeps running, and everything you have already scored or dismissed stays exactly as it is.
+              Cleared jobs are marked, not deleted, so tonight&apos;s run refreshes them in place instead of putting
+              them straight back in the queue.
+            </p>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <button
+                type="button"
+                onClick={clearQueue}
+                disabled={clearing}
+                style={{
+                  ...btnSecondary, padding: "9px 16px",
+                  cursor: clearing ? "not-allowed" : "pointer", opacity: clearing ? 0.6 : 1,
+                }}
+              >
+                {clearing ? "Clearing…" : "Clear the queue"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingClear(false)}
+                disabled={clearing}
+                style={{ background: "transparent", border: "none", color: T.DIM, fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {confirmingDelete && (
           <div style={{ ...card, padding: "14px 16px", borderColor: T.ERROR, background: T.ERROR_BG }}>
             <p style={{ fontSize: 13, color: T.TEXT, margin: "0 0 4px", fontWeight: 700 }}>
               Delete &ldquo;{lane.name}&rdquo; permanently?
@@ -603,6 +754,123 @@ export function LaneTitleEditor({
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+/**
+ * The years ceiling.
+ *
+ * Committed on blur or Enter rather than on every keystroke: saving as you type
+ * would send "1" on the way to "12", and a lane briefly filtered at one year is
+ * a run that drops most of the board.
+ *
+ * Empty means no ceiling, which is a real value and the only way to remove one.
+ * Anything that is not a whole number of years is refused by putting the lane's
+ * own value back, so the box can never disagree with what was saved.
+ *
+ * Its caller keys it on the saved value, so a save landing (or being rolled
+ * back) re-seeds the draft without this component watching for it.
+ */
+function YearsMaxField({
+  value,
+  disabled,
+  onCommit,
+}: {
+  value: number | null
+  disabled: boolean
+  onCommit: (v: number | null) => void
+}) {
+  const asText = (v: number | null) => (v == null ? "" : String(v))
+  const [draft, setDraft] = useState(asText(value))
+
+  const commit = () => {
+    const t = draft.trim()
+    if (t === "") {
+      if (value !== null) onCommit(null)
+      return
+    }
+    const n = Number(t)
+    if (!Number.isInteger(n) || n < 0) {
+      setDraft(asText(value))
+      return
+    }
+    if (n !== value) onCommit(n)
+  }
+
+  return (
+    <div>
+      <div style={{ ...eyebrow, color: T.DIM, marginBottom: 4 }}>Years max</div>
+      <input
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur()
+          if (e.key === "Escape") setDraft(asText(value))
+        }}
+        disabled={disabled}
+        inputMode="numeric"
+        placeholder="no ceiling"
+        aria-label="Years max"
+        title="Drop postings asking for more years than this. Empty means no ceiling. Postings that never state a minimum are kept either way."
+        style={{ ...input, height: 30, width: 104, padding: "0 10px", borderRadius: 9 }}
+      />
+    </div>
+  )
+}
+
+/**
+ * How far back the lane looks.
+ *
+ * Saves on change, unlike the years box: there is no half-typed state to guard
+ * against when every value is one of five.
+ *
+ * The null case is a database where the column has not been added yet. It is
+ * rendered as the window every lane used to run at rather than as a blank, so
+ * the control never claims the lane is set to something it is not.
+ */
+function PostedWithinField({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: number | null
+  disabled: boolean
+  onChange: (days: number) => void
+}) {
+  const known = value != null && POSTING_WINDOW_DAYS.has(value)
+  return (
+    <div>
+      <div style={{ ...eyebrow, color: T.DIM, marginBottom: 4 }}>Posted within</div>
+      <select
+        value={known ? String(value) : ""}
+        onChange={(e) => {
+          const n = Number(e.target.value)
+          if (POSTING_WINDOW_DAYS.has(n)) onChange(n)
+        }}
+        disabled={disabled}
+        aria-label="Posted within"
+        title="Only jobs posted inside this window. It is sent to the board, so anything older never reaches the queue."
+        style={
+          {
+            ...input,
+            height: 30,
+            width: "auto",
+            padding: "0 8px",
+            borderRadius: 9,
+            cursor: "pointer",
+            colorScheme: "dark",
+          } as React.CSSProperties
+        }
+      >
+        {!known && <option value="">{postingWindowLabel(value)}</option>}
+        {POSTING_WINDOWS.map((w) => (
+          <option key={w.days} value={w.days}>
+            {w.label}
+          </option>
+        ))}
+      </select>
     </div>
   )
 }

@@ -37,6 +37,7 @@ import { createClient } from "@supabase/supabase-js"
 import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { runLane, resolvePresets, type Lane, type TitleOutcome } from "../lib/laneRunner"
+import { LEGACY_POSTING_WINDOW_DAYS } from "../lib/lanePostingWindow"
 
 function loadEnvLocal() {
   for (const name of [".env.local", ".env.development.local"]) {
@@ -77,7 +78,7 @@ function arg(name: string, fallback?: string): string | undefined {
 async function listLanes() {
   const { data, error } = await sb
     .from("search_lanes")
-    .select("id, name, active, titles, location, years_max, client_profile_id")
+    .select("id, name, active, titles, location, days_posted, years_max, client_profile_id")
     .order("created_at")
   if (error) throw new Error(error.message)
   if (!data?.length) return console.log("no lanes")
@@ -93,7 +94,7 @@ async function listLanes() {
   }
 }
 
-async function runOneLane(l: Lane, opts: { dryRun: boolean; days: number; pages: number }) {
+async function runOneLane(l: Lane, opts: { dryRun: boolean; days?: number; pages: number }) {
   if (!l.active) console.log(`(lane is paused — running anyway because it was named explicitly)\n`)
 
   let markets: string
@@ -106,7 +107,11 @@ async function runOneLane(l: Lane, opts: { dryRun: boolean; days: number; pages:
   console.log(`lane: ${l.name}  (${l.id})`)
   console.log(`  titles:     ${l.titles.join(" | ")}`)
   console.log(`  keyword:    ${l.keyword ?? "(none)"}`)
-  console.log(`  location:   ${markets}, posted ≤ ${opts.days}d`)
+  const days = opts.days ?? l.days_posted ?? LEGACY_POSTING_WINDOW_DAYS
+  console.log(
+    `  location:   ${markets}, posted ≤ ${days}d` +
+      (opts.days != null ? ` (--days override; the lane itself is set to ${l.days_posted ?? LEGACY_POSTING_WINDOW_DAYS})` : "")
+  )
   console.log(`  years_max:  ${l.years_max ?? "none"}`)
   console.log(`  companies:  ${l.companies?.length ? l.companies.join(", ") : "(no restriction)"}`)
   console.log(`  exclusions: ${JSON.stringify(l.exclusions || {})}`)
@@ -173,6 +178,7 @@ function laneFromFile(path: string): Lane {
     titles: raw.titles,
     keyword: raw.keyword ?? null,
     location: raw.location ?? {},
+    days_posted: raw.days_posted ?? null,
     years_max: raw.years_max ?? null,
     companies: raw.companies ?? [],
     exclusions: raw.exclusions ?? {},
@@ -188,6 +194,7 @@ async function main() {
     console.error(
       "usage: run-search-lane.ts --lane <uuid> [--dry-run] [--days N] [--pages N]\n" +
         "       run-search-lane.ts --lane-json <path> [--days N] [--pages N]\n" +
+        "       (--days overrides the lane's own posting window, for this run only)\n" +
         "       run-search-lane.ts --list"
     )
     process.exit(1)
@@ -198,7 +205,11 @@ async function main() {
     // An unsaved lane has no id to write results against, so --dry-run is not
     // optional there; forcing it beats accepting the flag and ignoring it.
     dryRun: Boolean(laneFile) || process.argv.includes("--dry-run"),
-    days: Number(arg("days", "29")),
+    // Undefined, not a default. The lane carries its own posting window now, so
+    // passing one unconditionally is how a CLI run stops matching the nightly
+    // run of the same lane. --days is an override, which means it has to be
+    // absent when nobody typed it.
+    days: arg("days") == null ? undefined : Number(arg("days")),
     pages: Number(arg("pages", "1")),
   })
 }

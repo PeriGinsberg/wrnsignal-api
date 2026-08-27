@@ -54,8 +54,10 @@ const SPACING_MS = 15_000
  */
 const MIN_LANE_MS = 35_000
 
+// days_posted is load bearing: without it every swept lane falls back to the
+// pre-column window and the coach's choice never reaches the nightly run.
 const LANE_FIELDS =
-  "id, client_profile_id, name, active, titles, keyword, location, years_max, companies, exclusions, filters"
+  "id, client_profile_id, name, active, titles, keyword, location, days_posted, years_max, companies, exclusions, filters"
 
 function getSupabaseAdmin(): SupabaseClient {
   const url = process.env.SUPABASE_URL

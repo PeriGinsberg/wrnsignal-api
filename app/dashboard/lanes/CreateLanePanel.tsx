@@ -14,6 +14,7 @@
 import { useCallback, useState } from "react"
 import { T, card, eyebrow, input, btnPrimary, btnSecondary } from "../../../lib/dashboard-theme"
 import { authFetch, locationLabel } from "./laneApi"
+import { DEFAULT_POSTING_WINDOW_DAYS, postingWindowLabel } from "../../../lib/lanePostingWindow"
 
 type TitleProbe = { title: string; query: string; fetched: number; available: number; capped: boolean }
 
@@ -90,6 +91,9 @@ export function CreateLanePanel({
         // Empty input means no keyword. There is one representation of that.
         keyword: keyword.trim() || null,
         location: data.proposal.location,
+        // Sent rather than left to the column default, so the window shown in
+        // review below is the window the lane is actually created with.
+        days_posted: DEFAULT_POSTING_WINDOW_DAYS,
         years_max: data.proposal.years_max,
         companies: data.proposal.companies,
         exclusions: data.proposal.exclusions,
@@ -234,6 +238,7 @@ export function CreateLanePanel({
           label="Years max"
           value={data!.proposal.years_max == null ? "no ceiling" : String(data!.proposal.years_max)}
         />
+        <Fact label="Posted within" value={postingWindowLabel(DEFAULT_POSTING_WINDOW_DAYS)} />
         <Fact
           label="Excluded title words"
           value={data!.proposal.exclusions?.title_keywords?.join(", ") || "none"}

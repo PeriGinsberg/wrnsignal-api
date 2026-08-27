@@ -23,6 +23,7 @@
 
 import { type SupabaseClient } from "@supabase/supabase-js"
 import { fetchJobs, queryFor, SENIORITY_LEVELS, type JobRow } from "./hiringcafe"
+import { LEGACY_POSTING_WINDOW_DAYS } from "./lanePostingWindow"
 
 export type Lane = {
   id: string
@@ -35,6 +36,12 @@ export type Lane = {
   // thing — see resolvePresets(). `preset` is the pre-2026-08-18 single-market
   // shape, still read so old rows keep working.
   location: { presets?: string[]; preset?: string | null; radius_miles?: number; days_posted?: number }
+  /**
+   * How far back this lane looks, in days. NOT NULL in the column with a
+   * default, so an absent value here is never "the lane did not say": it is a
+   * select that did not ask for the field. See the fallback in runLane().
+   */
+  days_posted?: number | null
   years_max: number | null
   companies: string[]
   // Applied by US, after the fetch, against rows the board already sent.
@@ -232,7 +239,13 @@ export async function runLane(
 ): Promise<LaneRunResult> {
   const presets = resolvePresets(lane)
   const radius = lane.location?.radius_miles ?? 25
-  const days = opts.days ?? lane.location?.days_posted ?? 29
+  // The lane's own window, with an explicit caller override on top for the CLI
+  // and the dry-run probes. The last two steps are fallbacks rather than
+  // policy: location.days_posted is the pre-column shape nothing ever wrote,
+  // and the constant is what every lane ran at before the column existed, so a
+  // select that forgets days_posted degrades to the old behaviour rather than
+  // to a narrower search nobody asked for.
+  const days = opts.days ?? lane.days_posted ?? lane.location?.days_posted ?? LEGACY_POSTING_WINDOW_DAYS
   const pages = opts.pages ?? 1
 
   // job_id -> row. First title to surface a job wins matched_title; that is

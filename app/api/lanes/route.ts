@@ -17,6 +17,7 @@ import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { canAccessLaneOwner, laneScopeIds } from "@/lib/collab/laneAccess"
 import { runLaneLogged, type Lane } from "@/lib/laneRunner"
 import { commitmentTypesFromJobType, toBoardCommitment } from "@/lib/laneCommitment"
+import { DEFAULT_POSTING_WINDOW_DAYS, POSTING_WINDOW_DAYS } from "@/lib/lanePostingWindow"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -64,7 +65,7 @@ export async function GET(req: NextRequest) {
       // never populates reads as "no filters set" to anything that defaults it,
       // which is the same silent-wrongness the column being missing from the run
       // paths caused.
-      .select("id, client_profile_id, name, active, titles, keyword, location, years_max, filters")
+      .select("id, client_profile_id, name, active, titles, keyword, location, days_posted, years_max, filters")
       .in("client_profile_id", owners)
       .order("created_at", { ascending: true })
     if (error) throw new Error(`Lanes failed: ${error.message}`)
@@ -240,6 +241,18 @@ export async function POST(req: NextRequest) {
       return withCorsJson(req, { ok: false, error: "years_max must be a non-negative number or null" }, 400)
     }
 
+    // The posting window. Absent means the caller had no opinion and takes the
+    // default; the column would supply the same number, but sending it back in
+    // the response is what lets a create screen show the window it just made.
+    const daysPosted = body?.days_posted === undefined ? DEFAULT_POSTING_WINDOW_DAYS : Number(body.days_posted)
+    if (!POSTING_WINDOW_DAYS.has(daysPosted)) {
+      return withCorsJson(
+        req,
+        { ok: false, error: `days_posted must be one of ${[...POSTING_WINDOW_DAYS].join(", ")}` },
+        400
+      )
+    }
+
     const { data: lane, error: insErr } = await supabase
       .from("search_lanes")
       .insert({
@@ -251,6 +264,7 @@ export async function POST(req: NextRequest) {
         // representation of "no keyword".
         keyword: keywordRaw || null,
         location,
+        days_posted: daysPosted,
         years_max: yearsMax,
         companies: Array.isArray(body?.companies) ? body.companies : [],
         exclusions: body?.exclusions && typeof body.exclusions === "object" ? body.exclusions : {},

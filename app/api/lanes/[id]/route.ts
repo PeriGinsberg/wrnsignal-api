@@ -1,13 +1,21 @@
 // app/api/lanes/[id]/route.ts
 // GET   — one lane's full config, for the edit screen.
-// PATCH { titles: string[] } — replace the lane's title list.
+// PATCH { titles?, active?, filters?, years_max?, days_posted? } — replace any
+//         combination of them.
 //
-// SCOPE. PATCH writes titles and active, and nothing else. Keyword, location,
-// years_max and exclusions are shown on the edit screen but not writable here:
-// each one has a failure mode that needs its own guard (a bad location preset
-// returns a fake zero-result, a keyword can silently empty the lane), and a
-// route that accepts them all would have to grow those guards before it was
-// safe.
+// SCOPE. Keyword, location, companies and exclusions are shown on the edit
+// screen but still not writable here: each has a failure mode that needs its
+// own guard (a bad location preset returns a fake zero-result, a keyword can
+// silently empty the lane), and a route that accepted them would have to grow
+// those guards before it was safe.
+//
+// years_max and days_posted ARE writable, because the guard each one needs is
+// a range check the route can do in full. Neither can put the lane into a state
+// the runner cannot describe: years_max is a ceiling that only bites on
+// postings that stated a minimum, and days_posted is one of five values the
+// column itself enforces. Both narrow or widen the queue visibly, in the
+// direction the coach chose, which is the opposite of the silent failures
+// above.
 //
 // `active` is safe in a way those are not: it is a boolean with no bad value,
 // and setting it false only stops the nightly sweep picking the lane up (the
@@ -20,12 +28,13 @@ import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { loadAuthorizedLane } from "@/lib/collab/laneAccess"
 import { toBoardCommitment } from "@/lib/laneCommitment"
+import { POSTING_WINDOW_DAYS } from "@/lib/lanePostingWindow"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 const LANE_FIELDS =
-  "id, client_profile_id, name, active, titles, keyword, location, years_max, companies, exclusions, filters"
+  "id, client_profile_id, name, active, titles, keyword, location, days_posted, years_max, companies, exclusions, filters"
 
 // Every title is one board fetch on every run, so the list is a cost, not just
 // a preference. The limit is generous enough that nobody hits it by accident
@@ -50,14 +59,24 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const { lane, error } = await loadAuthorizedLane(id, profileId, "read", supabase, LANE_FIELDS)
     if (error) return withCorsJson(req, { ok: false, error }, error === "Forbidden" ? 403 : 404)
 
-    // What deleting this lane would destroy. Returned with the config so a
-    // confirmation can name the cost instead of asking "are you sure".
-    const [{ count: results }, { count: runs }] = await Promise.all([
+    // What deleting this lane would destroy, and what clearing its queue would
+    // cost. Returned with the config so both confirmations can name the number
+    // instead of asking "are you sure".
+    const [{ count: results }, { count: unreviewed }, { count: runs }] = await Promise.all([
       supabase.from("lane_results").select("id", { count: "exact", head: true }).eq("lane_id", id),
+      supabase
+        .from("lane_results")
+        .select("id", { count: "exact", head: true })
+        .eq("lane_id", id)
+        .is("action", null),
       supabase.from("lane_runs").select("id", { count: "exact", head: true }).eq("lane_id", id),
     ])
 
-    return withCorsJson(req, { ok: true, lane, counts: { results: results ?? 0, runs: runs ?? 0 } }, 200)
+    return withCorsJson(
+      req,
+      { ok: true, lane, counts: { results: results ?? 0, unreviewed: unreviewed ?? 0, runs: runs ?? 0 } },
+      200
+    )
   } catch (err: any) {
     const msg = err?.message || String(err)
     const s = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500
@@ -76,11 +95,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const wantsTitles = body?.titles !== undefined
     const wantsActive = body?.active !== undefined
     const wantsFilters = body?.filters !== undefined
-    if (!wantsTitles && !wantsActive && !wantsFilters) {
-      return withCorsJson(req, { ok: false, error: "nothing to update — send titles, active, filters, or any combination" }, 400)
+    const wantsYearsMax = body?.years_max !== undefined
+    const wantsDaysPosted = body?.days_posted !== undefined
+    if (!wantsTitles && !wantsActive && !wantsFilters && !wantsYearsMax && !wantsDaysPosted) {
+      return withCorsJson(
+        req,
+        { ok: false, error: "nothing to update — send titles, active, filters, years_max, days_posted, or any combination" },
+        400
+      )
     }
 
-    const update: { titles?: string[]; active?: boolean; filters?: Record<string, string[]> } = {}
+    const update: {
+      titles?: string[]
+      active?: boolean
+      filters?: Record<string, string[]>
+      years_max?: number | null
+      days_posted?: number
+    } = {}
 
     if (wantsFilters) {
       // Whole-object replace, not a merge: a coach clearing every industry must
@@ -121,6 +152,37 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         return withCorsJson(req, { ok: false, error: "active must be true or false" }, 400)
       }
       update.active = body.active
+    }
+
+    if (wantsYearsMax) {
+      // null is a real value here, not a missing one: it means "no ceiling",
+      // which is the only way to remove a ceiling a lane already has.
+      if (body.years_max === null) {
+        update.years_max = null
+      } else {
+        const n = Number(body.years_max)
+        // Integer, not merely finite. The column is an integer, so 2.5 would be
+        // rejected by Postgres after the request looked accepted, and a ceiling
+        // of "two and a half years" is not a thing a posting can state anyway.
+        if (!Number.isInteger(n) || n < 0) {
+          return withCorsJson(req, { ok: false, error: "years_max must be a whole number of years, 0 or more, or null for no ceiling" }, 400)
+        }
+        update.years_max = n
+      }
+    }
+
+    if (wantsDaysPosted) {
+      const n = Number(body.days_posted)
+      // Closed set, checked here so the caller gets the vocabulary back rather
+      // than a constraint-violation 500 from the database.
+      if (!POSTING_WINDOW_DAYS.has(n)) {
+        return withCorsJson(
+          req,
+          { ok: false, error: `days_posted must be one of ${[...POSTING_WINDOW_DAYS].join(", ")}` },
+          400
+        )
+      }
+      update.days_posted = n
     }
 
     if (wantsTitles) {

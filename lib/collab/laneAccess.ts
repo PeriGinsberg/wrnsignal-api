@@ -99,8 +99,10 @@ export async function loadAuthorizedLane(
   // through this helper applied no board filters at all — the lane stored them,
   // the edit screen showed them, and the nightly run ignored them. Nothing about
   // that failure is visible in the results: you get more jobs, which looks like
-  // a good night.
-  columns = "id, client_profile_id, name, active, titles, keyword, location, years_max, companies, exclusions, filters"
+  // a good night. `days_posted` is here for exactly the same reason: leave it
+  // out and every run through this helper silently reverts to the pre-column
+  // window, which also just looks like more jobs.
+  columns = "id, client_profile_id, name, active, titles, keyword, location, days_posted, years_max, companies, exclusions, filters"
 ): Promise<{ lane: any; error: null } | { lane: null; error: "Lane not found" | "Forbidden" }> {
   const { data } = await supabase.from("search_lanes").select(columns).eq("id", laneId).maybeSingle()
   if (!data) return { lane: null, error: "Lane not found" }

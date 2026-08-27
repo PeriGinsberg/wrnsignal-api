@@ -2,9 +2,9 @@
 
 // Standalone lane edit screen.
 //
-// Thin wrapper: the titles list and the discovery control are the same component
-// the review panel embeds, so the two cannot drift. This route exists for a
-// direct link to one lane's configuration without the queue underneath it.
+// Thin wrapper: the setup panel is the same component the review panel embeds,
+// so the two cannot drift. This route exists for a direct link to one lane's
+// configuration without the queue underneath it.
 
 import { use } from "react"
 import Link from "next/link"
@@ -21,10 +21,11 @@ export default function LaneEditPage({ params }: { params: Promise<{ id: string 
           ← Lane Review
         </Link>
         <h1 style={{ fontSize: 24, fontWeight: 500, letterSpacing: -0.5, color: T.TEXT, margin: "10px 0 0" }}>
-          Lane titles
+          Lane setup
         </h1>
         <p style={{ fontSize: 13, color: T.MUTED, marginTop: 8 }}>
-          Every title is one search per run. Discovery below shows what the board actually titles the work.
+          Every title is one search per run, inside the years ceiling and posting window above them. Discovery
+          below shows what the board actually titles the work.
         </p>
       </div>
       <LaneTitleEditor laneId={id} />

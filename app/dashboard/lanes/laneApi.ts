@@ -15,6 +15,7 @@ export type LaneSummary = {
   titles: string[]
   keyword: string | null
   location: { presets?: string[]; preset?: string | null; radius_miles?: number }
+  days_posted: number | null
   years_max: number | null
   unreviewed: number
   // Present because a list can now span people; null when the owner profile
@@ -62,6 +63,12 @@ export type LaneConfig = {
   titles: string[]
   keyword: string | null
   location: { presets?: string[]; preset?: string | null; radius_miles?: number }
+  /**
+   * How far back a run looks, in days. Null only on a database where the column
+   * has not been added yet; the editor renders that as the window every lane
+   * used to run at rather than as a blank.
+   */
+  days_posted: number | null
   years_max: number | null
   companies: string[]
   exclusions: { companies?: string[]; title_keywords?: string[] }
