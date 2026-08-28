@@ -14,7 +14,7 @@
 
 import { useState } from "react"
 import { T, card, eyebrow, textarea, select, selectOption } from "../../../lib/dashboard-theme"
-import { REASONS, money, daysAgo, type Result } from "./laneApi"
+import { REASONS, REASONS_REQUIRING_NOTE, money, daysAgo, type Result } from "./laneApi"
 
 export function LaneResultRow({
   row,
@@ -37,8 +37,13 @@ export function LaneResultRow({
     row.min_yoe == null ? "Not stated" : row.min_yoe === 0 ? "0 yrs" : `${row.min_yoe}+ yrs`
   const tools = (row.tools ?? []).filter(Boolean)
 
+  // "Other" records nothing without the note, so the note is part of the reason
+  // rather than an optional extra. Same rule the API and the column enforce.
+  const noteRequired = REASONS_REQUIRING_NOTE.has(reason)
+  const canDismiss = Boolean(reason) && (!noteRequired || note.trim().length > 0)
+
   const commitDismiss = () => {
-    if (!reason) return
+    if (!canDismiss) return
     onDismiss(row, reason, note.trim() || null)
   }
 
@@ -156,30 +161,34 @@ export function LaneResultRow({
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <label htmlFor={`note-${row.id}`} style={{ ...eyebrow, fontSize: 10, color: T.MUTED }}>
-              Note (optional)
+            <label htmlFor={`note-${row.id}`} style={{ ...eyebrow, fontSize: 10, color: noteRequired ? T.WRN_ORANGE : T.MUTED }}>
+              Note {noteRequired ? "(required)" : "(optional)"}
             </label>
             <textarea
               id={`note-${row.id}`}
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={2}
-              placeholder="Anything the reason list misses…"
-              style={{ ...textarea, minHeight: 58 }}
+              placeholder={noteRequired ? "Say what the reason list missed…" : "Anything the reason list misses…"}
+              style={{
+                ...textarea,
+                minHeight: 58,
+                ...(noteRequired && !note.trim() ? { borderColor: T.ORANGE_BORDER } : null),
+              }}
             />
           </div>
 
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <button
               onClick={commitDismiss}
-              disabled={!reason}
+              disabled={!canDismiss}
               style={{
                 background: T.GLASS,
                 color: T.TEXT,
                 border: `1px solid ${T.BORDER}`,
                 borderRadius: 11, padding: "9px 16px", fontSize: 13, fontWeight: 900,
-                cursor: !reason ? "not-allowed" : "pointer",
-                opacity: !reason ? 0.45 : 1,
+                cursor: !canDismiss ? "not-allowed" : "pointer",
+                opacity: !canDismiss ? 0.45 : 1,
               }}
             >
               Dismiss
@@ -194,6 +203,9 @@ export function LaneResultRow({
               Cancel
             </button>
             {!reason && <span style={{ fontSize: 11, color: T.DIM }}>Pick a reason first</span>}
+            {reason && noteRequired && !note.trim() && (
+              <span style={{ fontSize: 11, color: T.DIM }}>Add a note to dismiss as Other</span>
+            )}
           </div>
         </div>
       )}

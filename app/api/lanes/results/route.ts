@@ -16,7 +16,7 @@
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
-import { REASON_VALUES } from "@/lib/laneReasons"
+import { REASON_VALUES, REASONS_REQUIRING_NOTE } from "@/lib/laneReasons"
 import { canAccessLaneOwner, loadAuthorizedLane } from "@/lib/collab/laneAccess"
 
 export const runtime = "nodejs"
@@ -86,6 +86,16 @@ export async function PATCH(req: NextRequest) {
     }
     if (action === "dismiss" && !REASON_VALUES.has(reason!)) {
       return withCorsJson(req, { ok: false, error: `unknown reason: ${reason}` }, 400)
+    }
+    // "Other" is the one reason that says nothing on its own, and it is the one
+    // most likely to be picked in a hurry. Refused without a note here so the
+    // caller gets a clean 400 rather than the column's constraint violation.
+    if (action === "dismiss" && REASONS_REQUIRING_NOTE.has(reason!) && !note) {
+      return withCorsJson(
+        req,
+        { ok: false, error: `a note is required when the reason is "${reason}" — the reason alone records nothing` },
+        400
+      )
     }
     // A push carries no reason: reusing dismissal vocabulary on an approval
     // would corrupt the counts that make the taxonomy worth having.

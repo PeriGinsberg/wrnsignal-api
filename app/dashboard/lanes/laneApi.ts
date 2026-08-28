@@ -118,7 +118,7 @@ export type Discovery = {
   titles: Found[]
 }
 
-export { LANE_REASONS as REASONS } from "../../../lib/laneReasons"
+export { LANE_REASONS as REASONS, REASONS_REQUIRING_NOTE } from "../../../lib/laneReasons"
 
 async function getToken() {
   const { data: { session } } = await getSupabaseBrowser().auth.getSession()
