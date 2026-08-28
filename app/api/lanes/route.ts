@@ -18,6 +18,7 @@ import { canAccessLaneOwner, laneScopeIds } from "@/lib/collab/laneAccess"
 import { runLaneLogged, type Lane } from "@/lib/laneRunner"
 import { commitmentTypesFromJobType, toBoardCommitment } from "@/lib/laneCommitment"
 import { DEFAULT_POSTING_WINDOW_DAYS, POSTING_WINDOW_DAYS } from "@/lib/lanePostingWindow"
+import { DEFAULT_SENIORITY_BANDS, invalidSeniority, orderSeniority } from "@/lib/laneSeniority"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -65,7 +66,7 @@ export async function GET(req: NextRequest) {
       // never populates reads as "no filters set" to anything that defaults it,
       // which is the same silent-wrongness the column being missing from the run
       // paths caused.
-      .select("id, client_profile_id, name, active, titles, keyword, location, days_posted, years_max, filters")
+      .select("id, client_profile_id, name, active, titles, keyword, location, days_posted, seniority, years_max, filters")
       .in("client_profile_id", owners)
       .order("created_at", { ascending: true })
     if (error) throw new Error(`Lanes failed: ${error.message}`)
@@ -253,6 +254,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Absent means the caller had no opinion and takes the band every lane used
+    // to be pinned to. Validated BEFORE it is ordered: orderSeniority assumes an
+    // array, so a caller sending a number would crash it into a 500 where the
+    // honest answer is a 400 naming the vocabulary.
+    let seniority = [...DEFAULT_SENIORITY_BANDS]
+    if (body?.seniority !== undefined) {
+      const bad = invalidSeniority(body.seniority)
+      if (bad) return withCorsJson(req, { ok: false, error: bad }, 400)
+      seniority = orderSeniority(body.seniority as string[])
+    }
+
     const { data: lane, error: insErr } = await supabase
       .from("search_lanes")
       .insert({
@@ -265,6 +277,7 @@ export async function POST(req: NextRequest) {
         keyword: keywordRaw || null,
         location,
         days_posted: daysPosted,
+        seniority,
         years_max: yearsMax,
         companies: Array.isArray(body?.companies) ? body.companies : [],
         exclusions: body?.exclusions && typeof body.exclusions === "object" ? body.exclusions : {},

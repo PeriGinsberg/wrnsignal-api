@@ -22,8 +22,9 @@
 // time"), rather than picking a winner.
 
 import { type SupabaseClient } from "@supabase/supabase-js"
-import { fetchJobs, queryFor, SENIORITY_LEVELS, type JobRow } from "./hiringcafe"
+import { fetchJobs, queryFor, type JobRow } from "./hiringcafe"
 import { LEGACY_POSTING_WINDOW_DAYS } from "./lanePostingWindow"
+import { DEFAULT_SENIORITY_BANDS } from "./laneSeniority"
 
 export type Lane = {
   id: string
@@ -42,6 +43,12 @@ export type Lane = {
    * select that did not ask for the field. See the fallback in runLane().
    */
   days_posted?: number | null
+  /**
+   * Board seniority bands. NOT NULL in the column with a default, so an absent
+   * value here is a select that did not ask for it rather than a lane with no
+   * opinion, and the fallback is the band every lane used to be pinned to.
+   */
+  seniority?: string[] | null
   years_max: number | null
   companies: string[]
   // Applied by US, after the fetch, against rows the board already sent.
@@ -217,8 +224,15 @@ export function toRow(lane: Lane, r: JobRow, matchedTitle: string) {
   }
 }
 
-/** Through Mid Level, the band a lane searches. */
-export const LANE_SENIORITY = [...SENIORITY_LEVELS].slice(0, 3)
+/**
+ * Through Mid Level: what every lane was pinned to before the band became a
+ * per-lane setting, and still the default for a new one.
+ *
+ * Kept as the fallback for a lane loaded without its `seniority` column, so a
+ * forgetful select degrades to the old behaviour rather than to a narrower
+ * search nobody chose.
+ */
+export const LANE_SENIORITY = [...DEFAULT_SENIORITY_BANDS]
 
 /**
  * Run one lane end to end.
@@ -247,6 +261,9 @@ export async function runLane(
   // to a narrower search nobody asked for.
   const days = opts.days ?? lane.days_posted ?? lane.location?.days_posted ?? LEGACY_POSTING_WINDOW_DAYS
   const pages = opts.pages ?? 1
+  // Empty is treated as absent, not as "no restriction": the column refuses an
+  // empty band and the board would read one as a filter matching nothing.
+  const seniority = lane.seniority?.length ? lane.seniority : LANE_SENIORITY
 
   // job_id -> row. First title to surface a job wins matched_title; that is
   // the fold that keeps the upsert from self-colliding (see header).
@@ -260,7 +277,7 @@ export async function runLane(
       locations: presets,
       radiusMiles: radius,
       days,
-      seniority: LANE_SENIORITY,
+      seniority,
       pages,
       ...toSearchFilters(lane.filters),
     })

@@ -22,6 +22,7 @@ import { useCallback, useEffect, useState } from "react"
 import { T, card, eyebrow, input, btnPrimary, btnSecondary } from "../../../lib/dashboard-theme"
 import { authFetch, locationLabel, type Discovery, type LaneConfig, type LaneFilters } from "./laneApi"
 import { BoardFiltersEditor, PostedWithinField, YearsMaxField } from "./LaneCriteria"
+import { LaneReviewHistory } from "./LaneReviewHistory"
 
 export function LaneTitleEditor({
   laneId,
@@ -223,9 +224,13 @@ export function LaneTitleEditor({
   // rather than the whole lane, so a title save landing at the same moment is
   // not rolled back by this one failing.
   const saveConfig = useCallback(
-    async (patch: { years_max?: number | null; days_posted?: number }) => {
+    async (patch: { years_max?: number | null; days_posted?: number; seniority?: string[] }) => {
       if (!lane) return
-      const previous = { years_max: lane.years_max, days_posted: lane.days_posted }
+      const previous = {
+        years_max: lane.years_max,
+        days_posted: lane.days_posted,
+        seniority: lane.seniority,
+      }
       setLane({ ...lane, ...patch })
       setSavingConfig(true)
       const res = await authFetch(`/api/lanes/${encodeURIComponent(laneId)}`, {
@@ -466,12 +471,18 @@ export function LaneTitleEditor({
         ))}
       </section>
 
+      {/* Directly above the controls it talks about: a count that says "the
+          titles are wrong" is only useful next to the titles. */}
+      <LaneReviewHistory key={laneId} laneId={laneId} />
+
       <section style={{ ...card, padding: "18px 20px", marginBottom: 14 }}>
         <BoardFiltersEditor
           filters={filters}
-          disabled={savingFilters}
-          saving={savingFilters}
+          seniority={lane.seniority}
+          disabled={savingFilters || savingConfig}
+          saving={savingFilters || savingConfig}
           onChange={saveFilters}
+          onSeniorityChange={(next) => saveConfig({ seniority: next })}
         />
       </section>
 

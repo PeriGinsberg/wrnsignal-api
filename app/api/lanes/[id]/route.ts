@@ -29,12 +29,13 @@ import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { loadAuthorizedLane } from "@/lib/collab/laneAccess"
 import { toBoardCommitment } from "@/lib/laneCommitment"
 import { POSTING_WINDOW_DAYS } from "@/lib/lanePostingWindow"
+import { invalidSeniority, orderSeniority } from "@/lib/laneSeniority"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 const LANE_FIELDS =
-  "id, client_profile_id, name, active, titles, keyword, location, days_posted, years_max, companies, exclusions, filters"
+  "id, client_profile_id, name, active, titles, keyword, location, days_posted, seniority, years_max, companies, exclusions, filters"
 
 // Every title is one board fetch on every run, so the list is a cost, not just
 // a preference. The limit is generous enough that nobody hits it by accident
@@ -97,10 +98,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const wantsFilters = body?.filters !== undefined
     const wantsYearsMax = body?.years_max !== undefined
     const wantsDaysPosted = body?.days_posted !== undefined
-    if (!wantsTitles && !wantsActive && !wantsFilters && !wantsYearsMax && !wantsDaysPosted) {
+    const wantsSeniority = body?.seniority !== undefined
+    if (!wantsTitles && !wantsActive && !wantsFilters && !wantsYearsMax && !wantsDaysPosted && !wantsSeniority) {
       return withCorsJson(
         req,
-        { ok: false, error: "nothing to update — send titles, active, filters, years_max, days_posted, or any combination" },
+        {
+          ok: false,
+          error:
+            "nothing to update — send titles, active, filters, years_max, days_posted, seniority, or any combination",
+        },
         400
       )
     }
@@ -111,6 +117,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       filters?: Record<string, string[]>
       years_max?: number | null
       days_posted?: number
+      seniority?: string[]
     } = {}
 
     if (wantsFilters) {
@@ -183,6 +190,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         )
       }
       update.days_posted = n
+    }
+
+    if (wantsSeniority) {
+      // One validator, shared with the create path and phrased as the message
+      // the caller sees. An empty band is refused rather than read as "no
+      // restriction": see lib/laneSeniority.ts.
+      const bad = invalidSeniority(body.seniority)
+      if (bad) return withCorsJson(req, { ok: false, error: bad }, 400)
+      // Stored in board order so the chips never reshuffle between saves.
+      update.seniority = orderSeniority(body.seniority as string[])
     }
 
     if (wantsTitles) {

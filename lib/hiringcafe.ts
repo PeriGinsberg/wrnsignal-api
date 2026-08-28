@@ -1056,12 +1056,10 @@ export const LOCATIONS: Record<string, any> = {
 }
 
 // Exact strings the backend filters on — anything else silently matches nothing.
-export const SENIORITY_LEVELS = [
-  "No Prior Experience Required",
-  "Entry Level",
-  "Mid Level",
-  "Senior Level",
-] as const
+// Defined in lib/laneSeniority.ts and re-exported here so the lane setup screens
+// can read the vocabulary without pulling in the LOCATIONS table and the fetch
+// layer, while there is still exactly one definition of it.
+export { SENIORITY_LEVELS } from "./laneSeniority"
 
 export type SearchOpts = {
   query: string

@@ -24,6 +24,7 @@ import { T, card, eyebrow, input, btnPrimary, btnSecondary } from "../../../lib/
 import { authFetch, locationLabel, type LaneFilters } from "./laneApi"
 import { DEFAULT_POSTING_WINDOW_DAYS } from "../../../lib/lanePostingWindow"
 import { BoardFiltersEditor, PostedWithinField, YearsMaxField } from "./LaneCriteria"
+import { DEFAULT_SENIORITY_BANDS } from "../../../lib/laneSeniority"
 
 type TitleProbe = { title: string; query: string; fetched: number; available: number; capped: boolean }
 
@@ -74,6 +75,7 @@ export function CreateLanePanel({
   const [yearsMax, setYearsMax] = useState<number | null>(null)
   const [daysPosted, setDaysPosted] = useState<number>(DEFAULT_POSTING_WINDOW_DAYS)
   const [filters, setFilters] = useState<LaneFilters>({})
+  const [seniority, setSeniority] = useState<string[]>([...DEFAULT_SENIORITY_BANDS])
 
   const propose = useCallback(async () => {
     setPhase("proposing")
@@ -95,6 +97,10 @@ export function CreateLanePanel({
     setYearsMax(j.proposal.years_max ?? null)
     setDaysPosted(DEFAULT_POSTING_WINDOW_DAYS)
     setFilters(j.proposal.filters ?? {})
+    // The proposal has no opinion on the band either, so it starts where every
+    // lane used to be pinned. Narrowing it here is the cheapest way to keep work
+    // beneath the client out of the first queue.
+    setSeniority([...DEFAULT_SENIORITY_BANDS])
     setPhase("review")
   }, [clientProfileId])
 
@@ -115,6 +121,7 @@ export function CreateLanePanel({
         // whole point of that box is that the coach gets to overrule the
         // derivation before the first run rather than after it.
         days_posted: daysPosted,
+        seniority,
         years_max: yearsMax,
         companies: data.proposal.companies,
         exclusions: data.proposal.exclusions,
@@ -136,7 +143,7 @@ export function CreateLanePanel({
       setError(`Lane created, but its first run failed: ${j.run_error}. The nightly sweep will retry it.`)
     }
     onCreated()
-  }, [data, clientProfileId, name, keyword, titles, yearsMax, daysPosted, filters, onCreated])
+  }, [data, clientProfileId, name, keyword, titles, yearsMax, daysPosted, seniority, filters, onCreated])
 
   // --- idle -----------------------------------------------------------------
   if (phase === "idle" || phase === "proposing") {
@@ -306,7 +313,13 @@ export function CreateLanePanel({
           <YearsMaxField value={yearsMax} disabled={phase === "saving"} onCommit={setYearsMax} />
           <PostedWithinField value={daysPosted} disabled={phase === "saving"} onChange={setDaysPosted} />
         </div>
-        <BoardFiltersEditor filters={filters} disabled={phase === "saving"} onChange={setFilters} />
+        <BoardFiltersEditor
+          filters={filters}
+          seniority={seniority}
+          disabled={phase === "saving"}
+          onChange={setFilters}
+          onSeniorityChange={setSeniority}
+        />
       </section>
 
       {(data?.flags.length ?? 0) > 0 && (

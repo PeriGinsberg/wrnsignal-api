@@ -21,17 +21,18 @@ import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { loadAuthorizedLane } from "@/lib/collab/laneAccess"
-import { SENIORITY_LEVELS, fetchJobs, queryFor } from "@/lib/hiringcafe"
+import { fetchJobs, queryFor } from "@/lib/hiringcafe"
+import { DEFAULT_SENIORITY_BANDS } from "@/lib/laneSeniority"
 import { toSearchFilters } from "@/lib/laneRunner"
 import { LEGACY_POSTING_WINDOW_DAYS } from "@/lib/lanePostingWindow"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-// Same seniority band the runner uses, for the same reason the keyword,
-// location and posting window all come from the lane: a discovery result found
-// under different search conditions lists titles the lane can never surface.
-const SENIORITY = [...SENIORITY_LEVELS].slice(0, 3) // through Mid Level
+// Nothing about the search is fixed here any more. The keyword, location,
+// posting window, seniority band and board filters all come from the lane,
+// because a discovery result found under different search conditions lists
+// titles the lane can never surface.
 
 export async function OPTIONS(req: NextRequest) {
   return corsOptionsResponse(req.headers.get("origin"))
@@ -56,7 +57,7 @@ export async function GET(req: NextRequest) {
       profileId,
       "read",
       supabase,
-      "id, client_profile_id, titles, keyword, location, days_posted, filters"
+      "id, client_profile_id, titles, keyword, location, days_posted, seniority, filters"
     )
     if (accessErr) return withCorsJson(req, { ok: false, error: accessErr }, accessErr === "Forbidden" ? 403 : 404)
 
@@ -83,6 +84,9 @@ export async function GET(req: NextRequest) {
     // The lane's own window. A lane looking back 24 hours must not be offered
     // titles that only exist in a month of backlog.
     const days: number = (lane as any).days_posted ?? LEGACY_POSTING_WINDOW_DAYS
+    const seniorityBands: string[] = (lane as any).seniority?.length
+      ? (lane as any).seniority
+      : [...DEFAULT_SENIORITY_BANDS]
 
     const query = queryFor(phrase, keyword)
     const { rows, total } = await fetchJobs({
@@ -90,7 +94,7 @@ export async function GET(req: NextRequest) {
       locations: presets,
       radiusMiles,
       days,
-      seniority: SENIORITY,
+      seniority: seniorityBands,
       pages: 1,
       // The lane's own board filters, so discovery lists titles this lane can
       // actually surface rather than titles it would have found without them.

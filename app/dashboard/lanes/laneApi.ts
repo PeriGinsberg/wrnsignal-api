@@ -16,6 +16,7 @@ export type LaneSummary = {
   keyword: string | null
   location: { presets?: string[]; preset?: string | null; radius_miles?: number }
   days_posted: number | null
+  seniority: string[] | null
   years_max: number | null
   unreviewed: number
   // Present because a list can now span people; null when the owner profile
@@ -69,6 +70,12 @@ export type LaneConfig = {
    * used to run at rather than as a blank.
    */
   days_posted: number | null
+  /**
+   * Board seniority bands this lane searches. Null only on a database where the
+   * column has not been added yet, which the editor renders as the three bands
+   * every lane used to be pinned to.
+   */
+  seniority: string[] | null
   years_max: number | null
   companies: string[]
   exclusions: { companies?: string[]; title_keywords?: string[] }

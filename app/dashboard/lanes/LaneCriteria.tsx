@@ -23,6 +23,7 @@ import { T, eyebrow, input } from "../../../lib/dashboard-theme"
 import { FilterListEditor } from "./FilterListEditor"
 import { BOARD_COMMITMENTS } from "../../../lib/laneCommitment"
 import { POSTING_WINDOWS, POSTING_WINDOW_DAYS, postingWindowLabel } from "../../../lib/lanePostingWindow"
+import { DEFAULT_SENIORITY_BANDS, SENIORITY_LEVELS, orderSeniority } from "../../../lib/laneSeniority"
 import type { LaneFilters } from "./laneApi"
 
 /**
@@ -155,15 +156,21 @@ export function PostedWithinField({
  */
 export function BoardFiltersEditor({
   filters,
+  seniority,
   disabled = false,
   saving = false,
   onChange,
+  onSeniorityChange,
 }: {
   filters: LaneFilters
+  /** Its own column, not a key in filters. See the seniority migration for why. */
+  seniority: string[] | null
   disabled?: boolean
   saving?: boolean
   onChange: (next: LaneFilters) => void
+  onSeniorityChange: (next: string[]) => void
 }) {
+  const bands = seniority?.length ? seniority : [...DEFAULT_SENIORITY_BANDS]
   return (
     <>
       <div style={{ ...eyebrow, color: T.MUTED, marginBottom: 6 }}>
@@ -175,6 +182,48 @@ export function BoardFiltersEditor({
         Education and the rest, so one term is usually enough. Two or more words must match a whole industry
         name exactly. &ldquo;Higher Education&rdquo; works, &ldquo;Higher Ed&rdquo; matches nothing.
       </p>
+
+      {/* First, because it is the widest lever in this section and the one that
+          was not a setting at all until now. */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ ...eyebrow, color: T.MUTED, marginBottom: 4 }}>Seniority</div>
+        <p style={{ fontSize: 12, color: T.DIM, margin: "0 0 8px" }}>
+          Which bands the board is asked for. Every lane used to search the first three whatever the client&apos;s
+          level, which is why queues fill with work beneath them. At least one is required.
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {SENIORITY_LEVELS.map((level) => {
+            const on = bands.includes(level)
+            // The last band standing cannot be switched off: an empty list is
+            // refused by the column and would reach the board as a filter
+            // matching nothing.
+            const isLast = on && bands.length === 1
+            return (
+              <button
+                key={level}
+                type="button"
+                disabled={disabled || isLast}
+                title={isLast ? "A lane has to search at least one band" : undefined}
+                onClick={() =>
+                  onSeniorityChange(
+                    orderSeniority(on ? bands.filter((b) => b !== level) : [...bands, level])
+                  )
+                }
+                style={{
+                  fontSize: 12, fontWeight: 700, borderRadius: 999, padding: "4px 12px",
+                  cursor: disabled || isLast ? "not-allowed" : "pointer",
+                  background: on ? T.GLASS : "transparent",
+                  border: `1px solid ${on ? T.ORANGE_BORDER : T.BORDER_SOFT}`,
+                  color: on ? T.TEXT : T.MUTED,
+                  opacity: isLast ? 0.7 : 1,
+                }}
+              >
+                {level}
+              </button>
+            )
+          })}
+        </div>
+      </div>
 
       <div style={{ marginBottom: 14 }}>
         <div style={{ ...eyebrow, color: T.MUTED, marginBottom: 4 }}>Commitment</div>
