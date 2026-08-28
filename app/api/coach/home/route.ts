@@ -236,6 +236,38 @@ function calendarBetaAllowlist(): string[] {
     .filter((s) => CALENDAR_BETA_UUID_RE.test(s))
 }
 
+/**
+ * Read every row matching an `IN (...)` filter, chunking the id list and paging
+ * the results.
+ *
+ * Two silent truncations to defend against, and both bite hardest on the
+ * accounts with the most data. PostgREST caps a response at a thousand rows and
+ * says nothing when it does, so an unpaged read quietly loses a busy coach's
+ * later applications. And an `.in()` list goes into the query string, so a few
+ * thousand ids build a URL something in the middle will reject.
+ *
+ * `build` is a factory rather than a builder because a Supabase query builder is
+ * single-use: it has to be rebuilt for every chunk and every page. It must set
+ * its own `.order()`, or the pages do not partition the set and rows are both
+ * duplicated and skipped.
+ */
+async function fetchInChunks<T>(ids: string[], build: (chunk: string[]) => any): Promise<T[]> {
+  const ID_CHUNK = 200
+  const PAGE = 1000
+  const out: T[] = []
+  for (let i = 0; i < ids.length; i += ID_CHUNK) {
+    const chunk = ids.slice(i, i + ID_CHUNK)
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await build(chunk).range(from, from + PAGE - 1)
+      if (error) throw new Error(`Batched read failed: ${error.message}`)
+      const page = (data ?? []) as T[]
+      out.push(...page)
+      if (page.length < PAGE) break
+    }
+  }
+  return out
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { userId, email } = await getAuthedUser(req)
@@ -273,123 +305,197 @@ export async function GET(req: NextRequest) {
       visitBaselineByRel.set(r.id, r.last_viewed_at || r.accepted_at || new Date(0).toISOString())
     }
 
-    // ── 3. Per-client stats (existing pattern from /api/coach/clients) ──
-    // Plus updates_since_visit count.
-    const clientCards = await Promise.all(
-      relationships.map(async (rel) => {
-        // cpid is null for prospect-lifecycle rows (Prospects v0.1
-        // Commit 3 / FRD §6.3 NULL hardening). Per-client stat queries
-        // below are guarded — prospects have no apps/recs to count, so
-        // the queries can be skipped entirely.
-        const cpid = rel.client_profile_id as string | null
-        const profile = cpid ? profileMap[cpid] : null
-        const baseline = visitBaselineByRel.get(rel.id)!
+    // ── 3. Per-client stats ───────────────────────────────────────────
+    //
+    // BATCHED, and that is the whole point of this block's shape. It used to
+    // run four queries per client, sequentially awaited inside a per-client
+    // async function: applications, pending recommendations, status-history
+    // count, then recommendation responses. Twenty-five clients meant a hundred
+    // round trips, four deep, to render one page, and measured against
+    // production it was the difference between eleven seconds and the two the
+    // already-batched client record takes.
+    //
+    // Now it is four queries total, whatever the roster size, and the per-client
+    // work below is pure computation with no awaits in it.
+    //
+    // THE BASELINE IS THE AWKWARD PART. updates_since_visit compares against
+    // each client's own last-viewed time, so there is no single `.gt()` that
+    // serves every client. The batched queries therefore ask for everything
+    // since the EARLIEST baseline on the roster and each client's own cut is
+    // applied in memory. One client who has never been viewed widens those two
+    // reads to all-time, which is the same total volume the old per-client
+    // query would have fetched for that client, spread across the others; the
+    // pagination in fetchInChunks is what keeps that safe rather than silently
+    // truncated.
+    const earliestBaseline =
+      relationships.length > 0
+        ? [...visitBaselineByRel.values()].sort()[0]
+        : new Date(0).toISOString()
 
-        // Apps for stats + updates count. Prospects (no
-        // client_profile_id) have no apps; skip the query.
-        let apps: Array<{ id: string; application_status: string; created_at: string }> = []
-        if (cpid) {
-          const { data } = await supabase
-            .from("signal_applications")
-            .select("id, application_status, created_at")
-            .eq("profile_id", cpid)
-          apps = (data as any) ?? []
-        }
+    // A. Applications for every client at once, grouped by owner.
+    type AppRow = { id: string; profile_id: string; application_status: string; created_at: string }
+    const appRows =
+      clientProfileIds.length === 0
+        ? []
+        : await fetchInChunks<AppRow>(clientProfileIds, (chunk) =>
+            supabase
+              .from("signal_applications")
+              .select("id, profile_id, application_status, created_at")
+              .in("profile_id", chunk)
+              .order("id", { ascending: true })
+          )
+    const appsByClient = new Map<string, AppRow[]>()
+    for (const a of appRows) {
+      const list = appsByClient.get(a.profile_id)
+      if (list) list.push(a)
+      else appsByClient.set(a.profile_id, [a])
+    }
 
-        // Per-client stats. `pending_recs` was removed Phase 1 (tile)
-        // + Phase 2 (API surface). attention_level recomputed below from
-        // the same pendingRecs query, no longer surfaced in stats.
-        const stats = {
-          applications: apps?.length ?? 0,
-          interviewing: (apps || []).filter((a: any) => a.application_status === "interviewing").length,
-          // offers + rejected added 2026-05-08 for the redesigned coach
-          // landing's per-client mini-cells + top-level metrics aggregation.
-          offers: (apps || []).filter((a: any) => a.application_status === "offer").length,
-          rejected: (apps || []).filter((a: any) => a.application_status === "rejected").length,
-          interview_rate: 0,
-        }
-        const appliedCount = (apps || []).filter((a: any) =>
-          ["applied", "interviewing", "offer", "rejected", "withdrawn"].includes(a.application_status)
-        ).length
-        stats.interview_rate = appliedCount > 0 ? Math.round((stats.interviewing / appliedCount) * 100) : 0
+    // B. Pending recommendations, counted per client.
+    const pendingRecRows =
+      clientProfileIds.length === 0
+        ? []
+        : await fetchInChunks<{ id: string; client_profile_id: string }>(clientProfileIds, (chunk) =>
+            supabase
+              .from("coach_job_recommendations")
+              .select("id, client_profile_id")
+              .eq("coach_profile_id", coachProfileId)
+              .in("client_profile_id", chunk)
+              .eq("client_status", "new")
+              .order("id", { ascending: true })
+          )
+    const pendingRecsByClient = new Map<string, number>()
+    for (const r of pendingRecRows) {
+      pendingRecsByClient.set(r.client_profile_id, (pendingRecsByClient.get(r.client_profile_id) ?? 0) + 1)
+    }
 
-        // Pending coach recs (used internally for attention_level sort only;
-        // not returned to the client). Skip for prospects.
-        let pendingRecsCount = 0
-        if (cpid) {
-          const { data: pendingRecs } = await supabase
-            .from("coach_job_recommendations")
-            .select("id, created_at")
-            .eq("client_profile_id", cpid)
-            .eq("coach_profile_id", coachProfileId)
-            .eq("client_status", "new")
-          pendingRecsCount = pendingRecs?.length ?? 0
-        }
+    // C. Status changes, keyed by application so each client can apply its own
+    //    baseline to the rows belonging to its own applications.
+    const allAppIds = appRows.map((a) => a.id)
+    const historyRows =
+      allAppIds.length === 0
+        ? []
+        : await fetchInChunks<{ application_id: string; changed_at: string }>(allAppIds, (chunk) =>
+            supabase
+              .from("signal_applications_status_history")
+              .select("application_id, changed_at")
+              .in("application_id", chunk)
+              .gt("changed_at", earliestBaseline)
+              .order("application_id", { ascending: true })
+          )
+    const historyByApp = new Map<string, string[]>()
+    for (const h of historyRows) {
+      const list = historyByApp.get(h.application_id)
+      if (list) list.push(h.changed_at)
+      else historyByApp.set(h.application_id, [h.changed_at])
+    }
 
-        const lastActivity =
-          (apps || []).map((a: any) => a.created_at).sort().reverse()[0] || null
+    // D. Recommendation responses, same per-client baseline treatment.
+    //    A null client_responded_at never matches a `.gt()`, which is the
+    //    behaviour the per-client query had and the reason unanswered
+    //    recommendations do not count as updates.
+    const responseRows =
+      clientProfileIds.length === 0
+        ? []
+        : await fetchInChunks<{ id: string; client_profile_id: string; client_responded_at: string }>(
+            clientProfileIds,
+            (chunk) =>
+              supabase
+                .from("coach_job_recommendations")
+                .select("id, client_profile_id, client_responded_at")
+                .eq("coach_profile_id", coachProfileId)
+                .in("client_profile_id", chunk)
+                .gt("client_responded_at", earliestBaseline)
+                .order("id", { ascending: true })
+          )
+    const responsesByClient = new Map<string, string[]>()
+    for (const r of responseRows) {
+      const list = responsesByClient.get(r.client_profile_id)
+      if (list) list.push(r.client_responded_at)
+      else responsesByClient.set(r.client_profile_id, [r.client_responded_at])
+    }
 
-        // updates_since_visit: status changes + new apps + rec responses
-        // since the coach last viewed this client.
-        const appIds = (apps || []).map((a: any) => a.id)
+    // No awaits past this point: every card is assembled from the four reads
+    // above, so the roster size costs CPU rather than round trips.
+    const clientCards = relationships.map((rel) => {
+      // cpid is null for prospect-lifecycle rows (Prospects v0.1 Commit 3 /
+      // FRD §6.3 NULL hardening). Prospects have no apps or recs, so they
+      // simply find nothing in the maps.
+      const cpid = rel.client_profile_id as string | null
+      const profile = cpid ? profileMap[cpid] : null
+      const baseline = visitBaselineByRel.get(rel.id)!
 
-        let statusChangesCount = 0
-        if (appIds.length > 0) {
-          const { count } = await supabase
-            .from("signal_applications_status_history")
-            .select("id", { count: "exact", head: true })
-            .in("application_id", appIds)
-            .gt("changed_at", baseline)
-          statusChangesCount = count ?? 0
-        }
+      const apps = cpid ? appsByClient.get(cpid) ?? [] : []
 
-        const newAppsCount = (apps || []).filter((a: any) => a.created_at > baseline).length
+      // Per-client stats. `pending_recs` was removed Phase 1 (tile) + Phase 2
+      // (API surface). attention_level is recomputed below from the same
+      // pending-recommendation count, no longer surfaced in stats.
+      const stats = {
+        applications: apps.length,
+        interviewing: apps.filter((a) => a.application_status === "interviewing").length,
+        // offers + rejected added 2026-05-08 for the redesigned coach
+        // landing's per-client mini-cells + top-level metrics aggregation.
+        offers: apps.filter((a) => a.application_status === "offer").length,
+        rejected: apps.filter((a) => a.application_status === "rejected").length,
+        interview_rate: 0,
+      }
+      const appliedCount = apps.filter((a) =>
+        ["applied", "interviewing", "offer", "rejected", "withdrawn"].includes(a.application_status)
+      ).length
+      stats.interview_rate = appliedCount > 0 ? Math.round((stats.interviewing / appliedCount) * 100) : 0
 
-        // Rec-response count — skip for prospects (no recs exist).
-        let recResponseCount: number | null = 0
-        if (cpid) {
-          const { count } = await supabase
-            .from("coach_job_recommendations")
-            .select("id", { count: "exact", head: true })
-            .eq("client_profile_id", cpid)
-            .eq("coach_profile_id", coachProfileId)
-            .gt("client_responded_at", baseline)
-          recResponseCount = count
-        }
+      const pendingRecsCount = cpid ? pendingRecsByClient.get(cpid) ?? 0 : 0
 
-        const updates_since_visit = statusChangesCount + newAppsCount + (recResponseCount ?? 0)
+      const lastActivity = apps.map((a) => a.created_at).sort().reverse()[0] || null
 
-        // Attention level: same intent as pre-Phase-2 (pending coach recs
-        // OR interviewing apps → "medium"). Uses internal pendingRecsCount
-        // since `stats.pending_recs` no longer exists.
-        const attention_level: "high" | "medium" | "low" =
-          pendingRecsCount > 0 || stats.interviewing > 0 ? "medium" : "low"
+      // updates_since_visit: status changes + new apps + rec responses since
+      // the coach last viewed this client.
+      const appIds = apps.map((a) => a.id)
 
-        return {
-          id: rel.id,
-          client_profile_id: cpid,
-          // Name precedence: client_profiles.name (post-onboarding
-          // canonical) wins; falls back to coach_clients.name for rows
-          // where the coach captured a prospect name but no SIGNAL
-          // profile is linked yet (Active-no-profile case). Same
-          // precedence as the /api/coach/prospects builder (bf8e31c6).
-          name: profile?.name ?? rel.name ?? null,
-          email: profile?.email ?? rel.invited_email,
-          status: rel.status,
-          lifecycle_status: rel.lifecycle_status ?? "Active",
-          attention_level,
-          stats,
-          last_activity: lastActivity,
-          last_viewed_at: rel.last_viewed_at,
-          updates_since_visit,
-          // Internal-only: app IDs feed the 30-day aggregation queries
-          // below. Stripped before response.
-          _appIds: appIds,
-          // user_id reused below for R1 last-login lookup
-          _user_id: profile?.user_id || null,
-        }
-      })
-    )
+      let statusChangesCount = 0
+      for (const appId of appIds) {
+        const changes = historyByApp.get(appId)
+        if (!changes) continue
+        for (const changedAt of changes) if (changedAt > baseline) statusChangesCount++
+      }
+
+      const newAppsCount = apps.filter((a) => a.created_at > baseline).length
+
+      const recResponseCount = cpid
+        ? (responsesByClient.get(cpid) ?? []).filter((at) => at > baseline).length
+        : 0
+
+      const updates_since_visit = statusChangesCount + newAppsCount + recResponseCount
+
+      // Attention level: same intent as pre-Phase-2 (pending coach recs OR
+      // interviewing apps → "medium").
+      const attention_level: "high" | "medium" | "low" =
+        pendingRecsCount > 0 || stats.interviewing > 0 ? "medium" : "low"
+
+      return {
+        id: rel.id,
+        client_profile_id: cpid,
+        // Name precedence: client_profiles.name (post-onboarding canonical)
+        // wins; falls back to coach_clients.name for rows where the coach
+        // captured a prospect name but no SIGNAL profile is linked yet
+        // (Active-no-profile case). Same precedence as the /api/coach/prospects
+        // builder (bf8e31c6).
+        name: profile?.name ?? rel.name ?? null,
+        email: profile?.email ?? rel.invited_email,
+        status: rel.status,
+        lifecycle_status: rel.lifecycle_status ?? "Active",
+        attention_level,
+        stats,
+        last_activity: lastActivity,
+        last_viewed_at: rel.last_viewed_at,
+        updates_since_visit,
+        // Internal-only: app IDs feed the 30-day aggregation queries below.
+        // Stripped before response.
+        _appIds: appIds,
+        // user_id reused below for R1 last-login lookup
+        _user_id: profile?.user_id || null,
+      }
+    })
 
     // Sort: most updates first, then by attention, then by name
     clientCards.sort((a, b) => {
