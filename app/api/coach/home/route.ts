@@ -278,6 +278,23 @@ export async function GET(req: NextRequest) {
     const supabase = getSupabaseAdmin()
     const coachProfileId = coach.id as string
 
+    // Phase timings, emitted as one line per request at the end.
+    //
+    // This route has now been misdiagnosed twice from reading its structure:
+    // once as a per-client query fan-out, which was real but cost little, and
+    // once as round-trip count, when the page making the FEWEST calls was the
+    // slowest. Both times the shape looked conclusive and was not. A single log
+    // line costs nothing per request and settles the question directly, so it
+    // stays rather than being pulled once the current problem is fixed.
+    //
+    // Marks are cumulative from the top; read them as a waterfall and the
+    // expensive phase is wherever the gap is.
+    const t0 = Date.now()
+    const marks: Record<string, number> = {}
+    const mark = (name: string) => {
+      marks[name] = Date.now() - t0
+    }
+
     // ── 1. Active coach-client relationships ──────────────────────────
     const { data: relRows, error: relErr } = await supabase
       .from("coach_clients")
@@ -297,6 +314,8 @@ export async function GET(req: NextRequest) {
         .in("id", clientProfileIds)
       for (const p of profs || []) profileMap[p.id] = p
     }
+
+    mark("roster")
 
     // Fall back: when last_viewed_at is null, treat accepted_at as the
     // baseline so "since last visit" doesn't show "all time."
@@ -497,6 +516,8 @@ export async function GET(req: NextRequest) {
       }
     })
 
+    mark("cards")
+
     // Sort: most updates first, then by attention, then by name
     clientCards.sort((a, b) => {
       if (b.updates_since_visit !== a.updates_since_visit)
@@ -591,6 +612,8 @@ export async function GET(req: NextRequest) {
       .slice(0, PROSPECT_CARD_LIMIT)
       .map((entry) => entry.card)
 
+    mark("prospects")
+
     // ── 4. Engagement signals (R1–R6) ─────────────────────────────────
     //
     // The R1-R6 heuristic engine was extracted to a shared module in
@@ -619,6 +642,8 @@ export async function GET(req: NextRequest) {
       coachProfileId,
       clients: heuristicClients,
     })
+
+    mark("heuristics")
 
     // ── 5. Coach-level metric tiles (Phase 2 Item 14) ───────────────
     //
@@ -770,6 +795,8 @@ export async function GET(req: NextRequest) {
         ? Math.round((totalInterviewing / totalApplications) * 100)
         : null
 
+    mark("metrics")
+
     // ── 6. Optional client-list filter (Phase 2 Item 12, revised) ────
     //
     // The coach can drill into the Active Prospects or Active Clients
@@ -799,6 +826,12 @@ export async function GET(req: NextRequest) {
     const cleanClients = filteredCards.map(({ _user_id, _appIds, ...rest }) => rest)
 
     const firstName = (coach.name || "").split(/\s+/)[0] || "Coach"
+
+    mark("total")
+    // One line, one request. Grep it out of `vercel logs` with [coach-home].
+    console.log(
+      `[coach-home] ${JSON.stringify({ clients: relationships.length, apps: appRows.length, ...marks })}`
+    )
 
     return withCorsJson(req, {
       ok: true,
