@@ -143,24 +143,41 @@ export async function runHeuristics(
   //
   // Order is preserved. Batches run in sequence and Promise.all keeps results in
   // input order, so signals are pushed in the same order the loop produced them.
-  const R1_CONCURRENCY = 10
   const r1Candidates = validClients.filter((c) => c.user_id)
-  for (let i = 0; i < r1Candidates.length; i += R1_CONCURRENCY) {
-    const batch = r1Candidates.slice(i, i + R1_CONCURRENCY)
-    const looked = await Promise.all(
-      batch.map(async (c) => {
-        try {
-          const { data: u } = await supabase.auth.admin.getUserById(c.user_id as string)
-          return { c, last: u?.user?.last_sign_in_at as string | undefined }
-        } catch {
-          // auth lookup errors are non-fatal — skip the rule for this client
-          return null
+  if (r1Candidates.length > 0) {
+    // ONE SWEEP, NOT ONE CALL PER CLIENT. The admin API offers no bulk
+    // fetch-by-ids, so the choice is a lookup per client or a listing of
+    // everyone. Per client was sixty serial round trips to the auth service and
+    // most of an eleven-second page; batching them ten at a time still left six
+    // rounds. Listing is one call per thousand users.
+    //
+    // THE TRADE IS REAL AND WORTH NAMING: this scales with the total number of
+    // users in the project rather than with the size of this coach's roster. At
+    // a few hundred users it is a single request and strictly better. Somewhere
+    // north of ten thousand it stops being, and at that point the right answer
+    // is neither of these: denormalise last_sign_in_at onto client_profiles and
+    // read it with the roster, which removes the auth service from this page
+    // entirely.
+    const lastSignInByUserId = new Map<string, string>()
+    try {
+      const PER_PAGE = 1000
+      for (let page = 1; ; page++) {
+        const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: PER_PAGE })
+        if (error) break
+        const users = data?.users ?? []
+        for (const u of users) {
+          if (u.id && u.last_sign_in_at) lastSignInByUserId.set(u.id, u.last_sign_in_at)
         }
-      })
-    )
-    for (const hit of looked) {
-      if (!hit?.last) continue
-      const { c, last } = hit
+        if (users.length < PER_PAGE) break
+      }
+    } catch {
+      // Non-fatal, exactly as the per-client lookup was: an auth failure drops
+      // R1 for this render rather than failing the page.
+    }
+
+    for (const c of r1Candidates) {
+      const last = lastSignInByUserId.get(c.user_id as string)
+      if (!last) continue
       const days = daysBetween(last)
       if (days < 7) continue
       push({

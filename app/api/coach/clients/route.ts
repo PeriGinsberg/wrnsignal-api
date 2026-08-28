@@ -88,16 +88,32 @@ async function verifyCoach(profileId: string, supabase: any): Promise<boolean> {
 async function fetchInChunks<T>(ids: string[], build: (chunk: string[]) => any): Promise<T[]> {
   const ID_CHUNK = 200
   const PAGE = 1000
-  const out: T[] = []
-  for (let i = 0; i < ids.length; i += ID_CHUNK) {
-    const chunk = ids.slice(i, i + ID_CHUNK)
+  // Chunks are independent, so they go out together. Walking them one at a
+  // time was measured at 1.7s for 920 application ids: five round trips where
+  // one would do. Bounded rather than unbounded so a very large id set cannot
+  // open an unreasonable number of sockets at once.
+  const CHUNK_CONCURRENCY = 6
+
+  const chunks: string[][] = []
+  for (let i = 0; i < ids.length; i += ID_CHUNK) chunks.push(ids.slice(i, i + ID_CHUNK))
+
+  // Pagination stays sequential WITHIN a chunk: there is no way to know how
+  // many pages a chunk has until a short one comes back.
+  const readChunk = async (chunk: string[]): Promise<T[]> => {
+    const rows: T[] = []
     for (let from = 0; ; from += PAGE) {
       const { data, error } = await build(chunk).range(from, from + PAGE - 1)
       if (error) throw new Error(`Batched read failed: ${error.message}`)
       const page = (data ?? []) as T[]
-      out.push(...page)
-      if (page.length < PAGE) break
+      rows.push(...page)
+      if (page.length < PAGE) return rows
     }
+  }
+
+  const out: T[] = []
+  for (let i = 0; i < chunks.length; i += CHUNK_CONCURRENCY) {
+    const batch = await Promise.all(chunks.slice(i, i + CHUNK_CONCURRENCY).map(readChunk))
+    for (const rows of batch) out.push(...rows)
   }
   return out
 }

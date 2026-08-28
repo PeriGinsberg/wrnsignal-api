@@ -254,16 +254,32 @@ function calendarBetaAllowlist(): string[] {
 async function fetchInChunks<T>(ids: string[], build: (chunk: string[]) => any): Promise<T[]> {
   const ID_CHUNK = 200
   const PAGE = 1000
-  const out: T[] = []
-  for (let i = 0; i < ids.length; i += ID_CHUNK) {
-    const chunk = ids.slice(i, i + ID_CHUNK)
+  // Chunks are independent, so they go out together. Walking them one at a
+  // time was measured at 1.7s for 920 application ids: five round trips where
+  // one would do. Bounded rather than unbounded so a very large id set cannot
+  // open an unreasonable number of sockets at once.
+  const CHUNK_CONCURRENCY = 6
+
+  const chunks: string[][] = []
+  for (let i = 0; i < ids.length; i += ID_CHUNK) chunks.push(ids.slice(i, i + ID_CHUNK))
+
+  // Pagination stays sequential WITHIN a chunk: there is no way to know how
+  // many pages a chunk has until a short one comes back.
+  const readChunk = async (chunk: string[]): Promise<T[]> => {
+    const rows: T[] = []
     for (let from = 0; ; from += PAGE) {
       const { data, error } = await build(chunk).range(from, from + PAGE - 1)
       if (error) throw new Error(`Batched read failed: ${error.message}`)
       const page = (data ?? []) as T[]
-      out.push(...page)
-      if (page.length < PAGE) break
+      rows.push(...page)
+      if (page.length < PAGE) return rows
     }
+  }
+
+  const out: T[] = []
+  for (let i = 0; i < chunks.length; i += CHUNK_CONCURRENCY) {
+    const batch = await Promise.all(chunks.slice(i, i + CHUNK_CONCURRENCY).map(readChunk))
+    for (const rows of batch) out.push(...rows)
   }
   return out
 }
@@ -710,31 +726,45 @@ export async function GET(req: NextRequest) {
     }
 
     // Status-history rows (within the active window) for both scopes.
-    // One query per scope since the app-id sets differ; both queries
-    // chunk through the same table. Returned rows include
-    // `application_id` so we can dedupe.
+    //
+    // Through fetchInChunks, which is doing three jobs here that the previous
+    // single `.in()` did none of: it chunks the id list so a scope of nine
+    // hundred application ids does not build a URL long enough to be rejected,
+    // it pages so a scope with more than a thousand history rows is not
+    // silently truncated into a wrong metric, and it issues the chunks
+    // together instead of one after another.
+    //
+    // Ordered by id, the table's own key, rather than by application_id: a
+    // non-unique sort column does not give pages a stable boundary, so rows
+    // land in two pages or in none. That would have been a quiet way to
+    // miscount exactly the coaches with the most history.
     async function transitionedAppIds(scopeAppIds: string[], toStatus: string): Promise<Set<string>> {
       if (scopeAppIds.length === 0) return new Set()
-      let q = supabase
-        .from("signal_applications_status_history")
-        .select("application_id")
-        .in("application_id", scopeAppIds)
-        .eq("to_status", toStatus)
-      if (windowSince) q = q.gte("changed_at", windowSince)
-      const { data } = await q
-      return new Set((data || []).map((r: any) => r.application_id as string))
+      const rows = await fetchInChunks<{ id: string; application_id: string }>(scopeAppIds, (chunk) => {
+        let q = supabase
+          .from("signal_applications_status_history")
+          .select("id, application_id")
+          .in("application_id", chunk)
+          .eq("to_status", toStatus)
+        if (windowSince) q = q.gte("changed_at", windowSince)
+        return q.order("id", { ascending: true })
+      })
+      return new Set(rows.map((r) => r.application_id))
     }
 
     // For the fallback path (apps with no history row), we also need the
     // set of apps that have ANY history row, so we know which apps to
-    // fall back on. Single query per scope.
+    // fall back on.
     async function appsWithAnyHistory(scopeAppIds: string[]): Promise<Set<string>> {
       if (scopeAppIds.length === 0) return new Set()
-      const { data } = await supabase
-        .from("signal_applications_status_history")
-        .select("application_id")
-        .in("application_id", scopeAppIds)
-      return new Set((data || []).map((r: any) => r.application_id as string))
+      const rows = await fetchInChunks<{ id: string; application_id: string }>(scopeAppIds, (chunk) =>
+        supabase
+          .from("signal_applications_status_history")
+          .select("id, application_id")
+          .in("application_id", chunk)
+          .order("id", { ascending: true })
+      )
+      return new Set(rows.map((r) => r.application_id))
     }
 
     // Apps in A+I scope with current status + created_at for the fallback.
@@ -743,20 +773,23 @@ export async function GET(req: NextRequest) {
       ai: [],
       aia: [],
     }
-    if (aiAppIds.length > 0) {
-      const { data } = await supabase
-        .from("signal_applications")
-        .select("id, application_status, created_at")
-        .in("id", aiAppIds)
-      appsByScope.ai = (data || []) as any
-    }
-    if (aiaAppIds.length > 0) {
-      const { data } = await supabase
-        .from("signal_applications")
-        .select("id, application_status, created_at")
-        .in("id", aiaAppIds)
-      appsByScope.aia = (data || []) as any
-    }
+    // Built from the rows the card phase already read, not re-fetched. These
+    // were two more queries over the same nine hundred applications, selecting
+    // the same three columns that appRows already holds, so the round trips
+    // bought nothing at all. Every id here came from _appIds, which came from
+    // appRows, so every lookup resolves.
+    const appById = new Map(appRows.map((a) => [a.id, a]))
+    const scopeRows = (scopeIds: string[]) =>
+      scopeIds
+        .map((id) => appById.get(id))
+        .filter(Boolean)
+        .map((a) => ({
+          id: a!.id,
+          application_status: a!.application_status,
+          created_at: a!.created_at,
+        }))
+    appsByScope.ai = scopeRows(aiAppIds)
+    appsByScope.aia = scopeRows(aiaAppIds)
 
     function countWithFallback(
       apps: Array<{ id: string; application_status: string; created_at: string }>,
