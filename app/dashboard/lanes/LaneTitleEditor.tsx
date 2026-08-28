@@ -22,7 +22,18 @@ import { useCallback, useEffect, useState } from "react"
 import { T, card, eyebrow, input, btnPrimary, btnSecondary } from "../../../lib/dashboard-theme"
 import { authFetch, locationLabel, type Discovery, type LaneConfig, type LaneFilters } from "./laneApi"
 import { BoardFiltersEditor, PostedWithinField, YearsMaxField } from "./LaneCriteria"
+import { postingWindowLabel } from "../../../lib/lanePostingWindow"
 import { LaneReviewHistory } from "./LaneReviewHistory"
+
+/** What GET /api/lanes/[id]/queue reports a mismatched clear would do. */
+type QueuePreview = {
+  unreviewed: number
+  mismatched: number
+  remaining: number
+  reasons: Array<{ reason: string; count: number }>
+  criteria: { seniority: string[]; days_posted: number; years_max: number | null }
+  unchecked: string[]
+}
 
 export function LaneTitleEditor({
   laneId,
@@ -58,9 +69,15 @@ export function LaneTitleEditor({
   const [deleting, setDeleting] = useState(false)
 
   // Clearing the queue is the reversible-ish answer to a hundred stale rows, so
-  // it gets its own confirmation rather than sharing the delete one.
-  const [confirmingClear, setConfirmingClear] = useState(false)
+  // it gets its own confirmation rather than sharing the delete one. Two
+  // scopes: everything, or only what the lane's current criteria would no
+  // longer return.
+  const [confirmingClear, setConfirmingClear] = useState<null | "all" | "mismatched">(null)
   const [clearing, setClearing] = useState(false)
+  // The mismatched preview, fetched when that confirmation opens. Null while it
+  // loads, which is why the button that commits it stays disabled until it
+  // arrives: a bulk clear must never run against a number nobody saw.
+  const [preview, setPreview] = useState<QueuePreview | null>(null)
 
   const [savingFilters, setSavingFilters] = useState(false)
   const [savingConfig, setSavingConfig] = useState(false)
@@ -95,7 +112,8 @@ export function LaneTitleEditor({
       setLane(j.lane)
       setCounts(j.counts ?? null)
       setConfirmingDelete(false)
-      setConfirmingClear(false)
+      setConfirmingClear(null)
+      setPreview(null)
       setNotice(null)
       setLoading(false)
     })()
@@ -250,26 +268,61 @@ export function LaneTitleEditor({
     [lane, laneId]
   )
 
+  // What a mismatched clear would cost. Read-only, and fetched when the
+  // confirmation opens rather than with the lane, because it walks the whole
+  // unreviewed queue to answer.
+  const openClear = useCallback(
+    async (scope: "all" | "mismatched") => {
+      setConfirmingClear(scope)
+      setPreview(null)
+      if (scope !== "mismatched") return
+      const res = await authFetch(`/api/lanes/${encodeURIComponent(laneId)}/queue`)
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j.ok) {
+        setError(j.error || "Could not work out what no longer matches")
+        setConfirmingClear(null)
+        return
+      }
+      setError(null)
+      setPreview(j)
+    },
+    [laneId]
+  )
+
   // Empty the queue without judging it. Rows are marked cleared rather than
   // deleted, so the next run refreshes them in place instead of putting them
   // straight back; see app/api/lanes/[id]/queue/route.ts. Anything already
   // pushed or dismissed is untouched, which is the whole point of clearing
   // rather than deleting the lane.
-  const clearQueue = useCallback(async () => {
-    setClearing(true)
-    setError(null)
-    const res = await authFetch(`/api/lanes/${encodeURIComponent(laneId)}/queue`, { method: "DELETE" })
-    const j = await res.json().catch(() => ({}))
-    setClearing(false)
-    if (!res.ok || !j.ok) {
-      setError(j.error || "Could not clear the queue")
-      return
-    }
-    setConfirmingClear(false)
-    setCounts((prev) => (prev ? { ...prev, unreviewed: 0 } : prev))
-    setNotice(`Cleared ${j.cleared} unreviewed job${j.cleared === 1 ? "" : "s"}. Reviewed rows were left alone.`)
-    onQueueCleared?.()
-  }, [laneId, onQueueCleared])
+  const clearQueue = useCallback(
+    async (scope: "all" | "mismatched") => {
+      setClearing(true)
+      setError(null)
+      const res = await authFetch(
+        `/api/lanes/${encodeURIComponent(laneId)}/queue?scope=${scope}`,
+        { method: "DELETE" }
+      )
+      const j = await res.json().catch(() => ({}))
+      setClearing(false)
+      if (!res.ok || !j.ok) {
+        setError(j.error || "Could not clear the queue")
+        return
+      }
+      setConfirmingClear(null)
+      setPreview(null)
+      setCounts((prev) =>
+        prev ? { ...prev, unreviewed: Math.max(0, prev.unreviewed - (j.cleared as number)) } : prev
+      )
+      setNotice(
+        `Cleared ${j.cleared} job${j.cleared === 1 ? "" : "s"} from the queue. ` +
+          (scope === "mismatched"
+            ? "Anything the current criteria still return was kept, and nothing already reviewed was touched."
+            : "Nothing already reviewed was touched.")
+      )
+      onQueueCleared?.()
+    },
+    [laneId, onQueueCleared]
+  )
 
   // All four board filters save through one call, because they are one column
   // and PATCH replaces the object wholesale — a per-list write would have the
@@ -587,9 +640,29 @@ export function LaneTitleEditor({
       <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${T.BORDER_SOFT}` }}>
         {!confirmingClear && !confirmingDelete && (
           <div style={{ display: "flex", gap: 20, alignItems: "center", flexWrap: "wrap" }}>
+            {/* First, because it is the one to reach for after narrowing a lane,
+                and the only one that keeps the correctly targeted jobs. */}
             <button
               type="button"
-              onClick={() => setConfirmingClear(true)}
+              onClick={() => openClear("mismatched")}
+              disabled={counts?.unreviewed === 0}
+              title={
+                counts?.unreviewed === 0
+                  ? "Nothing is waiting to be reviewed"
+                  : "Clear only the queued jobs this lane's current criteria would no longer return, keeping the rest"
+              }
+              style={{
+                background: "none", border: "none", padding: 0,
+                color: counts?.unreviewed === 0 ? T.DIM : T.WRN_BLUE,
+                fontSize: 12, fontWeight: 700,
+                cursor: counts?.unreviewed === 0 ? "not-allowed" : "pointer",
+              }}
+            >
+              Clear what no longer matches
+            </button>
+            <button
+              type="button"
+              onClick={() => openClear("all")}
               disabled={counts?.unreviewed === 0}
               title={
                 counts?.unreviewed === 0
@@ -603,7 +676,7 @@ export function LaneTitleEditor({
                 cursor: counts?.unreviewed === 0 ? "not-allowed" : "pointer",
               }}
             >
-              Clear the unreviewed queue
+              Clear the whole queue
               {counts ? ` (${counts.unreviewed})` : ""}
             </button>
             <button
@@ -621,31 +694,90 @@ export function LaneTitleEditor({
 
         {confirmingClear && (
           <div style={{ ...card, padding: "14px 16px", borderColor: T.ORANGE_BORDER, background: T.WARNING_BG }}>
-            <p style={{ fontSize: 13, color: T.TEXT, margin: "0 0 4px", fontWeight: 700 }}>
-              {counts
-                ? `Clear ${counts.unreviewed} unreviewed job${counts.unreviewed === 1 ? "" : "s"} from this queue?`
-                : "Clear every unreviewed job from this queue?"}
-            </p>
-            <p style={{ fontSize: 12, color: T.MUTED, margin: "0 0 12px" }}>
-              The lane keeps running, and everything you have already scored or dismissed stays exactly as it is.
-              Cleared jobs are marked, not deleted, so tonight&apos;s run refreshes them in place instead of putting
-              them straight back in the queue.
-            </p>
+            {confirmingClear === "all" ? (
+              <>
+                <p style={{ fontSize: 13, color: T.TEXT, margin: "0 0 4px", fontWeight: 700 }}>
+                  {counts
+                    ? `Clear ${counts.unreviewed} unreviewed job${counts.unreviewed === 1 ? "" : "s"} from this queue?`
+                    : "Clear every unreviewed job from this queue?"}
+                </p>
+                <p style={{ fontSize: 12, color: T.MUTED, margin: "0 0 12px" }}>
+                  This takes the correctly targeted jobs with it. If you have just narrowed the lane, use
+                  &ldquo;Clear what no longer matches&rdquo; instead.
+                </p>
+              </>
+            ) : !preview ? (
+              <p style={{ fontSize: 13, color: T.MUTED, margin: 0 }}>
+                Working out what the current criteria would no longer return…
+              </p>
+            ) : (
+              <>
+                <p style={{ fontSize: 13, color: T.TEXT, margin: "0 0 4px", fontWeight: 700 }}>
+                  Clear {preview.mismatched} of {preview.unreviewed} unreviewed job
+                  {preview.unreviewed === 1 ? "" : "s"}, keeping {preview.remaining}?
+                </p>
+                <p style={{ fontSize: 12, color: T.MUTED, margin: "0 0 10px" }}>
+                  Judged against what this lane searches now: {preview.criteria.seniority.join(", ")}, posted within{" "}
+                  {postingWindowLabel(preview.criteria.days_posted)}
+                  {preview.criteria.years_max == null ? "" : `, ${preview.criteria.years_max} years max`}.
+                </p>
+
+                {preview.reasons.length > 0 && (
+                  <div style={{ marginBottom: 10 }}>
+                    {preview.reasons.map((r) => (
+                      <div key={r.reason} style={{ fontSize: 12, color: T.MUTED, padding: "2px 0" }}>
+                        <span style={{ color: T.TEXT, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>
+                          {r.count}
+                        </span>{" "}
+                        {r.reason}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {preview.mismatched === 0 && (
+                  <p style={{ fontSize: 12, color: T.MUTED, margin: "0 0 10px" }}>
+                    Everything in the queue still matches. Nothing to clear.
+                  </p>
+                )}
+
+                {/* Said plainly, because a clear that removed a job the lane
+                    would still return is invisible: it simply never reappears. */}
+                <p style={{ fontSize: 12, color: T.DIM, margin: "0 0 12px" }}>
+                  Industry and company-keyword filters are not checked here. The board applies those with its own
+                  matching rules, and guessing at them would clear jobs this lane does still return. Rows that never
+                  stated a level, a posting date or a minimum are kept.
+                </p>
+              </>
+            )}
+
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
               <button
                 type="button"
-                onClick={clearQueue}
-                disabled={clearing}
+                onClick={() => clearQueue(confirmingClear)}
+                disabled={clearing || (confirmingClear === "mismatched" && !preview?.mismatched)}
                 style={{
                   ...btnSecondary, padding: "9px 16px",
-                  cursor: clearing ? "not-allowed" : "pointer", opacity: clearing ? 0.6 : 1,
+                  cursor:
+                    clearing || (confirmingClear === "mismatched" && !preview?.mismatched)
+                      ? "not-allowed"
+                      : "pointer",
+                  opacity:
+                    clearing || (confirmingClear === "mismatched" && !preview?.mismatched) ? 0.6 : 1,
                 }}
               >
-                {clearing ? "Clearing…" : "Clear the queue"}
+                {clearing
+                  ? "Clearing…"
+                  : confirmingClear === "all"
+                    ? "Clear the whole queue"
+                    : `Clear ${preview?.mismatched ?? 0}`}
               </button>
               <button
                 type="button"
-                onClick={() => setConfirmingClear(false)}
+                onClick={() => {
+                  setConfirmingClear(null)
+                  setPreview(null)
+                }}
                 disabled={clearing}
                 style={{ background: "transparent", border: "none", color: T.DIM, fontSize: 12, fontWeight: 700, cursor: "pointer" }}
               >
