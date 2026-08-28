@@ -1,0 +1,946 @@
+<!doctype html><html><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}</style>
+<!-- GENERATED for local viewing only. Source of truth: signal-capability-brief.html
+     (that file is the publish source and must stay skeleton-free; the artifact
+     host injects this same head at publish time). Regenerate after edits. -->
+</head><body>
+<title>SIGNAL Capability Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap">
+
+<style>
+/* ============================================================
+   SIGNAL Capability Brief
+   Palette taken from the product's own light language:
+   navy is structure and action, orange is structure ONLY
+   (rules, numerals, eyebrows: never body text, never a fill),
+   teal is affirmative. Ice ground. Same rules the app follows.
+   ============================================================ */
+
+:root {
+  --ground:      #F2FAFD;
+  --surface:     #FFFFFF;
+  --surface-2:   #EAF4FA;
+  --ink:         #08203F;
+  --ink-2:       #4A6478;
+  --ink-dim:     #7A93A8;
+  --rule:        #D9E7F0;
+  --rule-soft:   #E7F1F7;
+  --structure:   #FF6B00;
+  --affirm:      #00757A;
+  --affirm-bg:   #DFF5F4;
+  --info:        #0A6FB5;
+  --info-bg:     #E1EFFA;
+  --warn:        #9A5A00;
+  --warn-bg:     #FBEEDC;
+  --halt:        #A82D16;
+  --halt-bg:     #FBE6E1;
+  --shadow:      0 1px 2px rgba(8,32,63,.04), 0 6px 18px rgba(8,32,63,.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:    #0A1930;
+    --surface:   #12294A;
+    --surface-2: #17325A;
+    --ink:       #EAF3FA;
+    --ink-2:     #A9C2D6;
+    --ink-dim:   #7C99B2;
+    --rule:      rgba(255,255,255,.13);
+    --rule-soft: rgba(255,255,255,.07);
+    --structure: #FF8A33;
+    --affirm:    #4FD8D2;
+    --affirm-bg: rgba(0,179,179,.16);
+    --info:      #6BB9F0;
+    --info-bg:   rgba(0,155,255,.16);
+    --warn:      #F0B860;
+    --warn-bg:   rgba(240,184,96,.15);
+    --halt:      #F08A72;
+    --halt-bg:   rgba(196,53,27,.20);
+    --shadow:    0 1px 2px rgba(0,0,0,.28), 0 8px 22px rgba(0,0,0,.30);
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground:    #0A1930;
+  --surface:   #12294A;
+  --surface-2: #17325A;
+  --ink:       #EAF3FA;
+  --ink-2:     #A9C2D6;
+  --ink-dim:   #7C99B2;
+  --rule:      rgba(255,255,255,.13);
+  --rule-soft: rgba(255,255,255,.07);
+  --structure: #FF8A33;
+  --affirm:    #4FD8D2;
+  --affirm-bg: rgba(0,179,179,.16);
+  --info:      #6BB9F0;
+  --info-bg:   rgba(0,155,255,.16);
+  --warn:      #F0B860;
+  --warn-bg:   rgba(240,184,96,.15);
+  --halt:      #F08A72;
+  --halt-bg:   rgba(196,53,27,.20);
+  --shadow:    0 1px 2px rgba(0,0,0,.28), 0 8px 22px rgba(0,0,0,.30);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: "Newsreader", Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  line-height: 1.62;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px 120px; }
+
+/* ---------- masthead ---------- */
+
+.masthead { padding: 72px 0 0; }
+.mast-rule { height: 5px; background: var(--structure); width: 96px; border-radius: 3px; }
+.mast-eyebrow {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--structure); margin: 22px 0 0;
+}
+.mast-title {
+  font-family: "Archivo", system-ui, sans-serif;
+  font-weight: 800; font-size: clamp(40px, 6.4vw, 68px); line-height: 1.02;
+  letter-spacing: -.028em; margin: 14px 0 0; text-wrap: balance; color: var(--ink);
+}
+.mast-sub {
+  font-size: clamp(19px, 2.2vw, 23px); line-height: 1.5; color: var(--ink-2);
+  max-width: 30em; margin: 20px 0 0; font-weight: 400;
+}
+.mast-meta {
+  display: flex; flex-wrap: wrap; gap: 10px 28px; margin: 34px 0 0;
+  padding-top: 18px; border-top: 1px solid var(--rule);
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12.5px;
+  color: var(--ink-dim); letter-spacing: .02em;
+}
+.mast-meta b { color: var(--ink-2); font-weight: 500; }
+
+/* ---------- generic section chrome ---------- */
+
+.sec { margin-top: 76px; }
+.sec-head { display: grid; grid-template-columns: 128px minmax(0,1fr); gap: 28px; align-items: start; }
+.sec-num {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 13px; font-weight: 600; letter-spacing: .1em; color: var(--structure);
+  padding-top: 12px; border-top: 3px solid var(--structure);
+}
+.sec-title {
+  font-family: "Archivo", system-ui, sans-serif; font-weight: 700;
+  font-size: clamp(27px, 3.4vw, 36px); line-height: 1.12; letter-spacing: -.02em;
+  margin: 0; color: var(--ink); text-wrap: balance;
+}
+.sec-lede { color: var(--ink-2); max-width: 64ch; margin: 14px 0 0; font-size: 18.5px; }
+.sec-body { margin-top: 30px; }
+
+@media (max-width: 720px) {
+  .sec-head { grid-template-columns: 1fr; gap: 14px; }
+  .sec-num { border-top: none; padding-top: 0; }
+}
+
+p { max-width: 66ch; }
+.sec-body > p { color: var(--ink-2); }
+strong { font-weight: 600; color: var(--ink); }
+em { font-style: italic; }
+
+/* ---------- the loop strip ---------- */
+
+.loop { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--rule);
+        border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; margin-top: 30px; }
+.loop-cell { background: var(--surface); padding: 20px 20px 22px; }
+.loop-k {
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--structure);
+}
+.loop-h { font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 17px;
+          margin: 8px 0 6px; color: var(--ink); letter-spacing: -.01em; }
+.loop-p { font-size: 15.5px; line-height: 1.5; color: var(--ink-2); margin: 0; max-width: none; }
+@media (max-width: 860px) { .loop { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .loop { grid-template-columns: 1fr; } }
+
+/* ---------- function blocks ---------- */
+
+.arc { margin-top: 58px; }
+.arc-label {
+  display: flex; align-items: baseline; gap: 16px;
+  border-bottom: 2px solid var(--structure); padding-bottom: 10px; margin-bottom: 8px;
+}
+.arc-label h3 {
+  font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 21px;
+  letter-spacing: -.012em; margin: 0; color: var(--ink);
+}
+.arc-label span { font-size: 16px; color: var(--ink-2); }
+
+.fn { display: grid; grid-template-columns: 128px minmax(0,1fr); gap: 28px;
+      padding: 30px 0; border-bottom: 1px solid var(--rule-soft); }
+.fn-gutter { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.fn-id {
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 15px; font-weight: 600;
+  color: var(--structure); letter-spacing: .04em;
+}
+.fn-name {
+  font-family: "Archivo", system-ui, sans-serif; font-weight: 700; font-size: 23px;
+  letter-spacing: -.015em; margin: 0; color: var(--ink);
+}
+.fn-promise { font-size: 19px; line-height: 1.5; color: var(--ink); margin: 8px 0 0; max-width: 60ch; }
+.fn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-top: 20px; }
+@media (max-width: 900px) { .fn { grid-template-columns: 1fr; gap: 14px; }
+                            .fn-gutter { flex-direction: row; align-items: center; gap: 14px; }
+                            .fn-grid { grid-template-columns: 1fr; gap: 18px; } }
+
+.col-k {
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 8px;
+}
+.fn-list { margin: 0; padding: 0; list-style: none; }
+.fn-list li { position: relative; padding-left: 17px; margin-bottom: 7px; font-size: 16.5px;
+              line-height: 1.5; color: var(--ink-2); }
+.fn-list li::before { content: ""; position: absolute; left: 0; top: .62em;
+                      width: 7px; height: 2px; background: var(--structure); }
+.fn-list li b { color: var(--ink); font-weight: 600; }
+
+.sell {
+  margin-top: 20px; padding: 13px 0 13px 18px; border-left: 3px solid var(--structure);
+  font-size: 17px; line-height: 1.55; color: var(--ink); max-width: 68ch;
+}
+.sell i { font-style: italic; color: var(--ink-2); }
+
+/* ---------- status pills ---------- */
+
+.pill {
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 10.5px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; padding: 4px 9px; border-radius: 5px;
+  border: 1px solid transparent;
+}
+.p-live { background: var(--affirm-bg); color: var(--affirm); border-color: color-mix(in srgb, var(--affirm) 30%, transparent); }
+.p-web  { background: var(--info-bg);   color: var(--info);   border-color: color-mix(in srgb, var(--info) 30%, transparent); }
+.p-soon { background: var(--warn-bg);   color: var(--warn);   border-color: color-mix(in srgb, var(--warn) 34%, transparent); }
+.p-dev  { background: var(--halt-bg);   color: var(--halt);   border-color: color-mix(in srgb, var(--halt) 30%, transparent); }
+
+/* ---------- proof / stat tiles ---------- */
+
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 28px; }
+.tile { background: var(--surface); border: 1px solid var(--rule); border-radius: 12px;
+        padding: 20px 18px; box-shadow: var(--shadow); }
+.tile-n { font-family: "Archivo", system-ui, sans-serif; font-weight: 800;
+          font-size: 34px; letter-spacing: -.03em; color: var(--ink);
+          font-variant-numeric: tabular-nums; line-height: 1; }
+.tile-l { font-size: 14.5px; color: var(--ink-2); margin-top: 9px; line-height: 1.4; }
+@media (max-width: 860px) { .tiles { grid-template-columns: repeat(2, 1fr); } }
+
+/* ---------- tables ---------- */
+
+.tablewrap { overflow-x: auto; margin-top: 26px; border: 1px solid var(--rule);
+             border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
+table { border-collapse: collapse; width: 100%; min-width: 640px; }
+thead th {
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim);
+  text-align: left; padding: 13px 16px; border-bottom: 1px solid var(--rule); white-space: nowrap;
+}
+tbody td { padding: 13px 16px; border-bottom: 1px solid var(--rule-soft);
+           font-size: 16px; color: var(--ink-2); vertical-align: top; }
+tbody tr:last-child td { border-bottom: none; }
+tbody td:first-child { color: var(--ink); font-weight: 500; white-space: nowrap; }
+
+/* ---------- callout ---------- */
+
+.note { margin-top: 26px; background: var(--surface-2); border: 1px solid var(--rule);
+        border-radius: 12px; padding: 22px 24px; }
+.note-k { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; font-weight: 600;
+          letter-spacing: .14em; text-transform: uppercase; color: var(--structure); }
+.note p { margin: 9px 0 0; color: var(--ink-2); font-size: 16.5px; max-width: 72ch; }
+.note p + p { margin-top: 12px; }
+.note code, p code, li code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .86em;
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 4px;
+  padding: 1px 5px; color: var(--ink);
+}
+
+/* ---------- packaging cards ---------- */
+
+.tiers { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 28px; }
+.tier { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px;
+        padding: 26px; box-shadow: var(--shadow); }
+.tier-k { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 11px; font-weight: 600;
+          letter-spacing: .14em; text-transform: uppercase; color: var(--structure); }
+.tier-p { font-family: "Archivo", system-ui, sans-serif; font-weight: 800; font-size: 40px;
+          letter-spacing: -.03em; margin: 10px 0 2px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.tier-t { font-size: 15.5px; color: var(--ink-dim); margin: 0 0 16px; }
+@media (max-width: 760px) { .tiers { grid-template-columns: 1fr; } }
+
+/* ---------- contents ---------- */
+
+.toc { margin-top: 40px; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+       padding: 22px 0; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 6px 34px; }
+.toc a { display: flex; gap: 14px; align-items: baseline; text-decoration: none;
+         color: var(--ink-2); font-size: 16.5px; padding: 4px 0; border-radius: 4px; }
+.toc a:hover { color: var(--ink); }
+.toc a:focus-visible { outline: 2px solid var(--structure); outline-offset: 3px; }
+.toc a span { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px;
+              color: var(--structure); font-weight: 600; }
+@media (max-width: 640px) { .toc { grid-template-columns: 1fr; } }
+
+/* ---------- closing ---------- */
+
+.foot { margin-top: 84px; padding-top: 26px; border-top: 5px solid var(--structure);
+        font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12.5px;
+        color: var(--ink-dim); line-height: 1.7; }
+.foot b { color: var(--ink-2); font-weight: 500; }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <div class="mast-rule"></div>
+    <p class="mast-eyebrow">Marketing brief · Direct-to-consumer</p>
+    <h1 class="mast-title">What SIGNAL Actually Does</h1>
+    <p class="mast-sub">A function-by-function map of the product from the seat of an individual job seeker: written to be the source material for positioning, pricing and campaign work.</p>
+    <div class="mast-meta">
+      <div><b>Audience:</b> internal: marketing &amp; GTM planning</div>
+      <div><b>Scope:</b> D2C only (coach-side product excluded)</div>
+      <div><b>Tagline:</b> Stop applying blind</div>
+      <div><b>Basis:</b> production code, API surface and product docs, Aug 2026</div>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Contents">
+    <a href="#thesis"><span>01</span> The product in one page</a>
+    <a href="#loop"><span>02</span> The loop a user runs</a>
+    <a href="#functions"><span>03</span> The nine functions</a>
+    <a href="#engine"><span>04</span> Why the verdict is credible</a>
+    <a href="#packaging"><span>05</span> Packaging, price, surfaces</a>
+    <a href="#status"><span>06</span> What is live, and where</a>
+    <a href="#boundaries"><span>07</span> Honest boundaries</a>
+    <a href="#angles"><span>08</span> Angles worth testing</a>
+  </nav>
+
+  <!-- ============ 01 ============ -->
+  <section class="sec" id="thesis">
+    <div class="sec-head">
+      <div class="sec-num">01</div>
+      <div>
+        <h2 class="sec-title">SIGNAL is a decision engine first and a toolkit second</h2>
+        <p class="sec-lede">Most job-search products help you produce more applications. SIGNAL is built on the opposite premise: the problem is not volume, it is targeting, and the first thing it sells is permission to stop.</p>
+      </div>
+    </div>
+    <div class="sec-body">
+      <p>A user pastes a resume and a job description. In about thirty seconds SIGNAL returns a <strong>verdict</strong> of Priority Apply, Apply, Review or Pass, plus a 0–100 score, the specific evidence in their background that makes them competitive, the specific gaps that will get them screened out, and one concrete next step. That verdict is produced by a deterministic scoring engine, not by asking a language model what it thinks.</p>
+      <p>Everything else in the product hangs off that decision. Once a job is worth pursuing, SIGNAL rewrites how the user presents themselves for <em>that</em> job, drafts the letter, works the contacts who can get a human to read it, and tracks the whole campaign until something lands. When a round is booked, it generates the questions that interview will actually contain and drafts an answer to each one out of the user's own experience.</p>
+      <p>The pitch to a college student or early-career job seeker is not "apply faster." It is that you are sending thirty applications and getting two callbacks, and that is a targeting problem you can see and fix. Three words: <strong>Stop applying blind.</strong></p>
+      <div class="tiles">
+        <div class="tile"><div class="tile-n">~30s</div><div class="tile-l">from paste to a real verdict, with no account</div></div>
+        <div class="tile"><div class="tile-n">4</div><div class="tile-l">decision bands, not a vague match percentage</div></div>
+        <div class="tile"><div class="tile-n">$99</div><div class="tile-l">one-time fee, no expiry, everything unlocked</div></div>
+        <div class="tile"><div class="tile-n">9</div><div class="tile-l">distinct user-facing functions in the product</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 02 ============ -->
+  <section class="sec" id="loop">
+    <div class="sec-head">
+      <div class="sec-num">02</div>
+      <div>
+        <h2 class="sec-title">The loop a user actually runs</h2>
+        <p class="sec-lede">Four moves, repeated per job. Every function in the product belongs to one of them, which makes this the natural spine for messaging as well as for onboarding.</p>
+      </div>
+    </div>
+    <div class="sec-body">
+      <div class="loop">
+        <div class="loop-cell">
+          <div class="loop-k">Move one</div>
+          <div class="loop-h">Decide</div>
+          <p class="loop-p">Is this job worth a Saturday? Score it before you write a word.</p>
+        </div>
+        <div class="loop-cell">
+          <div class="loop-k">Move two</div>
+          <div class="loop-h">Compete</div>
+          <p class="loop-p">Reposition the resume for this job, then draft the letter.</p>
+        </div>
+        <div class="loop-cell">
+          <div class="loop-k">Move three</div>
+          <div class="loop-h">Work it</div>
+          <p class="loop-p">Track the application, work your contacts for a referral, hit the follow-ups on time.</p>
+        </div>
+        <div class="loop-cell">
+          <div class="loop-k">Move four</div>
+          <div class="loop-h">Convert</div>
+          <p class="loop-p">Walk into each round knowing the questions and your answers to them.</p>
+        </div>
+      </div>
+      <div class="note">
+        <div class="note-k">Why this framing sells</div>
+        <p>Competitors own one move each: a resume tool, a tracker, a networking scraper. SIGNAL is the only one of them that starts with the decision, and the decision is what makes the other three moves cheap. A user who scores ten jobs and applies to three has already saved more time than any resume optimizer can give back.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 03 ============ -->
+  <section class="sec" id="functions">
+    <div class="sec-head">
+      <div class="sec-num">03</div>
+      <div>
+        <h2 class="sec-title">The nine functions</h2>
+        <p class="sec-lede">Grouped by the move they serve. Each carries a status pill saying where it runs, because the web app and the iOS app do not carry the same set, and a campaign pointed at the wrong one promises a smaller product than it means to.</p>
+      </div>
+    </div>
+
+    <div class="sec-body">
+
+      <!-- ARC A -->
+      <div class="arc">
+        <div class="arc-label"><h3>Move one: Decide</h3><span>The wedge, and the whole free experience</span></div>
+
+        <div class="fn">
+          <div class="fn-gutter">
+            <div class="fn-id">F01</div>
+            <span class="pill p-live">Live · free</span>
+          </div>
+          <div>
+            <h4 class="fn-name">The Free Scan</h4>
+            <p class="fn-promise">Watch a recruiter read your resume for one specific job: no account, no card, about thirty seconds.</p>
+            <div class="fn-grid">
+              <div>
+                <div class="col-k">What the user does</div>
+                <ul class="fn-list">
+                  <li>Uploads a PDF/DOCX resume or pastes the text</li>
+                  <li>Pastes the full job description</li>
+                  <li>Hits run: no signup gate in front of the result</li>
+                </ul>
+              </div>
+              <div>
+                <div class="col-k">What SIGNAL gives back</div>
+                <ul class="fn-list">
+                  <li>A <b>verdict and score</b>: Priority Apply / Apply / Review / Pass</li>
+                  <li><b>Why you're competitive</b>: bullets that name the actual employer, role or metric on their resume and tie it to the posting's own language</li>
+                  <li><b>Risks before you apply</b>: the specific gaps, rated low/medium/high, never invented</li>
+                  <li>A <b>marked-up read of the resume</b>: lines a recruiter would underline or circle, with margin notes, plus a one-line verdict and a named next step</li>
+                  <li>Locked previews of the paid functions</li>
+                </ul>
+              </div>
+            </div>
+            <div class="sell">The free scan is a complete, honest product moment, not a teaser, and that is the acquisition asset. <i>"Real verdict. Real strengths. Real risks. Real next step."</i> The upgrade is not "see your result," it is "now do something about it, and do it for every job."</div>
+          </div>
+        </div>
+
+        <div class="fn">
+          <div class="fn-gutter">
+            <div class="fn-id">F02</div>
+            <span class="pill p-live">Live · paid</span>
+          </div>
+          <div>
+            <h4 class="fn-name">JobFit: the full scoring engine</h4>
+            <p class="fn-promise">The same verdict, but run against a profile that knows your targets, your constraints and your real resume, and saved.</p>
+            <div class="fn-grid">
+              <div>
+                <div class="col-k">What changes when you pay</div>
+                <ul class="fn-list">
+                  <li>Scores against a <b>structured profile</b>, not a guess from pasted text: target roles, locations, timeline, job type, hard nos, constraints</li>
+                  <li>Scores against the <b>persona</b> (resume version) you choose</li>
+                  <li><b>Unlimited jobs</b>, each one saved and re-openable</li>
+                  <li>Every scored job <b>auto-creates a tracker entry</b> so scoring and tracking are one action</li>
+                </ul>
+              </div>
+              <div>
+                <div class="col-k">What the result contains</div>
+                <ul class="fn-list">
+                  <li>Decision, score, and the evidence behind both</li>
+                  <li><b>Hard gates</b> when the job is structurally wrong: credential required, wrong grad window, remote/in-person mismatch, seniority, part-time, government or heavy-analytics requirements</li>
+                  <li>Location constraint read straight from the posting</li>
+                  <li>A strategy hand-off into positioning and the cover letter, both anchored on the same lead signal</li>
+                </ul>
+              </div>
+            </div>
+            <div class="sell">The commercial argument for the paid tier is repeatability: one scan tells you about one job, a profile tells you about your <i>search</i>. Ninety-nine dollars buys a working method, not a document.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ARC B -->
+      <div class="arc">
+        <div class="arc-label"><h3>Move two: Compete</h3><span>Two artifacts, both generated from the same verdict</span></div>
+
+        <div class="fn">
+          <div class="fn-gutter">
+            <div class="fn-id">F03</div>
+            <span class="pill p-live">Live · paid</span>
+          </div>
+          <div>
+            <h4 class="fn-name">Resume Positioning</h4>
+            <p class="fn-promise">Not a rewrite. A reordering and relabeling of what you have already done, in this job's language.</p>
+            <div class="fn-grid">
+              <div>
+                <div class="col-k">What it produces</div>
+                <ul class="fn-list">
+                  <li>A <b>role angle</b>: which of seven stances to take for this job (client-facing, analytical, creative, technical, operations, leadership, research)</li>
+                  <li>An explicit <b>reorder plan</b> of lead with, support with, then include and de-emphasize, each with the reason and the action</li>
+                  <li>A <b>summary statement</b> recommendation, including a drafted one if the resume needs it</li>
+                  <li>One to six <b>before/after bullet edits</b> with the reason each matters</li>
+                </ul>
+              </div>
+              <div>
+                <div class="col-k">The trust mechanic</div>
+                <ul class="fn-list">
+                  <li>Every "before" line must be a <b>verbatim substring of the user's own resume</b>: the system rejects any edit that isn't, so it structurally cannot invent experience</li>
+                  <li>Missing keywords are found deterministically first, then handed to the model as fact</li>
+                  <li>Whether a summary section already exists is <b>detected, not guessed</b></li>
+                </ul>
+              </div>
+            </div>
+            <div class="sell">This is the strongest honesty claim in the product and it is under-marketed today. <i>"Rewrites in this job's language that surface what you've already done. Nothing invented"</i>, and the architecture actually enforces it.</div>
+          </div>
+        </div>
+
+        <div class="fn">
+          <div class="fn-gutter">
+            <div class="fn-id">F04</div>
+            <span class="pill p-live">Live · paid</span>
+          </div>
+          <div>
+            <h4 class="fn-name">Cover Letter</h4>
+            <p class="fn-promise">A letter that opens on your strongest proof and names the gap instead of hiding it.</p>
+            <div class="fn-grid">
+              <div>
+                <div class="col-k">How it is built</div>
+                <ul class="fn-list">
+                  <li>Takes the JobFit verdict and the positioning angle as input, so the letter and the resume order argue the same thing</li>
+                  <li>Opens on a named experience or metric chosen by the engine, not a generic hook</li>
+                  <li>Explicitly addresses the top risk when one exists</li>
+                  <li>Ships with a formatted contact header, ready to send</li>
+                </ul>
+              </div>
+              <div>
+                <div class="col-k">What the user gets</div>
+                <ul class="fn-list">
+                  <li>A complete draft, cached so revisiting the job is instant</li>
+                  <li>A stated tone, so it reads like a person and not a template</li>
+                  <li>Nothing generated at all on a <b>Pass</b>: the product refuses to help you apply to a job it told you to skip</li>
+                </ul>
+              </div>
+            </div>
+            <div class="sell">The refusal-on-Pass behavior is a genuinely differentiating detail worth putting in copy: a product with the discipline to say no is a product whose yes means something.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ARC C -->
+      <div class="arc">
+        <div class="arc-label"><h3>The raw material</h3><span>What the engine reads about you</span></div>
+
+        <div class="fn">
+          <div class="fn-gutter">
+            <div class="fn-id">F05</div>
+            <span class="pill p-live">Live · paid</span>
+          </div>
+          <div>
+            <h4 class="fn-name">Profile &amp; Personas</h4>
+            <p class="fn-promise">One setup that makes every future scan sharper, and up to ten resumes for as many different directions.</p>
+            <div class="fn-grid">
+              <div>
+                <div class="col-k">What the user sets up</div>
+                <ul class="fn-list">
+                  <li>Direction: job type (full-time / internship / both), target roles, preferred locations, timeline</li>
+                  <li>Situation: school, major, graduation year, current status</li>
+                  <li>Judgment: strongest skills, biggest concern, hard nos, constraints, openness to entry level</li>
+                  <li>Evidence: the resume itself, plus optional writing samples and free-text context</li>
+                </ul>
+              </div>
+              <div>
+                <div class="col-k">Personas</div>
+                <ul class="fn-list">
+                  <li>Up to <b>ten named resume versions</b>, for example "Marketing" and "Operations", each scored independently</li>
+                  <li>The tracker records <b>which resume was used</b> for every application</li>
+                  <li>Resume upload parses PDF, DOCX or plain text</li>
+                </ul>
+              </div>
+            </div>
+            <div class="sell">Personas are the honest answer to "I'm applying to two kinds of jobs and my resume is fighting itself." The cap of ten sits well past what any individual realistically runs, so it reads as generous rather than metered. Worth saying out loud in copy, because most competitors meter exactly this.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ARC D -->
+      <div class="arc">
+        <div class="arc-label"><h3>Moves three and four: work it, convert</h3><span>The workspace a user comes back to daily</span></div>
+
+        <div class="fn">
+          <div class="fn-gutter">
+            <div class="fn-id">F06</div>
+            <span class="pill p-web">Live · web</span>
+          </div>
+          <div>
+            <h4 class="fn-name">Job Tracker</h4>
+            <p class="fn-promise">Every job you scored, applied to, or were sent: with the verdict attached, so your pipeline remembers why.</p>
+            <div class="fn-grid">
+              <div>
+                <div class="col-k">What it holds</div>
+                <ul class="fn-list">
+                  <li>Applications with status (saved, applied, interviewing, offer, rejected, withdrawn), dates, location, link and notes</li>
+                  <li>The <b>SIGNAL score and decision</b> on the row, and which persona was used</li>
+                  <li>A per-job detail page: status, interviews, notes and the job description, all in one place</li>
+                  <li>A <b>history</b> of every analysis run, re-openable</li>
+                </ul>
+              </div>
+              <div>
+                <div class="col-k">Deliberately absent</div>
+                <ul class="fn-list">
+                  <li>No personal interview-rate dashboards, no score distributions. The team removed them on purpose, because a student staring at their own 12% callback rate is not being helped</li>
+                  <li>The counts survive as navigation chips; the scorekeeping does not</li>
+                </ul>
+              </div>
+            </div>
+            <div class="sell">A restraint claim worth owning: <i>"we don't grade you, we tell you what to do next."</i> It differentiates sharply from analytics-heavy trackers.</div>
+          </div>
+        </div>
+
+        <div class="fn">
+          <div class="fn-gutter">
+            <div class="fn-id">F07</div>
+            <span class="pill p-web">Live · web</span>
+          </div>
+          <div>
+            <h4 class="fn-name">Interviews and Prep Now</h4>
+            <p class="fn-promise">Every round in one place, and for each one the questions you will actually be asked, with an answer to each built from your own experience.</p>
+            <div class="fn-grid">
+              <div>
+                <div class="col-k">Tracking the rounds</div>
+                <ul class="fn-list">
+                  <li>Three groups that sort themselves: <b>Coming up</b>, <b>Waiting to hear</b>, <b>Completed</b></li>
+                  <li>Rounds by stage and format, interviewer names, thank-you tracking, confidence and notes</li>
+                  <li>The soonest round takes over the dashboard as the single thing that matters</li>
+                  <li>A <b>preparation checklist</b> that re-orders itself inside 24 hours, when there is nothing left to read and everything left to do</li>
+                </ul>
+              </div>
+              <div>
+                <div class="col-k">Prep Now: the generated pack</div>
+                <ul class="fn-list">
+                  <li><b>Where you're exposed.</b> What they will want you to prove, taken from the strengths in your scan, and what they will push on, taken from its risks. Each with one line on how to handle it</li>
+                  <li><b>What they'll ask.</b> Real questions: one per requirement the posting actually names, one per risk in the version an interviewer would say out loud, plus "why this job" and "why you"</li>
+                  <li><b>What you say.</b> A drafted answer to every one of those questions, written in your voice, in second person</li>
+                  <li>Under every answer, <b>the lines from your own resume it rests on</b>, so you can check it before you say it</li>
+                  <li>Generated on demand behind a button, then frozen. Regenerating with the same inputs returns the same pack rather than a different one</li>
+                </ul>
+              </div>
+            </div>
+            <div class="sell">This is the single most defensible AI feature in the product and the brief previously undersold it badly. It is built so that it <b>cannot flatter you</b>: an answer may only use experience the engine actually extracted from your resume, it may not invent a system, a number, a tool or a team name that is not in the evidence, and it knows nothing about the company beyond the posting you gave it. Any answer citing evidence it was not handed is discarded before you see it, and if the whole pack fails those checks the feature shows nothing rather than showing you something to walk into a room with. <i>"Every word is something you can actually back up when they follow up."</i></div>
+          </div>
+        </div>
+
+        <div class="fn">
+          <div class="fn-gutter">
+            <div class="fn-id">F08</div>
+            <span class="pill p-web">Live · web</span>
+          </div>
+          <div>
+            <h4 class="fn-name">Networking Tracker</h4>
+            <p class="fn-promise">Stop being one of four hundred applications: a relationship CRM that tells you who to contact today and hands you the message already written.</p>
+            <div class="fn-grid">
+              <div>
+                <div class="col-k">The daily loop</div>
+                <ul class="fn-list">
+                  <li>A <b>due-today worklist</b>: overdue first, with the reason stated. This is the page, everything else sits under it</li>
+                  <li>An <b>eleven-stage pipeline</b> from identified through intro requested, active sequence, replied, chat, nurture, the ask, and outcome</li>
+                  <li>A <b>three-touch cadence engine</b> that sets the next due date automatically and moves a silent contact to dormant on its own</li>
+                  <li>Resurfacing built in: no-answer contacts return after five weeks, declined after three months</li>
+                </ul>
+              </div>
+              <div>
+                <div class="col-k">The rest of it</div>
+                <ul class="fn-list">
+                  <li><b>24 message templates</b> covering intro asks, three-touch sequences by relationship type, scheduling, thank-yous, nurture, the ask and LinkedIn notes, each auto-selected for the contact and merge-filled from the user's networking profile</li>
+                  <li><b>Copy and mark sent in one action</b>, which advances the pipeline and schedules the follow-up</li>
+                  <li>A <b>company board</b> grouped by tier, including target firms with no contacts yet</li>
+                  <li><b>CSV / Excel import</b> with a preview-and-commit wizard</li>
+                  <li>A funnel dashboard with reply and conversation rates, and a weekly target of five to eight new first touches</li>
+                  <li>Contacts are <b>linked to applications</b>: a job's detail page shows your network at that company</li>
+                </ul>
+              </div>
+            </div>
+            <div class="sell">This is now the whole of SIGNAL's outreach offer, and the most under-told asset in the product. It is a real CRM with a real cadence engine, and it is the function that creates the daily habit a $99 purchase needs in order to feel used. <i>"You don't have to remember to follow up. It tells you."</i></div>
+          </div>
+        </div>
+
+        <div class="fn">
+          <div class="fn-gutter">
+            <div class="fn-id">F09</div>
+            <span class="pill p-web">Live · web</span>
+          </div>
+          <div>
+            <h4 class="fn-name">The Adaptive Home</h4>
+            <p class="fn-promise">One screen that shows the one or two things that need you, and changes shape as the search changes.</p>
+            <div class="fn-grid">
+              <div>
+                <div class="col-k">Five states, in priority order</div>
+                <ul class="fn-list">
+                  <li><b>New</b>: profile incomplete, with a completion meter; nothing else works without it</li>
+                  <li><b>Interview</b>: a scheduled round ahead takes the whole screen</li>
+                  <li><b>Ready</b>: set up but nothing tracked yet, the get-started state</li>
+                  <li><b>Quiet</b>: real data but nothing touched in a week; re-engagement, warm and without guilt</li>
+                  <li><b>Active</b>: the normal working state, showing what's due, who is awaiting a reply, what has gone stale and this week's counts</li>
+                </ul>
+              </div>
+              <div>
+                <div class="col-k">Why it exists</div>
+                <ul class="fn-list">
+                  <li>Built explicitly for the user with <b>no coach</b>: a wall of panels is what an unaccompanied job seeker cannot parse</li>
+                  <li>The single "what needs you" surface for the whole app</li>
+                </ul>
+              </div>
+            </div>
+            <div class="sell">Retention story in one line: <i>"open it and it tells you what today is for."</i> This is what makes SIGNAL a place rather than a tool, and it is worth showing in product screenshots more than the scan is.</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ 04 ============ -->
+  <section class="sec" id="engine">
+    <div class="sec-head">
+      <div class="sec-num">04</div>
+      <div>
+        <h2 class="sec-title">Why the verdict is credible</h2>
+        <p class="sec-lede">The differentiation claim that matters most is also the least visible: SIGNAL's decision is computed, not opined. This section is the ammunition for that claim.</p>
+      </div>
+    </div>
+    <div class="sec-body">
+      <p><strong>The engine is deterministic.</strong> On the paid path, no language model decides anything about fit. Signals are extracted from the job description and the resume by rule-based detectors, evidence is matched, penalties are applied, and the score maps to a decision band. The same inputs always produce the same verdict. A model is used only to turn those findings into readable English. The free path adds one narrow extra check, which can spot a "right skill, wrong industry" match and reduce how much it counts. If that check errors or times out it is simply skipped, and the user gets the ordinary deterministic result, so a technical failure can never leave someone with a worse score than the rules alone would have given them.</p>
+
+      <div class="tiles">
+        <div class="tile"><div class="tile-n">40</div><div class="tile-l">distinct risk codes the engine can raise</div></div>
+        <div class="tile"><div class="tile-n">11</div><div class="tile-l">hard gates that can override a good score</div></div>
+        <div class="tile"><div class="tile-n">19</div><div class="tile-l">job families, plus finance and sales sub-families</div></div>
+        <div class="tile"><div class="tile-n">4.9k</div><div class="tile-l">lines in the extraction layer alone</div></div>
+      </div>
+
+      <p style="margin-top:30px"><strong>The rules are one person's judgment, written down.</strong> Every detector, gate, risk code and scoring weight in the engine was specified by SIGNAL's founder, who also built it: thirty years on the hiring side, ten of those in executive recruitment, and a working practice as a career counselor to college students and early-career professionals. This is not a model trained on scraped postings, and it is not a committee's rubric. It is what one recruiter knows about how a resume actually gets read, encoded so that it runs the same way every time, for every user, at three in the morning.</p>
+
+      <p><strong>The evidence is anchored to the user's own words.</strong> A "why you're competitive" bullet has to cite a fact from the resume; a positioning edit's before-text must be a literal substring of the resume or the system throws it away; a risk bullet can only be generated for a risk the engine actually raised, and the prompt forbids inventing one. Where a question has a deterministic answer, such as whether a summary section exists or whether a keyword is present, a regex answers it and the model is told the answer as a fact.</p>
+
+      <p><strong>The engine has guardrails against flattering the user.</strong> A near-perfect score with any medium or high risk attached cannot reach the top band. A case with no high-quality direct evidence is capped at Review no matter how well the keywords line up, and a resume's skills-list tag row explicitly does not count as proof that someone has done the work.</p>
+
+      <p><strong>The same discipline governs the generated interview answers.</strong> Prep Now may only make claims the engine actually extracted from the user's resume, and it is forbidden from adding a system, a threshold, a team name or a mechanism the evidence does not contain, on the stated test that an interviewer could follow up on any invented detail and the candidate would have nothing to say. It knows nothing about the employer beyond the posting, and its response format has no field for company research, so there is nothing to fill. Every drafted answer must name the evidence it rests on, and one citing evidence it was never handed is dropped. If the whole pack fails those checks the feature writes nothing and tells the user it could not generate, rather than quietly serving a thinner version. That is the right trade here: this is material a person walks into a room and repeats out loud, so getting nothing is recoverable and getting something invented is not.</p>
+
+      <p><strong>It is regression-tested like software, not tuned by vibes.</strong> Twenty-six hand-built cases run against a frozen baseline on every change, the full suite plus a typecheck runs in CI on every push, and a promotion to production is refused for any commit CI has not passed. Historical production runs are periodically inspected for structural drift.</p>
+
+      <div class="note">
+        <div class="note-k">How to use this in market</div>
+        <p>The tagline is <strong>Stop applying blind</strong>, and everything in this section is the proof behind it. Do not lead with "AI." Every competitor leads with AI, and the category's credibility problem is invention. Lead instead with <strong>judgment you can audit</strong>: it shows its work, it cites your resume, it refuses to make things up, and it will tell you not to apply.</p>
+        <p>Always attach the provenance, because it is the part no competitor can copy. The reason SIGNAL can say "don't apply" and be believed is that a named person wrote the rules and built the system: thirty years on the hiring side, ten in executive recruitment, and years counseling students and early-career professionals through exactly this. Anyone can license the same models. Nobody else has that source. The engine is not a substitute for that expertise, it is that expertise made repeatable and available at scale.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 05 ============ -->
+  <section class="sec" id="packaging">
+    <div class="sec-head">
+      <div class="sec-num">05</div>
+      <div>
+        <h2 class="sec-title">Packaging, price and where it runs</h2>
+        <p class="sec-lede">One free tier, one paid tier, two surfaces. Simple to sell, and currently priced as a one-time purchase rather than a subscription.</p>
+      </div>
+    </div>
+    <div class="sec-body">
+      <div class="tiers">
+        <div class="tier">
+          <div class="tier-k">Free</div>
+          <div class="tier-p">$0</div>
+          <p class="tier-t">No account, no card, results in ~30 seconds</p>
+          <ul class="fn-list">
+            <li>The full scan verdict, score, strengths and risks</li>
+            <li>The recruiter's marked-up read of the resume</li>
+            <li>A named next step</li>
+            <li>Locked previews of everything else</li>
+          </ul>
+        </div>
+        <div class="tier">
+          <div class="tier-k">Full access</div>
+          <div class="tier-p">$99</div>
+          <p class="tier-t">One-time, no expiry · 7-day money-back guarantee</p>
+          <ul class="fn-list">
+            <li>Unlimited scored jobs against a real profile</li>
+            <li>Positioning and cover letters, per job</li>
+            <li>Job tracker, interviews and prep</li>
+            <li>The networking CRM and the adaptive home</li>
+            <li>Up to ten resume personas</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="fn-grid" style="margin-top:34px">
+        <div>
+          <div class="col-k">Where it runs</div>
+          <ul class="fn-list">
+            <li><b>Web</b>: the marketing site and free scan, the three per-job tools, and the full dashboard workspace</li>
+            <li><b>iOS</b>: a native app on the App Store carrying JobFit, positioning, cover letter, tracker and profile, with its own trial and in-app purchase</li>
+            <li>No Android today</li>
+          </ul>
+        </div>
+        <div>
+          <div class="col-k">Commerce mechanics already built</div>
+          <ul class="fn-list">
+            <li>Stripe checkout with <b>promotion codes enabled</b>: discount campaigns need no engineering</li>
+            <li><b>Self-service refund</b> inside the 7-day window, which makes the guarantee real rather than a claim</li>
+            <li>Full attribution capture through to purchase, covering UTMs, referrer, landing page and click IDs for Meta, TikTok and Google, with server-side conversion events on both purchase and refund</li>
+            <li>Account deletion end to end, for App Store compliance</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="note">
+        <div class="note-k">Pricing tension, currently under evaluation</div>
+        <p>SIGNAL sells one thing today: $99 once, with no expiry. Buy it and you keep access. The product's centre of gravity has moved underneath that arrangement. The scan is a single act and a one-time fee suits it well, but the tracker, the networking cadence engine and the adaptive home are habits, and a habit carries an ongoing cost to serve. A perpetual one-time fee monetizes the first and gives the second away forever.</p>
+        <p>The audience is also seasonal, which cuts both ways. A graduating senior's search has a natural beginning and end, so a term price matches the shape of the need better than a perpetual licence does. But the same seasonality means a subscription will be cancelled the moment someone lands, which is the outcome the product is built to produce, so the model has to be priced against a short and successful life rather than a long one.</p>
+      </div>
+      <div class="note">
+        <div class="note-k">Fix first: the live copy undersells what you deliver</div>
+        <p>The free-scan results page tells users that full access is "unlimited JobFit analyses for 3 months," and the API sends a matching "3 months" term string alongside the price. Nothing in the system enforces that. <code>purchase_date</code> is read only for the 7-day refund window and a "Member since" line, and access is gated on an <code>active</code> flag that flips false only on a refund.</p>
+        <p>So the product currently advertises less than it grants. Resolve it in one direction or the other before any pricing test runs, because a price test is unreadable while the control describes a term the system does not apply.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 06 ============ -->
+  <section class="sec" id="status">
+    <div class="sec-head">
+      <div class="sec-num">06</div>
+      <div>
+        <h2 class="sec-title">Where each function runs</h2>
+        <p class="sec-lede">Every function in this document is live in production today. What differs is the surface: four of the nine are web-only, so a campaign running to iOS installs is promising a smaller product than a campaign running to the web app.</p>
+      </div>
+    </div>
+    <div class="sec-body">
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>Function</th><th>Status</th><th>Safe to advertise?</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>F01 Free Scan</td><td><span class="pill p-live">Live</span></td><td>Yes: it is the top of the funnel</td></tr>
+            <tr><td>F02 JobFit (full)</td><td><span class="pill p-live">Live</span></td><td>Yes</td></tr>
+            <tr><td>F03 Positioning</td><td><span class="pill p-live">Live</span></td><td>Yes</td></tr>
+            <tr><td>F04 Cover Letter</td><td><span class="pill p-live">Live</span></td><td>Yes</td></tr>
+            <tr><td>F05 Profile &amp; Personas</td><td><span class="pill p-live">Live</span></td><td>Yes</td></tr>
+            <tr><td>F06 Job Tracker</td><td><span class="pill p-web">Live, web</span></td><td>Yes: web-first framing</td></tr>
+            <tr><td>F07 Interviews and Prep Now</td><td><span class="pill p-web">Live, web</span></td><td>Yes, and it is a headline feature</td></tr>
+            <tr><td>F08 Networking Tracker</td><td><span class="pill p-web">Live, web</span></td><td>Yes, and under-used in current copy</td></tr>
+            <tr><td>F09 Adaptive Home</td><td><span class="pill p-web">Live, web</span></td><td>Yes</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:22px">One structural note that affects how screenshots and demos should be built: the free scan and the four per-job tools live on the marketing site, while the tracker, networking CRM, interviews and home live in a separate dashboard application. A user moves between them. That seam is invisible enough in practice but it means <strong>there is no single screen that shows the whole product</strong>: any "here's SIGNAL" video needs to be composed deliberately.</p>
+
+      <div class="note">
+        <div class="note-k">Retired: the per-job networking play</div>
+        <p>SIGNAL used to generate a three-move outreach play for every scored job, with the messages written per target. That function has been retired and the Networking Tracker replaces it, so no campaign should promise a per-job play.</p>
+        <p>The shipped code has not caught up. <code>/api/networking</code> is still wired into both the web app and the iOS app, and <b>"Networking Campaign" is still one of the four locked upsell cards on the free-scan results page</b>. Until those come out, a free-scan visitor is shown a preview of something the offer no longer contains, which is the one place this gap is customer-visible. Worth closing before the next acquisition push.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 07 ============ -->
+  <section class="sec" id="boundaries">
+    <div class="sec-head">
+      <div class="sec-num">07</div>
+      <div>
+        <h2 class="sec-title">Honest boundaries</h2>
+        <p class="sec-lede">What SIGNAL deliberately does not do. Knowing these prevents a campaign promise the product will have to walk back.</p>
+      </div>
+    </div>
+    <div class="sec-body">
+      <ul class="fn-list" style="max-width:70ch">
+        <li><b>It does not apply for you.</b> No auto-apply, no bulk submission. That is a positioning choice, not a gap: the entire thesis is that indiscriminate volume is the problem.</li>
+        <li><b>It does not send your messages.</b> Outreach is copy-and-paste by design; the user's own inbox and LinkedIn stay the channel. The tracker records that you sent it.</li>
+        <li><b>It does not host your documents.</b> Files live where they already live; SIGNAL indexes and links.</li>
+        <li><b>It cannot always read a posting from a URL.</b> URL parsing works across most applicant tracking systems, but LinkedIn in particular blocks it: pasting the text is the reliable path, and the copy should keep saying so.</li>
+        <li><b>The free scan analyzes; it does not remember.</b> Nothing is tracked until the user has an account.</li>
+      </ul>
+      <div class="note">
+        <div class="note-k">The one claim to keep tightly worded</div>
+        <p>SIGNAL scores fit against a job description. It does not see the other applicants, the hiring manager's actual preferences, or the internal candidate who was always going to get it. "Your real odds on each one" is defensible as shorthand for evidence-based fit; anything that implies knowledge of the applicant pool is not.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 08 ============ -->
+  <section class="sec" id="angles">
+    <div class="sec-head">
+      <div class="sec-num">08</div>
+      <div>
+        <h2 class="sec-title">Angles worth testing</h2>
+        <p class="sec-lede">Five positions the product can genuinely support, ordered by how much of the build they put to work.</p>
+      </div>
+    </div>
+    <div class="sec-body">
+      <div class="fn" style="border-bottom:1px solid var(--rule-soft)">
+        <div class="fn-gutter"><div class="fn-id">A</div></div>
+        <div>
+          <h4 class="fn-name">Stop applying blind</h4>
+          <p class="fn-promise">The tagline. "Know if it's worth applying, before you waste the Saturday."</p>
+          <p style="font-size:16.5px;color:var(--ink-2);margin-top:10px">The current lead and the right one for cold traffic. Highest-contrast against every competitor, it names the reader's actual behaviour rather than the product's category, and the free scan delivers on it in thirty seconds. Its one weakness is that it sells a moment rather than a method, which is what makes the $99 ask feel large at the point of decision.</p>
+        </div>
+      </div>
+      <div class="fn" style="border-bottom:1px solid var(--rule-soft)">
+        <div class="fn-gutter"><div class="fn-id">B</div></div>
+        <div>
+          <h4 class="fn-name">The honest one</h4>
+          <p class="fn-promise">"Nothing invented. Every line is something you actually did."</p>
+          <p style="font-size:16.5px;color:var(--ink-2);margin-top:10px">Aimed squarely at the anxiety AI resume tools create. Uniquely defensible here because the constraint is enforced in code, not in a prompt. Strong for parents, career centers and any institutional channel.</p>
+        </div>
+      </div>
+      <div class="fn" style="border-bottom:1px solid var(--rule-soft)">
+        <div class="fn-gutter"><div class="fn-id">C</div></div>
+        <div>
+          <h4 class="fn-name">The system, not the tool</h4>
+          <p class="fn-promise">"Open it and it tells you what today is for."</p>
+          <p style="font-size:16.5px;color:var(--ink-2);margin-top:10px">Puts the adaptive home, the tracker, the networking cadence engine and Prep Now to work: the two-thirds of the build the current copy barely mentions. This is the retention story and the one that justifies a recurring price. Prep Now in particular is the moment the product proves its worth, because it arrives exactly when the stakes are highest and it is the hardest thing here to replicate.</p>
+        </div>
+      </div>
+      <div class="fn" style="border-bottom:1px solid var(--rule-soft)">
+        <div class="fn-gutter"><div class="fn-id">D</div></div>
+        <div>
+          <h4 class="fn-name">Get a human to vouch for you</h4>
+          <p class="fn-promise">"A referral gets you read instead of filtered."</p>
+          <p style="font-size:16.5px;color:var(--ink-2);margin-top:10px">Networking is the highest-anxiety, lowest-competence area for the target user, and SIGNAL is unusually deep here: a due-today worklist, a cadence engine that schedules every follow-up, two dozen written templates, and contacts linked to the jobs you scored. Nobody else in the student segment carries a real CRM for this.</p>
+        </div>
+      </div>
+      <div class="fn" style="border-bottom:none">
+        <div class="fn-gutter"><div class="fn-id">E</div></div>
+        <div>
+          <h4 class="fn-name">What a career coach would tell you</h4>
+          <p class="fn-promise">"Thirty years on the hiring side. Ten in executive recruitment. Now it will read your resume the way they do."</p>
+          <p style="font-size:16.5px;color:var(--ink-2);margin-top:10px">Sells the judgment rather than the software, which suits an audience that distrusts the software. Strongest in institutional and referral channels, where a named practitioner travels further than a feature list, and it is the angle that makes a $99 ask feel like access to expertise rather than a subscription to a tool.</p>
+        </div>
+      </div>
+
+      <div class="note">
+        <div class="note-k">Recommendation</div>
+        <p>Keep <strong>A</strong> as the acquisition hook: it converts cold traffic and the free scan proves it in thirty seconds. Move <strong>C</strong> into the post-scan and upgrade surfaces, where the job is no longer to earn attention but to justify $99; today those surfaces re-argue the scan instead of showing the workspace. Use <strong>B</strong> as the trust layer running through all of it.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div><b>SIGNAL Capability Brief</b> · prepared from the production codebase, API surface and product documentation</div>
+    <div>Function statuses reflect the state of the repository as of late August 2026 and should be re-checked before any launch commitment.</div>
+  </footer>
+
+</div>
+</body></html>
