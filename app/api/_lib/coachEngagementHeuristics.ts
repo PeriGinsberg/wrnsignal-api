@@ -121,27 +121,56 @@ export async function runHeuristics(
     }
   }
 
-  // R1 — client hasn't logged in 7+ days. auth.users.last_sign_in_at via
-  // admin API (per-user lookup).
-  for (const c of validClients) {
-    if (!c.user_id) continue
-    try {
-      const { data: u } = await supabase.auth.admin.getUserById(c.user_id)
-      const last = u?.user?.last_sign_in_at
-      if (!last) continue
+  // R1 — client hasn't logged in 7+ days. auth.users.last_sign_in_at via the
+  // admin API, which only offers a per-user lookup.
+  //
+  // ISSUED IN PARALLEL, IN BOUNDED BATCHES, and that is the whole point. This
+  // was a plain `for` loop with the await inside it, so the lookups ran one
+  // after another: a coach with twenty-five clients paid twenty-five serial
+  // round trips to the auth service, which is a different service from
+  // PostgREST and a slower one. Measured on production that loop alone was most
+  // of an eleven-second page.
+  //
+  // It hid well. This module is called by /api/coach/home with the whole roster
+  // and by /api/coach/clients/[clientId]/needs-attention with exactly one
+  // client, so the per-client page stayed fast and made the landing pages look
+  // like they had a query-count problem rather than a serial-loop one.
+  //
+  // Bounded rather than unbounded: firing a roster of any size at the auth
+  // service at once invites rate limiting, and the difference between one round
+  // and three is not worth that risk. Twenty-five clients now cost three rounds
+  // instead of twenty-five.
+  //
+  // Order is preserved. Batches run in sequence and Promise.all keeps results in
+  // input order, so signals are pushed in the same order the loop produced them.
+  const R1_CONCURRENCY = 10
+  const r1Candidates = validClients.filter((c) => c.user_id)
+  for (let i = 0; i < r1Candidates.length; i += R1_CONCURRENCY) {
+    const batch = r1Candidates.slice(i, i + R1_CONCURRENCY)
+    const looked = await Promise.all(
+      batch.map(async (c) => {
+        try {
+          const { data: u } = await supabase.auth.admin.getUserById(c.user_id as string)
+          return { c, last: u?.user?.last_sign_in_at as string | undefined }
+        } catch {
+          // auth lookup errors are non-fatal — skip the rule for this client
+          return null
+        }
+      })
+    )
+    for (const hit of looked) {
+      if (!hit?.last) continue
+      const { c, last } = hit
       const days = daysBetween(last)
-      if (days >= 7) {
-        push({
-          id: `r1:${c.client_profile_id}`,
-          kind: "no_login",
-          client_profile_id: c.client_profile_id,
-          client_name: c.name || c.email || "(unknown)",
-          message: `${(c.name || c.email || "Client").split(" ")[0]} hasn't logged in for ${days} days`,
-          days_elapsed: days,
-        })
-      }
-    } catch {
-      // auth lookup errors are non-fatal — skip the rule for this client
+      if (days < 7) continue
+      push({
+        id: `r1:${c.client_profile_id}`,
+        kind: "no_login",
+        client_profile_id: c.client_profile_id,
+        client_name: c.name || c.email || "(unknown)",
+        message: `${(c.name || c.email || "Client").split(" ")[0]} hasn't logged in for ${days} days`,
+        days_elapsed: days,
+      })
     }
   }
 
