@@ -7,10 +7,25 @@ $ErrorActionPreference = "Stop"
 
 Write-Host "`n=== Deploy dev -> production (via Vercel promote) ===" -ForegroundColor Cyan
 
-# 1. Make sure working tree is clean
-$status = git status --porcelain
+# 1. Make sure there are no uncommitted CHANGES.
+#
+# --untracked-files=no is the whole point of this gate. Bare --porcelain lists
+# untracked files too, and this repo carries ~80 of them: investigation docs,
+# probe scripts, eval cases. None of that can reach a deployment, because Vercel
+# builds from the pushed commit and an untracked file is by definition not in it.
+# Counting them meant the gate was permanently red, which does not make a deploy
+# safer, it makes the check something you work around.
+#
+# What it still catches is the thing that matters: a tracked file modified and
+# not committed, which WOULD differ between what you tested and what ships.
+#
+# Nothing else here is relaxed. tsc --noEmit still has to pass, the push still
+# has to succeed, and the GitHub Actions gate below still fails closed on
+# anything that is not a completed run concluding "success".
+$status = git status --porcelain --untracked-files=no
 if ($status) {
-    Write-Host "ERROR: Working tree is dirty. Commit or stash changes first." -ForegroundColor Red
+    Write-Host "ERROR: Uncommitted changes to tracked files. Commit or stash first." -ForegroundColor Red
+    Write-Host $status -ForegroundColor Red
     exit 1
 }
 
