@@ -1983,12 +1983,52 @@ export default function WRNSignalTabs(props: {
     // F6 — Stage 1c: special-case no_persona_configured by sending the user
     // to /dashboard so they can configure a persona, then return. All other
     // v2 errors render the generic banner inline.
-    function goToDashboard() {
+    /**
+     * EVERY EXIT TO THE DASHBOARD GOES THROUGH HERE, and it hands over a whole
+     * session rather than half of one.
+     *
+     * It used to be `?token=${accessToken}`: an access token, on the query
+     * string, and nothing else. The receiving end could not build a real
+     * session out of that, so it faked one by putting the access token in the
+     * refresh_token field, which persisted silently and then 400'd on the first
+     * auto-refresh and signed the user out. Passing the refresh token is what
+     * makes the receiver's job possible; see app/dashboard/layout.tsx.
+     *
+     * FRAGMENT, NOT QUERY. A fragment is never sent to the server, so it stays
+     * out of Vercel access logs and out of any Referer header. The other
+     * direction (openInSignal, and the dashboard's Back to SIGNAL link) already
+     * handed off this way; this makes both directions one mechanism instead of
+     * two shapes that drift.
+     *
+     * READ AT CLICK TIME, not from the accessToken state, because the state
+     * copy can be a refresh behind and carries no refresh token at all.
+     *
+     * Falls back to navigating WITHOUT credentials rather than blocking: the
+     * dashboard has its own sign-in, so a missing session is a login prompt,
+     * not a dead button.
+     */
+    async function openDashboard(path: string) {
         if (typeof window === "undefined") return
-        const url = accessToken
-            ? `${API_BASE}/dashboard?token=${accessToken}`
-            : `${API_BASE}/dashboard`
-        window.top!.location.replace(url)
+        const base = `${API_BASE}${path}`
+        try {
+            const { data } = await supabase.auth.getSession()
+            const at = data?.session?.access_token
+            const rt = data?.session?.refresh_token
+            if (at && rt) {
+                const p = new URLSearchParams()
+                p.set("access_token", at)
+                p.set("refresh_token", rt)
+                window.top!.location.replace(`${base}#${p.toString()}`)
+                return
+            }
+        } catch {
+            // Fall through to the uncredentialed URL below.
+        }
+        window.top!.location.replace(base)
+    }
+
+    function goToDashboard() {
+        void openDashboard("/dashboard")
     }
 
     // Same mechanism as goToDashboard: this component runs inside a Framer
@@ -1998,37 +2038,25 @@ export default function WRNSignalTabs(props: {
     // being retired — the left nav already leaves for the board — and Cover
     // Letter's CTA was the last thing still pointing at it.
     function goToNetworkBoard() {
-        if (typeof window === "undefined") return
-        const url = accessToken
-            ? `${API_BASE}/dashboard/network?token=${accessToken}`
-            : `${API_BASE}/dashboard/network`
-        window.top!.location.replace(url)
+        void openDashboard("/dashboard/network")
     }
 
-    // The tracker card for ONE application. Same full-app-switch mechanism as
-    // goToNetworkBoard below: this component runs inside a Framer iframe, so an
-    // <a href> would open the dashboard inside the frame, and window.top with
-    // the token on the query string is what breaks out of it.
-    // /dashboard/layout.tsx reads ?token=, strips it and sets the session, and
-    // it wraps every /dashboard/* route, so the deep path survives the handoff.
+    // The tracker card for ONE application. Goes through openDashboard like
+    // every other exit, so the session travels whole and the deep path survives
+    // (layout.tsx wraps every /dashboard/* route).
     //
     // Guarded rather than trusting the caller: the bar only renders this link
     // when there is an id, but a null here would navigate to
     // /dashboard/tracker/null, which is a 404 dressed up as a real page.
     function goToJobDetails(applicationId: string | null) {
-        if (typeof window === "undefined") return
         if (!applicationId) return
-        const path = `${API_BASE}/dashboard/tracker/${encodeURIComponent(applicationId)}`
-        const url = accessToken ? `${path}?token=${accessToken}` : path
-        window.top!.location.replace(url)
+        void openDashboard(
+            `/dashboard/tracker/${encodeURIComponent(applicationId)}`
+        )
     }
 
     function goToNetworkCompanies() {
-        if (typeof window === "undefined") return
-        const url = accessToken
-            ? `${API_BASE}/dashboard/network/companies?token=${accessToken}`
-            : `${API_BASE}/dashboard/network/companies`
-        window.top!.location.replace(url)
+        void openDashboard("/dashboard/network/companies")
     }
 
     function runNewJob(isSilent = false) {
@@ -5748,6 +5776,7 @@ export default function WRNSignalTabs(props: {
                     onSelect={(t) => goTo(t)}
                     onRunNewJob={() => runNewJob()}
                     onNetworkBoard={goToNetworkCompanies}
+                    onDashboard={goToDashboard}
                     onLogout={logout}
                 />
 
@@ -6216,6 +6245,7 @@ function SideNav({
     onSelect,
     onRunNewJob,
     onNetworkBoard,
+    onDashboard,
     onLogout,
 }: {
     tab: TabKey
@@ -6227,6 +6257,8 @@ function SideNav({
     onRunNewJob: () => void
     /** Leaves the component for the dashboard board. Not a tab switch. */
     onNetworkBoard: () => void
+    /** Leaves for the dashboard root, session and all. See openDashboard. */
+    onDashboard: () => void
     onLogout: () => void
 }) {
 
@@ -6280,15 +6312,13 @@ function SideNav({
                 Run New Job
             </button>
 
+            {/* Was the fourth place that built its own dashboard URL, and the
+                only one that hardcoded the host rather than using API_BASE, so
+                it needed hand-translating on every prod mirror. It calls the
+                one helper now, like everything else that leaves. */}
             <button
                 style={sideSecondaryBtn}
-                onClick={async () => {
-                    const { data } = await supabase.auth.getSession()
-                    const token = data?.session?.access_token
-                    const base = "https://wrnsignal-api-staging.vercel.app/dashboard"
-                    const url = token ? `${base}?token=${token}` : base
-                    window.top!.location.replace(url)
-                }}
+                onClick={onDashboard}
                 type="button"
             >
                 My Dashboard ↗

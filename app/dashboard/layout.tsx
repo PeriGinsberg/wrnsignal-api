@@ -216,6 +216,42 @@ function Logo() {
   )
 }
 
+/**
+ * Shown when a Framer handoff arrived without a refresh token, so this tab is
+ * running on the raw bearer and will stop working when that token expires.
+ *
+ * THIS IS THE "FAIL VISIBLY" HALF OF THE FIX. The alternative that used to be
+ * here was to fake a session by putting the access token in the refresh_token
+ * field, which hid the problem until the auto-refresh 400 signed the user out
+ * with no explanation. A session that will end is worth saying out loud; a
+ * session that lies about being renewable is not.
+ *
+ * Not a blocking screen: bearer-only genuinely works, every page reads the
+ * handoff token, and kicking a working session to a login wall would be a
+ * regression for anyone still on the old Framer bundle.
+ */
+function HandoffDegradedBanner() {
+  return (
+    <div
+      style={{
+        width: "100%",
+        background: "rgba(196,53,27,0.10)",
+        borderBottom: "1px solid rgba(196,53,27,0.22)",
+        padding: "10px 20px",
+        fontSize: 13,
+        lineHeight: "18px",
+        color: T.TEXT,
+        flexShrink: 0,
+      }}
+    >
+      <strong style={{ fontWeight: 900 }}>Limited session.</strong>{" "}
+      You arrived from SIGNAL without a renewable session, so this tab will sign
+      out when the current token expires. Sign in here directly to keep working
+      past that.
+    </div>
+  )
+}
+
 function FramerBanner() {
   return (
     <div
@@ -263,6 +299,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [error, setError] = useState("")
   const [sending, setSending] = useState(false)
   const [fromFramer, setFromFramer] = useState(false)
+  // Arrived from Framer with an access token but no refresh token, so this tab
+  // is running on the raw bearer with no way to renew it. See the handoff block
+  // below for why that is now a visible state instead of a silent one.
+  const [handoffDegraded, setHandoffDegraded] = useState(false)
   const [isCoach, setIsCoach] = useState(false)
   // True when this D2C account has an ACTIVE coach (from /api/profile's `coached`
   // gate). Gates the coached-only "Coaching Tools" nav item.
@@ -300,32 +340,72 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         return
       }
 
-      // Check for token handoff from Framer
-      const handoffToken = url.searchParams.get("token")
+      // ── Token handoff from Framer ────────────────────────────────────────
+      //
+      // TWO SOURCES, IN PRIORITY ORDER. The fragment is where the current
+      // Framer bundle puts both tokens, matching the direction that already
+      // worked (openInSignal and the Back to SIGNAL link both hand off in a
+      // fragment). The `?token=` query param is the legacy sender, kept only
+      // until the prod Framer bundle carries the fragment form; a query string
+      // reaches the server and lands in access logs, a fragment never does.
+      const hashParams = new URLSearchParams(
+        (window.location.hash || "").replace(/^#/, "")
+      )
+      const handoffAccess =
+        hashParams.get("access_token") || url.searchParams.get("token")
+      const handoffRefresh = hashParams.get("refresh_token")
 
-      if (handoffToken) {
+      if (handoffAccess) {
         // Flag as coming from Framer
         sessionStorage.setItem("signal_from_framer", "1")
-        sessionStorage.setItem("signal_handoff_token", handoffToken)
+        sessionStorage.setItem("signal_handoff_token", handoffAccess)
         setFromFramer(true)
 
-        // Strip token from URL immediately
+        // Strip the credentials from the URL before doing anything with them.
+        // `url.pathname + url.search` deliberately DROPS the fragment, which is
+        // where the tokens now live; the old form appended url.hash back on,
+        // which would have left a refresh token sitting in the address bar.
         url.searchParams.delete("token")
-        window.history.replaceState({}, "", url.pathname + url.search + url.hash)
+        window.history.replaceState({}, "", url.pathname + url.search)
 
-        // Attempt to set session with the handoff token
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: handoffToken,
-          refresh_token: handoffToken,
-        })
-
-        if (!sessionError) {
+        if (handoffRefresh) {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: handoffAccess,
+            refresh_token: handoffRefresh,
+          })
+          if (!sessionError) {
+            setStatus("authed")
+            return
+          }
+          // A real pair that the auth server rejected. Nothing was persisted,
+          // so fall through to bearer-only rather than leaving a half-session.
+          console.error(
+            `AUTH_HANDOFF_FAILED reason=${sessionError.message}`,
+          )
+          setHandoffDegraded(true)
           setStatus("authed")
           return
         }
-        // setSession failed (access token isn't a valid refresh token),
-        // but we stored the handoff token — use it directly for API calls
-        console.warn("[dashboard] token handoff failed, using direct token:", sessionError.message)
+
+        // NO REFRESH TOKEN, SO NO SESSION. This is where the sign-out bug came
+        // from: the old code called setSession({ access_token: t,
+        // refresh_token: t }), passing the ACCESS token as the refresh token.
+        // setSession makes no network call while the access token is still
+        // valid, so that succeeded silently and persisted a session whose
+        // refresh_token could never work. The first auto-refresh then POSTed an
+        // access token to grant_type=refresh_token, got a 400, and signed the
+        // user out of a tab they had not touched.
+        //
+        // A fake refresh token is never better than no session. The dashboard
+        // does not need one: getToken() across ~28 call sites already falls
+        // back to signal_handoff_token, so bearer-only is a real supported mode
+        // and every page keeps working. What it cannot do is outlive the access
+        // token, which is why this is now surfaced rather than warned about.
+        console.error(
+          "AUTH_HANDOFF_DEGRADED reason=no_refresh_token " +
+            "detail=sender_passed_access_token_only_bearer_mode_until_expiry",
+        )
+        setHandoffDegraded(true)
         setStatus("authed")
         return
       }
@@ -685,6 +765,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div style={{ minHeight: "100vh", background: useLight ? S.page : T.BG, display: "flex", flexDirection: "column" }}>
       {fromFramer && <FramerBanner />}
+      {handoffDegraded && <HandoffDegradedBanner />}
       <div style={{ display: "flex", flex: 1 }}>
         <nav style={{ width: 220, background: navBg, borderRight: `1px solid ${navBorder}`, flexShrink: 0, display: "flex", flexDirection: "column" }}>
           <Logo />
