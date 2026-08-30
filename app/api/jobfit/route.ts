@@ -53,6 +53,27 @@ function isBypassAllowed(req: NextRequest): boolean {
 // normalize, and buildFingerprint now live in ../_lib/runJobFitForProfile.
 const MISSING = "__MISSING__"
 
+/**
+ * Should this scan write job_url onto an application row that already exists?
+ *
+ * Only when the caller supplied one AND the row has none. Both halves matter:
+ *
+ *   - Without the first, a rescan pasted from the clipboard (no URL in the
+ *     request) would blank a URL the user had already saved.
+ *   - Without the second, this would overwrite a URL the user typed by hand on
+ *     the tracker card with whatever the extractor happened to have this time.
+ *
+ * ABSENT MEANS NULL *OR* EMPTY STRING. signal_applications.job_url is
+ * `text DEFAULT ''::text` (20260403_job_tracker.sql), so a row that has never
+ * had a URL is '' when it came from the column default and NULL when a writer
+ * passed null explicitly — both shapes are live in the table today, and a
+ * null-only check would silently skip every row of the first kind.
+ */
+function shouldFillJobUrl(stored: unknown, incoming: string | null): boolean {
+  if (!incoming) return false
+  return !String(stored ?? "").trim()
+}
+
 /* ----------------------------------
  * Optional Supabase caching (lazy)
  * ---------------------------------- */
@@ -300,7 +321,10 @@ export async function POST(req: NextRequest) {
             if (cachedCompany) {
               const { data } = await supabase
                 .from("signal_applications")
-                .select("id")
+                // job_url joins the select so the backfill below can tell an
+                // empty row from one the user has already filled in. It is the
+                // only reason this is not still `select("id")`.
+                .select("id, job_url")
                 .eq("profile_id", profileId)
                 .ilike("company_name", cachedCompany)
                 .ilike("job_title", cachedTitle || "")
@@ -308,7 +332,29 @@ export async function POST(req: NextRequest) {
               existingCachedApp = data
             }
 
-            if (existingCachedApp?.id) signalApplicationId = existingCachedApp.id
+            if (existingCachedApp?.id) {
+              signalApplicationId = existingCachedApp.id
+
+              // Backfill the posting URL onto a row that has none.
+              //
+              // This branch used to do nothing but keep the id. So a user who
+              // scanned a job by pasting the text, then rescanned the same job
+              // having found the link, got a cache hit — and the URL they
+              // supplied was read off the request, used for nothing, and
+              // dropped. The scan is cached; the row is not, and this is the
+              // only chance the URL gets to land.
+              if (shouldFillJobUrl(existingCachedApp.job_url, userJobUrl)) {
+                const { error: urlErr } = await supabase
+                  .from("signal_applications")
+                  .update({ job_url: userJobUrl, updated_at: new Date().toISOString() })
+                  .eq("id", existingCachedApp.id)
+                if (urlErr) {
+                  console.warn("[jobfit/route] cache-hit job_url backfill failed:", urlErr.message)
+                } else {
+                  console.log("[jobfit/route] cache-hit job_url backfilled:", existingCachedApp.id)
+                }
+              }
+            }
 
             if (!existingCachedApp?.id) {
               const { data: newCachedApp } = await supabase.from("signal_applications").insert({
@@ -490,7 +536,10 @@ export async function POST(req: NextRequest) {
           if (companyName) {
             const { data, error: lookupErr } = await supabase
               .from("signal_applications")
-              .select("id")
+              // job_url joins the select for the same reason it does on the
+              // cache-hit path: the update below can only decide whether to
+              // fill it if it knows whether it is already filled.
+              .select("id, job_url")
               .eq("profile_id", profileId)
               .ilike("company_name", companyName)
               .ilike("job_title", jobTitle || "")
@@ -503,12 +552,23 @@ export async function POST(req: NextRequest) {
           }
 
           if (existingApp?.id) {
+            // job_url is SPREAD IN, not set unconditionally. The insert branch
+            // below has always written it; this branch never did, so rescoring
+            // a job you had already tracked discarded the link every time —
+            // and a rescan is exactly when a user goes back and adds one.
+            //
+            // Conditional rather than `job_url: userJobUrl ?? existingApp.job_url`
+            // so that when there is nothing to write, the column is absent from
+            // the patch entirely and the update cannot touch it.
             const { error: updateErr } = await supabase.from("signal_applications").update({
               signal_decision: String((result as any)?.decision || ""),
               signal_score: (result as any)?.score ?? null,
               signal_run_at: new Date().toISOString(),
               jobfit_run_id: runId,
               updated_at: new Date().toISOString(),
+              ...(shouldFillJobUrl(existingApp.job_url, userJobUrl)
+                ? { job_url: userJobUrl }
+                : {}),
             }).eq("id", existingApp.id)
 
             if (updateErr) console.warn("[jobfit/route] application update failed:", updateErr.message)

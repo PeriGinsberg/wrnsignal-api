@@ -92,7 +92,15 @@ export async function GET(
     // Fetch the jobfit run
     const { data: run, error: runErr } = await supabase
       .from("jobfit_runs")
-      .select("id, client_profile_id, fingerprint_hash, fingerprint_code, verdict, result_json, job_description, created_at")
+      // application_id and job_url are the two columns that make a deep-linked
+      // run as addressable as a freshly scanned one. The scan populates both
+      // (jobfit_runs.application_id is back-filled right after the
+      // signal_applications write; job_url is set from the request), but this
+      // select never read them, so /signal/jobfit?run=<id> could rebuild the
+      // results and the job text and still not know WHICH tracked application
+      // it was looking at. Everything downstream of that gap was a link the UI
+      // could not offer.
+      .select("id, client_profile_id, fingerprint_hash, fingerprint_code, verdict, result_json, job_description, created_at, application_id, job_url")
       .eq("id", id)
       .maybeSingle()
 
@@ -178,6 +186,23 @@ export async function GET(
       jobDescription: run.job_description ?? null,
       jobTitle: run.result_json?.job_signals?.jobTitle ?? null,
       companyName: run.result_json?.job_signals?.companyName ?? null,
+      // The tracked application this run is bound to, and the posting link.
+      //
+      // camelCase, matching every other top-level field this endpoint returns,
+      // rather than POST /api/jobfit's signal_application_id / job_url. The two
+      // endpoints have never shared a top-level naming convention (runId vs
+      // jobfit_run_id, jobDescription vs nothing at all), and the one place
+      // parity actually matters is already handled below by stamping
+      // jobfit_run_id INSIDE the jobfit blob. Deliberately not mirrored a
+      // second time here: two spellings of one fact is how they drift.
+      //
+      // NULL IS NORMAL FOR BOTH, and means different things. A null
+      // applicationId is a run whose signal_applications write failed (the scan
+      // route wraps it in a catch that does not fail the scan) or predates the
+      // auto-create. A null or empty jobUrl is simply a job that was pasted as
+      // text rather than fetched from a link, which is most of them.
+      applicationId: run.application_id ?? null,
+      jobUrl: run.job_url ?? null,
       // Include jobfit_run_id inside the jobfit object so this endpoint's
       // shape matches POST /api/jobfit's response (which decorates the
       // result with jobfit_run_id at the top level). The Framer deep-link

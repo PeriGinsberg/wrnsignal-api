@@ -1087,6 +1087,118 @@ function JobContextBlock({
     )
 }
 
+/**
+ * THE PERSISTENT JOB CONTEXT BAR.
+ *
+ * One job, named once, with every screen that acts on it one click away. It is
+ * the answer to "I ran JobFit, now where am I" — the tabs already existed, but
+ * nothing on screen said which job they were about or that they were about the
+ * same one.
+ *
+ * IDENTITY IS THE IDS, NOT THE TEXT. `runId` is what makes this a job rather
+ * than a paste buffer. The bar does not render without one (or an application
+ * id): if the server never wrote the row, there is nothing durable to be the
+ * context OF, and offering navigation around an unsaved job would be a promise
+ * the product cannot keep. Title and company are display only — they come from
+ * the same jobCtx cascade the rest of the component reads, and they are never
+ * what a destination is resolved by.
+ *
+ * NAVIGATION MUST NOT COMPUTE. Every tool destination goes through `onSelect`,
+ * which is goTo / setTab and nothing else. It deliberately does NOT go through
+ * proceedToPositioning or proceedToCoverLetter: those RUN the tool when no
+ * result exists yet, and a context bar whose links can each cost thirty seconds
+ * and an LLM call is not a context bar. Landing on an unrun tool shows that
+ * tool's own landing state with its own Run button, which is the correct place
+ * for that decision. Results already computed are held in the component's state
+ * and survive every switch.
+ *
+ * JOB DETAILS IS THE ONE LINK THAT LEAVES. The tracker lives in the Next.js app,
+ * not in this Framer component, so it is a full app switch carrying the session:
+ * window.top with the token on the query string, because an <a href> would open
+ * the dashboard inside the Framer iframe. It addresses the specific application,
+ * never the list.
+ *
+ * NETWORKING IS ABSENT ON PURPOSE. It is out of scope for this task, and its
+ * three surfaces do not agree on what a job even is yet.
+ */
+function JobContextBar({
+    ctx,
+    tab,
+    runId,
+    applicationId,
+    onSelect,
+    onJobDetails,
+}: {
+    ctx: { ctxTitle: string; ctxCompany: string }
+    tab: TabKey
+    runId: string | null
+    applicationId: string | null
+    onSelect: (t: TabKey) => void
+    onJobDetails: () => void
+}) {
+    // No addressable job, no bar. Checked before anything else so the empty
+    // case costs nothing and can never half-render.
+    if (!runId && !applicationId) return null
+
+    const lead = [ctx.ctxTitle, ctx.ctxCompany].filter(Boolean).join(" · ")
+
+    const stops: { key: TabKey; label: string }[] = [
+        { key: "jobfit", label: "JobFit" },
+        { key: "positioning", label: "Positioning" },
+        { key: "coverletter", label: "Cover Letter" },
+    ]
+
+    return (
+        <div style={jcBar}>
+            <div style={jcIdentity}>
+                <div style={jcEyebrow}>Current job</div>
+                {/* The fallback is not decoration. A cached result with thin
+                    job_signals, or a run deep-linked before the title was
+                    entered, can genuinely have neither field — and the bar
+                    still has to name the row it is steering, so it says so
+                    rather than rendering an empty line. */}
+                <div style={jcLead}>{lead || "Untitled job"}</div>
+            </div>
+
+            <div style={jcStops}>
+                {stops.map((s) => {
+                    const active = tab === s.key
+                    return (
+                        <button
+                            key={s.key}
+                            type="button"
+                            onClick={() => onSelect(s.key)}
+                            aria-current={active ? "page" : undefined}
+                            style={{
+                                ...jcStop,
+                                ...(active ? jcStopActive : null),
+                            }}
+                        >
+                            {s.label}
+                        </button>
+                    )
+                })}
+
+                {/* Only when there is an application to open. Null is a normal
+                    outcome — the scan's application write is best-effort, and
+                    a deep-linked run cannot recover the id at all because
+                    GET /api/runs/:id does not return it. A link that would
+                    land on the tracker list instead of this job is worse than
+                    no link, so it is absent rather than degraded. */}
+                {applicationId ? (
+                    <button
+                        type="button"
+                        onClick={onJobDetails}
+                        style={{ ...jcStop, ...jcStopLeaves }}
+                    >
+                        Job Details ↗
+                    </button>
+                ) : null}
+            </div>
+        </div>
+    )
+}
+
 function DevBanner() {
     const [hostname, setHostname] = React.useState("")
     const [shouldShow, setShouldShow] = React.useState(false)
@@ -1236,11 +1348,28 @@ export default function WRNSignalTabs(props: {
     const [errorMsg, setErrorMsg] = React.useState<string | null>(null)
     const [debug, setDebug] = React.useState<any>(null)
 
-    // ── Networking prompt under the JobFit verdict ────────────────────────
-    // Its own application id, deliberately separate from the tracked
-    // application. The scan auto-creates (or matches) an application and
-    // returns its id; this holds that id purely so the prompt below can link
-    // the company to it. Nothing else reads it.
+    // ── The current job, held by id ───────────────────────────────────────
+    //
+    // These two ids ARE the persistent job context. The server already writes
+    // and links the whole graph on every scan — jobfit_runs and
+    // signal_applications, bidirectionally — and hands both ids back at the top
+    // level of the /api/jobfit response. Until now the component threw both
+    // away: the run id survived only inside the jobFitResult blob, and the
+    // application id was read by exactly one feature.
+    //
+    // WHY STATE AND NOT A READ THROUGH jobFitResult. The run id has to outlive
+    // the blob it arrived in. JobContextBar renders on every tool screen, and
+    // on Positioning or Cover Letter the blob is not what the screen is showing
+    // — reaching into it for an id would tie a cross-screen handle to one
+    // screen's payload. Held here, both ids are addressable from anywhere in
+    // the component and survive a tab switch, which is the whole point.
+    //
+    // BOTH ARE LEGITIMATELY NULL. The application insert is wrapped in a catch
+    // server-side that deliberately does not fail the scan, and the run insert
+    // can fail too (logged as ARTIFACT_WRITE_FAILED). Every consumer treats
+    // null as "that destination is not reachable for this job", never as an
+    // error. runNewJob() clears both — see the note there.
+    const [jobfitRunId, setJobfitRunId] = React.useState<string | null>(null)
     const [jobfitApplicationId, setJobfitApplicationId] = React.useState<string | null>(null)
     const [netPromptState, setNetPromptState] = React.useState<
         "idle" | "busy" | "added" | "dismissed" | "error"
@@ -1564,8 +1693,56 @@ export default function WRNSignalTabs(props: {
                                     if (data.jobDescription) setJob(data.jobDescription)
                                     if (data.jobTitle) setManualJobTitle(data.jobTitle)
                                     if (data.companyName) setManualCompanyName(data.companyName)
+                                    // The run id, restored into state rather than
+                                    // left inside the blob. `runId` is the
+                                    // endpoint's own top-level field; the fallback
+                                    // is the copy it stamps inside `jobfit` to
+                                    // match POST /api/jobfit's shape. Either way a
+                                    // deep-linked job is now addressable exactly
+                                    // like a freshly scanned one.
+                                    setJobfitRunId(
+                                        data.runId ?? data.jobfit?.jobfit_run_id ?? runId
+                                    )
+                                    // The tracked application, restored. This is
+                                    // what puts Job Details on the context bar
+                                    // for a deep-linked job on FIRST load rather
+                                    // than only after a rescan. GET /api/runs/:id
+                                    // returns it as `applicationId` (camelCase,
+                                    // its own convention) — POST /api/jobfit's
+                                    // signal_application_id is the other spelling
+                                    // of the same id, and neither endpoint sends
+                                    // both, so each is read where it is sent.
+                                    //
+                                    // ?? null, not `if (x)`: a run genuinely
+                                    // without an application must CLEAR any id
+                                    // left over from a previous job in this
+                                    // session, not inherit it. Every other field
+                                    // here is guarded truthily because it is
+                                    // display text that degrades harmlessly; an
+                                    // id that is silently wrong points a link at
+                                    // someone else's job.
+                                    setJobfitApplicationId(data.applicationId ?? null)
+                                    // The posting link, same reasoning. Feeds the
+                                    // job-input card's URL field, so a rescan from
+                                    // a deep link resubmits the URL the job was
+                                    // saved with instead of dropping it.
+                                    setJobUrl(data.jobUrl ?? "")
                                     setTab("jobfit")
-                                    window.history.replaceState({}, "", window.location.pathname)
+                                    // THE ?run= PARAM STAYS. It used to be wiped
+                                    // here, one line after being read, so the job
+                                    // id survived exactly one page load and a
+                                    // refresh dropped the user back onto an empty
+                                    // scan page. It is the only durable handle on
+                                    // the current job, so it stays for the life of
+                                    // the session and a refresh now rehydrates.
+                                    //
+                                    // The credential wipe this line was doing DID
+                                    // matter and is NOT lost: the token-handoff
+                                    // branch above already strips access_token and
+                                    // refresh_token and drops the fragment, via
+                                    // `url.pathname + url.search`. That is the
+                                    // right place for it — it runs whether or not
+                                    // there is a ?run= to hydrate.
                                 })
                                 .catch((err) => {
                                     console.warn("[deep-link] Failed to load run:", err)
@@ -1784,6 +1961,24 @@ export default function WRNSignalTabs(props: {
         window.top!.location.replace(url)
     }
 
+    // The tracker card for ONE application. Same full-app-switch mechanism as
+    // goToNetworkBoard below: this component runs inside a Framer iframe, so an
+    // <a href> would open the dashboard inside the frame, and window.top with
+    // the token on the query string is what breaks out of it.
+    // /dashboard/layout.tsx reads ?token=, strips it and sets the session, and
+    // it wraps every /dashboard/* route, so the deep path survives the handoff.
+    //
+    // Guarded rather than trusting the caller: the bar only renders this link
+    // when there is an id, but a null here would navigate to
+    // /dashboard/tracker/null, which is a 404 dressed up as a real page.
+    function goToJobDetails(applicationId: string | null) {
+        if (typeof window === "undefined") return
+        if (!applicationId) return
+        const path = `${API_BASE}/dashboard/tracker/${encodeURIComponent(applicationId)}`
+        const url = accessToken ? `${path}?token=${accessToken}` : path
+        window.top!.location.replace(url)
+    }
+
     function goToNetworkCompanies() {
         if (typeof window === "undefined") return
         const url = accessToken
@@ -1815,6 +2010,20 @@ export default function WRNSignalTabs(props: {
         setJobInputOpen(true)
         setNetOpenSet(new Set())
         setJobContext({ title: "", company: "" })
+        // The two job ids, and the networking prompt that hangs off one of
+        // them. This reset did not clear any of them before. It did not show
+        // because the only reader also required ctxCompany, which IS cleared
+        // one line up — so a stale application id sat in state, harmless, until
+        // the next scan overwrote it. JobContextBar reads the ids DIRECTLY, so
+        // leaving them set would keep the bar on screen after a reset,
+        // advertising the previous job as the current one. "Renders nothing
+        // when there is no current job" is the bar's contract, and this is
+        // where "no current job" is declared.
+        setJobfitRunId(null)
+        setJobfitApplicationId(null)
+        setNetPromptState("idle")
+        setNetPromptError(null)
+        setNetPromptCompany(null)
         const defaultPersona =
             personas.find((p: any) => p.is_default) ?? personas[0]
         if (defaultPersona) setSelectedPersonaId(defaultPersona.id)
@@ -2053,10 +2262,13 @@ export default function WRNSignalTabs(props: {
             const normalized = normalizeJobFitResponseForUI(data)
             setJobFitResult(normalized)
 
-            // The application this scan auto-created (or matched). NULL is a
-            // normal outcome, not a failure: the auto-create is wrapped in a
-            // catch that deliberately does not fail the scan, so the prompt
-            // simply does not render when there is nothing to link.
+            // The two ids that identify this job from here on. Both come back
+            // at the TOP LEVEL of the response, not inside the scoring result,
+            // which is why they are read off `normalized` and not off
+            // job_signals. NULL is a normal outcome for either: both writes are
+            // wrapped server-side in catches that deliberately do not fail the
+            // scan, so a destination that needs an id simply is not offered.
+            setJobfitRunId(normalized?.jobfit_run_id ?? null)
             setJobfitApplicationId(normalized?.signal_application_id ?? null)
             // A new scan is a new question. Reset the prompt so a company
             // added on the previous scan does not read as this one's answer.
@@ -2292,13 +2504,24 @@ export default function WRNSignalTabs(props: {
               ? L_VERDICT_REVIEW
               : L_VERDICT_APPLY
 
-        const ctaLabel = isPass
-            ? "Run New Job"
-            : loadingPositioning
-              ? "Running Positioning"
-              : isReview
-                ? "Proceed Carefully"
-                : "Proceed to Positioning"
+        // ONE PRIMARY, AND IT IS ALWAYS THE SAME ACTION.
+        //
+        // This used to fork on the verdict: a Pass swapped the label to "Run
+        // New Job" and the handler with it, so the primary button did not
+        // proceed at all — it discarded the job. The student who disagreed with
+        // a Pass, or who wanted the positioning read precisely BECAUSE the fit
+        // was weak, had no route forward that did not start by throwing the
+        // scan away. The verdict is advice; it is not a permission check.
+        //
+        // Review's own wording survives untouched — "Proceed Carefully" already
+        // said the cautious thing without removing the action, which is exactly
+        // the shape a Pass now gets too. The Pass caveat is a sentence above the
+        // row (renderPassNote), not a missing button.
+        const ctaLabel = loadingPositioning
+            ? "Running Positioning"
+            : isReview
+              ? "Proceed Carefully"
+              : "Proceed to Positioning"
 
         // The client-side why_codes re-sort (WHY_PRIORITY, weight-first) went
         // with WhyCards, its only consumer. NOTHING ON SCREEN DEPENDED ON IT:
@@ -2313,12 +2536,25 @@ export default function WRNSignalTabs(props: {
         // the two card renderers that had not been called since the two-column
         // layout landed. The live risk list does its own normalising inline.
 
-        function onPrimaryClick() {
-            if (isPass) {
-                runNewJob()
-                return
-            }
-            proceedToPositioning()
+        /**
+         * The Pass caveat. Everything the removed gate was trying to say, said
+         * in a sentence instead of said by taking the button away.
+         *
+         * Above the CTA row rather than beside it: the row is two equal-width
+         * buttons that reflow to one column on a narrow screen, and a third
+         * element inside it would either break that pairing or get pushed onto
+         * its own line anyway. Read order is caveat, then action — which is the
+         * order a caution belongs in.
+         */
+        function renderPassNote() {
+            if (!isPass) return null
+            return (
+                <div style={jfPassNote}>
+                    SIGNAL scored this a Pass. You can still work it, and the
+                    tools below run on any job, but the gaps listed in Risks are
+                    the ones a reader will land on first.
+                </div>
+            )
         }
 
         // -- Networking prompt ------------------------------------
@@ -2335,13 +2571,18 @@ export default function WRNSignalTabs(props: {
         // equal width" is structural rather than two lists of numbers that
         // agree today. "Not now" is the quiet option, and it is a text link.
         //
-        // WHAT DID NOT CHANGE — and must not: the visibility rule (an
-        // application id AND a company name), the non-Pass-only placement, the
-        // three states (idle / busy / added), the dismissal, and the
-        // addCompanyToNetworkBoard(ctxCompany) call itself. This is a paint job
-        // over the same behaviour. A Pass still never shows it: a coach
-        // rejected the premise that a rejection is a good moment to network,
-        // and that is a product decision, not a style one.
+        // UNCHANGED: the three states (idle / busy / added), the dismissal, and
+        // the addCompanyToNetworkBoard(ctxCompany) call itself.
+        //
+        // CHANGED: the Pass suppression is gone. It read "a coach rejected the
+        // premise that a rejection is a good moment to network" — but a Pass is
+        // SIGNAL's opinion of one posting's fit, not a rejection by the
+        // employer, and adding the company to the board is a bet on the
+        // company, not on this job. Suppressing it meant the weaker the fit,
+        // the less the product would help you get inside — backwards, and the
+        // student never saw the option existed. The button is offered on every
+        // verdict now; the Pass caveat above the row is what carries the
+        // warning, and "Not now" is still one click.
         //
         // ctxCompany rather than a second read of job_signals: it already
         // falls back through job context and the job text, so a cached result
@@ -2350,7 +2591,7 @@ export default function WRNSignalTabs(props: {
             Boolean(jobfitApplicationId) && Boolean(ctxCompany)
 
         const showNetButton =
-            netPromptVisible && !isPass && netPromptState !== "dismissed"
+            netPromptVisible && netPromptState !== "dismissed"
 
         /**
          * The second half of the CTA pair. Renders the "added" confirmation in
@@ -2421,46 +2662,43 @@ export default function WRNSignalTabs(props: {
         }
 
         /**
-         * Dismissal and the failure message, both of which survived the move
-         * from strip to button — they simply have nowhere to live inside a
-         * button, so they sit on their own line under the CTA row.
+         * Dismissal and the failure message. These were one function returning
+         * both; they are two now because they no longer belong in the same
+         * place. "Not now" joins "Run a different job" in the quiet row — they
+         * are the same kind of thing, and stacking two lone links looked like
+         * two separate afterthoughts. The error is a sentence, so it keeps its
+         * own full-width line below and must not be pulled into a flex row.
+         *
+         * Its own marginTop is gone with the move: jfQuietRow owns the spacing
+         * now, and a button carrying its own top margin inside a flex row is
+         * how rows end up misaligned by 10px.
          */
-        function renderNetFooter() {
-            if (!showNetButton) return null
+        function renderNetDismiss() {
+            if (!showNetButton || netPromptState === "added") return null
             return (
-                <>
-                    {netPromptState !== "added" ? (
-                        <button
-                            type="button"
-                            onClick={() => setNetPromptState("dismissed")}
-                            style={{
-                                background: "none",
-                                border: "none",
-                                padding: 0,
-                                marginTop: 10,
-                                color: L_MUTED,
-                                fontSize: 13,
-                                fontWeight: 700,
-                                fontFamily: "inherit",
-                                cursor: "pointer",
-                            }}
-                        >
-                            Not now
-                        </button>
-                    ) : null}
-                    {netPromptError ? (
-                        <div
-                            style={{
-                                fontSize: 12.5,
-                                color: "#C0322F",
-                                fontWeight: 700,
-                                marginTop: 8,
-                            }}
-                        >
-                            {netPromptError}
-                        </div>
-                    ) : null}
-                </>
+                <button
+                    type="button"
+                    onClick={() => setNetPromptState("dismissed")}
+                    style={jfQuietBtn}
+                >
+                    Not now
+                </button>
+            )
+        }
+
+        function renderNetError() {
+            if (!showNetButton || !netPromptError) return null
+            return (
+                <div
+                    style={{
+                        fontSize: 12.5,
+                        color: "#C0322F",
+                        fontWeight: 700,
+                        marginTop: 8,
+                    }}
+                >
+                    {netPromptError}
+                </div>
             )
         }
 
@@ -2592,13 +2830,19 @@ export default function WRNSignalTabs(props: {
                     ) : null}
                 </div>
 
-                {/* Actions. A matched peach pair, both from jfCtaPair — see
-                    renderNetButton. Both handlers are the ones they always
-                    were. */}
+                {/* Actions. The Pass caveat, then a matched pair from
+                    jfCtaPair — see renderNetButton — then the quiet row.
+
+                    Both buttons render on every verdict now. The primary goes
+                    straight to proceedToPositioning: the onPrimaryClick wrapper
+                    it used to call existed only to branch on isPass, and with
+                    that branch gone it was a function whose whole body was a
+                    call to another function. */}
+                {renderPassNote()}
                 <div style={jfCtaRow}>
                     <button
                         style={jfCtaPair}
-                        onClick={onPrimaryClick}
+                        onClick={proceedToPositioning}
                         disabled={loadingPositioning}
                         type="button"
                     >
@@ -2609,7 +2853,23 @@ export default function WRNSignalTabs(props: {
                     </button>
                     {renderNetButton()}
                 </div>
-                {renderNetFooter()}
+                {/* Run New Job, demoted. On a Pass it used to BE the primary,
+                    which is how discarding the scan ended up as the loudest
+                    thing on the screen. It is still one click from here, and it
+                    is still in the side nav under Actions, but it no longer
+                    occupies the slot that moving forward belongs in. Shares the
+                    row and the quiet treatment with "Not now" beside it. */}
+                <div style={jfQuietRow}>
+                    <button
+                        type="button"
+                        onClick={() => runNewJob()}
+                        style={jfQuietBtn}
+                    >
+                        Run a different job
+                    </button>
+                    {renderNetDismiss()}
+                </div>
+                {renderNetError()}
 
                 {/* Why / Risk. Stacked full width, Why first. They were side by
                     side in a 1fr 1fr grid, which gave each of them half a
@@ -5307,6 +5567,21 @@ export default function WRNSignalTabs(props: {
                 />
 
                 <div style={main}>
+                    {/* ── 0 · THE CURRENT JOB ──────────────────────────────
+                        First thing in the main column on every tab, so the
+                        answer to "which job am I looking at" never depends on
+                        which tool is open. Renders nothing until a scan has
+                        produced an addressable job, which is why it can sit
+                        above the empty-state hero without displacing it. */}
+                    <JobContextBar
+                        ctx={jobCtx}
+                        tab={tab}
+                        runId={jobfitRunId}
+                        applicationId={jobfitApplicationId}
+                        onSelect={(t) => goTo(t)}
+                        onJobDetails={() => goToJobDetails(jobfitApplicationId)}
+                    />
+
                     {/* ── 1 · THE QUESTION ─────────────────────────────────
                         The scan page now opens by naming the thing it answers.
                         Two blocks used to stand here and both are gone: the
@@ -5457,17 +5732,28 @@ export default function WRNSignalTabs(props: {
                             role="button"
                             onClick={() => setJobInputOpen((v) => !v)}
                         >
+                            {/* Label only. This div used to also carry a
+                                JobContextBlock on every tab except JobFit,
+                                under a comment reading "two copies of the job
+                                title 40px apart is worse than none" — which is
+                                exactly what it became once JobContextBar landed
+                                at the top of this column and started naming the
+                                job on every tab, this one included.
+
+                                The bar won because it is the thing that names
+                                the job for ALL of them; this was only ever the
+                                non-JobFit half of that job, which is why it
+                                needed a tab test to avoid colliding with the
+                                JobFit result header. The wrapper stays: it is
+                                the flex item the chevron is spaced against, and
+                                dropping it would collapse the row.
+
+                                No spacing compensation needed. Removing the
+                                block makes non-JobFit tabs render this row
+                                exactly as the JobFit tab has always rendered it,
+                                single line, which is the shipped appearance. */}
                             <div style={{ minWidth: 0 }}>
                                 <div style={scanCollapseLabel}>Active job</div>
-                                {/* Not on JobFit: its result already opens with
-                                    this same block, and two copies of the job
-                                    title 40px apart is worse than none. */}
-                                {tab !== "jobfit" ? (
-                                    <JobContextBlock
-                                        ctx={jobCtx}
-                                        style={{ marginTop: 6 }}
-                                    />
-                                ) : null}
                             </div>
                             <div style={scanCollapseChevron}>
                                 {jobInputOpen ? "▾" : "▸"}
@@ -7252,6 +7538,89 @@ const jfMoveBody: React.CSSProperties = {
     color: L_ON_NAVY,
 }
 
+// ── Job context bar ─────────────────────────────────────────────────────────
+// A white card on the blue ground, matching scanCard, because it is structure
+// the tabs share rather than content belonging to any one of them. Sticky: it
+// is a wayfinding element, and one that scrolls away stops answering the
+// question it exists for on exactly the long result pages that raise it.
+
+const jcBar: React.CSSProperties = {
+    position: "sticky",
+    top: 0,
+    zIndex: 20,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
+    flexWrap: "wrap",
+    padding: "12px 16px",
+    marginBottom: 14,
+    background: L_CARD,
+    border: `1px solid ${L_BORDER}`,
+    borderRadius: 14,
+    boxSizing: "border-box",
+}
+
+const jcIdentity: React.CSSProperties = {
+    minWidth: 0,
+    display: "flex",
+    flexDirection: "column",
+    gap: 2,
+}
+
+const jcEyebrow: React.CSSProperties = {
+    fontSize: 10.5,
+    fontWeight: 900,
+    letterSpacing: "0.09em",
+    textTransform: "uppercase",
+    color: L_DIM,
+}
+
+const jcLead: React.CSSProperties = {
+    fontSize: 14.5,
+    fontWeight: 800,
+    color: L_TEXT,
+    lineHeight: "19px",
+}
+
+const jcStops: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    flexWrap: "wrap",
+}
+
+// Text-weight by default. These are wayfinding, not calls to action — the
+// screen each one lands on carries its own primary, and four buttons up here
+// would out-shout every one of them.
+const jcStop: React.CSSProperties = {
+    background: "none",
+    border: "1px solid transparent",
+    borderRadius: 9,
+    padding: "7px 11px",
+    color: L_MUTED,
+    fontSize: 13,
+    fontWeight: 700,
+    fontFamily: "inherit",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+}
+
+// "You are here". The well plus a hairline rather than a fill: the bar sits
+// above real content and a solid active pill reads as a button that has been
+// pressed and stuck.
+const jcStopActive: React.CSSProperties = {
+    background: L_WELL,
+    borderColor: L_BORDER,
+    color: L_TEXT,
+}
+
+// The one destination that leaves the Framer app. Tealed so the ↗ is not the
+// only thing distinguishing a full app switch from a tab change.
+const jcStopLeaves: React.CSSProperties = {
+    color: L_TEAL_INK,
+}
+
 // ── Actions ─────────────────────────────────────────────────────────────────
 
 const jfCtaRow: React.CSSProperties = {
@@ -7259,6 +7628,50 @@ const jfCtaRow: React.CSSProperties = {
     gap: 12,
     marginTop: 14,
     flexWrap: "wrap",
+}
+
+/**
+ * The Pass caveat above the CTA row. Risk-card palette, deliberately: this is
+ * the same category of thing the Risks card carries, so it should not invent a
+ * third warning colour. Tint and ink, no border and no icon — it is one
+ * sentence qualifying the button under it, not a panel competing with it.
+ */
+const jfPassNote: React.CSSProperties = {
+    marginTop: 14,
+    padding: "12px 14px",
+    borderRadius: 12,
+    background: L_SCAN_RISK_BG,
+    color: L_TEXT_2,
+    fontSize: 13.5,
+    lineHeight: "19px",
+    fontWeight: 600,
+}
+
+/**
+ * The quiet row under the CTA pair: "Run a different job" and "Not now".
+ *
+ * Both are text, both are muted, and neither is a button-shaped thing — that is
+ * the entire point of the demotion. Run New Job spent its life as a peach
+ * primary on Pass verdicts; anything short of plain text here would keep
+ * competing with the actual primary above it.
+ */
+const jfQuietRow: React.CSSProperties = {
+    display: "flex",
+    gap: 18,
+    marginTop: 12,
+    alignItems: "center",
+    flexWrap: "wrap",
+}
+
+const jfQuietBtn: React.CSSProperties = {
+    background: "none",
+    border: "none",
+    padding: 0,
+    color: L_MUTED,
+    fontSize: 13,
+    fontWeight: 700,
+    fontFamily: "inherit",
+    cursor: "pointer",
 }
 
 /**
