@@ -2030,7 +2030,13 @@ export default function WRNSignalTabs(props: {
     }
 
     async function handleFetchUrl() {
-        if (!jobUrl.trim()) return
+        // Was a bare `return`. An empty field and a successful fetch looked
+        // identical from the outside, which is half of why the bug below took
+        // three passes to find.
+        if (!jobUrl.trim()) {
+            setUrlError("Paste a job posting URL first.")
+            return
+        }
         setUrlLoading(true)
         setUrlError("")
         setShowLinkedInHelper(false)
@@ -2051,14 +2057,45 @@ export default function WRNSignalTabs(props: {
                 setUrlError(data.error)
                 return
             }
+
+            // THE JOB DESCRIPTION IS THE ONE FIELD THAT MUST COME BACK, and it
+            // is not a preference. The confirm step below renders company and
+            // title as editable inputs, but the description only as a READ-ONLY
+            // preview. There is nowhere in that step to type one. So advancing
+            // without a description strands the user in a screen whose missing
+            // piece it gives them no way to supply, and the only exit is "Paste
+            // again". Better to say so here, while the paste box is still on
+            // screen and is still the answer.
+            if (!data.jobDescription) {
+                setUrlError(
+                    "We reached that page but could not read the job description from it. Paste the posting below instead."
+                )
+                return
+            }
+
             if (data.companyName) setManualCompanyName(data.companyName)
             if (data.jobTitle) setManualJobTitle(data.jobTitle)
-            if (data.jobDescription) setJob(data.jobDescription)
+            setJob(data.jobDescription)
             // Keep jobUrl — it gets sent to /api/jobfit as job_url
             // so the application dashboard auto-populates the link
             setUrlError("")
             setShowLinkedInHelper(false)
             setShowBlockedPopup(false)
+
+            // THE ACTUAL FIX. Everything above this line already worked: the
+            // API returns 200 with jobTitle, companyName and jobDescription at
+            // the top level, the key names match, and all three setters fired.
+            // None of it had anywhere to render. manualCompanyName and
+            // manualJobTitle are read ONLY inside `manualPasteStep ===
+            // "confirm"`, and so is the `job` preview, and manualPasteStep
+            // starts at "paste".
+            //
+            // The two paste handlers each advance the step as their last act.
+            // This one never did, so a completely successful fetch wrote three
+            // pieces of state behind a screen the user was not on and left them
+            // looking at the paste box, which is indistinguishable from the
+            // button being dead. Same line, same reason, as the other two.
+            setManualPasteStep("confirm")
         } catch {
             setUrlError("Something went wrong. Please paste the job description manually.")
         } finally {
@@ -5554,6 +5591,63 @@ export default function WRNSignalTabs(props: {
 .wrn-scan-field::placeholder { color: ${L_PLACEHOLDER}; opacity: 1; }
 `}</style>
 
+            {/* THE BLOCKED-SITE MODAL, at the top level of the return and
+                deliberately outside <div style={shell}>. It is the only
+                thing the user gets when a posting cannot be read, so its
+                visibility must not depend on whether the job card happens
+                to be mounted. It was inside that card, which unmounts when
+                a result arrives and collapses it: a LinkedIn fetch whose
+                422 landed after a ?run= hydration set showBlockedPopup on a
+                component that had already thrown the render site away, and
+                the user got a spinner followed by nothing. */}
+            {showBlockedPopup && (
+                <div style={scanModalScrim}>
+                    <div style={scanModalCard}>
+                        <div style={scanModalTitle}>
+                            We couldn't read this job posting
+                        </div>
+                        <div style={scanModalBody}>
+                            Some sites block us from reading their
+                            job postings automatically. Others use
+                            formatting we can't handle. To continue,
+                            copy and paste the job description text
+                            directly below.
+                        </div>
+                        <div style={{ display: "flex", gap: 10 }}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    window.open(
+                                        jobUrl.trim(),
+                                        "_blank"
+                                    )
+                                    setShowBlockedPopup(false)
+                                }}
+                                style={{
+                                    ...scanModalPrimaryBtn,
+                                    flex: 1,
+                                }}
+                            >
+                                Open Job Posting
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setShowBlockedPopup(false)
+                                }
+                                style={{
+                                    ...scanModalSecondaryBtn,
+                                    flex: 1,
+                                }}
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
             <div style={shell}>
                 <SideNav
                     tab={tab}
@@ -5761,7 +5855,13 @@ export default function WRNSignalTabs(props: {
                         </div>
                     ) : null}
 
-                    {!hasAnyResult || jobInputOpen ? (
+                    {/* showLinkedInHelper joins the guard because the paste
+                        well below is the modal's follow-through: dismissing the
+                        modal sets showBlockedPopup false and reveals the well,
+                        and a well inside a card that has collapsed is the same
+                        bug one step later. While a blocked-site rescue is in
+                        progress this card stays up. */}
+                    {!hasAnyResult || jobInputOpen || showLinkedInHelper ? (
                     <div
                         style={{
                             ...scanCard,
@@ -5805,54 +5905,15 @@ export default function WRNSignalTabs(props: {
                             </button>
                         </div>
 
-                        {/* Blocked site modal. Fixed to the viewport, so it
-                            renders wherever it is declared. */}
-                        {showBlockedPopup && (
-                            <div style={scanModalScrim}>
-                                <div style={scanModalCard}>
-                                    <div style={scanModalTitle}>
-                                        We couldn't read this job posting
-                                    </div>
-                                    <div style={scanModalBody}>
-                                        Some sites block us from reading their
-                                        job postings automatically. Others use
-                                        formatting we can't handle. To continue,
-                                        copy and paste the job description text
-                                        directly below.
-                                    </div>
-                                    <div style={{ display: "flex", gap: 10 }}>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                window.open(
-                                                    jobUrl.trim(),
-                                                    "_blank"
-                                                )
-                                                setShowBlockedPopup(false)
-                                            }}
-                                            style={{
-                                                ...scanModalPrimaryBtn,
-                                                flex: 1,
-                                            }}
-                                        >
-                                            Open Job Posting
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                setShowBlockedPopup(false)
-                                            }
-                                            style={{
-                                                ...scanModalSecondaryBtn,
-                                                flex: 1,
-                                            }}
-                                        >
-                                            Close
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                        {/* The blocked-site modal USED TO SIT HERE, under a
+                            comment claiming that being position:fixed meant it
+                            "renders wherever it is declared". That is true of
+                            where a fixed element PAINTS and false of whether it
+                            paints at all: fixed still has to be mounted, and
+                            everything in this card unmounts whenever the guard
+                            above goes false. It now lives at the top level of
+                            the component, outside the shell, so no card or step
+                            state can suppress it. See renderBlockedSiteModal. */}
 
                         {/* Paste helper, visible once the modal is dismissed */}
                         {showLinkedInHelper && !showBlockedPopup && (

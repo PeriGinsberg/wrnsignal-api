@@ -5481,6 +5481,63 @@ export default function WRNSignalTabs(props: {
 .wrn-scan-field::placeholder { color: ${L_PLACEHOLDER}; opacity: 1; }
 `}</style>
 
+            {/* THE BLOCKED-SITE MODAL, at the top level of the return and
+                deliberately outside <div style={shell}>. It is the only
+                thing the user gets when a posting cannot be read, so its
+                visibility must not depend on whether the job card happens
+                to be mounted. It was inside that card, which unmounts when
+                a result arrives and collapses it: a LinkedIn fetch whose
+                422 landed after a ?run= hydration set showBlockedPopup on a
+                component that had already thrown the render site away, and
+                the user got a spinner followed by nothing. */}
+            {showBlockedPopup && (
+                <div style={scanModalScrim}>
+                    <div style={scanModalCard}>
+                        <div style={scanModalTitle}>
+                            We couldn't read this job posting
+                        </div>
+                        <div style={scanModalBody}>
+                            Some sites block us from reading their
+                            job postings automatically. Others use
+                            formatting we can't handle. To continue,
+                            copy and paste the job description text
+                            directly below.
+                        </div>
+                        <div style={{ display: "flex", gap: 10 }}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    window.open(
+                                        jobUrl.trim(),
+                                        "_blank"
+                                    )
+                                    setShowBlockedPopup(false)
+                                }}
+                                style={{
+                                    ...scanModalPrimaryBtn,
+                                    flex: 1,
+                                }}
+                            >
+                                Open Job Posting
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setShowBlockedPopup(false)
+                                }
+                                style={{
+                                    ...scanModalSecondaryBtn,
+                                    flex: 1,
+                                }}
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
             <div style={shell}>
                 <SideNav
                     tab={tab}
@@ -5688,7 +5745,13 @@ export default function WRNSignalTabs(props: {
                         </div>
                     ) : null}
 
-                    {!hasAnyResult || jobInputOpen ? (
+                    {/* showLinkedInHelper joins the guard because the paste
+                        well below is the modal's follow-through: dismissing the
+                        modal sets showBlockedPopup false and reveals the well,
+                        and a well inside a card that has collapsed is the same
+                        bug one step later. While a blocked-site rescue is in
+                        progress this card stays up. */}
+                    {!hasAnyResult || jobInputOpen || showLinkedInHelper ? (
                     <div
                         style={{
                             ...scanCard,
@@ -5732,54 +5795,15 @@ export default function WRNSignalTabs(props: {
                             </button>
                         </div>
 
-                        {/* Blocked site modal. Fixed to the viewport, so it
-                            renders wherever it is declared. */}
-                        {showBlockedPopup && (
-                            <div style={scanModalScrim}>
-                                <div style={scanModalCard}>
-                                    <div style={scanModalTitle}>
-                                        We couldn't read this job posting
-                                    </div>
-                                    <div style={scanModalBody}>
-                                        Some sites block us from reading their
-                                        job postings automatically. Others use
-                                        formatting we can't handle. To continue,
-                                        copy and paste the job description text
-                                        directly below.
-                                    </div>
-                                    <div style={{ display: "flex", gap: 10 }}>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                window.open(
-                                                    jobUrl.trim(),
-                                                    "_blank"
-                                                )
-                                                setShowBlockedPopup(false)
-                                            }}
-                                            style={{
-                                                ...scanModalPrimaryBtn,
-                                                flex: 1,
-                                            }}
-                                        >
-                                            Open Job Posting
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                setShowBlockedPopup(false)
-                                            }
-                                            style={{
-                                                ...scanModalSecondaryBtn,
-                                                flex: 1,
-                                            }}
-                                        >
-                                            Close
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                        {/* The blocked-site modal USED TO SIT HERE, under a
+                            comment claiming that being position:fixed meant it
+                            "renders wherever it is declared". That is true of
+                            where a fixed element PAINTS and false of whether it
+                            paints at all: fixed still has to be mounted, and
+                            everything in this card unmounts whenever the guard
+                            above goes false. It now lives at the top level of
+                            the component, outside the shell, so no card or step
+                            state can suppress it. See renderBlockedSiteModal. */}
 
                         {/* Paste helper, visible once the modal is dismissed */}
                         {showLinkedInHelper && !showBlockedPopup && (
