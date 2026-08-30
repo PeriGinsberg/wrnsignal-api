@@ -22,7 +22,7 @@
 import { useCallback, useState } from "react"
 import { T, card, eyebrow, input, btnPrimary, btnSecondary } from "../../../lib/dashboard-theme"
 import { authFetch, locationLabel, type LaneFilters } from "./laneApi"
-import { DEFAULT_POSTING_WINDOW_DAYS } from "../../../lib/lanePostingWindow"
+import { DEFAULT_POSTING_WINDOW } from "../../../lib/lanePostingWindow"
 import { BoardFiltersEditor, PostedWithinField, YearsMaxField } from "./LaneCriteria"
 import { DEFAULT_SENIORITY_BANDS } from "../../../lib/laneSeniority"
 
@@ -73,7 +73,7 @@ export function CreateLanePanel({
   const [keyword, setKeyword] = useState("")
   const [titles, setTitles] = useState<string[]>([])
   const [yearsMax, setYearsMax] = useState<number | null>(null)
-  const [daysPosted, setDaysPosted] = useState<number>(DEFAULT_POSTING_WINDOW_DAYS)
+  const [daysPosted, setDaysPosted] = useState<number>(DEFAULT_POSTING_WINDOW)
   const [filters, setFilters] = useState<LaneFilters>({})
   const [seniority, setSeniority] = useState<string[]>([...DEFAULT_SENIORITY_BANDS])
 
@@ -95,7 +95,7 @@ export function CreateLanePanel({
     // place the proposal has no opinion, so it starts at the default every lane
     // gets.
     setYearsMax(j.proposal.years_max ?? null)
-    setDaysPosted(DEFAULT_POSTING_WINDOW_DAYS)
+    setDaysPosted(DEFAULT_POSTING_WINDOW)
     setFilters(j.proposal.filters ?? {})
     // The proposal has no opinion on the band either, so it starts where every
     // lane used to be pinned. Narrowing it here is the cheapest way to keep work

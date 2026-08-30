@@ -17,7 +17,7 @@ import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { canAccessLaneOwner, laneScopeIds } from "@/lib/collab/laneAccess"
 import { runLaneLogged, type Lane } from "@/lib/laneRunner"
 import { commitmentTypesFromJobType, toBoardCommitment } from "@/lib/laneCommitment"
-import { DEFAULT_POSTING_WINDOW_DAYS, POSTING_WINDOW_DAYS } from "@/lib/lanePostingWindow"
+import { DEFAULT_POSTING_WINDOW, POSTING_WINDOW_VALUES } from "@/lib/lanePostingWindow"
 import { DEFAULT_SENIORITY_BANDS, invalidSeniority, orderSeniority } from "@/lib/laneSeniority"
 
 export const runtime = "nodejs"
@@ -245,11 +245,11 @@ export async function POST(req: NextRequest) {
     // The posting window. Absent means the caller had no opinion and takes the
     // default; the column would supply the same number, but sending it back in
     // the response is what lets a create screen show the window it just made.
-    const daysPosted = body?.days_posted === undefined ? DEFAULT_POSTING_WINDOW_DAYS : Number(body.days_posted)
-    if (!POSTING_WINDOW_DAYS.has(daysPosted)) {
+    const daysPosted = body?.days_posted === undefined ? DEFAULT_POSTING_WINDOW : Number(body.days_posted)
+    if (!POSTING_WINDOW_VALUES.has(daysPosted)) {
       return withCorsJson(
         req,
-        { ok: false, error: `days_posted must be one of ${[...POSTING_WINDOW_DAYS].join(", ")}` },
+        { ok: false, error: `days_posted must be one of ${[...POSTING_WINDOW_VALUES].join(", ")}` },
         400
       )
     }

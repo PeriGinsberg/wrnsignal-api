@@ -33,6 +33,8 @@
  *      from a lat/lon pair, and why parseResponse() throws on ssrError.
  */
 
+import { isBoardPostingWindow } from "./lanePostingWindow"
+
 const ORIGIN = "https://hiringcafe.com"
 
 // Cloudflare wants a browser UA in addition to a browser TLS stack.
@@ -1078,7 +1080,14 @@ export type SearchOpts = {
    */
   locations: string[]
   radiusMiles: number
-  days: number
+  /**
+   * The board's Date Posted TOKEN, not a number of days. See
+   * lib/lanePostingWindow.ts for the closed list and for what the board does
+   * with anything else: HTTP 200, no date filter at all, and a result set
+   * reaching back four years. Named for what it is, because the field being
+   * called `days` is what put 1/3/7/30 in it.
+   */
+  postedWithin: number
   seniority: string[]
 
   /**
@@ -1130,9 +1139,21 @@ export type SearchOpts = {
 }
 
 export function buildSearchState(opts: SearchOpts): Record<string, any> {
+  // Throw rather than pass it through, for the same reason an unknown location
+  // throws below: the board does not reject a token it does not know, it drops
+  // the filter and answers with everything it has ever fetched. That reads as a
+  // good day on the queue screen and is only ever found months later.
+  if (!isBoardPostingWindow(opts.postedWithin)) {
+    throw new Error(
+      `dateFetchedPastNDays ${opts.postedWithin} is not one of the board's Date Posted tokens. ` +
+        `It is not a day count — the board ignores an unknown value and returns every posting it has. ` +
+        `Use a value from POSTING_WINDOWS in lib/lanePostingWindow.ts.`
+    )
+  }
+
   const base: Record<string, any> = {
     searchQuery: opts.query,
-    dateFetchedPastNDays: opts.days,
+    dateFetchedPastNDays: opts.postedWithin,
     seniorityLevel: opts.seniority,
     sortBy: "default",
   }

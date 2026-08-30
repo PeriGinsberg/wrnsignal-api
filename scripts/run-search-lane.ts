@@ -7,8 +7,12 @@
  *   npx tsx scripts/run-search-lane.ts --lane <uuid>
  *   npx tsx scripts/run-search-lane.ts --lane <uuid> --dry-run   # fetch + filter, no writes
  *   npx tsx scripts/run-search-lane.ts --list                    # lanes with counts
- *   npx tsx scripts/run-search-lane.ts --lane <uuid> --days 14
+ *   npx tsx scripts/run-search-lane.ts --lane <uuid> --days 21
  *   npx tsx scripts/run-search-lane.ts --lane-json <path>        # a lane that isn't saved yet
+ *
+ * --days takes the board's Date Posted TOKEN, not a number of days: 2, 4, 14,
+ * 21, 29, 61, ... See lib/lanePostingWindow.ts. Anything else is refused by
+ * buildSearchState rather than silently returning every posting on the board.
  *
  * --lane-json runs a lane config from a file (propose-search-lane.ts --json
  * writes one) instead of loading a row. It is always a dry run: there is no
@@ -37,7 +41,7 @@ import { createClient } from "@supabase/supabase-js"
 import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { runLane, resolvePresets, type Lane, type TitleOutcome } from "../lib/laneRunner"
-import { LEGACY_POSTING_WINDOW_DAYS } from "../lib/lanePostingWindow"
+import { LEGACY_POSTING_WINDOW, postingWindowLabel } from "../lib/lanePostingWindow"
 
 function loadEnvLocal() {
   for (const name of [".env.local", ".env.development.local"]) {
@@ -107,10 +111,10 @@ async function runOneLane(l: Lane, opts: { dryRun: boolean; days?: number; pages
   console.log(`lane: ${l.name}  (${l.id})`)
   console.log(`  titles:     ${l.titles.join(" | ")}`)
   console.log(`  keyword:    ${l.keyword ?? "(none)"}`)
-  const days = opts.days ?? l.days_posted ?? LEGACY_POSTING_WINDOW_DAYS
+  const days = opts.days ?? l.days_posted ?? LEGACY_POSTING_WINDOW
   console.log(
     `  location:   ${markets}, posted ≤ ${days}d` +
-      (opts.days != null ? ` (--days override; the lane itself is set to ${l.days_posted ?? LEGACY_POSTING_WINDOW_DAYS})` : "")
+      (opts.days != null ? ` (--days override; the lane itself is set to ${postingWindowLabel(l.days_posted ?? LEGACY_POSTING_WINDOW)})` : "")
   )
   console.log(`  years_max:  ${l.years_max ?? "none"}`)
   console.log(`  companies:  ${l.companies?.length ? l.companies.join(", ") : "(no restriction)"}`)

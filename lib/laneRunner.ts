@@ -23,7 +23,7 @@
 
 import { type SupabaseClient } from "@supabase/supabase-js"
 import { fetchJobs, queryFor, type JobRow } from "./hiringcafe"
-import { LEGACY_POSTING_WINDOW_DAYS } from "./lanePostingWindow"
+import { LEGACY_POSTING_WINDOW } from "./lanePostingWindow"
 import { DEFAULT_SENIORITY_BANDS } from "./laneSeniority"
 
 export type Lane = {
@@ -38,9 +38,13 @@ export type Lane = {
   // shape, still read so old rows keep working.
   location: { presets?: string[]; preset?: string | null; radius_miles?: number; days_posted?: number }
   /**
-   * How far back this lane looks, in days. NOT NULL in the column with a
-   * default, so an absent value here is never "the lane did not say": it is a
-   * select that did not ask for the field. See the fallback in runLane().
+   * How far back this lane looks, as the board's Date Posted TOKEN — 2, 4, 14,
+   * 21 or 61. NOT a count of days, whatever the column name says: see
+   * lib/lanePostingWindow.ts, and do not do arithmetic on it.
+   *
+   * NOT NULL in the column with a default, so an absent value here is never
+   * "the lane did not say": it is a select that did not ask for the field. See
+   * the fallback in runLane().
    */
   days_posted?: number | null
   /**
@@ -244,6 +248,7 @@ export async function runLane(
   lane: Lane,
   supabase: SupabaseClient,
   opts: {
+    /** Board Date Posted token override, not a day count. See lanePostingWindow. */
     days?: number
     pages?: number
     dryRun?: boolean
@@ -259,7 +264,7 @@ export async function runLane(
   // and the constant is what every lane ran at before the column existed, so a
   // select that forgets days_posted degrades to the old behaviour rather than
   // to a narrower search nobody asked for.
-  const days = opts.days ?? lane.days_posted ?? lane.location?.days_posted ?? LEGACY_POSTING_WINDOW_DAYS
+  const postedWithin = opts.days ?? lane.days_posted ?? lane.location?.days_posted ?? LEGACY_POSTING_WINDOW
   const pages = opts.pages ?? 1
   // Empty is treated as absent, not as "no restriction": the column refuses an
   // empty band and the board would read one as a filter matching nothing.
@@ -276,7 +281,7 @@ export async function runLane(
       query,
       locations: presets,
       radiusMiles: radius,
-      days,
+      postedWithin,
       seniority,
       pages,
       ...toSearchFilters(lane.filters),

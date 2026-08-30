@@ -15,6 +15,7 @@
 
 import { fetchJobs, queryFor, LOCATIONS, SENIORITY_LEVELS } from "./hiringcafe"
 import { commitmentTypesFromJobType } from "./laneCommitment"
+import { LEGACY_POSTING_WINDOW } from "./lanePostingWindow"
 
 // ---------------------------------------------------------------------------
 // Sector keywords
@@ -492,7 +493,8 @@ export const titleCase = (s: string) => s.replace(/\b[a-z]/g, (c) => c.toUpperCa
 // applied here, so a title that survives the probe can still contribute
 // nothing after filtering; the probe answers "does this phrase exist on the
 // board", which is the question that decides whether to keep the title.
-export const PROBE_DAYS = 29
+// The board's "3 weeks" token, not 29 days. See lib/lanePostingWindow.ts.
+export const PROBE_DAYS = LEGACY_POSTING_WINDOW
 const PROBE_SENIORITY = [...SENIORITY_LEVELS].slice(0, 3) // through Mid Level, as the runner does
 
 export type Probe = { title: string; query: string; fetched: number; available: number; capped: boolean }
@@ -517,7 +519,7 @@ export async function probeTitles(
       query,
       locations: presets,
       radiusMiles,
-      days: PROBE_DAYS,
+      postedWithin: PROBE_DAYS,
       seniority: PROBE_SENIORITY,
       pages: 1,
       ...filters,

@@ -24,7 +24,7 @@ import { loadAuthorizedLane } from "@/lib/collab/laneAccess"
 import { fetchJobs, queryFor } from "@/lib/hiringcafe"
 import { DEFAULT_SENIORITY_BANDS } from "@/lib/laneSeniority"
 import { toSearchFilters } from "@/lib/laneRunner"
-import { LEGACY_POSTING_WINDOW_DAYS } from "@/lib/lanePostingWindow"
+import { LEGACY_POSTING_WINDOW } from "@/lib/lanePostingWindow"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
     const keyword: string | null = (lane as any).keyword ?? null
     // The lane's own window. A lane looking back 24 hours must not be offered
     // titles that only exist in a month of backlog.
-    const days: number = (lane as any).days_posted ?? LEGACY_POSTING_WINDOW_DAYS
+    const postedWithin: number = (lane as any).days_posted ?? LEGACY_POSTING_WINDOW
     const seniorityBands: string[] = (lane as any).seniority?.length
       ? (lane as any).seniority
       : [...DEFAULT_SENIORITY_BANDS]
@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
       query,
       locations: presets,
       radiusMiles,
-      days,
+      postedWithin,
       seniority: seniorityBands,
       pages: 1,
       // The lane's own board filters, so discovery lists titles this lane can
@@ -127,7 +127,7 @@ export async function GET(req: NextRequest) {
         query,
         keyword,
         location: presets.length ? { presets, radius_miles: radiusMiles } : null,
-        days,
+        days: postedWithin,
         // fetched vs available: one page of a larger set is a sample, and a
         // count presented without that distinction reads as the whole board.
         fetched: rows.length,

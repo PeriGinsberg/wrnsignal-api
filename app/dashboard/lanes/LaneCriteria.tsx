@@ -22,7 +22,7 @@ import { useState } from "react"
 import { T, eyebrow, input } from "../../../lib/dashboard-theme"
 import { FilterListEditor } from "./FilterListEditor"
 import { BOARD_COMMITMENTS } from "../../../lib/laneCommitment"
-import { POSTING_WINDOWS, POSTING_WINDOW_DAYS, postingWindowLabel } from "../../../lib/lanePostingWindow"
+import { POSTING_WINDOWS, POSTING_WINDOW_VALUES, postingWindowLabel } from "../../../lib/lanePostingWindow"
 import { DEFAULT_SENIORITY_BANDS, SENIORITY_LEVELS, orderSeniority } from "../../../lib/laneSeniority"
 import type { LaneFilters } from "./laneApi"
 
@@ -108,7 +108,7 @@ export function PostedWithinField({
   disabled: boolean
   onChange: (days: number) => void
 }) {
-  const known = value != null && POSTING_WINDOW_DAYS.has(value)
+  const known = value != null && POSTING_WINDOW_VALUES.has(value)
   return (
     <div>
       <div style={{ ...eyebrow, color: T.DIM, marginBottom: 4 }}>Posted within</div>
@@ -116,7 +116,7 @@ export function PostedWithinField({
         value={known ? String(value) : ""}
         onChange={(e) => {
           const n = Number(e.target.value)
-          if (POSTING_WINDOW_DAYS.has(n)) onChange(n)
+          if (POSTING_WINDOW_VALUES.has(n)) onChange(n)
         }}
         disabled={disabled}
         aria-label="Posted within"
@@ -135,7 +135,7 @@ export function PostedWithinField({
       >
         {!known && <option value="">{postingWindowLabel(value)}</option>}
         {POSTING_WINDOWS.map((w) => (
-          <option key={w.days} value={w.days}>
+          <option key={w.value} value={w.value}>
             {w.label}
           </option>
         ))}

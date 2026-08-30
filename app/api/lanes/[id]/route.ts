@@ -28,7 +28,7 @@ import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { loadAuthorizedLane } from "@/lib/collab/laneAccess"
 import { toBoardCommitment } from "@/lib/laneCommitment"
-import { POSTING_WINDOW_DAYS } from "@/lib/lanePostingWindow"
+import { POSTING_WINDOW_VALUES } from "@/lib/lanePostingWindow"
 import { invalidSeniority, orderSeniority } from "@/lib/laneSeniority"
 
 export const runtime = "nodejs"
@@ -182,10 +182,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       const n = Number(body.days_posted)
       // Closed set, checked here so the caller gets the vocabulary back rather
       // than a constraint-violation 500 from the database.
-      if (!POSTING_WINDOW_DAYS.has(n)) {
+      if (!POSTING_WINDOW_VALUES.has(n)) {
         return withCorsJson(
           req,
-          { ok: false, error: `days_posted must be one of ${[...POSTING_WINDOW_DAYS].join(", ")}` },
+          { ok: false, error: `days_posted must be one of ${[...POSTING_WINDOW_VALUES].join(", ")}` },
           400
         )
       }

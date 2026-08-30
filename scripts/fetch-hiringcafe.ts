@@ -19,6 +19,7 @@ import { fetchJobs, SENIORITY_LEVELS } from "../lib/hiringcafe"
 // Re-exported so existing importers (run-search-lane.ts, propose-search-lane.ts)
 // keep working against this path.
 export { LOCATIONS, SENIORITY_LEVELS, buildSearchState, resolveBuildId, fetchJobs, queryFor } from "../lib/hiringcafe"
+import { postingWindowLabel } from "../lib/lanePostingWindow"
 export type { SearchOpts, JobRow } from "../lib/hiringcafe"
 
 function arg(name: string, fallback?: string): string | undefined {
@@ -33,7 +34,10 @@ async function main() {
     // comma-separated list of preset keys.
     locations: arg("location", "nyc") === "none" ? [] : arg("location", "nyc")!.split(",").map((x) => x.trim()).filter(Boolean),
     radiusMiles: Number(arg("radius", "25")),
-    days: Number(arg("days", "29")),
+    // A board Date Posted token, not a day count: 2, 4, 14, 21, 29, 61, ...
+    // buildSearchState throws on anything else rather than letting the board
+    // quietly drop the filter. See lib/lanePostingWindow.ts.
+    postedWithin: Number(arg("days", "29")),
     seniority: arg("seniority", "No Prior Experience Required,Entry Level,Mid Level")!
       .split(",")
       .map((s) => s.trim())
@@ -57,7 +61,7 @@ async function main() {
 
   console.log(
     `query="${opts.query}" locations=${opts.locations.join(",") || "(none)"} radius=${opts.radiusMiles}mi ` +
-      `days=${opts.days} seniority=[${opts.seniority.join(", ")}]`
+      `posted=${postingWindowLabel(opts.postedWithin)} seniority=[${opts.seniority.join(", ")}]`
   )
   console.log(`${total} total, ${rows.length} fetched\n`)
 

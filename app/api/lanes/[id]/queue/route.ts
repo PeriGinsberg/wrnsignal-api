@@ -59,7 +59,7 @@ import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { loadAuthorizedLane } from "@/lib/collab/laneAccess"
 import { applyLaneFilters, type Lane } from "@/lib/laneRunner"
-import { LEGACY_POSTING_WINDOW_DAYS } from "@/lib/lanePostingWindow"
+import { LEGACY_POSTING_WINDOW, postingWindowApproxDays, postingWindowLabel } from "@/lib/lanePostingWindow"
 import { DEFAULT_SENIORITY_BANDS } from "@/lib/laneSeniority"
 
 export const runtime = "nodejs"
@@ -101,8 +101,12 @@ type EvalRow = {
  */
 function splitQueue(rows: EvalRow[], lane: Lane) {
   const bands = lane.seniority?.length ? lane.seniority : [...DEFAULT_SENIORITY_BANDS]
-  const days = lane.days_posted ?? LEGACY_POSTING_WINDOW_DAYS
-  const cutoff = Date.now() - days * 86_400_000
+  // days_posted is a board token, not a day count, so the cutoff is derived
+  // rather than multiplied. Multiplying it is how a lane set to the board's
+  // "1 month" (61) would be cleared against a 61-day cutoff while the board
+  // itself only ever returned 59 days of postings.
+  const postedWithin = lane.days_posted ?? LEGACY_POSTING_WINDOW
+  const cutoff = Date.now() - postingWindowApproxDays(postedWithin) * 86_400_000
 
   const ids: string[] = []
   const counts: Record<string, number> = {}
@@ -116,7 +120,7 @@ function splitQueue(rows: EvalRow[], lane: Lane) {
     if (row.seniority && !bands.includes(row.seniority)) {
       reason = `outside the lane's seniority band (${row.seniority})`
     } else if (row.posted_at && new Date(row.posted_at).getTime() < cutoff) {
-      reason = `posted more than ${days} day${days === 1 ? "" : "s"} ago`
+      reason = `posted outside the lane's window (${postingWindowLabel(postedWithin)})`
     } else {
       // The runner's own post-fetch rules, on the stored row. One row at a
       // time because the reason matters here, and applyLaneFilters reports its
@@ -201,7 +205,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         reasons,
         criteria: {
           seniority: (lane as Lane).seniority ?? [...DEFAULT_SENIORITY_BANDS],
-          days_posted: (lane as Lane).days_posted ?? LEGACY_POSTING_WINDOW_DAYS,
+          days_posted: (lane as Lane).days_posted ?? LEGACY_POSTING_WINDOW,
           years_max: (lane as Lane).years_max,
         },
         unchecked: UNCHECKED,
