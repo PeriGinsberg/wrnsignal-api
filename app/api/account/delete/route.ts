@@ -108,6 +108,10 @@ export async function DELETE(req: NextRequest) {
       "coverletter_runs",
       "networking_runs",
       "client_personas",
+      // Resume Rx was removed 2026-08-27, but resume_rx_sessions still exists
+      // in dev and prod and may still hold rows written before the removal.
+      // Keep deleting from it until the table itself is dropped, or account
+      // deletion silently leaves that PII behind.
       "resume_rx_sessions",
     ]
     for (const table of directTables) {

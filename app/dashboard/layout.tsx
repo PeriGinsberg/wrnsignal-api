@@ -14,10 +14,11 @@ import {
 } from "../../components/icons"
 
 // Sprint 3 (2026-05-08): conditional nav rendering by is_coach.
-//   • D2C: My Account (renamed from Overview), Job Tracker, ResumeRx
+//   • D2C: My Account (renamed from Overview), Job Tracker
 //   • Coach: Coaches Center group (Dashboard / Required Actions / My
-//     Clients), then My Account, then Back to SIGNAL. Job Tracker +
-//     ResumeRx hidden from coach nav.
+//     Clients), then My Account, then Back to SIGNAL. Job Tracker
+//     hidden from coach nav.
+// (Resume Rx was a third D2C item here; the feature was removed 2026-08-27.)
 //
 // Redesign step 2 (2026-08-03): the D2C shell moves to the light theme. The
 // nav stays NAVY because navy is structure in the new language; what changes

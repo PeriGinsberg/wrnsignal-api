@@ -379,76 +379,12 @@ The free trial is a **one-shot real JobFit run** — same engine as the paid pat
 **Returns:** `{ ok: boolean, marked_seen: number }`
 **Errors:** 401 unauthorized.
 
-### Resume Rx
+### Resume Rx — REMOVED
 
-All Resume Rx routes require an authenticated user and operate on a single `resume_rx_sessions` row identified by `session_id` (ownership enforced by matching `profile_id` to the caller's profile; 403 on mismatch, 404 if not found). The flow: `start` → `education` → `architecture` → `answer` (repeated per bullet) → `approve` → `complete` → `save-to-profile`.
-
-#### POST /api/resume-rx/start
-**Auth:** Authenticated user.
-**Purpose:** Create a new Resume Rx session and run the Claude-powered diagnosis stage.
-**Request:** `{ resume_text: string (min 200 chars), mode: string, year_in_school: string, target_field: string, source_persona_id?: string }`
-**Returns:** `{ ok: boolean, session_id: string, diagnosis: object }` — shape [NEEDS CLARIFICATION] (full output schema defined in the prompt).
-**Errors:** 400 validation errors (missing or too-short fields), 401 unauthorized.
-
-#### POST /api/resume-rx/education
-**Auth:** Authenticated user (session ownership checked).
-**Purpose:** Generate or accept the education section for the session.
-**Request:** `{ session_id: string, education?: object }`
-**Returns:** `{ ok: boolean, education_intake: object }` — [NEEDS CLARIFICATION] on exact shape.
-**Errors:** 400 invalid body, 401 unauthorized, 403 forbidden, 404 session not found.
-
-#### POST /api/resume-rx/architecture
-**Auth:** Authenticated user (session ownership checked).
-**Purpose:** Produce section architecture; accepts optional `adjustments` text.
-**Request:** `{ session_id: string, adjustments?: string }`
-**Returns:** `{ ok: boolean, architecture: object }`
-**Errors:** 400 invalid body, 401 unauthorized, 403 forbidden, 404 session not found.
-
-#### POST /api/resume-rx/answer
-**Auth:** Authenticated user (session ownership checked).
-**Purpose:** Produce a bullet rewrite from Q&A input.
-**Request:** `{ session_id: string, original?: string, section?: string, answers?: Record<string,string>, source_material?: string }`
-**Returns:** `{ ok: boolean, rewrite: object }` — [NEEDS CLARIFICATION] on exact shape.
-**Errors:** 400 invalid body, 401 unauthorized, 403 forbidden, 404 session not found.
-
-#### POST /api/resume-rx/approve
-**Auth:** Authenticated user (session ownership checked).
-**Purpose:** Approve a bullet variant produced in the `answer` stage.
-**Request:** `{ session_id: string, ... }` — additional fields [NEEDS CLARIFICATION].
-**Returns:** `{ ok: boolean, approved_bullets: array }`
-**Errors:** 400 invalid body, 401 unauthorized, 403 forbidden, 404 session not found.
-
-#### POST /api/resume-rx/complete
-**Auth:** Authenticated user (session ownership checked).
-**Purpose:** Assemble the final resume text and coaching summary.
-**Request:** `{ session_id: string }`
-**Returns:** `{ ok: boolean, final_resume_text: string, coaching_summary: string }`
-**Errors:** 400 missing session_id, 401 unauthorized, 403 forbidden, 404 session not found.
-
-#### POST /api/resume-rx/save-to-profile
-**Auth:** Authenticated user.
-**Purpose:** Save the completed resume back to the caller's profile / persona.
-**Request:** `{ session_id: string, ... }` — persona-related params [NEEDS CLARIFICATION].
-**Returns:** `{ ok: boolean }`
-**Errors:** 400 invalid body, 401 unauthorized, 403 forbidden, 404 session not found.
-
-#### GET /api/resume-rx/existing-resume
-**Auth:** Authenticated user.
-**Purpose:** Fetch the caller's existing resume text (likely from the profile or default persona).
-**Returns:** `{ ok: boolean, resume_text: string }` — [NEEDS CLARIFICATION] on exact shape.
-**Errors:** 401 unauthorized, 404 not found.
-
-#### GET /api/resume-rx/sessions
-**Auth:** Authenticated user.
-**Purpose:** List the caller's Resume Rx sessions.
-**Returns:** `{ ok: boolean, sessions: array }`
-**Errors:** 401 unauthorized.
-
-#### GET /api/resume-rx/sessions/[id]
-**Auth:** Authenticated user (session ownership checked).
-**Purpose:** Load a full Resume Rx session.
-**Returns:** `{ ok: boolean, session: object }`
-**Errors:** 401 unauthorized, 403 forbidden, 404 session not found.
+Removed 2026-08-27. All ten `/api/resume-rx/*` routes, the dashboard page and
+`lib/resume-rx-prompt.ts` were deleted. The `resume_rx_sessions` table still exists in
+dev and prod and is still swept by `DELETE /api/account/delete`; dropping it is a
+separate, unscheduled step.
 
 ### Auth & Checkout
 
@@ -553,7 +489,6 @@ All Resume Rx routes require an authenticated user and operate on a single `resu
 ## Known Gaps / [NEEDS CLARIFICATION]
 
 1. **`/api/dashboard`** serves HTML with inline calls to a Supabase REST URL. How the page authenticates in production (what key the inline script uses) is not obvious from the handler alone.
-2. **Several Resume Rx response shapes** (`start`, `education`, `answer`, `approve`, `existing-resume`, `save-to-profile`) were not fully inspected. Exact response keys beyond `{ ok, session_id, <stage output> }` should be confirmed.
 3. **Seat-create auth header name.** `/api/seat-create` rejects with 401 when the shared secret is missing, but the exact header name (`x-webhook-secret` per the earlier QA inventory vs. another name) should be verified against `process.env` usage.
 4. **`/api/positioning` and `/api/networking` success shapes** are the persisted `result_json` from their respective tables; the full key set comes from their upstream LLM prompts and wasn't enumerated here.
 5. **`/api/jobfit` request body** accepts many optional structured fields beyond `profile_text` / `job_text` that weren't catalogued individually (the handler is ~700 lines).
@@ -563,9 +498,8 @@ All Resume Rx routes require an authenticated user and operate on a single `resu
 
 - **Route files inspected:** 64 (added `app/api/stripe/refund/route.ts`, 2026-04-15).
 - **Total endpoints documented:** 68 method+path combinations, plus the `/checkout/mobile-success` bridge page.
-- **Endpoints with `[NEEDS CLARIFICATION]`:** 7 (mostly Resume Rx response shapes and the dashboard auth model).
+- **Endpoints with `[NEEDS CLARIFICATION]`:** 6 (mostly the dashboard auth model and the positioning / networking result shapes).
 - **Structural surprises:**
   - `/api/jobfit-v4-debug` and `/api/jobfit/debug-review` are public dev tools deployed alongside production code.
   - `/api/dashboard` serves HTML rather than JSON and includes an inline Supabase REST query layer.
-  - `/api/resume-rx/*` is a fully staged workflow — 10 endpoints that mutate the same `resume_rx_sessions` row.
   - Seat-flow endpoints (`/api/seat-*`, `/api/send-magic-link`) and Stripe-flow endpoints (`/api/auth/send-link`, `/api/checkout/*`, `/api/webhooks/stripe`) are two parallel payment/auth pipelines; the seat flow is the older GHL path.

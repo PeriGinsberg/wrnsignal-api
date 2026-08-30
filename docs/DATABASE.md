@@ -2,7 +2,7 @@
 
 ## Overview
 
-SIGNAL uses **Supabase Postgres** as its primary datastore. The database backs authentication (via Supabase Auth), user profiles and resume personas, deterministic JobFit scoring history, the four cached LLM run families (`jobfit_runs`, `positioning_runs`, `coverletter_runs`, `networking_runs`), a job tracker with interview records, the multi-stage Resume Rx rewrite sessions, a coach/client system, a free-trial track (`jobfit_users` + `jobfit_profiles` + `jobfit_trial_runs` — the third added 2026-05-03 for one-shot result caching), internal QA tooling (`qa_*`), and analytics (`jobfit_page_views`, `signal_attribution`). API routes access the database through the Supabase service-role key (admin client), so Row Level Security is defined on a small subset of tables but is bypassed server-side — authorization is enforced in application code. The data-model philosophy is canonical profile text (`client_profiles.profile_text`) as the source of truth for scoring, fingerprint-hashed runs (`UNIQUE(client_profile_id, fingerprint_hash)`) for deterministic caching, and soft links (`ON DELETE SET NULL`) between runs, applications, and personas so historical runs survive upstream edits.
+SIGNAL uses **Supabase Postgres** as its primary datastore. The database backs authentication (via Supabase Auth), user profiles and resume personas, deterministic JobFit scoring history, the four cached LLM run families (`jobfit_runs`, `positioning_runs`, `coverletter_runs`, `networking_runs`), a job tracker with interview records, a coach/client system, a free-trial track (`jobfit_users` + `jobfit_profiles` + `jobfit_trial_runs` — the third added 2026-05-03 for one-shot result caching), internal QA tooling (`qa_*`), and analytics (`jobfit_page_views`, `signal_attribution`). API routes access the database through the Supabase service-role key (admin client), so Row Level Security is defined on a small subset of tables but is bypassed server-side — authorization is enforced in application code. The data-model philosophy is canonical profile text (`client_profiles.profile_text`) as the source of truth for scoring, fingerprint-hashed runs (`UNIQUE(client_profile_id, fingerprint_hash)`) for deterministic caching, and soft links (`ON DELETE SET NULL`) between runs, applications, and personas so historical runs survive upstream edits.
 
 All documented columns, constraints, and indexes were verified against the live production schema (project `ejhnokcnahauvrcbcmic`) via `information_schema` / `pg_indexes` / `pg_policies` queries. Schema history in `supabase/migrations/` begins on 2026-04-03; anything predating that (foundational tables) was created before migrations were tracked here.
 
@@ -180,7 +180,12 @@ Interview records linked to an application.
 **Primary key:** `id`. **Indexes:** pkey, `idx_signal_interviews_application_id`, `idx_signal_interviews_profile_id`.
 
 ### `resume_rx_sessions`
-Multi-stage resume rewrite sessions.
+Multi-stage resume rewrite sessions. **Orphaned 2026-08-27:** the Resume Rx
+feature was removed (all `/api/resume-rx/*` routes, the dashboard page and
+`lib/resume-rx-prompt.ts` deleted). Nothing reads or writes this table any more,
+but it and its rows remain in dev and prod, and `DELETE /api/account/delete`
+still sweeps it so old rows go with the account. Dropping the table is a
+separate, unscheduled step.
 
 | Column | Type | Nullable | Default | Description |
 |---|---|---|---|---|
@@ -640,6 +645,6 @@ A root-level `prod_schema.sql` and `supabase/migrations_backup/20260206144423_re
 7. **`user_profiles`** appears to be a legacy table superseded by `client_profiles`. Confirm and drop if unused.
 8. **`pending_profiles`** intent is unclear from code inspection; confirm whether this is the pre-Stripe intake buffer or a deprecated flow.
 9. **`client_profiles_backfill_snapshot_20260308`** is a one-off snapshot; drop once you're confident the backfill is stable.
-10. **`resume_rx_sessions.mode` allowed values** are not DB-constrained; valid modes live only in app code.
+10. **`resume_rx_sessions` is orphaned** since the Resume Rx removal on 2026-08-27. Drop it once you are satisfied nothing needs the historical rows; until then it is dead weight that account deletion still has to sweep.
 11. **`signal_applications.application_status` CHECK** was added in migration `20260413_coach_client_system.sql` but did not appear in the live CHECK-constraint snapshot. Confirm it is actually in place.
 12. **Duplicate indexes on `signal_seats.claim_token_hash`** (`signal_seats_claim_hash_idx`, `signal_seats_claim_lookup`, plus the unique `idx_signal_seats_claim_token_hash`) — likely safe to drop the two non-unique ones.
