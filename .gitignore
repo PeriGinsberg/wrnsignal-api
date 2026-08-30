@@ -51,3 +51,16 @@ Redesign0826/
 Resumes/
 # Real client contact lists — local import test fixtures, never commit
 network-import-fixtures/
+# Python bytecode from the regression tooling
+__pycache__/
+
+# Timestamped run logs from seed / copy scripts. Generalises the
+# scripts/migrate-candidate-targeting/results/ rule above; the tests/ side is
+# already covered by tests/**/results/.
+scripts/**/results/
+
+# Ad-hoc UI captures. Referenced by nothing in the repo.
+screen shots/
+
+# One-off scaffold archive
+signal-jobfit-cc-scaffold.zip
