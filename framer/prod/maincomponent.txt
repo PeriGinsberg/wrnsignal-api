@@ -1120,15 +1120,20 @@ function JobContextBar({
     tab,
     runId,
     applicationId,
+    busy,
     onSelect,
     onJobDetails,
+    onNetworking,
 }: {
     ctx: { ctxTitle: string; ctxCompany: string }
     tab: TabKey
     runId: string | null
     applicationId: string | null
+    /** True while the Networking stop is resolving its link state. */
+    busy: boolean
     onSelect: (t: TabKey) => void
     onJobDetails: () => void
+    onNetworking: () => void
 }) {
     // No addressable job, no bar. Checked before anything else so the empty
     // case costs nothing and can never half-render.
@@ -1172,6 +1177,34 @@ function JobContextBar({
                         </button>
                     )
                 })}
+
+                {/* Networking, the fifth stop, after Cover Letter and before
+                    Job Details. Same leaves-the-bundle treatment as Job Details
+                    because it does the same thing: /dashboard/network/companies
+                    is the Next.js app, not a tab in here.
+
+                    UNCONDITIONAL, unlike Job Details. It needs no id to be
+                    useful: with no application and no company name there is
+                    simply nothing to offer linking, and it goes straight to the
+                    board. The handler decides that; the bar does not have to
+                    know the rules to render the entry.
+
+                    Disabled only while the click is resolving. That check hits
+                    the network, so without this the second and third impatient
+                    press would each start their own lookup. */}
+                <button
+                    type="button"
+                    onClick={onNetworking}
+                    disabled={busy}
+                    style={{
+                        ...jcStop,
+                        ...jcStopLeaves,
+                        cursor: busy ? "default" : "pointer",
+                        opacity: busy ? 0.6 : 1,
+                    }}
+                >
+                    {busy ? "Networking…" : "Networking ↗"}
+                </button>
 
                 {/* Only when there is an application to open. Null is a normal
                     outcome — the scan's application write is best-effort, and
@@ -1307,11 +1340,22 @@ export default function WRNSignalTabs(props: {
     // error. runNewJob() clears both — see the note there.
     const [jobfitRunId, setJobfitRunId] = React.useState<string | null>(null)
     const [jobfitApplicationId, setJobfitApplicationId] = React.useState<string | null>(null)
-    const [netPromptState, setNetPromptState] = React.useState<
-        "idle" | "busy" | "added" | "dismissed" | "error"
+    // ── Networking hand-off ───────────────────────────────────────────────
+    //
+    // Replaces netPromptState / netPromptCompany, which described a button on
+    // the JobFit verdict card that no longer exists. That machine had "added"
+    // and "dismissed" states because the button stayed on screen after being
+    // used; this one always ends by leaving the component, so the only states
+    // that matter are the ones the user can still be waiting in.
+    //
+    // "dismissed" is deliberately NOT among them. Saying No returns to idle,
+    // so the question comes back the next time Networking is pressed. A
+    // decision not to link this job today is not a decision to never link it,
+    // and the old dismissal quietly made it one for the rest of the session.
+    const [netNav, setNetNav] = React.useState<
+        "idle" | "checking" | "prompting" | "linking"
     >("idle")
-    const [netPromptError, setNetPromptError] = React.useState<string | null>(null)
-    const [netPromptCompany, setNetPromptCompany] = React.useState<string | null>(null)
+    const [netNavError, setNetNavError] = React.useState<string | null>(null)
 
     // Networking open set
     // Hydration guard — state declared here with all other hooks
@@ -1875,44 +1919,80 @@ export default function WRNSignalTabs(props: {
     // F6 — Stage 1c: special-case no_persona_configured by sending the user
     // to /dashboard so they can configure a persona, then return. All other
     // v2 errors render the generic banner inline.
-    // This component runs inside a Framer iframe, so an <a href> would open
-    // the dashboard INSIDE the frame. window.top is what breaks out of it, and
-    // the token rides along so the dashboard does not bounce to a login.
+    /**
+     * EVERY EXIT TO THE DASHBOARD GOES THROUGH HERE, and it hands over a whole
+     * session rather than half of one.
+     *
+     * It used to be `?token=${accessToken}`: an access token, on the query
+     * string, and nothing else. The receiving end could not build a real
+     * session out of that, so it faked one by putting the access token in the
+     * refresh_token field, which persisted silently and then 400'd on the first
+     * auto-refresh and signed the user out. Passing the refresh token is what
+     * makes the receiver's job possible; see app/dashboard/layout.tsx.
+     *
+     * FRAGMENT, NOT QUERY. A fragment is never sent to the server, so it stays
+     * out of Vercel access logs and out of any Referer header. The other
+     * direction (openInSignal, and the dashboard's Back to SIGNAL link) already
+     * handed off this way; this makes both directions one mechanism instead of
+     * two shapes that drift.
+     *
+     * READ AT CLICK TIME, not from the accessToken state, because the state
+     * copy can be a refresh behind and carries no refresh token at all.
+     *
+     * Falls back to navigating WITHOUT credentials rather than blocking: the
+     * dashboard has its own sign-in, so a missing session is a login prompt,
+     * not a dead button.
+     */
+    async function openDashboard(path: string) {
+        if (typeof window === "undefined") return
+        const base = `${API_BASE}${path}`
+        try {
+            const { data } = await supabase.auth.getSession()
+            const at = data?.session?.access_token
+            const rt = data?.session?.refresh_token
+            if (at && rt) {
+                const p = new URLSearchParams()
+                p.set("access_token", at)
+                p.set("refresh_token", rt)
+                window.top!.location.replace(`${base}#${p.toString()}`)
+                return
+            }
+        } catch {
+            // Fall through to the uncredentialed URL below.
+        }
+        window.top!.location.replace(base)
+    }
+
+    function goToDashboard() {
+        void openDashboard("/dashboard")
+    }
+
+    // Same mechanism as goToDashboard: this component runs inside a Framer
+    // iframe, so an <a href> would open the dashboard INSIDE the frame. The
+    // token rides along for the same reason it does there.
     // /dashboard/network, not the in-component Networking tab. That tab is
     // being retired — the left nav already leaves for the board — and Cover
     // Letter's CTA was the last thing still pointing at it.
     function goToNetworkBoard() {
-        if (typeof window === "undefined") return
-        const url = accessToken
-            ? `${API_BASE}/dashboard/network?token=${accessToken}`
-            : `${API_BASE}/dashboard/network`
-        window.top!.location.replace(url)
+        void openDashboard("/dashboard/network")
     }
 
-    // The tracker card for ONE application. Same full-app-switch mechanism as
-    // goToNetworkBoard below: this component runs inside a Framer iframe, so an
-    // <a href> would open the dashboard inside the frame, and window.top with
-    // the token on the query string is what breaks out of it.
-    // /dashboard/layout.tsx reads ?token=, strips it and sets the session, and
-    // it wraps every /dashboard/* route, so the deep path survives the handoff.
+    // The tracker card for ONE application. Goes through openDashboard like
+    // every other exit, so the session travels whole and the deep path survives
+    // (layout.tsx wraps every /dashboard/* route).
     //
     // Guarded rather than trusting the caller: the bar only renders this link
     // when there is an id, but a null here would navigate to
     // /dashboard/tracker/null, which is a 404 dressed up as a real page.
     function goToJobDetails(applicationId: string | null) {
-        if (typeof window === "undefined") return
         if (!applicationId) return
-        const path = `${API_BASE}/dashboard/tracker/${encodeURIComponent(applicationId)}`
-        const url = accessToken ? `${path}?token=${accessToken}` : path
-        window.top!.location.replace(url)
+        void openDashboard(
+            `/dashboard/tracker/${encodeURIComponent(applicationId)}`
+        )
     }
 
     function goToNetworkCompanies() {
-        if (typeof window === "undefined") return
-        const url = accessToken
-            ? `${API_BASE}/dashboard/network/companies?token=${accessToken}`
-            : `${API_BASE}/dashboard/network/companies`
-        window.top!.location.replace(url)
+        void openDashboard("/dashboard/network/companies")
     }
 
     function runNewJob(isSilent = false) {
@@ -1949,9 +2029,8 @@ export default function WRNSignalTabs(props: {
         // where "no current job" is declared.
         setJobfitRunId(null)
         setJobfitApplicationId(null)
-        setNetPromptState("idle")
-        setNetPromptError(null)
-        setNetPromptCompany(null)
+        setNetNav("idle")
+        setNetNavError(null)
         const defaultPersona =
             personas.find((p: any) => p.is_default) ?? personas[0]
         if (defaultPersona) setSelectedPersonaId(defaultPersona.id)
@@ -2234,11 +2313,11 @@ export default function WRNSignalTabs(props: {
             // scan, so a destination that needs an id simply is not offered.
             setJobfitRunId(normalized?.jobfit_run_id ?? null)
             setJobfitApplicationId(normalized?.signal_application_id ?? null)
-            // A new scan is a new question. Reset the prompt so a company
-            // added on the previous scan does not read as this one's answer.
-            setNetPromptState("idle")
-            setNetPromptError(null)
-            setNetPromptCompany(null)
+            // A new scan is a new question. Drop any half-finished networking
+            // hand-off so a prompt raised for the previous job cannot land on
+            // this one and link the wrong company.
+            setNetNav("idle")
+            setNetNavError(null)
 
             const ctxFromApi = extractJobContextFromJobFit(normalized)
             setJobContext((prev) => {
@@ -2265,32 +2344,127 @@ export default function WRNSignalTabs(props: {
     // board even in principle.
     //
     // JOB TRACKING IS NOT TOUCHED. The application already exists by the time
-    // this renders; this is only about the networking board.
-    async function addCompanyToNetworkBoard(companyName: string) {
-        if (!jobfitApplicationId || netPromptState === "busy") return
-        setNetPromptState("busy")
-        setNetPromptError(null)
-        try {
-            if (!accessToken) throw new Error("Please log in again.")
-            const data = await postJsonWithDebug(
-                `${API_BASE}/api/network/companies/link-application`,
-                {
-                    application_id: jobfitApplicationId,
-                    company_name: companyName,
-                },
-                setDebug,
-                accessToken
-            )
-            // The board's own spelling wins over the one extracted from the
-            // posting: linking to an existing "Globex" from a scan that read
-            // "GLOBEX" should confirm the name the user will actually see on
-            // their board. Falls back to what we sent if the field is absent.
-            setNetPromptCompany(data?.company?.name ?? companyName)
-            setNetPromptState("added")
-        } catch (e: any) {
-            setNetPromptError(e?.message || String(e))
-            setNetPromptState("error")
+    // this runs; this is only about the networking board.
+    //
+    // THE CALL IS UNCHANGED. What changed is who owns the outcome: it used to
+    // drive the verdict-card button's own state machine, and now it throws and
+    // lets the caller decide. A function that both performs the link and paints
+    // a button cannot be reused by a second caller that paints something else.
+    async function addCompanyToNetworkBoard(companyName: string): Promise<string> {
+        if (!jobfitApplicationId) throw new Error("No tracked application for this job.")
+        if (!accessToken) throw new Error("Please log in again.")
+        const data = await postJsonWithDebug(
+            `${API_BASE}/api/network/companies/link-application`,
+            {
+                application_id: jobfitApplicationId,
+                company_name: companyName,
+            },
+            setDebug,
+            accessToken
+        )
+        // The board's own spelling wins over the one extracted from the
+        // posting: linking to an existing "Globex" from a scan that read
+        // "GLOBEX" should confirm the name the user will actually see on
+        // their board. Falls back to what we sent if the field is absent.
+        return data?.company?.name ?? companyName
+    }
+
+    /**
+     * Does this job's tracked application already point at a company?
+     *
+     * NO SERVER CHANGE WAS NEEDED FOR THIS. GET /api/applications selects "*"
+     * off signal_applications and spreads it into every row it returns, so
+     * company_id has always been in that payload; nothing had ever read it.
+     * The application id we already hold is enough to find the row.
+     *
+     * THE COST IS HONEST AND DELIBERATE: that endpoint embeds each row's full
+     * job_description, so this is a heavy response for one boolean. It runs on
+     * the Networking click ONLY, never on render, so it costs nothing until
+     * somebody asks for it. If it ever needs to be cheap, the fix is to return
+     * company_id from POST /api/jobfit's existing application lookup rather
+     * than to add an endpoint here.
+     *
+     * Throws rather than returning false on failure. "I could not find out" and
+     * "there is no link" lead to different handling, and collapsing them would
+     * silently skip the prompt for someone whose network dropped.
+     */
+    async function applicationHasLinkedCompany(appId: string): Promise<boolean> {
+        if (!accessToken) throw new Error("Please log in again.")
+        const res = await fetch(`${API_BASE}/api/applications`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        if (!res.ok) throw new Error(`Applications lookup failed (${res.status})`)
+        const data = await res.json()
+        const rows = Array.isArray(data?.applications) ? data.applications : []
+        const row = rows.find((a: any) => a?.id === appId)
+        return Boolean(row?.company_id)
+    }
+
+    /**
+     * The bar's Networking stop. Leaves the Framer bundle for the board, and
+     * offers to put this job's company on that board first.
+     *
+     * The three ways through, in the order they are checked:
+     *
+     *   no company name, or no tracked application -> go straight to the board.
+     *     There is nothing to offer, and an empty "Add  to Networking?" is
+     *     worse than no question.
+     *   already linked -> go straight to the board. Asking again would be
+     *     asking the user to confirm something already true.
+     *   not linked -> ask. Yes links then navigates; No changes nothing and
+     *     stays put.
+     *
+     * A FAILED LOOKUP ASKS RATHER THAN ASSUMES. If we cannot tell, the prompt
+     * is the safe branch: the link endpoint find-or-creates and treats a unique
+     * violation as success, so saying Yes to an already-linked company is a
+     * no-op, whereas skipping the prompt would lose the only route to linking.
+     */
+    async function goToNetworking() {
+        if (netNav !== "idle") return
+        setNetNavError(null)
+
+        const company = jobCtx.ctxCompany.trim()
+        if (!company || !jobfitApplicationId) {
+            goToNetworkCompanies()
+            return
         }
+
+        setNetNav("checking")
+        try {
+            const linked = await applicationHasLinkedCompany(jobfitApplicationId)
+            if (linked) {
+                setNetNav("idle")
+                goToNetworkCompanies()
+                return
+            }
+        } catch (e: any) {
+            console.warn("[networking] link lookup failed, asking anyway:", e?.message || String(e))
+        }
+        setNetNav("prompting")
+    }
+
+    async function confirmAddToNetworking() {
+        if (netNav === "linking") return
+        setNetNav("linking")
+        setNetNavError(null)
+        try {
+            await addCompanyToNetworkBoard(jobCtx.ctxCompany.trim())
+            setNetNav("idle")
+            goToNetworkCompanies()
+        } catch (e: any) {
+            // Stay on the prompt with the reason showing. Navigating anyway
+            // would land the user on a board that does not have the company
+            // they just asked for, with nothing saying why.
+            setNetNavError(e?.message || String(e))
+            setNetNav("prompting")
+        }
+    }
+
+    // No means no, for now. Not dismissed, not remembered: back to idle, so the
+    // next press asks again.
+    function declineAddToNetworking() {
+        setNetNav("idle")
+        setNetNavError(null)
     }
 
     async function runPositioning() {
@@ -2477,15 +2651,17 @@ export default function WRNSignalTabs(props: {
         // was weak, had no route forward that did not start by throwing the
         // scan away. The verdict is advice; it is not a permission check.
         //
-        // Review's own wording survives untouched — "Proceed Carefully" already
-        // said the cautious thing without removing the action, which is exactly
-        // the shape a Pass now gets too. The Pass caveat is a sentence above the
-        // row (renderPassNote), not a missing button.
+        // ONE LABEL NOW, TOO. It last forked for Review, which read "Proceed
+        // Carefully" — the caution lived in the button. That does not survive
+        // this pass, and deliberately: the button is the only primary on the
+        // card now, and a primary whose text changes with the verdict makes the
+        // next step look like a different next step depending on the score. It
+        // is the same step. The caution moved up into renderVerdictNote, beside
+        // the Pass caveat, where both verdicts now say their piece in a sentence
+        // instead of in a button label.
         const ctaLabel = loadingPositioning
             ? "Running Positioning"
-            : isReview
-              ? "Proceed Carefully"
-              : "Proceed to Positioning"
+            : "Next Step: Positioning"
 
         // The client-side why_codes re-sort (WHY_PRIORITY, weight-first) went
         // with WhyCards, its only consumer. NOTHING ON SCREEN DEPENDED ON IT:
@@ -2501,170 +2677,58 @@ export default function WRNSignalTabs(props: {
         // layout landed. The live risk list does its own normalising inline.
 
         /**
-         * The Pass caveat. Everything the removed gate was trying to say, said
-         * in a sentence instead of said by taking the button away.
+         * The verdict caveat, above the CTA. Was renderPassNote and covered
+         * only Pass; it covers Review as well now because Review's caution used
+         * to be carried by the button label and the label no longer varies.
+         * Dropping "Proceed Carefully" without putting the same warning
+         * somewhere would have quietly made Review read exactly like Apply.
          *
-         * Above the CTA row rather than beside it: the row is two equal-width
-         * buttons that reflow to one column on a narrow screen, and a third
-         * element inside it would either break that pairing or get pushed onto
-         * its own line anyway. Read order is caveat, then action — which is the
-         * order a caution belongs in.
-         */
-        function renderPassNote() {
-            if (!isPass) return null
-            return (
-                <div style={jfPassNote}>
-                    SIGNAL scored this a Pass. You can still work it, and the
-                    tools below run on any job, but the gaps listed in Risks are
-                    the ones a reader will land on first.
-                </div>
-            )
-        }
-
-        // -- Networking prompt ------------------------------------
-        // NOW A BUTTON, NOT A STRIP. It used to be a tinted blue band under the
-        // verdict card carrying its own sentence ("One person inside beats ten
-        // applications"), an Add button and a Not now link.
-        //
-        // IT IS HALF OF A MATCHED PAIR, NOT A SECONDARY. It spent one pass as
-        // the white outlined button beside the peach primary, which was wrong:
-        // proceeding to Positioning and adding the company to the tracker are
-        // both things we want the student to do, and painting one of them as
-        // the quiet option answered a question nobody asked. Both are peach on
-        // navy ink now, from one shared style so "same height, same weight,
-        // equal width" is structural rather than two lists of numbers that
-        // agree today. "Not now" is the quiet option, and it is a text link.
-        //
-        // UNCHANGED: the three states (idle / busy / added), the dismissal, and
-        // the addCompanyToNetworkBoard(ctxCompany) call itself.
-        //
-        // CHANGED: the Pass suppression is gone. It read "a coach rejected the
-        // premise that a rejection is a good moment to network" — but a Pass is
-        // SIGNAL's opinion of one posting's fit, not a rejection by the
-        // employer, and adding the company to the board is a bet on the
-        // company, not on this job. Suppressing it meant the weaker the fit,
-        // the less the product would help you get inside — backwards, and the
-        // student never saw the option existed. The button is offered on every
-        // verdict now; the Pass caveat above the row is what carries the
-        // warning, and "Not now" is still one click.
-        //
-        // ctxCompany rather than a second read of job_signals: it already
-        // falls back through job context and the job text, so a cached result
-        // with a thin job_signals still names the company.
-        const netPromptVisible =
-            Boolean(jobfitApplicationId) && Boolean(ctxCompany)
-
-        const showNetButton =
-            netPromptVisible && netPromptState !== "dismissed"
-
-        /**
-         * The second half of the CTA pair. Renders the "added" confirmation in
-         * place rather than vanishing, so the click has a visible result.
+         * Apply and Priority Apply render nothing. There is no caveat to give,
+         * and a reassuring sentence in a caution slot teaches people to skip
+         * the slot.
          *
-         * That confirmation stays white while the button it replaces is peach,
-         * and the asymmetry is the point: peach is what to press, and this is
-         * a thing already done. Its padding and radius match the pair so the
-         * row does not resize under the cursor.
+         * Read order is caveat, then action, which is the order a caution
+         * belongs in.
          */
-        function renderNetButton() {
-            if (!showNetButton) return null
-
-            if (netPromptState === "added") {
+        function renderVerdictNote() {
+            if (isPass) {
                 return (
-                    <div
-                        style={{
-                            flex: 1,
-                            minWidth: 200,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 9,
-                            padding: "15px 18px",
-                            borderRadius: 13,
-                            background: L_CARD,
-                            border: `1px solid ${L_BORDER}`,
-                            fontSize: 13.5,
-                            color: L_TEXT_2,
-                            lineHeight: "18px",
-                            boxSizing: "border-box" as const,
-                        }}
-                    >
-                        <span
-                            style={{
-                                width: 8,
-                                height: 8,
-                                borderRadius: "50%",
-                                background: L_TEAL,
-                                flexShrink: 0,
-                            }}
-                        />
-                        {(netPromptCompany ?? ctxCompany) +
-                            " is on your networking board"}
+                    <div style={jfVerdictNote}>
+                        SIGNAL scored this a Pass. You can still work it, and
+                        the tools below run on any job, but the gaps listed in
+                        Risks are the ones a reader will land on first.
                     </div>
                 )
             }
-
-            return (
-                <button
-                    type="button"
-                    disabled={netPromptState === "busy"}
-                    onClick={() => addCompanyToNetworkBoard(ctxCompany)}
-                    style={{
-                        // The same style object the primary uses. Not a copy
-                        // of its values — a copy drifts the first time one of
-                        // them is touched.
-                        ...jfCtaPair,
-                        cursor:
-                            netPromptState === "busy" ? "default" : "pointer",
-                        opacity: netPromptState === "busy" ? 0.6 : 1,
-                    }}
-                >
-                    {netPromptState === "busy"
-                        ? "Adding…"
-                        : `Add ${ctxCompany} to Network Tracker`}
-                </button>
-            )
+            if (isReview) {
+                return (
+                    <div style={jfVerdictNote}>
+                        SIGNAL scored this a Review. Worth proceeding, but read
+                        the Risks first: they are what a positioning pass has to
+                        answer for this application to land.
+                    </div>
+                )
+            }
+            return null
         }
 
-        /**
-         * Dismissal and the failure message. These were one function returning
-         * both; they are two now because they no longer belong in the same
-         * place. "Not now" joins "Run a different job" in the quiet row — they
-         * are the same kind of thing, and stacking two lone links looked like
-         * two separate afterthoughts. The error is a sentence, so it keeps its
-         * own full-width line below and must not be pulled into a flex row.
-         *
-         * Its own marginTop is gone with the move: jfQuietRow owns the spacing
-         * now, and a button carrying its own top margin inside a flex row is
-         * how rows end up misaligned by 10px.
-         */
-        function renderNetDismiss() {
-            if (!showNetButton || netPromptState === "added") return null
-            return (
-                <button
-                    type="button"
-                    onClick={() => setNetPromptState("dismissed")}
-                    style={jfQuietBtn}
-                >
-                    Not now
-                </button>
-            )
-        }
-
-        function renderNetError() {
-            if (!showNetButton || !netPromptError) return null
-            return (
-                <div
-                    style={{
-                        fontSize: 12.5,
-                        color: "#C0322F",
-                        fontWeight: 700,
-                        marginTop: 8,
-                    }}
-                >
-                    {netPromptError}
-                </div>
-            )
-        }
+        // THE "ADD <COMPANY> TO NETWORK TRACKER" BUTTON STOOD HERE, with its
+        // netPromptVisible / showNetButton gating, its renderNetButton,
+        // renderNetDismiss and renderNetError helpers, and the "Not now" link
+        // that only ever existed to dismiss it.
+        //
+        // It is gone from the verdict card because the card is the wrong place
+        // to ask. Networking is not a step of reading a JobFit result, and
+        // pairing it with Proceed to Positioning made the screen offer two
+        // primaries and no answer to "which one first". The action itself is
+        // NOT gone: it moved to the Networking stop on JobContextBar, where it
+        // sits beside the other four destinations and is reachable from every
+        // tab rather than only from a fresh verdict.
+        //
+        // addCompanyToNetworkBoard survived the move intact and is still the
+        // only caller of /api/network/companies/link-application. "Not now"
+        // did not survive, and was checked before removal: netPromptState
+        // "dismissed" gated nothing but the button it hid.
 
         // ── Location label ───────────────────────────────────────
         // ── Risk rows ────────────────────────────────────────────
@@ -2794,18 +2858,17 @@ export default function WRNSignalTabs(props: {
                     ) : null}
                 </div>
 
-                {/* Actions. The Pass caveat, then a matched pair from
-                    jfCtaPair — see renderNetButton — then the quiet row.
+                {/* Actions. The verdict caveat, then ONE primary, then the
+                    quiet row.
 
-                    Both buttons render on every verdict now. The primary goes
-                    straight to proceedToPositioning: the onPrimaryClick wrapper
-                    it used to call existed only to branch on isPass, and with
-                    that branch gone it was a function whose whole body was a
-                    call to another function. */}
-                {renderPassNote()}
+                    jfCtaPair became jfCtaPrimary when the pair stopped being a
+                    pair. Its `flex: 1` existed to make two buttons equal width
+                    against each other; with one button that expressed nothing,
+                    so it is width 100% now and says so. */}
+                {renderVerdictNote()}
                 <div style={jfCtaRow}>
                     <button
-                        style={jfCtaPair}
+                        style={jfCtaPrimary}
                         onClick={proceedToPositioning}
                         disabled={loadingPositioning}
                         type="button"
@@ -2815,14 +2878,14 @@ export default function WRNSignalTabs(props: {
                         ) : null}
                         {ctaLabel}
                     </button>
-                    {renderNetButton()}
                 </div>
                 {/* Run New Job, demoted. On a Pass it used to BE the primary,
                     which is how discarding the scan ended up as the loudest
                     thing on the screen. It is still one click from here, and it
                     is still in the side nav under Actions, but it no longer
-                    occupies the slot that moving forward belongs in. Shares the
-                    row and the quiet treatment with "Not now" beside it. */}
+                    occupies the slot that moving forward belongs in. It has the
+                    quiet row to itself now that "Not now" has gone with the
+                    button it dismissed. */}
                 <div style={jfQuietRow}>
                     <button
                         type="button"
@@ -2831,9 +2894,7 @@ export default function WRNSignalTabs(props: {
                     >
                         Run a different job
                     </button>
-                    {renderNetDismiss()}
                 </div>
-                {renderNetError()}
 
                 {/* Why / Risk. Stacked full width, Why first. They were side by
                     side in a 1fr 1fr grid, which gave each of them half a
@@ -5518,6 +5579,72 @@ export default function WRNSignalTabs(props: {
 .wrn-scan-field::placeholder { color: ${L_PLACEHOLDER}; opacity: 1; }
 `}</style>
 
+            {/* ADD-TO-NETWORKING CONFIRMATION. Top level for the same reason
+                the blocked-site modal below it is: it is raised from the
+                context bar, which renders on every tab, so it cannot live
+                inside anything that one tab owns. Putting a modal inside a
+                collapsible card is the exact bug that cost three diagnostic
+                passes last week, and this is the first modal added since.
+
+                "linking" keeps it up rather than swapping to a spinner
+                elsewhere, so the answer stays on screen while it is acted on
+                and the buttons have somewhere to disable to. */}
+            {netNav === "prompting" || netNav === "linking" ? (
+                <div style={scanModalScrim}>
+                    <div style={scanModalCard}>
+                        <div style={scanModalTitle}>
+                            Add {jobCtx.ctxCompany} to Networking?
+                        </div>
+                        <div style={scanModalBody}>
+                            This puts {jobCtx.ctxCompany} on your networking
+                            board and links it to this job, so anyone you add
+                            there shows up against this application.
+                        </div>
+                        {netNavError ? (
+                            <div
+                                style={{
+                                    fontSize: 12.5,
+                                    color: "#FFB4A8",
+                                    fontWeight: 700,
+                                    marginBottom: 12,
+                                }}
+                            >
+                                {netNavError}
+                            </div>
+                        ) : null}
+                        <div style={{ display: "flex", gap: 10 }}>
+                            <button
+                                type="button"
+                                onClick={confirmAddToNetworking}
+                                disabled={netNav === "linking"}
+                                style={{
+                                    ...scanModalPrimaryBtn,
+                                    flex: 1,
+                                    opacity: netNav === "linking" ? 0.6 : 1,
+                                    cursor:
+                                        netNav === "linking"
+                                            ? "default"
+                                            : "pointer",
+                                }}
+                            >
+                                {netNav === "linking" ? "Adding…" : "Yes"}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={declineAddToNetworking}
+                                disabled={netNav === "linking"}
+                                style={{
+                                    ...scanModalSecondaryBtn,
+                                    flex: 1,
+                                }}
+                            >
+                                No
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            ) : null}
+
             {/* THE BLOCKED-SITE MODAL, at the top level of the return and
                 deliberately outside <div style={shell}>. It is the only
                 thing the user gets when a posting cannot be read, so its
@@ -5584,6 +5711,7 @@ export default function WRNSignalTabs(props: {
                     onSelect={(t) => goTo(t)}
                     onRunNewJob={() => runNewJob()}
                     onNetworkBoard={goToNetworkCompanies}
+                    onDashboard={goToDashboard}
                     onLogout={logout}
                 />
 
@@ -5599,8 +5727,10 @@ export default function WRNSignalTabs(props: {
                         tab={tab}
                         runId={jobfitRunId}
                         applicationId={jobfitApplicationId}
+                        busy={netNav === "checking" || netNav === "linking"}
                         onSelect={(t) => goTo(t)}
                         onJobDetails={() => goToJobDetails(jobfitApplicationId)}
+                        onNetworking={goToNetworking}
                     />
 
                     {/* ── 1 · THE QUESTION ─────────────────────────────────
@@ -6050,6 +6180,7 @@ function SideNav({
     onSelect,
     onRunNewJob,
     onNetworkBoard,
+    onDashboard,
     onLogout,
 }: {
     tab: TabKey
@@ -6061,6 +6192,8 @@ function SideNav({
     onRunNewJob: () => void
     /** Leaves the component for the dashboard board. Not a tab switch. */
     onNetworkBoard: () => void
+    /** Leaves for the dashboard root, session and all. See openDashboard. */
+    onDashboard: () => void
     onLogout: () => void
 }) {
 
@@ -6114,15 +6247,13 @@ function SideNav({
                 Run New Job
             </button>
 
+            {/* Was the fourth place that built its own dashboard URL, and the
+                only one that hardcoded the host rather than using API_BASE, so
+                it needed hand-translating on every prod mirror. It calls the
+                one helper now, like everything else that leaves. */}
             <button
                 style={sideSecondaryBtn}
-                onClick={async () => {
-                    const { data } = await supabase.auth.getSession()
-                    const token = data?.session?.access_token
-                    const base = "https://wrnsignal-api.vercel.app/dashboard"
-                    const url = token ? `${base}?token=${token}` : base
-                    window.top!.location.replace(url)
-                }}
+                onClick={onDashboard}
                 type="button"
             >
                 My Dashboard ↗
@@ -7619,12 +7750,13 @@ const jfCtaRow: React.CSSProperties = {
 }
 
 /**
- * The Pass caveat above the CTA row. Risk-card palette, deliberately: this is
- * the same category of thing the Risks card carries, so it should not invent a
- * third warning colour. Tint and ink, no border and no icon — it is one
- * sentence qualifying the button under it, not a panel competing with it.
+ * The verdict caveat above the CTA row, for Pass and Review alike. Risk-card
+ * palette, deliberately: this is the same category of thing the Risks card
+ * carries, so it should not invent a third warning colour. Tint and ink, no
+ * border and no icon — it is one sentence qualifying the button under it, not a
+ * panel competing with it.
  */
-const jfPassNote: React.CSSProperties = {
+const jfVerdictNote: React.CSSProperties = {
     marginTop: 14,
     padding: "12px 14px",
     borderRadius: 12,
@@ -7636,12 +7768,14 @@ const jfPassNote: React.CSSProperties = {
 }
 
 /**
- * The quiet row under the CTA pair: "Run a different job" and "Not now".
+ * The quiet row under the primary. It held "Run a different job" and "Not now";
+ * "Not now" went with the network button it dismissed, so this is now a row of
+ * one, kept as a row because that is the slot a second quiet action would go in.
  *
- * Both are text, both are muted, and neither is a button-shaped thing — that is
- * the entire point of the demotion. Run New Job spent its life as a peach
- * primary on Pass verdicts; anything short of plain text here would keep
- * competing with the actual primary above it.
+ * Text, muted, not a button-shaped thing — that is the entire point of the
+ * demotion. Run New Job spent its life as a peach primary on Pass verdicts;
+ * anything short of plain text here would keep competing with the actual
+ * primary above it.
  */
 const jfQuietRow: React.CSSProperties = {
     display: "flex",
@@ -7663,16 +7797,14 @@ const jfQuietBtn: React.CSSProperties = {
 }
 
 /**
- * ONE STYLE, BOTH RESULT CTAs. Proceed to Positioning and Add to Network
- * Tracker are a matched pair — see the comment above renderNetButton for why
- * neither of them is the secondary. Shared rather than duplicated so they
- * cannot drift: flex 1 with a 0 basis is what makes them equal width whatever
- * the company name is, and one padding and one weight is what makes them the
- * same height.
+ * THE ONE PRIMARY ON THE VERDICT CARD. It was jfCtaPair, shared with the Add to
+ * Network Tracker button beside it so the two could not drift apart in height
+ * or weight. That button has moved to the context bar, so there is no pair left
+ * to match and `flex: 1` was describing a relationship that no longer exists.
+ * Full width instead, stated rather than emergent.
  */
-const jfCtaPair: React.CSSProperties = {
-    flex: 1,
-    minWidth: 200,
+const jfCtaPrimary: React.CSSProperties = {
+    width: "100%",
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
