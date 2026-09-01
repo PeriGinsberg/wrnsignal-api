@@ -9,7 +9,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
  * Latest fixes in THIS version:
  * - Left nav cut-off: add outer padding + ensure no clipping (shell overflow visible)
  * - Positioning: on landing (before Run), CTA is BELOW Step Notes
- * - Positioning: the intro summary line above Primary M<div style={sideAccountRow}>atch Drivers renders in WRN_BLUE
+ * - Positioning: the intro summary line above Primary Match Drivers renders in WRN_BLUE
  * - Cover Letter: on landing (before Run), CTA is BELOW Step Notes
  * - Cover Letter: remove duplicate "Dear" (strip any leading salutation from body before templating)
  * - Networking: on landing (before Run), CTA is BELOW Step Notes
@@ -182,7 +182,11 @@ const L_SCAN_RISK_ICON = L_RED
 const L_SCAN_RISK_TITLE = L_NAVY
 const L_SCAN_RISK_BODY = L_TEXT_2
 
-type TabKey = "jobfit" | "positioning" | "coverletter" | "networking"
+// Three tools, three tabs. "networking" was a fourth until the in-bundle
+// plan tab was retired: it had become unreachable, because the only
+// setTab("networking") lived inside the very screen it opened. Narrowing
+// the union is what makes that state impossible rather than merely unused.
+type TabKey = "jobfit" | "positioning" | "coverletter"
 
 /* ---------- WHY / RISK BULLET TEXT ---------- */
 
@@ -791,82 +795,6 @@ ${name}
 `
 }
 
-/* ---------- NETWORKING EXTRACTORS ---------- */
-function extractNetworkingTarget(a: any) {
-    if (!a) return ""
-
-    const roles = a?.target_roles
-    if (Array.isArray(roles) && roles.length) {
-        const first =
-            roles.find((x: any) => typeof x === "string" && x.trim()) ||
-            roles.find(
-                (x: any) => typeof x?.title === "string" && x.title.trim()
-            )
-        if (typeof first === "string") return first.trim()
-        if (first?.title) return String(first.title).trim()
-    } else if (typeof roles === "string" && roles.trim()) {
-        return roles.trim()
-    }
-
-    const person = pickString(a, ["person_to_pick", "personToPick"])
-    if (person) return person
-
-    const terms = a?.search_terms
-    if (Array.isArray(terms) && terms.length) {
-        const firstTerm = terms.find(
-            (x: any) => typeof x === "string" && x.trim()
-        )
-        if (firstTerm) return firstTerm.trim()
-    } else if (typeof terms === "string" && terms.trim()) {
-        return terms.trim()
-    }
-
-    return pickString(a, [
-        "linkedin_title",
-        "linkedinTitle",
-        "search_title",
-        "searchTitle",
-        "target_title",
-        "targetTitle",
-        "role",
-        "title",
-        "persona",
-        "label",
-    ])
-}
-
-function extractNetworkingMessageParts(action: any) {
-    const msg =
-        action?.message ??
-        action?.outreach_message ??
-        action?.outreachMessage ??
-        action?.copy ??
-        action?.draft ??
-        ""
-
-    if (typeof msg === "string") {
-        return { initial: msg.trim(), followUp: "" }
-    }
-
-    if (msg && typeof msg === "object") {
-        const initial =
-            pickString(msg, ["initial", "first", "message", "text", "body"]) ||
-            pickString(msg?.content, ["text", "body", "content"]) ||
-            pickString(msg?.message, ["text", "body", "content"]) ||
-            ""
-
-        const followUp =
-            pickString(msg, ["follow_up", "followUp", "followup", "second"]) ||
-            pickString(msg?.follow_up, ["text", "body", "content"]) ||
-            pickString(msg?.followUp, ["text", "body", "content"]) ||
-            ""
-
-        return { initial, followUp }
-    }
-
-    return { initial: "", followUp: "" }
-}
-
 // ─────────────────────────────────────────────────────────────────────────
 // Global UI overlay — DEV banner (dev only)
 // ─────────────────────────────────────────────────────────────────────────
@@ -1366,7 +1294,6 @@ export default function WRNSignalTabs(props: {
     const [jobFitResult, setJobFitResult] = React.useState<any>(null)
     const [positioningResult, setPositioningResult] = React.useState<any>(null)
     const [coverLetterResult, setCoverLetterResult] = React.useState<any>(null)
-    const [networkingResult, setNetworkingResult] = React.useState<any>(null)
     const [clName, setClName] = React.useState("")
     const [clCompany, setClCompany] = React.useState("")
     const [clHiringManager, setClHiringManager] = React.useState("")
@@ -1375,7 +1302,6 @@ export default function WRNSignalTabs(props: {
     const [loadingJobFit, setLoadingJobFit] = React.useState(false)
     const [loadingPositioning, setLoadingPositioning] = React.useState(false)
     const [loadingCoverLetter, setLoadingCoverLetter] = React.useState(false)
-    const [loadingNetworking, setLoadingNetworking] = React.useState(false)
 
     // Messages
     const [errorMsg, setErrorMsg] = React.useState<string | null>(null)
@@ -1421,13 +1347,8 @@ export default function WRNSignalTabs(props: {
     >("idle")
     const [netNavError, setNetNavError] = React.useState<string | null>(null)
 
-    // Networking open set
     // Hydration guard — state declared here with all other hooks
     const [mounted, setMounted] = React.useState(false)
-
-    const [netOpenSet, setNetOpenSet] = React.useState<Set<number>>(
-        () => new Set()
-    )
 
     // Keep latest token
     const accessTokenRef = React.useRef<string | null>(null)
@@ -1484,8 +1405,7 @@ export default function WRNSignalTabs(props: {
     const hasAnyResult =
         !!jobFitResult ||
         !!positioningResult ||
-        !!coverLetterResult ||
-        !!networkingResult
+        !!coverLetterResult
     React.useEffect(() => {
         if (typeof window === "undefined") return
 
@@ -1733,7 +1653,6 @@ export default function WRNSignalTabs(props: {
                                     if (data.jobfit) setJobFitResult(normalizeJobFitResponseForUI(data.jobfit))
                                     if (data.positioning) setPositioningResult(data.positioning)
                                     if (data.coverLetter) setCoverLetterResult(data.coverLetter)
-                                    if (data.networking) setNetworkingResult(data.networking)
                                     if (data.jobDescription) setJob(data.jobDescription)
                                     if (data.jobTitle) setManualJobTitle(data.jobTitle)
                                     if (data.companyName) setManualCompanyName(data.companyName)
@@ -1952,34 +1871,6 @@ export default function WRNSignalTabs(props: {
         }
     }
 
-    async function logout() {
-        // 1️⃣ Clear any error/debug state
-        clearErrorAndDebug()
-
-        try {
-            // 2️⃣ Sign out from Supabase (full-access users)
-            if (supabase) await supabase.auth.signOut()
-        } catch (err) {
-            console.warn("Supabase signOut error:", err)
-        } finally {
-            // 3️⃣ Reset React state
-            setAccessToken(null)
-            setAuthedEmail(null)
-            setAuthStatus("logged_out")
-            runNewJob(true)
-
-            // 4️⃣ Defensive cleanup of legacy jobfit_only localStorage keys
-            // (left over from sunset trial substrate; harmless if absent)
-            if (typeof window !== "undefined") {
-                localStorage.removeItem("jobfit_email")
-                localStorage.removeItem("jobfit_unlocked")
-            }
-
-            // 5️⃣ Force UI refresh to clear SideNav
-            if (typeof window !== "undefined") window.top!.location.replace("https://genuine-times-909123.framer.app/signal/jobfit")
-        }
-    }
-
     // F6 — Stage 1c: special-case no_persona_configured by sending the user
     // to /dashboard so they can configure a persona, then return. All other
     // v2 errors render the generic banner inline.
@@ -2102,10 +1993,8 @@ export default function WRNSignalTabs(props: {
         setJobFitResult(null)
         setPositioningResult(null)
         setCoverLetterResult(null)
-        setNetworkingResult(null)
         setTab("jobfit")
         setJobInputOpen(true)
-        setNetOpenSet(new Set())
         setJobContext({ title: "", company: "" })
         // The two job ids, and the networking prompt that hangs off one of
         // them. This reset did not clear any of them before. It did not show
@@ -2623,29 +2512,6 @@ export default function WRNSignalTabs(props: {
         }
     }
 
-    async function runNetworking() {
-        clearErrorAndDebug()
-        setLoadingNetworking(true)
-
-        try {
-            if (!hasJob) throw new Error("Paste a job description first.")
-            if (!accessToken) throw new Error("Please log in again.")
-
-            const data = await postJsonWithDebug(
-                `${API_BASE}/api/networking`,
-                { job: job.trim() },
-                setDebug,
-                accessToken
-            )
-
-            setNetworkingResult(data)
-            setTab("networking")
-        } catch (e: any) {
-            setErrorMsg(e?.message || String(e))
-        } finally {
-            setLoadingNetworking(false)
-        }
-    }
 
     /* ---------- RENDER: JOBFIT ---------- */
     function renderJobFit() {
@@ -3782,1532 +3648,6 @@ export default function WRNSignalTabs(props: {
         )
     }
 
-    /* ---------- RENDER: NETWORKING ---------- */
-    function renderNetworking() {
-        if (!networkingResult) {
-            return (
-                <>
-                    <div
-                        style={{
-                            borderRadius: 18,
-                            border: "1px solid rgba(81,173,229,0.20)",
-                            background: "#0D1829",
-                            overflow: "hidden",
-                            marginBottom: 16,
-                            marginTop: 4,
-                            position: "relative" as const,
-                        }}
-                    >
-                        <div
-                            style={{
-                                position: "absolute" as const,
-                                top: -40,
-                                left: -40,
-                                width: 220,
-                                height: 220,
-                                borderRadius: "50%",
-                                background: "rgba(81,173,229,0.07)",
-                                pointerEvents: "none" as const,
-                            }}
-                        />
-                        <div
-                            style={{
-                                position: "absolute" as const,
-                                bottom: -20,
-                                right: -20,
-                                width: 180,
-                                height: 180,
-                                borderRadius: "50%",
-                                background: "rgba(254,176,106,0.06)",
-                                pointerEvents: "none" as const,
-                            }}
-                        />
-                        <div
-                            style={{
-                                height: 3,
-                                background:
-                                    "linear-gradient(90deg,#FEB06A,#f97316,#51ADE5)",
-                            }}
-                        />
-                        <div
-                            style={{
-                                padding: "28px 32px 32px",
-                                position: "relative" as const,
-                                zIndex: 1,
-                                textAlign: "center" as const,
-                            }}
-                        >
-                            <div
-                                style={{
-                                    fontSize: 9,
-                                    fontWeight: 900,
-                                    letterSpacing: 2,
-                                    textTransform: "uppercase" as const,
-                                    color: "rgba(254,176,106,0.70)",
-                                    marginBottom: 16,
-                                }}
-                            >
-                                Step 4 of 4
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: 38,
-                                    fontWeight: 950,
-                                    color: "rgba(255,255,255,0.97)",
-                                    lineHeight: 1.1,
-                                    letterSpacing: -1.2,
-                                    marginBottom: 10,
-                                }}
-                            >
-                                Make your name known
-                                <br />
-                                <span style={{ color: "#FEB06A" }}>
-                                    before
-                                </span>{" "}
-                                the interview.
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: 22,
-                                    fontWeight: 950,
-                                    letterSpacing: -0.5,
-                                    marginBottom: 18,
-                                    lineHeight: 1.2,
-                                }}
-                            >
-                                <span style={{ color: "#FEB06A" }}>
-                                    Don't just apply.
-                                </span>
-                                <span
-                                    style={{ color: "rgba(255,255,255,0.90)" }}
-                                >
-                                    {" "}
-                                    Be appropriately aggressive.
-                                </span>
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: 14,
-                                    lineHeight: "22px",
-                                    color: "rgba(255,255,255,0.45)",
-                                    margin: "0 auto 28px",
-                                    maxWidth: 500,
-                                }}
-                            >
-                                Most candidates apply and wait. The ones who get
-                                interviews are already known inside the org.
-                                SIGNAL gives you exactly who to contact, what to
-                                say, and how to follow up — without being
-                                annoying about it.
-                            </div>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column" as const,
-                                    gap: 10,
-                                    marginBottom: 22,
-                                    textAlign: "left" as const,
-                                }}
-                            >
-                                {[
-                                    {
-                                        n: "1",
-                                        head: "Run JobFit",
-                                        body: "Paste the job description and get a clear verdict — Apply, Review, or Pass — before you spend a minute on an application.",
-                                    },
-                                    {
-                                        n: "2",
-                                        head: "Run Positioning",
-                                        body: "Rewrite your resume bullets to match this specific role. One targeted story, in the language the recruiter is scanning for.",
-                                    },
-                                    {
-                                        n: "3",
-                                        head: "Run Cover Letter",
-                                        body: "Write a letter in your voice that connects your background to this company — not a template, a real case for why you fit.",
-                                    },
-                                    {
-                                        n: "4",
-                                        head: "Run Networking",
-                                        body: "Build your outreach plan. Know who to contact, what to say, and how to follow up so your name is known before the interview.",
-                                    },
-                                ].map((s, idx) => {
-                                    const isActive = idx === 3
-                                    const isDone = idx < 3
-                                    return (
-                                        <div
-                                            key={s.n}
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "flex-start",
-                                                gap: 14,
-                                                opacity: isActive
-                                                    ? 1
-                                                    : isDone
-                                                      ? 0.55
-                                                      : 0.3,
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    width: isActive ? 36 : 28,
-                                                    height: isActive ? 36 : 28,
-                                                    borderRadius: "50%",
-                                                    background: isActive
-                                                        ? "rgba(254,176,106,0.25)"
-                                                        : isDone
-                                                          ? "rgba(74,222,128,0.15)"
-                                                          : "rgba(255,255,255,0.06)",
-                                                    border: isActive
-                                                        ? "2px solid rgba(254,176,106,0.70)"
-                                                        : isDone
-                                                          ? "2px solid rgba(74,222,128,0.50)"
-                                                          : "2px solid rgba(255,255,255,0.15)",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    fontSize: isActive
-                                                        ? 15
-                                                        : 12,
-                                                    fontWeight: 900,
-                                                    color: isActive
-                                                        ? "#FEB06A"
-                                                        : isDone
-                                                          ? "#4ade80"
-                                                          : "rgba(255,255,255,0.35)",
-                                                    flexShrink: 0,
-                                                    marginTop: 1,
-                                                }}
-                                            >
-                                                {s.n}
-                                            </div>
-                                            <div>
-                                                <div
-                                                    style={{
-                                                        fontSize: isActive
-                                                            ? 16
-                                                            : 13,
-                                                        fontWeight: isActive
-                                                            ? 900
-                                                            : 700,
-                                                        color: isActive
-                                                            ? "#FEB06A"
-                                                            : isDone
-                                                              ? "rgba(255,255,255,0.75)"
-                                                              : "rgba(255,255,255,0.40)",
-                                                        marginBottom: 3,
-                                                    }}
-                                                >
-                                                    {s.head}
-                                                </div>
-                                                <div
-                                                    style={{
-                                                        fontSize: 12,
-                                                        lineHeight: "18px",
-                                                        color: isActive
-                                                            ? "rgba(255,255,255,0.55)"
-                                                            : "rgba(255,255,255,0.22)",
-                                                    }}
-                                                >
-                                                    {s.body}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                            <div
-                                style={{
-                                    borderRadius: 14,
-                                    border: "1px solid rgba(74,222,128,0.18)",
-                                    background: "rgba(74,222,128,0.05)",
-                                    padding: "14px 16px",
-                                    textAlign: "left" as const,
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        fontSize: 9,
-                                        fontWeight: 900,
-                                        letterSpacing: 2,
-                                        textTransform: "uppercase" as const,
-                                        color: "rgba(74,222,128,0.65)",
-                                        marginBottom: 10,
-                                    }}
-                                >
-                                    What Networking gives you
-                                </div>
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        flexDirection: "column" as const,
-                                        gap: 8,
-                                    }}
-                                >
-                                    {[
-                                        "A list of specific people to contact inside the company",
-                                        "LinkedIn connection request and first message — ready to send",
-                                        "A follow-up sequence if they don't respond",
-                                        "Conversation starters and call prep for when they do",
-                                    ].map((item, i) => (
-                                        <div
-                                            key={i}
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "flex-start",
-                                                gap: 10,
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    width: 18,
-                                                    height: 18,
-                                                    borderRadius: "50%",
-                                                    background:
-                                                        "rgba(74,222,128,0.15)",
-                                                    border: "1.5px solid rgba(74,222,128,0.45)",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    fontSize: 10,
-                                                    fontWeight: 900,
-                                                    color: "#4ade80",
-                                                    flexShrink: 0,
-                                                    marginTop: 1,
-                                                }}
-                                            >
-                                                ✓
-                                            </div>
-                                            <div
-                                                style={{
-                                                    fontSize: 12,
-                                                    lineHeight: "18px",
-                                                    color: "rgba(255,255,255,0.60)",
-                                                }}
-                                            >
-                                                {item}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {renderPrimaryRunButton(
-                        "Run Networking →",
-                        runNetworking,
-                        loadingNetworking
-                    )}
-                </>
-            )
-        }
-
-        function normalizeUserVoice(text: string) {
-            if (!text) return ""
-            return text
-                .replace(/\bReece\b/gi, "You")
-                .replace(/\bhe\b/gi, "you")
-                .replace(/\bhis\b/gi, "your")
-                .replace(/\bhim\b/gi, "you")
-                .replace(/Move\s*1/gi, "First outreach")
-                .replace(/Move\s*2/gi, "Second outreach")
-                .replace(/Move\s*3/gi, "Third outreach")
-        }
-
-        const framing = normalizeUserVoice(
-            String(networkingResult?.framing || "").trim()
-        )
-        const strategy = normalizeUserVoice(
-            String(networkingResult?.strategy || "").trim()
-        )
-        const sequence = Array.isArray(networkingResult?.sequence)
-            ? networkingResult.sequence
-            : []
-        const moves = Array.isArray(networkingResult?.moves)
-            ? networkingResult.moves
-            : []
-
-        // copyText and wasCopied are defined at component level
-
-        const laneMeta = [
-            {
-                stage: "Start Here",
-                title: "Someone Doing the Job",
-                accent: WRN_ORANGE,
-                tag: "Do this first",
-            },
-            {
-                stage: "Second Reachout",
-                title: "Shared Background Contact",
-                accent: WRN_BLUE,
-                tag: "",
-            },
-            {
-                stage: "Third Reachout",
-                title: "Hiring Team Contact",
-                accent: ICE,
-                tag: "",
-            },
-        ]
-
-        // Shared sub-section label style
-        function NetLabel({ text, color }: { text: string; color?: string }) {
-            return (
-                <div
-                    style={{
-                        fontSize: 9,
-                        fontWeight: 900,
-                        letterSpacing: 2,
-                        textTransform: "uppercase" as const,
-                        color: color || "rgba(255,255,255,0.30)",
-                        marginBottom: 6,
-                        marginTop: 14,
-                    }}
-                >
-                    {text}
-                </div>
-            )
-        }
-
-        // Color config per step
-        const stepColors = [
-            {
-                accent: "#FEB06A",
-                border: "rgba(254,176,106,0.30)",
-                headerBg: "rgba(254,176,106,0.06)",
-                headerBorder: "rgba(254,176,106,0.12)",
-                iconBg: "rgba(254,176,106,0.15)",
-                iconBorder: "rgba(254,176,106,0.50)",
-                msgBg: "rgba(254,176,106,0.07)",
-                msgBorder: "rgba(254,176,106,0.20)",
-                btnBg: "linear-gradient(135deg,#FEB06A,#f97316)",
-                btnColor: "#0B1020",
-                pillBg: "rgba(254,176,106,0.12)",
-                pillBorder: "rgba(254,176,106,0.25)",
-                gradient: "linear-gradient(90deg,#FEB06A,#f97316,#FEB06A)",
-                detailBg: "rgba(254,176,106,0.05)",
-                detailBorder: "rgba(254,176,106,0.15)",
-                timelineDot: "#FEB06A",
-                whenLabel: "Send Today",
-            },
-            {
-                accent: "#51ADE5",
-                border: "rgba(81,173,229,0.25)",
-                headerBg: "rgba(81,173,229,0.06)",
-                headerBorder: "rgba(81,173,229,0.12)",
-                iconBg: "rgba(81,173,229,0.15)",
-                iconBorder: "rgba(81,173,229,0.40)",
-                msgBg: "rgba(81,173,229,0.07)",
-                msgBorder: "rgba(81,173,229,0.18)",
-                btnBg: "rgba(81,173,229,0.18)",
-                btnColor: "#51ADE5",
-                pillBg: "rgba(81,173,229,0.12)",
-                pillBorder: "rgba(81,173,229,0.25)",
-                gradient: "linear-gradient(90deg,#51ADE5,#218C8C,#51ADE5)",
-                detailBg: "rgba(81,173,229,0.05)",
-                detailBorder: "rgba(81,173,229,0.15)",
-                timelineDot: "#51ADE5",
-                whenLabel: "Send Day 3",
-            },
-            {
-                accent: "#4ade80",
-                border: "rgba(74,222,128,0.22)",
-                headerBg: "rgba(74,222,128,0.06)",
-                headerBorder: "rgba(74,222,128,0.12)",
-                iconBg: "rgba(74,222,128,0.15)",
-                iconBorder: "rgba(74,222,128,0.40)",
-                msgBg: "rgba(74,222,128,0.06)",
-                msgBorder: "rgba(74,222,128,0.18)",
-                btnBg: "rgba(74,222,128,0.15)",
-                btnColor: "#4ade80",
-                pillBg: "rgba(74,222,128,0.12)",
-                pillBorder: "rgba(74,222,128,0.25)",
-                gradient: "linear-gradient(90deg,#4ade80,#22c55e,#51ADE5)",
-                detailBg: "rgba(74,222,128,0.05)",
-                detailBorder: "rgba(74,222,128,0.15)",
-                timelineDot: "#4ade80",
-                whenLabel: "Send Day 5",
-            },
-        ]
-
-        // Simple human labels replacing jargon
-        const stepTitles = [
-            "Find someone in the company already doing this job",
-            "Find someone in the company with a similar background to you",
-            "Find a recruiter, HR member, or hiring manager at the company",
-        ]
-
-        return (
-            <>
-                {/* ── PLAN HEADER ── */}
-                <div
-                    style={{
-                        borderRadius: 18,
-                        border: "1px solid rgba(81,173,229,0.20)",
-                        background: "#0D1829",
-                        overflow: "hidden",
-                        marginBottom: 20,
-                        boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
-                    }}
-                >
-                    <div
-                        style={{
-                            height: 3,
-                            background:
-                                "linear-gradient(90deg,#51ADE5,#218C8C,#FEB06A)",
-                        }}
-                    />
-                    <div style={{ padding: "20px 24px" }}>
-                        <div
-                            style={{
-                                fontSize: 9,
-                                fontWeight: 900,
-                                letterSpacing: 2,
-                                textTransform: "uppercase" as const,
-                                color: "rgba(81,173,229,0.65)",
-                                marginBottom: 10,
-                            }}
-                        >
-                            Your Networking Plan
-                        </div>
-                        <div
-                            style={{
-                                fontSize: 18,
-                                fontWeight: 900,
-                                color: "rgba(255,255,255,0.95)",
-                                lineHeight: "26px",
-                                marginBottom: 8,
-                            }}
-                        >
-                            Send 3 messages over the next 5 days.
-                        </div>
-                        <div
-                            style={{
-                                fontSize: 14,
-                                color: "rgba(255,255,255,0.50)",
-                                lineHeight: "22px",
-                            }}
-                        >
-                            {framing ||
-                                "Each message goes to a different person at or connected to the company. Start with Step 1 today — right after you apply."}
-                        </div>
-                    </div>
-                </div>
-
-                {/* ── TIMELINE TRACK ── */}
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        marginBottom: 20,
-                        padding: "0 4px",
-                    }}
-                >
-                    {stepColors.map((c, i) => (
-                        <React.Fragment key={i}>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 8,
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        width: 10,
-                                        height: 10,
-                                        borderRadius: "50%",
-                                        background: c.timelineDot,
-                                        boxShadow: `0 0 8px ${c.timelineDot}`,
-                                    }}
-                                />
-                                <div
-                                    style={{
-                                        fontSize: 11,
-                                        color: "rgba(255,255,255,0.40)",
-                                        whiteSpace: "nowrap" as const,
-                                    }}
-                                >
-                                    Step {i + 1} —{" "}
-                                    {c.whenLabel.replace("Send ", "")}
-                                </div>
-                            </div>
-                            {i < 2 && (
-                                <div
-                                    style={{
-                                        flex: 1,
-                                        height: 1,
-                                        background: "rgba(255,255,255,0.08)",
-                                    }}
-                                />
-                            )}
-                        </React.Fragment>
-                    ))}
-                </div>
-
-                {/* ── STEP CARDS ── */}
-                {moves.map((m: any, i: number) => {
-                    const c = stepColors[i] || stepColors[2]
-                    const isOpen = netOpenSet.has(i)
-
-                    const targetTitle = normalizeUserVoice(
-                        String(m?.target_title || m?.targetTitle || "").trim()
-                    )
-                    const goal = String(m?.goal || "").trim()
-                    const why = String(m?.why_this_target || "").trim()
-                    const timing = String(m?.timing || "").trim()
-                    const channelPrimary = String(
-                        m?.channel_plan?.primary || ""
-                    ).trim()
-                    const connectionRequest = String(
-                        m?.linkedin_connection_request || ""
-                    ).trim()
-                    const linkedinMessage = String(
-                        m?.linkedin_message || ""
-                    ).trim()
-                    const emailSubject = String(m?.email_subject || "").trim()
-                    const emailBody = String(m?.email_body || "").trim()
-                    const followUp = String(m?.follow_up_message || "").trim()
-                    const searchQueries = Array.isArray(
-                        m?.linkedin_search_queries
-                    )
-                        ? m.linkedin_search_queries
-                        : []
-                    const openers = Array.isArray(m?.conversation_openers)
-                        ? m.conversation_openers
-                        : []
-
-                    const humanTitle = stepTitles[i] || targetTitle || "Contact"
-                    const searchHint = searchQueries[0]
-                        ? `Search LinkedIn for: ${String(searchQueries[0]).trim()}`
-                        : targetTitle
-                          ? `Search LinkedIn for: ${targetTitle}`
-                          : ""
-
-                    const primaryMessage =
-                        linkedinMessage || connectionRequest || ""
-
-                    const toggle = () =>
-                        setNetOpenSet((prev: Set<number>) => {
-                            const next = new Set(prev)
-                            if (next.has(i)) next.delete(i)
-                            else next.add(i)
-                            return next
-                        })
-
-                    return (
-                        <div
-                            key={i}
-                            style={{
-                                borderRadius: 18,
-                                border: `1px solid ${c.border}`,
-                                background: "#0D1829",
-                                overflow: "hidden",
-                                marginBottom: 14,
-                                boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
-                            }}
-                        >
-                            <div
-                                style={{ height: 3, background: c.gradient }}
-                            />
-
-                            {/* Card header */}
-                            <div
-                                style={{
-                                    padding: "18px 22px 20px",
-                                    borderBottom: isOpen
-                                        ? `1px solid ${c.headerBorder}`
-                                        : "none",
-                                }}
-                            >
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "flex-start",
-                                        gap: 14,
-                                        marginBottom: 14,
-                                    }}
-                                >
-                                    {/* Step number */}
-                                    <div
-                                        style={{
-                                            width: 36,
-                                            height: 36,
-                                            borderRadius: "50%",
-                                            flexShrink: 0,
-                                            background: c.iconBg,
-                                            border: `2px solid ${c.iconBorder}`,
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            fontSize: 16,
-                                            fontWeight: 900,
-                                            color: c.accent,
-                                        }}
-                                    >
-                                        {i + 1}
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 8,
-                                                marginBottom: 4,
-                                            }}
-                                        >
-                                            <div
-                                                style={{
-                                                    fontSize: 13,
-                                                    fontWeight: 900,
-                                                    color: c.accent,
-                                                }}
-                                            >
-                                                {c.whenLabel}
-                                            </div>
-                                            {i === 0 && (
-                                                <div
-                                                    style={{
-                                                        padding: "3px 10px",
-                                                        borderRadius: 999,
-                                                        background: c.pillBg,
-                                                        border: `1px solid ${c.pillBorder}`,
-                                                        fontSize: 10,
-                                                        fontWeight: 900,
-                                                        color: c.accent,
-                                                    }}
-                                                >
-                                                    Do this first
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div
-                                            style={{
-                                                fontSize: 16,
-                                                fontWeight: 900,
-                                                color: "rgba(255,255,255,0.95)",
-                                                lineHeight: "22px",
-                                                marginBottom: 4,
-                                            }}
-                                        >
-                                            {humanTitle}
-                                        </div>
-                                        {searchHint ? (
-                                            <div
-                                                style={{
-                                                    fontSize: 12,
-                                                    color: "rgba(255,255,255,0.38)",
-                                                    lineHeight: "18px",
-                                                }}
-                                            >
-                                                {searchHint}
-                                            </div>
-                                        ) : null}
-                                    </div>
-                                </div>
-
-                                {/* Primary message — always visible */}
-                                {primaryMessage ? (
-                                    <>
-                                        <div
-                                            style={{
-                                                fontSize: 9,
-                                                fontWeight: 900,
-                                                letterSpacing: 2,
-                                                textTransform:
-                                                    "uppercase" as const,
-                                                color: `${c.accent}99`,
-                                                marginBottom: 8,
-                                            }}
-                                        >
-                                            Your message — copy and send on
-                                            LinkedIn
-                                        </div>
-                                        <div
-                                            style={{
-                                                borderRadius: 12,
-                                                padding: "16px 18px",
-                                                background: c.msgBg,
-                                                border: `1px solid ${c.msgBorder}`,
-                                                fontSize: 14,
-                                                lineHeight: "22px",
-                                                color: "rgba(255,255,255,0.88)",
-                                                marginBottom: 12,
-                                                whiteSpace: "pre-wrap" as const,
-                                            }}
-                                        >
-                                            {primaryMessage}
-                                        </div>
-                                        <button
-                                            onClick={() =>
-                                                copyText(
-                                                    primaryMessage,
-                                                    `primary-${i}`
-                                                )
-                                            }
-                                            type="button"
-                                            style={{
-                                                width: "100%",
-                                                padding: "13px",
-                                                borderRadius: 12,
-                                                border: "none",
-                                                cursor: "pointer",
-                                                fontSize: 14,
-                                                fontWeight: 900,
-                                                letterSpacing: 0.2,
-                                                background: wasCopied(
-                                                    `primary-${i}`
-                                                )
-                                                    ? "rgba(74,222,128,0.18)"
-                                                    : c.btnBg,
-                                                color: wasCopied(`primary-${i}`)
-                                                    ? "#4ade80"
-                                                    : c.btnColor,
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                gap: 8,
-                                                transition:
-                                                    "background 0.2s, color 0.2s",
-                                            }}
-                                        >
-                                            {wasCopied(`primary-${i}`)
-                                                ? "✓ Copied!"
-                                                : "⎘   Copy this message"}
-                                        </button>
-                                    </>
-                                ) : null}
-
-                                {/* More detail toggle */}
-                                {connectionRequest ||
-                                emailSubject ||
-                                emailBody ||
-                                followUp ||
-                                openers.length > 0 ||
-                                why ? (
-                                    <button
-                                        onClick={toggle}
-                                        type="button"
-                                        style={{
-                                            marginTop: 12,
-                                            background: "none",
-                                            border: "none",
-                                            padding: 0,
-                                            fontSize: 12,
-                                            fontWeight: 900,
-                                            color: "rgba(255,255,255,0.35)",
-                                            cursor: "pointer",
-                                            letterSpacing: 0.3,
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 4,
-                                        }}
-                                    >
-                                        {isOpen
-                                            ? "▾ Hide details"
-                                            : "▸ More — connection request, email version, follow-up"}
-                                    </button>
-                                ) : null}
-                            </div>
-
-                            {/* Expanded details */}
-                            {isOpen ? (
-                                <div
-                                    style={{
-                                        padding: "18px 22px 20px",
-                                        display: "flex",
-                                        flexDirection: "column" as const,
-                                        gap: 16,
-                                    }}
-                                >
-                                    {/* Connection request */}
-                                    {connectionRequest &&
-                                    connectionRequest !== primaryMessage ? (
-                                        <div>
-                                            <div
-                                                style={{
-                                                    fontSize: 9,
-                                                    fontWeight: 900,
-                                                    letterSpacing: 2,
-                                                    textTransform:
-                                                        "uppercase" as const,
-                                                    color: "rgba(255,255,255,0.28)",
-                                                    marginBottom: 8,
-                                                }}
-                                            >
-                                                Short connection request (300
-                                                chars)
-                                            </div>
-                                            <div
-                                                style={{
-                                                    borderRadius: 12,
-                                                    padding: "14px 16px",
-                                                    background:
-                                                        "rgba(255,255,255,0.04)",
-                                                    border: "1px solid rgba(255,255,255,0.09)",
-                                                    fontSize: 13,
-                                                    lineHeight: "21px",
-                                                    color: "rgba(255,255,255,0.80)",
-                                                    marginBottom: 8,
-                                                }}
-                                            >
-                                                {connectionRequest}
-                                            </div>
-                                            <button
-                                                onClick={() =>
-                                                    copyText(
-                                                        connectionRequest,
-                                                        `conn-${i}`
-                                                    )
-                                                }
-                                                type="button"
-                                                style={{
-                                                    background: wasCopied(
-                                                        `conn-${i}`
-                                                    )
-                                                        ? "rgba(74,222,128,0.15)"
-                                                        : "rgba(255,255,255,0.07)",
-                                                    border: wasCopied(
-                                                        `conn-${i}`
-                                                    )
-                                                        ? "1px solid rgba(74,222,128,0.40)"
-                                                        : "1px solid rgba(255,255,255,0.12)",
-                                                    borderRadius: 8,
-                                                    padding: "7px 14px",
-                                                    fontSize: 11,
-                                                    fontWeight: 900,
-                                                    color: wasCopied(
-                                                        `conn-${i}`
-                                                    )
-                                                        ? "#4ade80"
-                                                        : "rgba(255,255,255,0.55)",
-                                                    cursor: "pointer",
-                                                    transition: "all 0.2s",
-                                                }}
-                                            >
-                                                {wasCopied(`conn-${i}`)
-                                                    ? "✓ Copied!"
-                                                    : "⎘ Copy connection request"}
-                                            </button>
-                                        </div>
-                                    ) : null}
-
-                                    {/* Email version */}
-                                    {emailSubject || emailBody ? (
-                                        <div>
-                                            <div
-                                                style={{
-                                                    fontSize: 9,
-                                                    fontWeight: 900,
-                                                    letterSpacing: 2,
-                                                    textTransform:
-                                                        "uppercase" as const,
-                                                    color: "rgba(255,255,255,0.28)",
-                                                    marginBottom: 8,
-                                                }}
-                                            >
-                                                Email version
-                                            </div>
-                                            {emailSubject ? (
-                                                <div
-                                                    style={{
-                                                        fontSize: 13,
-                                                        fontWeight: 700,
-                                                        color: "rgba(255,255,255,0.70)",
-                                                        marginBottom: 8,
-                                                    }}
-                                                >
-                                                    Subject: {emailSubject}
-                                                </div>
-                                            ) : null}
-                                            {emailBody ? (
-                                                <div
-                                                    style={{
-                                                        borderRadius: 12,
-                                                        padding: "14px 16px",
-                                                        background:
-                                                            "rgba(255,255,255,0.04)",
-                                                        border: "1px solid rgba(255,255,255,0.09)",
-                                                        fontSize: 13,
-                                                        lineHeight: "21px",
-                                                        color: "rgba(255,255,255,0.80)",
-                                                        whiteSpace:
-                                                            "pre-wrap" as const,
-                                                        marginBottom: 8,
-                                                    }}
-                                                >
-                                                    {emailBody}
-                                                </div>
-                                            ) : null}
-                                            <div
-                                                style={{
-                                                    display: "flex",
-                                                    gap: 8,
-                                                }}
-                                            >
-                                                {emailSubject ? (
-                                                    <button
-                                                        onClick={() =>
-                                                            copyText(
-                                                                emailSubject,
-                                                                `subj-${i}`
-                                                            )
-                                                        }
-                                                        type="button"
-                                                        style={{
-                                                            background:
-                                                                wasCopied(
-                                                                    `subj-${i}`
-                                                                )
-                                                                    ? "rgba(74,222,128,0.15)"
-                                                                    : "rgba(255,255,255,0.07)",
-                                                            border: wasCopied(
-                                                                `subj-${i}`
-                                                            )
-                                                                ? "1px solid rgba(74,222,128,0.40)"
-                                                                : "1px solid rgba(255,255,255,0.12)",
-                                                            borderRadius: 8,
-                                                            padding: "7px 14px",
-                                                            fontSize: 11,
-                                                            fontWeight: 900,
-                                                            color: wasCopied(
-                                                                `subj-${i}`
-                                                            )
-                                                                ? "#4ade80"
-                                                                : "rgba(255,255,255,0.55)",
-                                                            cursor: "pointer",
-                                                            transition:
-                                                                "all 0.2s",
-                                                        }}
-                                                    >
-                                                        {wasCopied(`subj-${i}`)
-                                                            ? "✓ Copied!"
-                                                            : "⎘ Copy subject"}
-                                                    </button>
-                                                ) : null}
-                                                {emailBody ? (
-                                                    <button
-                                                        onClick={() =>
-                                                            copyText(
-                                                                emailBody,
-                                                                `email-${i}`
-                                                            )
-                                                        }
-                                                        type="button"
-                                                        style={{
-                                                            background:
-                                                                wasCopied(
-                                                                    `email-${i}`
-                                                                )
-                                                                    ? "rgba(74,222,128,0.15)"
-                                                                    : "rgba(255,255,255,0.07)",
-                                                            border: wasCopied(
-                                                                `email-${i}`
-                                                            )
-                                                                ? "1px solid rgba(74,222,128,0.40)"
-                                                                : "1px solid rgba(255,255,255,0.12)",
-                                                            borderRadius: 8,
-                                                            padding: "7px 14px",
-                                                            fontSize: 11,
-                                                            fontWeight: 900,
-                                                            color: wasCopied(
-                                                                `email-${i}`
-                                                            )
-                                                                ? "#4ade80"
-                                                                : "rgba(255,255,255,0.55)",
-                                                            cursor: "pointer",
-                                                            transition:
-                                                                "all 0.2s",
-                                                        }}
-                                                    >
-                                                        {wasCopied(`email-${i}`)
-                                                            ? "✓ Copied!"
-                                                            : "⎘ Copy email"}
-                                                    </button>
-                                                ) : null}
-                                            </div>
-                                        </div>
-                                    ) : null}
-
-                                    {/* Follow-up */}
-                                    {followUp ? (
-                                        <div>
-                                            <div
-                                                style={{
-                                                    fontSize: 9,
-                                                    fontWeight: 900,
-                                                    letterSpacing: 2,
-                                                    textTransform:
-                                                        "uppercase" as const,
-                                                    color: "rgba(255,255,255,0.28)",
-                                                    marginBottom: 8,
-                                                }}
-                                            >
-                                                If they don't reply in 5 days
-                                            </div>
-                                            <div
-                                                style={{
-                                                    borderRadius: 12,
-                                                    padding: "14px 16px",
-                                                    background:
-                                                        "rgba(255,255,255,0.04)",
-                                                    border: "1px solid rgba(255,255,255,0.09)",
-                                                    fontSize: 13,
-                                                    lineHeight: "21px",
-                                                    color: "rgba(255,255,255,0.80)",
-                                                    marginBottom: 8,
-                                                }}
-                                            >
-                                                {followUp}
-                                            </div>
-                                            <button
-                                                onClick={() =>
-                                                    copyText(
-                                                        followUp,
-                                                        `fu-${i}`
-                                                    )
-                                                }
-                                                type="button"
-                                                style={{
-                                                    background: wasCopied(
-                                                        `fu-${i}`
-                                                    )
-                                                        ? "rgba(74,222,128,0.15)"
-                                                        : "rgba(255,255,255,0.07)",
-                                                    border: wasCopied(`fu-${i}`)
-                                                        ? "1px solid rgba(74,222,128,0.40)"
-                                                        : "1px solid rgba(255,255,255,0.12)",
-                                                    borderRadius: 8,
-                                                    padding: "7px 14px",
-                                                    fontSize: 11,
-                                                    fontWeight: 900,
-                                                    color: wasCopied(`fu-${i}`)
-                                                        ? "#4ade80"
-                                                        : "rgba(255,255,255,0.55)",
-                                                    cursor: "pointer",
-                                                    transition: "all 0.2s",
-                                                }}
-                                            >
-                                                {wasCopied(`fu-${i}`)
-                                                    ? "✓ Copied!"
-                                                    : "⎘ Copy follow-up"}
-                                            </button>
-                                        </div>
-                                    ) : null}
-
-                                    {/* Conversation openers */}
-                                    {openers.length > 0 ? (
-                                        <div>
-                                            <div
-                                                style={{
-                                                    fontSize: 9,
-                                                    fontWeight: 900,
-                                                    letterSpacing: 2,
-                                                    textTransform:
-                                                        "uppercase" as const,
-                                                    color: "rgba(255,255,255,0.28)",
-                                                    marginBottom: 10,
-                                                }}
-                                            >
-                                                If they reply — things to ask
-                                            </div>
-                                            <div
-                                                style={{
-                                                    display: "flex",
-                                                    flexDirection:
-                                                        "column" as const,
-                                                    gap: 8,
-                                                }}
-                                            >
-                                                {openers.map(
-                                                    (o: any, oi: number) => (
-                                                        <div
-                                                            key={oi}
-                                                            style={{
-                                                                display: "flex",
-                                                                alignItems:
-                                                                    "flex-start",
-                                                                gap: 10,
-                                                            }}
-                                                        >
-                                                            <div
-                                                                style={{
-                                                                    width: 5,
-                                                                    height: 5,
-                                                                    borderRadius:
-                                                                        "50%",
-                                                                    background:
-                                                                        c.accent,
-                                                                    flexShrink: 0,
-                                                                    marginTop: 7,
-                                                                    opacity: 0.6,
-                                                                }}
-                                                            />
-                                                            <div
-                                                                style={{
-                                                                    fontSize: 13,
-                                                                    lineHeight:
-                                                                        "20px",
-                                                                    color: "rgba(255,255,255,0.55)",
-                                                                }}
-                                                            >
-                                                                {String(
-                                                                    o
-                                                                ).trim()}
-                                                            </div>
-                                                        </div>
-                                                    )
-                                                )}
-                                            </div>
-                                        </div>
-                                    ) : null}
-                                </div>
-                            ) : null}
-                        </div>
-                    )
-                })}
-
-                {/* ── SEQUENCE (if API returns it) ── */}
-                {sequence.length > 0 ? (
-                    <div
-                        style={{
-                            borderRadius: 14,
-                            border: "1px solid rgba(255,255,255,0.08)",
-                            background: "rgba(255,255,255,0.03)",
-                            padding: "16px 20px",
-                            marginBottom: 14,
-                        }}
-                    >
-                        <div
-                            style={{
-                                fontSize: 9,
-                                fontWeight: 900,
-                                letterSpacing: 2,
-                                textTransform: "uppercase" as const,
-                                color: "rgba(255,255,255,0.28)",
-                                marginBottom: 12,
-                            }}
-                        >
-                            Full outreach sequence
-                        </div>
-                        <div
-                            style={{
-                                display: "flex",
-                                flexDirection: "column" as const,
-                                gap: 10,
-                            }}
-                        >
-                            {sequence.map((step: any, si: number) => {
-                                const stepText =
-                                    typeof step === "string"
-                                        ? step
-                                        : String(
-                                              step?.step ||
-                                                  step?.message ||
-                                                  step?.text ||
-                                                  step?.content ||
-                                                  JSON.stringify(step)
-                                          )
-                                return (
-                                    <div
-                                        key={si}
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "flex-start",
-                                            gap: 12,
-                                        }}
-                                    >
-                                        <div
-                                            style={{
-                                                width: 22,
-                                                height: 22,
-                                                borderRadius: "50%",
-                                                background:
-                                                    "rgba(254,176,106,0.15)",
-                                                border: "1px solid rgba(254,176,106,0.35)",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                fontSize: 11,
-                                                fontWeight: 900,
-                                                color: "#FEB06A",
-                                                flexShrink: 0,
-                                                marginTop: 1,
-                                            }}
-                                        >
-                                            {si + 1}
-                                        </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div
-                                                style={{
-                                                    fontSize: 13,
-                                                    lineHeight: "20px",
-                                                    color: "rgba(255,255,255,0.70)",
-                                                    marginBottom: 6,
-                                                }}
-                                            >
-                                                {stepText}
-                                            </div>
-                                            <button
-                                                onClick={() =>
-                                                    copyText(
-                                                        stepText,
-                                                        `seq-${si}`
-                                                    )
-                                                }
-                                                type="button"
-                                                style={{
-                                                    background: wasCopied(
-                                                        `seq-${si}`
-                                                    )
-                                                        ? "rgba(74,222,128,0.15)"
-                                                        : "rgba(255,255,255,0.07)",
-                                                    border: wasCopied(
-                                                        `seq-${si}`
-                                                    )
-                                                        ? "1px solid rgba(74,222,128,0.40)"
-                                                        : "1px solid rgba(255,255,255,0.12)",
-                                                    borderRadius: 8,
-                                                    padding: "5px 12px",
-                                                    fontSize: 11,
-                                                    fontWeight: 900,
-                                                    color: wasCopied(
-                                                        `seq-${si}`
-                                                    )
-                                                        ? "#4ade80"
-                                                        : "rgba(255,255,255,0.50)",
-                                                    cursor: "pointer",
-                                                    transition: "all 0.2s",
-                                                }}
-                                            >
-                                                {wasCopied(`seq-${si}`)
-                                                    ? "✓ Copied!"
-                                                    : "⎘ Copy"}
-                                            </button>
-                                        </div>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    </div>
-                ) : null}
-
-                {/* ── LINKEDIN SEARCH TIP ── */}
-                <div
-                    style={{
-                        borderRadius: 14,
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        background: "rgba(255,255,255,0.03)",
-                        overflow: "hidden",
-                        marginBottom: 20,
-                    }}
-                >
-                    <div
-                        onClick={() =>
-                            setNetOpenSet((prev: Set<number>) => {
-                                const next = new Set(prev)
-                                if (next.has(99)) next.delete(99)
-                                else next.add(99)
-                                return next
-                            })
-                        }
-                        style={{
-                            padding: "14px 18px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            cursor: "pointer",
-                        }}
-                    >
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 12,
-                            }}
-                        >
-                            <div style={{ fontSize: 18 }}>🔍</div>
-                            <div>
-                                <div
-                                    style={{
-                                        fontSize: 13,
-                                        fontWeight: 800,
-                                        color: "rgba(255,255,255,0.70)",
-                                    }}
-                                >
-                                    Need help finding these people on LinkedIn?
-                                </div>
-                                <div
-                                    style={{
-                                        fontSize: 11,
-                                        color: "rgba(255,255,255,0.35)",
-                                        marginTop: 2,
-                                    }}
-                                >
-                                    Tap to see search tips and exact queries to
-                                    use
-                                </div>
-                            </div>
-                        </div>
-                        <div
-                            style={{
-                                fontSize: 12,
-                                color: "rgba(255,255,255,0.35)",
-                            }}
-                        >
-                            {netOpenSet.has(99) ? "▾" : "▸"}
-                        </div>
-                    </div>
-                    {netOpenSet.has(99) ? (
-                        <div
-                            style={{
-                                padding: "0 18px 16px",
-                                borderTop: "1px solid rgba(255,255,255,0.06)",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    paddingTop: 14,
-                                    display: "flex",
-                                    flexDirection: "column" as const,
-                                    gap: 10,
-                                }}
-                            >
-                                {moves.map((m: any, i: number) => {
-                                    const c = stepColors[i] || stepColors[2]
-                                    const queries = Array.isArray(
-                                        m?.linkedin_search_queries
-                                    )
-                                        ? m.linkedin_search_queries
-                                        : []
-                                    if (!queries.length) return null
-                                    return (
-                                        <div key={i}>
-                                            <div
-                                                style={{
-                                                    fontSize: 10,
-                                                    fontWeight: 900,
-                                                    color: c.accent,
-                                                    marginBottom: 6,
-                                                    letterSpacing: 0.5,
-                                                }}
-                                            >
-                                                Step {i + 1}
-                                            </div>
-                                            {queries.map(
-                                                (q: any, qi: number) => {
-                                                    const qStr =
-                                                        String(q).trim()
-                                                    const liUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(qStr)}`
-                                                    return (
-                                                        <div
-                                                            key={qi}
-                                                            style={{
-                                                                display: "flex",
-                                                                alignItems:
-                                                                    "center",
-                                                                gap: 8,
-                                                                marginBottom: 6,
-                                                            }}
-                                                        >
-                                                            <div
-                                                                style={{
-                                                                    flex: 1,
-                                                                    fontSize: 13,
-                                                                    lineHeight:
-                                                                        "19px",
-                                                                    color: "rgba(255,255,255,0.60)",
-                                                                    padding:
-                                                                        "6px 10px",
-                                                                    background:
-                                                                        "rgba(255,255,255,0.04)",
-                                                                    borderRadius: 8,
-                                                                    fontFamily:
-                                                                        "monospace",
-                                                                }}
-                                                            >
-                                                                {qStr}
-                                                            </div>
-                                                            <button
-                                                                onClick={() =>
-                                                                    copyText(
-                                                                        qStr,
-                                                                        `q-${i}-${qi}`
-                                                                    )
-                                                                }
-                                                                type="button"
-                                                                title="Copy search query"
-                                                                style={{
-                                                                    background:
-                                                                        wasCopied(
-                                                                            `q-${i}-${qi}`
-                                                                        )
-                                                                            ? "rgba(74,222,128,0.15)"
-                                                                            : "rgba(255,255,255,0.07)",
-                                                                    border: wasCopied(
-                                                                        `q-${i}-${qi}`
-                                                                    )
-                                                                        ? "1px solid rgba(74,222,128,0.40)"
-                                                                        : "1px solid rgba(255,255,255,0.12)",
-                                                                    borderRadius: 8,
-                                                                    padding:
-                                                                        "6px 10px",
-                                                                    fontSize: 11,
-                                                                    fontWeight: 900,
-                                                                    color: wasCopied(
-                                                                        `q-${i}-${qi}`
-                                                                    )
-                                                                        ? "#4ade80"
-                                                                        : "rgba(255,255,255,0.50)",
-                                                                    cursor: "pointer",
-                                                                    flexShrink: 0,
-                                                                    transition:
-                                                                        "all 0.2s",
-                                                                }}
-                                                            >
-                                                                {wasCopied(
-                                                                    `q-${i}-${qi}`
-                                                                )
-                                                                    ? "✓"
-                                                                    : "⎘"}
-                                                            </button>
-                                                            <a
-                                                                href={liUrl}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                title="Search on LinkedIn"
-                                                                style={{
-                                                                    background:
-                                                                        "rgba(10,102,194,0.20)",
-                                                                    border: "1px solid rgba(10,102,194,0.45)",
-                                                                    borderRadius: 8,
-                                                                    padding:
-                                                                        "6px 10px",
-                                                                    fontSize: 11,
-                                                                    fontWeight: 900,
-                                                                    color: "#5ba4cf",
-                                                                    cursor: "pointer",
-                                                                    textDecoration:
-                                                                        "none",
-                                                                    flexShrink: 0,
-                                                                }}
-                                                            >
-                                                                Search →
-                                                            </a>
-                                                        </div>
-                                                    )
-                                                }
-                                            )}
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    ) : null}
-                </div>
-            </>
-        )
-    }
     /* ---------- AUTH GATE ---------- */
     const shouldShowAuthGate = !isLoggedIn
 
@@ -5651,7 +3991,11 @@ export default function WRNSignalTabs(props: {
         if (tab === "jobfit") return renderJobFit()
         if (tab === "positioning") return renderPositioning()
         if (tab === "coverletter") return renderCoverLetter()
-        return renderNetworking()
+        // Explicit, not a fallback. This was `return renderNetworking()`,
+        // so whichever function sat last caught every tab value not named
+        // above. TabKey has no fourth member now, so this is unreachable,
+        // and it renders nothing rather than a screen nobody asked for.
+        return null
     }
 
     const showJobFitLandingCTA = tab === "jobfit" && !jobFitResult
@@ -5793,19 +4137,80 @@ export default function WRNSignalTabs(props: {
 
 
             <div style={shell}>
-                <SideNav
-                    tab={tab}
-                    isLoggedIn={isLoggedIn}
-                    authedEmail={authedEmail}
-                    logo={props.logo}
-                    onSelect={(t) => goTo(t)}
-                    onRunNewJob={() => runNewJob()}
-                    onNetworkBoard={goToNetworkCompanies}
-                    onDashboard={goToDashboard}
-                    onLogout={logout}
-                />
-
                 <div style={main}>
+                    {/* THE WORKSPACE TIER.
+
+                        Above the job, and deliberately not inside the bar
+                        below it. Everything in JobContextBar belongs to the
+                        CURRENT job; neither of these does. Run a New Job
+                        discards that job, and a control that abandons the
+                        thing a bar describes cannot sit in that bar without
+                        contradicting it. My Account leaves the bundle.
+
+                        Two rows, two scopes, read top to bottom: your account
+                        and your next job, then the job you are working on. The
+                        sidebar carried both scopes plus the tool nav in one
+                        column, which is why it needed three headings to keep
+                        them apart.
+
+                        The wordmark lands here because the sidebar's brand
+                        block went with it, and props.logo would otherwise
+                        appear only on the signed-out screen. */}
+                    <div style={wsHeader}>
+                        {props.logo ? (
+                            <img src={props.logo} alt="SIGNAL" style={wsLogo} />
+                        ) : (
+                            <span />
+                        )}
+                        <div style={wsHeaderActions}>
+                            {/* WHICH ACCOUNT IS SCANNING. The sidebar's
+                                account block carried this and nothing did
+                                after it went, which matters most to whoever
+                                runs more than one test account.
+
+                                TEXT, NOT A CHIP. It is a readout and not a
+                                control: no avatar, no border, no background,
+                                nothing that invites a click. The old block's
+                                avatar disc was the loudest thing in it, and
+                                at this size beside two buttons it would read
+                                as a third one.
+
+                                The old block's three states, collapsed to one
+                                line because there is no room to stack a label
+                                over an address: the email when there is one,
+                                "Signed in" when the session has no address
+                                yet, "Guest" when there is no session. That
+                                last one is unreachable today, since the auth
+                                gate returns before this renders, and it is
+                                kept because the block it replaces kept it
+                                behind the same guard. */}
+                            <span style={wsIdentity} title={authedEmail || ""}>
+                                {isLoggedIn
+                                    ? authedEmail || "Signed in"
+                                    : "Guest"}
+                            </span>
+                            {/* Filled, because it is the one action at this
+                                tier and the only way to leave the current job
+                                without leaving the bundle. My Account is an
+                                exit, so it takes the outline and the same
+                                arrow the bar's two exits use. */}
+                            <button
+                                type="button"
+                                style={wsRunBtn}
+                                onClick={() => runNewJob()}
+                            >
+                                Run a New Job
+                            </button>
+                            <button
+                                type="button"
+                                style={wsAccountBtn}
+                                onClick={goToDashboard}
+                            >
+                                My Account ↗
+                            </button>
+                        </div>
+                    </div>
+
                     {/* ── 0 · THE CURRENT JOB ──────────────────────────────
                         First thing in the main column on every tab, so the
                         answer to "which job am I looking at" never depends on
@@ -6261,147 +4666,6 @@ export default function WRNSignalTabs(props: {
     )
 }
 
-/* ---------- SIDE NAV ---------- */
-function SideNav({
-    tab,
-    isLoggedIn,
-    authedEmail,
-    logo,
-    onSelect,
-    onRunNewJob,
-    onNetworkBoard,
-    onDashboard,
-    onLogout,
-}: {
-    tab: TabKey
-    isLoggedIn: boolean
-    authedEmail: string | null
-    /** The uploaded logo, straight from the property control. */
-    logo?: string
-    onSelect: (t: TabKey) => void
-    onRunNewJob: () => void
-    /** Leaves the component for the dashboard board. Not a tab switch. */
-    onNetworkBoard: () => void
-    /** Leaves for the dashboard root, session and all. See openDashboard. */
-    onDashboard: () => void
-    onLogout: () => void
-}) {
-
-    return (
-        <div style={sideNav}>
-            <div style={sideBrandBlock}>
-                {logo ? (
-                    <img src={logo} alt="SIGNAL" style={sideLogo} />
-                ) : null}
-            </div>
-
-            <div style={sideSectionTitle}>System</div>
-
-            <SideNavItem
-                label="JobFit"
-                active={tab === "jobfit"}
-                locked={false}
-                onClick={() => onSelect("jobfit")}
-            />
-            <SideNavItem
-                label="Positioning"
-                active={tab === "positioning"}
-                locked={false}
-                onClick={() => onSelect("positioning")}
-            />
-            <SideNavItem
-                label="Cover Letter"
-                active={tab === "coverletter"}
-                locked={false}
-                onClick={() => onSelect("coverletter")}
-            />
-            {/* The board on the dashboard is the only networking now. This
-                leaves the component entirely rather than switching tabs, so it
-                is never the active tab — the old in-component plan tab it used
-                to open is being retired. */}
-            <SideNavItem
-                label="Networking"
-                active={false}
-                locked={false}
-                onClick={onNetworkBoard}
-            />
-
-            <div style={{ height: 14 }} />
-
-            <div style={sideSectionTitle}>Actions</div>
-
-            {/* The only peach in the nav. Run New Job is the one thing here
-                that does something rather than going somewhere; My Dashboard
-                is navigation, so it takes the outlined secondary. */}
-            <button style={sideRunBtn} onClick={onRunNewJob} type="button">
-                Run New Job
-            </button>
-
-            {/* Was the fourth place that built its own dashboard URL, and the
-                only one that hardcoded the host rather than using API_BASE, so
-                it needed hand-translating on every prod mirror. It calls the
-                one helper now, like everything else that leaves. */}
-            <button
-                style={sideSecondaryBtn}
-                onClick={onDashboard}
-                type="button"
-            >
-                My Dashboard ↗
-            </button>
-
-            <div style={{ height: 14 }} />
-
-            <div style={sideSectionTitle}>Account</div>
-
-            <div style={sideAccountRow}>
-                <div style={sideAvatar}>
-                    {(authedEmail || "?").charAt(0).toUpperCase()}
-                </div>
-                <div style={{ overflow: "hidden" }}>
-                    <div style={sideAccountName}>
-                        {isLoggedIn ? "Signed in" : "Guest"}
-                    </div>
-                    <div style={sideAccountEmail}>
-                        {authedEmail || ""}
-                    </div>
-                </div>
-            </div>
-            <button style={sideLogoutBtn} onClick={onLogout} type="button">
-                Log Out
-            </button>
-
-        </div>
-    )
-}
-
-function SideNavItem({
-    label,
-    active,
-    locked,
-    onClick,
-}: {
-    label: string
-    active: boolean
-    locked: boolean
-    onClick: () => void
-}) {
-    return (
-        <button
-            style={{
-                ...sideNavItem,
-                ...(active ? sideNavItemActive : null),
-                opacity: locked ? 0.55 : 1,
-                cursor: "pointer",
-            }}
-            onClick={onClick}
-            disabled={false}
-            type="button"
-        >
-            <span>{label}</span>
-            {locked ? <span style={{ opacity: 0.8 }}>🔒</span> : null}
-        </button>
-    )
-}
 
 /* ---------- STYLES ---------- */
 
@@ -6448,206 +4712,81 @@ const shell: React.CSSProperties = {
 
 const main: React.CSSProperties = {
     flex: 1,
-    padding: "32px 40px 60px 36px",
+    // Symmetric now. The 36px left was the sidebar's gutter; with the
+    // sidebar gone this column is the whole width and an off-centre
+    // gutter just reads as a mistake.
+    padding: "32px 40px 60px",
     boxSizing: "border-box",
     width: "100%",
     minWidth: 0,
 }
-const ENGINE_BRAND_HEIGHT = 56
 
-const engineBrandWrap: React.CSSProperties = {
-    position: "absolute",
-    top: 20,
-    left: 24,
-    zIndex: 9999,
-    pointerEvents: "none",
-    userSelect: "none",
-}
-const engineBrandSignal: React.CSSProperties = {
-    fontSize: 30,
-    fontWeight: 800,
-    lineHeight: 1,
-    letterSpacing: -0.6,
-    color: WRN_ORANGE,
-    margin: 0,
-    padding: 0,
-}
+/* ---------- WORKSPACE HEADER ----------
+   What is left of the sidebar. SideNav, SideNavItem and their thirteen style
+   objects are gone: the job context bar carries every in-bundle destination,
+   and the dashboard carries the account nav, so a third place to navigate from
+   was a third place to keep in sync. */
 
-const engineBrandByline: React.CSSProperties = {
-    fontSize: 11,
-    fontWeight: 700,
-    lineHeight: 1.1,
-    letterSpacing: 0.8,
-    color: WRN_BLUE,
-    textTransform: "uppercase",
-    marginTop: 4,
-    paddingLeft: 2,
-}
-
-/* ---------- SIDE NAV ----------
-   Converted to the light language. This is the last piece the four tabs share,
-   so it is the last thing that was still reading from the dark token set.
-   TEXT, MUTED and BORDER_SOFT are no longer used here but remain live for the
-   Positioning / Cover Letter / Networking output blocks, which have not been
-   converted. NAV_BG had no other caller and is gone, as is BG, which the
-   signed-out splash was the last thing holding open.
-
-   Near-white rather than white, with a hairline edge: the main column is white
-   cards on the blue gradient, and a pure-white nav would fuse with them at the
-   seam.
-
-   sideNavTopSpacer, sideActionBtnSecondary and sideDisabledItem are gone —
-   none of the three had a call site. */
-
-const sideNav: React.CSSProperties = {
-    width: 220,
-    flex: "0 0 220px",
-    padding: "24px 14px",
-    background: L_WELL,
-    borderRight: `1px solid ${L_BORDER}`,
-    boxSizing: "border-box",
-    height: "100%",
-    overflowY: "auto",
-}
-
-const sideBrandBlock: React.CSSProperties = {
+const wsHeader: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
+    marginBottom: 18,
     paddingBottom: 16,
-    marginBottom: 12,
     borderBottom: `1px solid ${L_BORDER}`,
 }
 
-// The real mark, in two sizes. Width is set and height is auto so the file's
-// own aspect ratio drives it and neither call site can squash it. This
-// replaced six style objects — sideWordmark, sideWordmarkDash, sideByline and
-// the three byline spans — that rebuilt the logo out of CSS on every surface.
-const sideLogo: React.CSSProperties = {
-    width: 150,
+const wsLogo: React.CSSProperties = {
+    width: 132,
     height: "auto",
     display: "block",
 }
 
-const sideSectionTitle: React.CSSProperties = {
-    fontSize: 11,
-    letterSpacing: 1.4,
-    fontWeight: 600,
+// Quiet by construction: muted ink, no weight, and a hard ceiling on width
+// so a long address truncates instead of shoving the buttons off the row.
+// The full value stays reachable through the title attribute.
+const wsIdentity: React.CSSProperties = {
+    fontSize: 12,
     color: L_MUTED,
-    margin: "12px 0 8px",
-    textTransform: "uppercase",
+    maxWidth: 210,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    marginRight: 4,
 }
 
-// Flat rows, no pill and no chevron. The active state is a navy fill, which
-// says "you are here" on its own — the old peach-tinted, peach-bordered,
-// peach-lettered active item said it three times in the action colour.
-const sideNavItem: React.CSSProperties = {
-    width: "100%",
+const wsHeaderActions: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
-    padding: "11px 12px",
-    borderRadius: 10,
-    background: "transparent",
-    border: "1px solid transparent",
-    color: L_TEXT,
-    fontWeight: 500,
-    cursor: "pointer",
-    marginBottom: 4,
-    fontSize: 13,
-    textAlign: "left",
-    fontFamily: "inherit",
+    gap: 10,
+    flexShrink: 0,
 }
 
-const sideNavItemActive: React.CSSProperties = {
-    background: L_NAVY,
-    border: `1px solid ${L_NAVY}`,
-    color: "#FFFFFF",
-    fontWeight: 600,
-}
-
-/** The one action in the nav, so the one peach thing in it. */
-const sideRunBtn: React.CSSProperties = {
-    width: "100%",
-    padding: "11px 12px",
+const wsRunBtn: React.CSSProperties = {
+    padding: "9px 16px",
     borderRadius: 10,
     background: L_NAVY,
     border: "none",
     color: "#FFFFFF",
     fontWeight: 600,
-    cursor: "pointer",
-    marginBottom: 8,
     fontSize: 13,
     fontFamily: "inherit",
+    cursor: "pointer",
+    whiteSpace: "nowrap",
 }
 
-/** Navigation, not an action: outlined, not filled. */
-const sideSecondaryBtn: React.CSSProperties = {
-    width: "100%",
-    padding: "11px 12px",
+const wsAccountBtn: React.CSSProperties = {
+    padding: "9px 16px",
     borderRadius: 10,
     background: L_CARD,
     border: `1px solid ${L_HAIRLINE}`,
     color: L_TEXT,
     fontWeight: 500,
-    cursor: "pointer",
-    marginBottom: 8,
     fontSize: 13,
-    textAlign: "left",
     fontFamily: "inherit",
-}
-
-const sideAccountRow: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    padding: 12,
-    borderRadius: 10,
-    border: `1px solid ${L_BORDER_SOFT}`,
-    background: L_CARD,
-    marginBottom: 4,
-}
-
-const sideAvatar: React.CSSProperties = {
-    width: 34,
-    height: 34,
-    borderRadius: 18,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: L_NAVY,
-    color: "#FFFFFF",
-    fontWeight: 600,
-    fontSize: 14,
-    flexShrink: 0,
-}
-
-const sideAccountName: React.CSSProperties = {
-    fontSize: 12,
-    fontWeight: 600,
-    color: L_TEXT,
-}
-
-const sideAccountEmail: React.CSSProperties = {
-    fontSize: 11,
-    color: L_HINT,
-    marginTop: 2,
+    cursor: "pointer",
     whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    maxWidth: 150,
-}
-
-const sideLogoutBtn: React.CSSProperties = {
-    width: "100%",
-    padding: "11px 12px",
-    borderRadius: 10,
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-    color: L_MUTED,
-    fontWeight: 500,
-    fontSize: 13,
-    marginTop: 4,
-    textAlign: "left",
-    fontFamily: "inherit",
 }
 
 /* ---------- FORM / INPUT ---------- */
@@ -7509,148 +5648,6 @@ const clCopyBtn: React.CSSProperties = {
 const clCopyBtnDone: React.CSSProperties = {
     border: `1.5px solid ${L_TEAL}`,
     color: L_TEAL_INK,
-}
-
-/* ---------- NETWORKING ---------- */
-
-const netSummaryBox: React.CSSProperties = {
-    marginTop: 8,
-    padding: 16,
-    borderRadius: 16,
-    background: CARD,
-    border: `1px solid ${BORDER_SOFT}`,
-}
-
-const netSummaryTitle: React.CSSProperties = {
-    fontSize: 12,
-    fontWeight: 900,
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-    color: "rgba(255,255,255,0.70)",
-    marginBottom: 12,
-}
-
-const netSequenceRow: React.CSSProperties = {
-    display: "grid",
-    gridTemplateColumns: "90px 1fr",
-    gap: 12,
-    alignItems: "start",
-}
-
-const netSequenceDay: React.CSSProperties = {
-    fontSize: 12,
-    fontWeight: 900,
-    color: WRN_BLUE,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-}
-
-const netSequenceStep: React.CSSProperties = {
-    fontSize: 14,
-    lineHeight: "20px",
-    color: TEXT,
-}
-
-const netLaneCard: React.CSSProperties = {
-    padding: 16,
-    borderRadius: 16,
-    background: CARD,
-    border: `1px solid ${BORDER_SOFT}`,
-    width: "100%",
-    color: TEXT,
-}
-
-const netLaneHeader: React.CSSProperties = {
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    cursor: "pointer",
-    userSelect: "none",
-    gap: 16,
-}
-
-const netLaneTopRow: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    flexWrap: "wrap",
-    marginBottom: 6,
-}
-
-const netLaneStage: React.CSSProperties = {
-    fontSize: 12,
-    fontWeight: 900,
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-}
-
-const netDoFirstTag: React.CSSProperties = {
-    fontSize: 11,
-    fontWeight: 900,
-    letterSpacing: 0.4,
-    textTransform: "uppercase",
-    color: "#0B1020",
-    background: ICE,
-    borderRadius: 999,
-    padding: "4px 8px",
-}
-
-const netLaneTitle: React.CSSProperties = {
-    fontSize: 15,
-    lineHeight: "20px",
-    color: TEXT,
-    fontWeight: 900,
-}
-
-const netLaneTarget: React.CSSProperties = {
-    fontSize: 16,
-    lineHeight: "22px",
-    color: TEXT,
-    fontWeight: 900,
-    marginTop: 6,
-}
-
-const netLaneOutcome: React.CSSProperties = {
-    fontSize: 15,
-    lineHeight: "22px",
-    color: MUTED,
-    marginTop: 8,
-}
-
-const netLaneMetaRow: React.CSSProperties = {
-    marginTop: 12,
-    fontSize: 13,
-    lineHeight: "18px",
-    color: WRN_BLUE,
-    fontWeight: 900,
-}
-
-const netLaneToggle: React.CSSProperties = {
-    color: MUTED,
-    fontWeight: 900,
-    flex: "0 0 auto",
-    marginTop: 2,
-    fontSize: 13,
-    whiteSpace: "nowrap",
-}
-
-const netInnerDisclosure: React.CSSProperties = {
-    marginTop: 10,
-    borderTop: `1px solid ${BORDER_SOFT}`,
-    paddingTop: 10,
-}
-
-const netInnerSummary: React.CSSProperties = {
-    cursor: "pointer",
-    color: WRN_BLUE,
-    fontWeight: 900,
-    fontSize: 13,
-    listStyle: "none",
-    outline: "none",
-}
-
-const netInnerBody: React.CSSProperties = {
-    marginTop: 10,
 }
 
 /* ---------- JOBFIT — LIGHT ---------- */
