@@ -16,7 +16,7 @@ import { render, screen, cleanup } from "@testing-library/react"
 // The page owns its own fetching, so the nudges are exercised through the
 // exported Nudges component with a hand-built model, rather than mocking three
 // endpoints to assert on an href.
-import { Nudges } from "./page"
+import { Nudges } from "./Nudges"
 
 afterEach(cleanup)
 

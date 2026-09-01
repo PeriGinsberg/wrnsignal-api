@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { getSupabaseBrowser } from "../../lib/supabase-browser"
 import { T, eyebrow } from "../../lib/dashboard-theme"
-import { LIGHT } from "../../lib/theme/surfaces"
+import { action, LIGHT } from "../../lib/theme/surfaces"
 import { FRAMER_URL } from "../../lib/urls"
 import { signOutCompletely } from "../../lib/signOut"
 // The return path back to the Framer job workspace. Already the tracker's
@@ -239,12 +239,29 @@ function HandoffDegradedBanner() {
     <div
       style={{
         width: "100%",
-        background: "rgba(196,53,27,0.10)",
-        borderBottom: "1px solid rgba(196,53,27,0.22)",
+        // The third stranded dark-theme token found in this shell, and the
+        // same shape as the other two: T.TEXT is rgba(255,255,255,0.92), which
+        // measured 1.11:1 on this pale wash. The warning was rendering and
+        // could not be read, which is the worst possible failure for the one
+        // banner whose whole job is to warn.
+        //
+        // ATTENTION, NOT ERROR, and the distinction is load-bearing. Nothing
+        // has failed here: the session works and will keep working until the
+        // token expires, and there is something to do about it. The hardcoded
+        // rgba(196,53,27,...) was error red in all but name, so this both
+        // fixes the contrast and corrects what the strip was claiming.
+        // COLOR-SYSTEM 6.11 is explicit that "needs you" and "destructive"
+        // must never read alike.
+        //
+        // fill carries its own ink by design; the pairing measures 5.98:1.
+        // The accent takes the bottom edge, which is what keeps this reading
+        // as a warning strip rather than the neutral shelf above it.
+        background: LIGHT.meaning.attention.fill,
+        borderBottom: `1px solid ${LIGHT.meaning.attention.accent}`,
         padding: "10px 20px",
         fontSize: 13,
         lineHeight: "18px",
-        color: T.TEXT,
+        color: LIGHT.meaning.attention.ink,
         flexShrink: 0,
       }}
     >
@@ -262,8 +279,16 @@ function FramerBanner({ runId, jobTitle }: { runId: string | null; jobTitle: str
       style={{
         width: "100%",
         height: 40,
-        background: "rgba(254,176,106,0.10)",
-        borderBottom: "1px solid rgba(254,176,106,0.20)",
+        // NEUTRAL, not peach. This was a 10% orange wash with a 20% orange
+        // edge, which is orange doing a job it does not have: it is for rules,
+        // section numbers, eyebrow labels and bullets, never a background fill.
+        //
+        // `well` is the system's recessed surface, so the strip reads as a
+        // shelf above the app rather than as a card floating on the ground,
+        // and it stays distinct from the white cards below it. The navy pill
+        // measures 15.26:1 on it.
+        background: LIGHT.well,
+        borderBottom: `1px solid ${LIGHT.border}`,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -290,13 +315,35 @@ function FramerBanner({ runId, jobTitle }: { runId: string | null; jobTitle: str
         <button
           onClick={() => void openInSignal(runId)}
           style={{
-            background: "none",
-            border: "none",
-            color: T.WRN_ORANGE,
-            fontSize: 13,
-            fontWeight: 900,
-            cursor: "pointer",
-            padding: 0,
+            // FILLED, from the system's one action shape rather than a
+            // hand-rolled pill: solid navy #08203F with white ink, which the
+            // token file measures at 16.30:1, the highest-contrast pairing in
+            // either theme.
+            //
+            // It was T.WRN_ORANGE as bare text, which broke the brand rule and
+            // then failed at the job anyway. Orange is for rules, section
+            // numbers, eyebrow labels and bullets, never body or control type;
+            // peach measures 1.81 as text on white, so it was both off-palette
+            // and close to unreadable. Bare coloured text also reads as a
+            // label, and this is the only way back to the job.
+            //
+            // CANNOT BE CONFUSED WITH THE NAV'S ACTIVE ITEM, which is a
+            // translucent white pill on navy. This is that exact inverse, and
+            // it sits in the strip above the nav rather than inside it.
+            //
+            // No second accent colour. The fill already carries it, and a blue
+            // border on navy would be a new hex this palette does not have.
+            ...action(LIGHT, "primary"),
+            borderRadius: 999,
+            padding: "6px 14px",
+            fontSize: 12.5,
+            lineHeight: "16px",
+            // A posting title arrives capped at 80 chars, which still overruns
+            // a 40px strip. Truncate rather than let the row grow.
+            maxWidth: 340,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
           }}
         >
           &larr; Back to {jobTitle || "your job"}
@@ -304,7 +351,15 @@ function FramerBanner({ runId, jobTitle }: { runId: string | null; jobTitle: str
       ) : (
         <span />
       )}
-      <span style={{ fontSize: 12, color: T.MUTED }}>
+      {/* T.MUTED was a DARK-theme token, rgba(255,255,255,0.6), left behind
+          when the shell went light. White at 60% on a near-white strip
+          measured 1.03:1, which is not low contrast so much as no contrast:
+          the sentence was rendering and could not be read.
+
+          LIGHT.text.muted is the light theme's quiet ink, 5.10:1 here. Muted
+          rather than secondary on purpose, because this line is ambient
+          context and should sit below the control beside it. */}
+      <span style={{ fontSize: 12, color: LIGHT.text.muted }}>
         You&apos;re in your SIGNAL Dashboard
       </span>
     </div>

@@ -21,12 +21,14 @@ import { getSupabaseBrowser } from "../../lib/supabase-browser"
 import { LIGHT as S, DARK, action as actionStyle, orb } from "../../lib/theme/surfaces"
 import { formatLong } from "../../lib/localDate"
 import { FRAMER_URL } from "../../lib/urls"
-import { timeAgo } from "../../lib/relativeTime"
 import {
   ScoreAJobIcon, TrackIcon, NetworkIcon, InterviewIcon, MomentumIcon,
-  PinIcon, RepliedIcon, QuietIcon,
+  QuietIcon,
 } from "../../components/icons"
 import { buildDashboard, type DashboardModel, type DashboardState } from "./dashboardState"
+// Not exported from here: Next 16 rejects non-page exports from a route
+// file. See the header of Nudges.tsx.
+import { Nudges } from "./Nudges"
 
 // DEV-ONLY state preview. A five-state screen cannot be reviewed by anyone,
 // including its author, when an account only ever occupies one state at a time,
@@ -365,57 +367,6 @@ function CountRow({ model }: { model: DashboardModel }) {
   )
 }
 
-// Specific, never vague. Each nudge names the person or the company.
-// Exported for Nudges.test.tsx. The page fetches its own data, so testing
-// the links through the default export would mean mocking three endpoints
-// to assert on an href.
-export function Nudges({ model }: { model: DashboardModel }) {
-  const items: { key: string; icon: React.ReactNode; body: React.ReactNode; href: string; cta: string; tone: "attention" | "replied" }[] = []
-
-  for (const c of model.awaiting.slice(0, 2)) {
-    items.push({
-      key: `r-${c.id}`, icon: <RepliedIcon size={26} />, tone: "replied",
-      body: <><strong>{c.first_name} {c.last_name}</strong> replied {timeAgo(c.last_action_at) ?? "recently"}. Don't leave them hanging.</>,
-      href: `/dashboard/network/contacts/${c.id}`, cta: "Reply →",
-    })
-  }
-  for (const a of model.stale.slice(0, 2)) {
-    items.push({
-      key: `s-${a.id}`, icon: <PinIcon size={26} />, tone: "attention",
-      body: <>You applied to <strong>{a.company_name || "a company"}</strong> over two weeks ago with no word back. Worth a follow-up.</>,
-      // Straight to THIS job. Same fix as "Prep now" in the hero above: the
-      // nudge names a company in its own sentence and then opened the whole
-      // tracker, leaving the student to find again the job the screen had
-      // just picked out for them. `a.id` is a signal_applications id — the
-      // list comes from /api/applications — and is already used for the key.
-      href: `/dashboard/tracker/${a.id}`, cta: "Show me →",
-    })
-  }
-  if (items.length === 0) {
-    for (const a of model.saved.slice(0, 2)) {
-      items.push({
-        key: `v-${a.id}`, icon: <PinIcon size={26} />, tone: "attention",
-        body: <>You saved <strong>{a.job_title || "a job"}</strong>{a.company_name ? ` at ${a.company_name}` : ""} but haven't applied yet.</>,
-        href: `/dashboard/tracker/${a.id}`, cta: "Show me →",
-      })
-    }
-  }
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      {items.slice(0, 3).map((it) => (
-        <div key={it.key} style={{ ...card, ...nudgeCard, borderLeft: `3px solid ${S.meaning[it.tone].accent}` }}>
-          <span style={{ flexShrink: 0, display: "flex" }}>{it.icon}</span>
-          <span style={{ flex: 1, color: S.text.secondary, fontSize: 15, lineHeight: "22px" }}>{it.body}</span>
-          <a href={it.href} style={{ color: S.action.quietInk, fontSize: 14.5, fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap" }}>
-            {it.cta}
-          </a>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 function OrbCard({
   tone, href, title, sub, icon, external = false,
 }: {
@@ -499,9 +450,6 @@ const momentumBar: React.CSSProperties = {
   marginTop: 14, padding: "16px 22px", borderRadius: 14,
   background: `linear-gradient(135deg, ${S.meaning.spoke.accent}, ${S.meaning.replied.accent})`,
   color: "#FFFFFF", fontSize: 15.5,
-}
-const nudgeCard: React.CSSProperties = {
-  display: "flex", alignItems: "center", gap: 14, padding: "16px 20px",
 }
 const editProfile: React.CSSProperties = {
   background: S.card, border: `1px solid ${S.border}`, color: S.text.primary,
