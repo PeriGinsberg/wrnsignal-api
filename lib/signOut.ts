@@ -53,6 +53,11 @@ export async function signOutCompletely(): Promise<void> {
   }
   sessionStorage.removeItem("signal_handoff_token")
   sessionStorage.removeItem("signal_from_framer")
+  // The job the dashboard offers to go back to. Same reason as the two above:
+  // a second account signing in on this tab must not inherit the first one's
+  // job, which would hand them a run id their token cannot read.
+  sessionStorage.removeItem("signal_return_run")
+  sessionStorage.removeItem("signal_return_title")
 
   // A full navigation, not router.push, so the app re-initialises from scratch
   // in the unauthenticated state.

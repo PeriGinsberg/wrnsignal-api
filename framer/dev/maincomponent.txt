@@ -2010,21 +2010,46 @@ export default function WRNSignalTabs(props: {
     async function openDashboard(path: string) {
         if (typeof window === "undefined") return
         const base = `${API_BASE}${path}`
+        const p = new URLSearchParams()
+
+        // THE WAY BACK, carried across the handoff.
+        //
+        // Read from this closure rather than added to five call signatures, so
+        // every exit gets it and none of them can forget. The dashboard stores
+        // it for the visit and offers "Back to <title>"; see FramerBanner in
+        // app/dashboard/layout.tsx.
+        //
+        // IT HAS TO BE CARRIED because it cannot be recovered. We leave via
+        // location.replace(), which REPLACES this history entry rather than
+        // pushing one, so the browser's own Back cannot return here and the
+        // dashboard has no other way to learn which job the student came from.
+        //
+        // The title is display only. A missing one falls back to "your job" on
+        // the far side, so it is never load-bearing; the run id is. Capped
+        // because a pathological posting title should not build a 2KB URL.
+        if (jobfitRunId) {
+            p.set("from_run", jobfitRunId)
+            const t = jobCtx.ctxTitle.trim()
+            if (t) p.set("from_title", t.slice(0, 80))
+        }
+
         try {
             const { data } = await supabase.auth.getSession()
             const at = data?.session?.access_token
             const rt = data?.session?.refresh_token
             if (at && rt) {
-                const p = new URLSearchParams()
                 p.set("access_token", at)
                 p.set("refresh_token", rt)
-                window.top!.location.replace(`${base}#${p.toString()}`)
-                return
             }
         } catch {
-            // Fall through to the uncredentialed URL below.
+            // Navigate without credentials rather than blocking: the dashboard
+            // has its own sign-in, so a missing session is a login prompt and
+            // not a dead button. from_run still rides along, so the way back
+            // survives the sign-in.
         }
-        window.top!.location.replace(base)
+
+        const frag = p.toString()
+        window.top!.location.replace(frag ? `${base}#${frag}` : base)
     }
 
     function goToDashboard() {

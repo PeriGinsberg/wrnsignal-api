@@ -7,6 +7,10 @@ import { T, eyebrow } from "../../lib/dashboard-theme"
 import { LIGHT } from "../../lib/theme/surfaces"
 import { FRAMER_URL } from "../../lib/urls"
 import { signOutCompletely } from "../../lib/signOut"
+// The return path back to the Framer job workspace. Already the tracker's
+// "see the analysis" jump; the layout is now its third consumer, so lib/ is
+// where it belongs the next time it is touched.
+import { openInSignal } from "./tracker/openInSignal"
 import { FeedbackSlideIn } from "../../components/feedback/FeedbackSlideIn"
 import {
   HomeIcon, TrackIcon, NetworkIcon, ProfileIcon, CoachesHubIcon,
@@ -252,7 +256,7 @@ function HandoffDegradedBanner() {
   )
 }
 
-function FramerBanner() {
+function FramerBanner({ runId, jobTitle }: { runId: string | null; jobTitle: string | null }) {
   return (
     <div
       style={{
@@ -267,24 +271,39 @@ function FramerBanner() {
         flexShrink: 0,
       }}
     >
-      <button
-        onClick={() => {
-          try { window.close() } catch {}
-          // If close was blocked, the page is still here — go back
-          setTimeout(() => window.history.back(), 100)
-        }}
-        style={{
-          background: "none",
-          border: "none",
-          color: T.WRN_ORANGE,
-          fontSize: 13,
-          fontWeight: 900,
-          cursor: "pointer",
-          padding: 0,
-        }}
-      >
-        &larr; Back to SIGNAL
-      </button>
+      {/* THIS BUTTON USED TO BE BROKEN, in a way that looked like it worked.
+          It called window.close() and fell back to history.back(). Neither can
+          return you to the job: window.close() only closes script-opened
+          windows and this is a same-tab navigation, and openDashboard leaves
+          via location.replace(), which REPLACES the Framer history entry
+          instead of pushing one. So Back went to whatever preceded the job
+          workspace, usually the auth page or a blank tab.
+
+          openInSignal carries the session in a fragment and appends ?run=,
+          which the Framer bundle already reads on arrival, so the student
+          lands on the rendered result rather than the paste screen.
+
+          Rendered ONLY with a run id. Without one there is no job to go back
+          to, and a button that cannot keep its promise is worse than no
+          button. The empty span holds the space-between layout. */}
+      {runId ? (
+        <button
+          onClick={() => void openInSignal(runId)}
+          style={{
+            background: "none",
+            border: "none",
+            color: T.WRN_ORANGE,
+            fontSize: 13,
+            fontWeight: 900,
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          &larr; Back to {jobTitle || "your job"}
+        </button>
+      ) : (
+        <span />
+      )}
       <span style={{ fontSize: 12, color: T.MUTED }}>
         You&apos;re in your SIGNAL Dashboard
       </span>
@@ -299,6 +318,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [error, setError] = useState("")
   const [sending, setSending] = useState(false)
   const [fromFramer, setFromFramer] = useState(false)
+  // The job this dashboard visit came from, for the "Back to <title>"
+  // control. Null on a page opened directly, which is the case that
+  // hides the button.
+  const [returnRun, setReturnRun] = useState<string | null>(null)
+  const [returnTitle, setReturnTitle] = useState<string | null>(null)
   // Arrived from Framer with an access token but no refresh token, so this tab
   // is running on the raw bearer with no way to renew it. See the handoff block
   // below for why that is now a visible state instead of a silent one.
@@ -318,6 +342,44 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [passwordSubmitting, setPasswordSubmitting] = useState(false)
   const showDevAuth = process.env.NEXT_PUBLIC_DEV_AUTH === "true"
   const pathname = usePathname()
+
+  // The job to come back to.
+  //
+  // DECLARED BEFORE THE AUTH EFFECT DELIBERATELY. React fires mount effects in
+  // declaration order, and the auth effect below strips the fragment with
+  // history.replaceState. Read it here or it is already gone.
+  //
+  // Two sources, in priority order. The fragment is the arrival from Framer.
+  // sessionStorage is every dashboard page after that, which is what lets
+  // Job Details -> tracker list -> a company page still offer the way back.
+  // Same storage the handoff token uses: per-tab, dies with the tab, and
+  // cleared by signOutCompletely so a second account never inherits it.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const hash = new URLSearchParams(
+      (window.location.hash || "").replace(/^#/, "")
+    )
+    const fromHash = hash.get("from_run")
+    if (fromHash) {
+      const title = hash.get("from_title") || ""
+      sessionStorage.setItem("signal_return_run", fromHash)
+      if (title) sessionStorage.setItem("signal_return_title", title)
+      else sessionStorage.removeItem("signal_return_title")
+      setReturnRun(fromHash)
+      setReturnTitle(title || null)
+      setFromFramer(true)
+      return
+    }
+    const stored = sessionStorage.getItem("signal_return_run")
+    if (stored) {
+      setReturnRun(stored)
+      setReturnTitle(sessionStorage.getItem("signal_return_title"))
+    }
+    // The banner's own flag, restored for the same reason: it was set only on
+    // the arrival page, so the banner vanished on the first click inside the
+    // dashboard and took the return control with it.
+    if (sessionStorage.getItem("signal_from_framer") === "1") setFromFramer(true)
+  }, [])
 
   useEffect(() => {
     const supabase = getSupabaseBrowser()
@@ -764,7 +826,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div style={{ minHeight: "100vh", background: useLight ? S.page : T.BG, display: "flex", flexDirection: "column" }}>
-      {fromFramer && <FramerBanner />}
+      {(fromFramer || returnRun) && (
+        <FramerBanner runId={returnRun} jobTitle={returnTitle} />
+      )}
       {handoffDegraded && <HandoffDegradedBanner />}
       <div style={{ display: "flex", flex: 1 }}>
         <nav style={{ width: 220, background: navBg, borderRight: `1px solid ${navBorder}`, flexShrink: 0, display: "flex", flexDirection: "column" }}>
