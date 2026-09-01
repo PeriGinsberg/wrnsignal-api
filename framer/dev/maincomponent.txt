@@ -1090,8 +1090,14 @@ function JobContextBar({
                     entered, can genuinely have neither field — and the bar
                     still has to name the row it is steering, so it says so
                     rather than rendering an empty line. */}
-                <div style={jcLead}>{lead || "Untitled job"}</div>
+                <div style={jcLead} title={lead || "Untitled job"}>
+                    {lead || "Untitled job"}
+                </div>
             </div>
+
+            {/* Binds the title to the stops. Without it these are two groups
+                that share a row; with it they are one component. */}
+            <div style={jcDivider} aria-hidden="true" />
 
             <div style={jcStops}>
                 {stops.map((s) => {
@@ -5750,25 +5756,57 @@ const jfMoveBody: React.CSSProperties = {
 // is a wayfinding element, and one that scrolls away stops answering the
 // question it exists for on exactly the long result pages that raise it.
 
+/* INK FOR THE NAVY BAR.
+
+   Declared rather than borrowed. Every L_* token in this file is dark-on-light
+   and would disappear on this ground; three tokens stranded on the wrong
+   surface were just dug out of the dashboard shell, and reaching for L_MUTED
+   here would have made a fourth.
+
+   The values are the dashboard nav's own light-on-navy set, so the two
+   surfaces read as one product rather than as two takes on the same idea.
+   Measured on #08203F: muted 7.79:1, link 8.54:1, dim 5.78:1, ink 16.30:1. */
+const ON_NAVY_INK = "#FFFFFF"
+const ON_NAVY_MUTED = "#9DB6D0"
+const ON_NAVY_LINK = "#7FC4EC"
+const ON_NAVY_DIM = "rgba(255,255,255,0.55)"
+const ON_NAVY_FILL = "rgba(255,255,255,0.12)"
+const ON_NAVY_BORDER = "rgba(255,255,255,0.16)"
+
 const jcBar: React.CSSProperties = {
     position: "sticky",
     top: 0,
     zIndex: 20,
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 16,
+    // LEFT-ANCHORED, not space-between. The title sat hard left and the stops
+    // hard right, so on a wide screen they were two things that happened to
+    // share a row. Now they are one group with a rule between them, and the
+    // slack collects on the right where it says nothing.
+    justifyContent: "flex-start",
+    gap: 14,
     flexWrap: "wrap",
-    padding: "12px 16px",
+    padding: "10px 16px",
     marginBottom: 14,
-    background: L_CARD,
-    border: `1px solid ${L_BORDER}`,
+    // A NAVY OBJECT, not text on the page. It was L_CARD on the near-white
+    // ground, directly under the pale workspace header, and the two strips
+    // read as one undifferentiated zone. This is the only way between the
+    // tools now, so it has to look like the thing it is.
+    background: L_NAVY,
+    border: "1px solid rgba(255,255,255,0.10)",
     borderRadius: 14,
+    // It is sticky, so content scrolls underneath it. The shadow is what keeps
+    // the seam legible at the moment something passes behind.
+    boxShadow: "0 2px 10px rgba(8,32,63,0.18)",
     boxSizing: "border-box",
 }
 
 const jcIdentity: React.CSSProperties = {
     minWidth: 0,
+    // Shrinks and truncates rather than shoving the stops onto a second row.
+    // A long posting title is common and the stops are the point of the bar.
+    maxWidth: 380,
+    flexShrink: 1,
     display: "flex",
     flexDirection: "column",
     gap: 2,
@@ -5779,14 +5817,28 @@ const jcEyebrow: React.CSSProperties = {
     fontWeight: 900,
     letterSpacing: "0.09em",
     textTransform: "uppercase",
-    color: L_DIM,
+    color: ON_NAVY_DIM,
+}
+
+/* The rule that makes the title and the stops one component instead of two
+   groups sharing a row. Stretches to the bar's content height so it reads as
+   structure rather than as a stray dash. */
+const jcDivider: React.CSSProperties = {
+    width: 1,
+    alignSelf: "stretch",
+    minHeight: 28,
+    background: ON_NAVY_BORDER,
+    flexShrink: 0,
 }
 
 const jcLead: React.CSSProperties = {
     fontSize: 14.5,
     fontWeight: 800,
-    color: L_TEXT,
+    color: ON_NAVY_INK,
     lineHeight: "19px",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
 }
 
 const jcStops: React.CSSProperties = {
@@ -5799,12 +5851,16 @@ const jcStops: React.CSSProperties = {
 // Text-weight by default. These are wayfinding, not calls to action — the
 // screen each one lands on carries its own primary, and four buttons up here
 // would out-shout every one of them.
+/* A REAL HIT AREA, not a text link. Idle is a transparent pill that already
+   occupies its full size, so the active state changes colour and nothing
+   moves: the transparent 1px border exists to reserve the space the active
+   border will take. */
 const jcStop: React.CSSProperties = {
     background: "none",
     border: "1px solid transparent",
     borderRadius: 9,
-    padding: "7px 11px",
-    color: L_MUTED,
+    padding: "8px 12px",
+    color: ON_NAVY_MUTED,
     fontSize: 13,
     fontWeight: 700,
     fontFamily: "inherit",
@@ -5815,16 +5871,31 @@ const jcStop: React.CSSProperties = {
 // "You are here". The well plus a hairline rather than a fill: the bar sits
 // above real content and a solid active pill reads as a button that has been
 // pressed and stuck.
+/* THE DASHBOARD NAV'S ACTIVE MECHANISM, deliberately the same one: a
+   translucent white fill with a slightly lighter border. Both surfaces are
+   light-on-navy pill systems and they should feel like one product.
+
+   THE INK CHANGE IS DOING MOST OF THE WORK, and that is worth saying plainly.
+   The fill composites to #263B56, only 1.43:1 against the navy, and the border
+   to #30445E at 1.64:1. What makes the active stop unmistakable is the ink
+   going from #9DB6D0 to white, which is 7.79:1 against navy against 16.30:1.
+   The fill and border give the pill a shape; the ink says which one. */
 const jcStopActive: React.CSSProperties = {
-    background: L_WELL,
-    borderColor: L_BORDER,
-    color: L_TEXT,
+    background: ON_NAVY_FILL,
+    borderColor: ON_NAVY_BORDER,
+    color: ON_NAVY_INK,
 }
 
 // The one destination that leaves the Framer app. Tealed so the ↗ is not the
 // only thing distinguishing a full app switch from a tab change.
+/* THE TWO STOPS THAT LEAVE. Clicking either costs the user their place in the
+   bundle, so they stay in the set but never look like the other three: link
+   blue rather than the muted ink, and never an active pill, because there is
+   no state here to come back to. The arrow says the same thing again for
+   anyone who does not read the colour. Was L_TEAL_INK, a dark ink that would
+   have been unreadable the moment this bar turned navy. */
 const jcStopLeaves: React.CSSProperties = {
-    color: L_TEAL_INK,
+    color: ON_NAVY_LINK,
 }
 
 // ── Actions ─────────────────────────────────────────────────────────────────
