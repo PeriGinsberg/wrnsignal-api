@@ -28,8 +28,17 @@ export type EmptyCompany = { id: string; name: string }
 export function EmptyCompanyStrip({
   companies, onAddContact,
 }: {
-  /** Companies with contact_count === 0. The caller decides what empty means. */
-  companies: EmptyCompany[]
+  /**
+   * Companies with contact_count === 0, or NULL while that is still loading.
+   *
+   * THE DISTINCTION IS LOAD-BEARING, and getting it wrong wiped every
+   * dismissal on every page load: an empty ARRAY means "every company has
+   * somebody, forget the dismissals", which is correct, and the list simply
+   * not having arrived yet looked identical. Null is the only way to say "I do
+   * not know yet", so it is a separate type rather than a second boolean the
+   * caller could forget to pass.
+   */
+  companies: EmptyCompany[] | null
   /** Opens the add-contact form with this company prefilled. */
   onAddContact: (companyName: string) => void
 }) {
@@ -58,11 +67,17 @@ export function EmptyCompanyStrip({
 
   useEffect(() => {
     if (!viewerId) return
+    // NEVER PRUNE AGAINST AN UNLOADED LIST. pruneTo keeps only the ids it is
+    // given, so calling it with [] before the fetch returns deletes the store.
+    if (companies === null) {
+      setHidden(dismissedFor(viewerId))
+      return
+    }
     setHidden(pruneTo(viewerId, companies.map((c) => c.id)))
   }, [viewerId, companies])
 
   const shown = useMemo(
-    () => companies.filter((c) => !hidden.has(c.id)),
+    () => (companies ?? []).filter((c) => !hidden.has(c.id)),
     [companies, hidden],
   )
 

@@ -515,10 +515,14 @@ function ReminderLine({ contact, onChanged }: { contact: Contact; onChanged: () 
           <>
             {overdueDays > 0 ? (
               <strong style={{ color: S.meaning.attention.ink, fontWeight: 700 }}>
-                Overdue by {overdueDays} day{overdueDays === 1 ? "" : "s"}
+                Follow-up reminder was {overdueDays} day{overdueDays === 1 ? "" : "s"} ago
               </strong>
             ) : (
-              <>Due <strong style={{ color: S.text.primary, fontWeight: 700 }}>{fmt(contact.next_due_at)}</strong></>
+              // "Follow-up reminder", not "Due". Due is a word about an
+              // obligation, and this is a note the student left themselves; the
+              // engine schedules it and nobody is owed it. Naming it what it is
+              // also stops it reading as a deadline the product is enforcing.
+              <>Follow-up reminder <strong style={{ color: S.text.primary, fontWeight: 700 }}>{fmt(contact.next_due_at)}</strong></>
             )}
             {snoozed && (
               <span style={{ color: S.text.dim, marginLeft: 8 }}>

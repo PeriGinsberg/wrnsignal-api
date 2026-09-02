@@ -278,13 +278,15 @@ describe("nothing was removed", () => {
   it("the reminder controls survive as one line", async () => {
     await open()
     const line = screen.getByTestId("reminder-line")
-    // ASSERTION CHANGED 2026-08-04, not just a selector. This used to pin the
-    // literal "Next:", which prefixed the due REASON ("Next: Send a reply").
-    // That reason was removed in the top-half rework because the status above
-    // and the hero's own button already said it, three statements of one fact.
-    // What the line must still do is say WHEN, which is the part nothing else
-    // on the screen carries, so that is what is asserted now.
-    expect(line.textContent).toMatch(/Overdue by|Due |No reminder set/)
+    // ASSERTION CHANGED TWICE, and the intent has never changed: the line must
+    // say WHEN, which is the part nothing else on the screen carries.
+    //   2026-08-04  stopped pinning "Next:", which prefixed the due REASON.
+    //   2026-09-02  "Due" became "Follow-up reminder". Due is a word about an
+    //               obligation; this is a note the student left themselves and
+    //               nobody is owed it.
+    // Still deliberately a loose match on the phrasing rather than an exact
+    // string, so the next copy change does not fail a test about behaviour.
+    expect(line.textContent).toMatch(/Follow-up reminder|No reminder set/)
     fireEvent.click(within(line).getByTitle("Snooze 7 days"))
     await waitFor(() => {
       const call = authFetchMock.mock.calls.find((c) => String(c[0]).includes("/reminder"))

@@ -65,7 +65,9 @@ function ContactsInner() {
   // The FULL company list, which the roster alone cannot give: a company
   // with no contacts appears in no contact row, and those are exactly the
   // ones the strip is about.
-  const [allCompanies, setAllCompanies] = useState<{ id: string; name: string; contact_count: number }[]>([])
+  // NULL until the fetch returns. See EmptyCompanyStrip: [] means "none are
+  // empty", and conflating that with "not loaded" wiped the dismissals.
+  const [allCompanies, setAllCompanies] = useState<{ id: string; name: string; contact_count: number }[] | null>(null)
   const [panelCompanyId, setPanelCompanyId] = useState<string | null>(null)
   // Set by the strip, so "add someone at Globex" opens the form knowing where.
   // Falls back to the ?company= param the add-from-a-company flow already used.
@@ -185,8 +187,10 @@ function ContactsInner() {
 
   useEffect(() => { void loadCompanies() }, [loadCompanies])
 
-  const emptyCompanies: EmptyCompany[] = useMemo(
-    () => allCompanies.filter((c) => (c.contact_count ?? 0) === 0).map((c) => ({ id: c.id, name: c.name })),
+  const emptyCompanies: EmptyCompany[] | null = useMemo(
+    () => allCompanies === null
+      ? null
+      : allCompanies.filter((c) => (c.contact_count ?? 0) === 0).map((c) => ({ id: c.id, name: c.name })),
     [allCompanies],
   )
 

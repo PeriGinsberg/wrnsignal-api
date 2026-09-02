@@ -55,6 +55,7 @@ export function MessageComposer({
   const [applicationId, setApplicationId] = useState(draft?.application_id ?? "")
   const [apps, setApps] = useState<AppOption[] | null>(null)
   const [busy, setBusy] = useState<"" | "draft" | "sent" | "discard">("")
+  const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   // Re-seed when a different draft arrives; the record refetches after a save.
@@ -133,6 +134,33 @@ export function MessageComposer({
       setBusy("")
     }
   }, [draft, contactId, onSaved])
+
+  // COPY, because SIGNAL does not send. The whole point of writing here is to
+  // paste it somewhere else, and re-selecting a textarea by hand is the step
+  // that makes people give up on the composer and go write in Gmail instead.
+  //
+  // SUBJECT AND BODY TOGETHER on email: they are one message, and two copies
+  // means two trips. Prefixed so the pasted block still reads correctly if it
+  // lands somewhere with no subject field. LinkedIn has no subject, so it
+  // copies the body alone rather than a stray label.
+  const copyText = useMemo(
+    () => (channel === "email" && subject.trim()
+      ? "Subject: " + subject.trim() + "\n\n" + body
+      : body),
+    [channel, subject, body],
+  )
+
+  const copy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(copyText)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1800)
+    } catch {
+      // Denied, or an insecure origin. The text is on screen and selectable,
+      // so say what to do rather than failing silently.
+      setError("Could not reach the clipboard. Select the text and copy it.")
+    }
+  }, [copyText])
 
   const appNote = useMemo(() => {
     if (!companyId) return `${firstName} has no company on your board, so there is no application to link.`
@@ -217,6 +245,15 @@ export function MessageComposer({
         </button>
         <button
           type="button"
+          onClick={copy}
+          disabled={!body.trim()}
+          style={{ ...quiet, opacity: body.trim() ? 1 : 0.5 }}
+          data-testid="composer-copy"
+        >
+          {copied ? "Copied" : channel === "email" && subject.trim() ? "Copy subject and message" : "Copy message"}
+        </button>
+        <button
+          type="button"
           onClick={() => save("draft")}
           disabled={!canSave}
           style={{ ...quiet, opacity: canSave ? 1 : 0.5 }}
@@ -234,7 +271,7 @@ export function MessageComposer({
       {/* Said plainly, once. A product that drafts messages could reasonably be
           assumed to send them, and this one never will. */}
       <p style={note}>
-        SIGNAL does not send anything. Copy this into {channel === "email" ? "your email" : "LinkedIn"}, then mark it sent.
+        SIGNAL does not send anything. Copy it, paste it into {channel === "email" ? "your email" : "LinkedIn"}, then mark it sent.
       </p>
     </section>
   )

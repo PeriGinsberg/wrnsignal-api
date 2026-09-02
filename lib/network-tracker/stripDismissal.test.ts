@@ -66,7 +66,22 @@ function main() {
   ok("dismiss does not throw", (() => { try { dismiss(A, "x"); return true } catch { return false } })())
   ok("clearAllDismissals does not throw", (() => { try { clearAllDismissals(); return true } catch { return false } })())
 
-  console.log("\nempty inputs")
+console.log("\nthe wipe-on-load trap")
+  // The bug this pins: pruneTo keeps ONLY the ids it is given, so calling it
+  // with [] deletes the store. That is correct when the board genuinely has
+  // no empty companies left, and catastrophic when the list has simply not
+  // loaded yet, which is every page load: the fetch has not returned when the
+  // session resolves. The caller must pass null, not [], while it does not
+  // know. EmptyCompanyStrip s prop type is what enforces that now.
+  withStorage(fakeStorage())
+  dismiss(A, "co-1")
+  dismiss(A, "co-2")
+  ok("pruning to [] DOES wipe, correct for a board with none left", pruneTo(A, []).size === 0)
+  ok("...and the store really is empty afterwards", dismissedFor(A).size === 0)
+  dismiss(A, "co-1")
+  ok("pruning to the same list is a no-op", pruneTo(A, ["co-1"]).size === 1)
+
+    console.log("\nempty inputs")
   withStorage(fakeStorage())
   ok("no profile id means no dismissals", dismissedFor("").size === 0)
   ok("an empty company id is not stored", dismiss(A, "").size === 0)
