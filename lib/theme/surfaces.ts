@@ -249,12 +249,16 @@ export const LIGHT: Surface = {
     // measures 2.38 on white, under the 3.0 a non-text boundary needs. #DE7620
     // is the same hue family at 3.13.
     //
-    // LEFT UNCHANGED when the filled tier went navy, deliberately. The only
-    // consumer of these two tokens is app/dashboard/network/profile/Field.tsx,
-    // where they paint a featured-field border and a pill badge — neither of
-    // them a button. Renavying the optional tier would repaint a non-button, so
-    // the two tiers no longer share an ink: filled is white on navy, outline is
-    // navy on white. Revisit if a real outline BUTTON ever appears.
+    // LEFT UNCHANGED when the filled tier went navy, deliberately: the consumer
+    // was network/profile/Field.tsx, where these painted a featured-field
+    // border and a pill badge, neither of them a button, so renavying the
+    // optional tier would have repainted a non-button.
+    //
+    // THAT CONSUMER IS GONE (2026-09-02, with the networking profile), so these
+    // two tokens now have none. Kept rather than deleted because they are the
+    // optional ACTION tier, and the next outline button that appears is the
+    // caller they were defined for; the filled tier is white on navy and this
+    // one is navy on white, which is the distinction worth preserving.
     outlineBorder: "#DE7620",
     outlineInk: "#13294A",
     quietInk: "#1F6FA8",

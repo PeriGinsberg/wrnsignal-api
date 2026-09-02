@@ -26,19 +26,24 @@
 import { Suspense, useCallback, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { LIGHT as S } from "../../../lib/theme/surfaces"
-import { AccountIcon, ResumeIcon, NetworkIcon, ProfileIcon } from "../../../components/icons"
+import { AccountIcon, ResumeIcon, ProfileIcon } from "../../../components/icons"
 import { authFetch } from "../network/authFetch"
 import { profileCompletion } from "../dashboardState"
 import { BasicsSection, type Profile } from "./BasicsSection"
 import { ResumeSection } from "./ResumeSection"
 import { AccountSection } from "./AccountSection"
-import { ProfileForm } from "../network/profile/ProfileForm"
-import { SectionHead } from "./BasicsSection"
 
+// THE NETWORKING SECTION IS GONE, with the templates and the merge variables
+// it existed to feed. It rendered ProfileForm from network/profile, which read
+// and wrote /api/network/profile; both are deleted. network_client_profile
+// keeps its 15 rows, unread.
+//
+// An old ?section=networking link does not 404: the guard below falls back to
+// "basics" for any key not in this list, which is what it always did for a
+// typo and is now what it does for a retirement.
 const SECTIONS = [
   { key: "basics", label: "Basics", icon: <ProfileIcon size={19} /> },
   { key: "resume", label: "Resume", icon: <ResumeIcon size={19} /> },
-  { key: "networking", label: "Networking", icon: <NetworkIcon size={19} /> },
   { key: "account", label: "Account", icon: <AccountIcon size={19} /> },
 ] as const
 
@@ -209,15 +214,6 @@ function MyProfile() {
         >
           {section === "basics" && <BasicsSection profile={profile} onSave={save} />}
           {section === "resume" && <ResumeSection profile={profile} onSave={save} />}
-          {section === "networking" && (
-            <>
-              <SectionHead
-                title="Networking"
-                blurb="What your outreach messages pull from. This is your voice, not your CV, so write it the way you'd say it."
-              />
-              <ProfileForm />
-            </>
-          )}
           {section === "account" && <AccountSection profile={profile} />}
         </section>
       </div>
