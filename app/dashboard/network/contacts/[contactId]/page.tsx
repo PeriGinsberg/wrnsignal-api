@@ -237,6 +237,34 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
       )}
 
       {/* ── The thing you came here to do ──────────────────────── */}
+      {/* ABOVE THE COMPOSER, not folded away below it. Who someone is changes
+          what you write to them, so reading it after writing is the wrong
+          order; a coach or a student opening a contact they have not touched
+          in a month needs the context before the blank textarea, not under it.
+
+          Still a drawer, and still open by default for a contact with NO
+          relationship set, so a new one lands on its setup step. The old reason
+          given here was that relationship drove the template engine, which is
+          no longer true: pickTemplate went with the templates. It stays open
+          because how you know someone is the first thing you would want settled
+          before writing to them, which was always the better reason. */}
+      <Collapsible
+        icon={<ProfileIcon size={20} />}
+        title="Details" testId="details"
+        defaultOpen={!contact.relationship}
+        summary={detailsSummary}
+      >
+        <DetailsEditor contact={contact} onSaved={load} />
+        <div style={{ marginTop: 22 }}>
+          <div style={{ ...factLabel, marginBottom: 8 }}>Additional info</div>
+          <TextFieldEditor
+            contactId={contact.id} field="additional_info" value={contact.additional_info}
+            placeholder="Context for this person: a hand-written opening line, why they're worth reaching, a shared connection…"
+            onSaved={load}
+          />
+        </div>
+      </Collapsible>
+
       {/* WRITE THE MESSAGE. The action box and SendPanel stood here; that pair
           rendered a template from a library and asked you to copy it, and both
           went when the library did. This keeps what you write instead.
@@ -258,27 +286,6 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
 
       {/* ── Reference, folded away ─────────────────────────────── */}
       <div style={{ marginTop: 22 }}>
-        {/* Details opens for a contact with NO relationship set, because that
-            single field drives the whole template engine (pickTemplate routes on
-            it), so a new user lands on the setup step already open. Once it is
-            set, this is reference and shuts. */}
-        <Collapsible
-          icon={<ProfileIcon size={20} />}
-          title="Details" testId="details"
-          defaultOpen={!contact.relationship}
-          summary={detailsSummary}
-        >
-          <DetailsEditor contact={contact} onSaved={load} />
-          <div style={{ marginTop: 22 }}>
-            <div style={{ ...factLabel, marginBottom: 8 }}>Additional info</div>
-            <TextFieldEditor
-              contactId={contact.id} field="additional_info" value={contact.additional_info}
-              placeholder="Context for this person: a hand-written opening line, why they're worth reaching, a shared connection…"
-              onSaved={load}
-            />
-          </div>
-        </Collapsible>
-
         <Collapsible
           icon={<HistoryIcon size={20} />}
           title="History" testId="history"

@@ -22,11 +22,13 @@
 // draft has not happened. Counting one here would tell someone they wrote to a
 // contact when they only thought about it.
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { LIGHT as S, action as actionStyle } from "../../../../../lib/theme/surfaces"
 import { authFetch } from "../../authFetch"
 import { STAGE_LABELS, REASON_LABELS, ACTION_TYPE_LABEL } from "../../vocab"
 import { impliedStageAhead, historyImpliesAhead } from "../../../../../lib/network-tracker/action-semantics"
+import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
+import { isFlagDismissed, dismissFlag } from "../../../../../lib/network-tracker/reminderFlagDismissal"
 import { ChangeStage } from "./ChangeStage"
 
 type Contact = {
@@ -117,7 +119,28 @@ export function WhereThingsStand({
 }) {
   const [busy, setBusy] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
+  const [viewerId, setViewerId] = useState("")
+  const [flagHidden, setFlagHidden] = useState(false)
   const now = new Date()
+
+  // The account, for scoping the dismissal. Wrapped because
+  // getSupabaseBrowser() throws SYNCHRONOUSLY without its env vars, and a flag
+  // must never take the record down; the same trap the strip fell into.
+  useEffect(() => {
+    let alive = true
+    try {
+      getSupabaseBrowser().auth.getSession().then(({ data }) => {
+        const id = data.session?.user?.id ?? ""
+        if (alive && id) setViewerId(id)
+      }).catch(() => {})
+    } catch {}
+    return () => { alive = false }
+  }, [])
+
+  useEffect(() => {
+    if (!viewerId) { setFlagHidden(false); return }
+    setFlagHidden(isFlagDismissed(viewerId, contact.id, contact.next_due_at))
+  }, [viewerId, contact.id, contact.next_due_at])
 
   async function move(stage: string) {
     setBusy(stage); setErr(null)
@@ -173,9 +196,54 @@ export function WhereThingsStand({
 
   const resting = stage === "dormant_no_answer" || stage === "dormant_declined"
 
+  // THE FLAG. Raised only when the reminder is actually owed: today or past.
+  // A reminder three weeks out is information, not a flag, and the reminder
+  // line further down already states it. Flagging it would teach people that
+  // the banner at the top means nothing in particular.
+  const dueDays = contact.next_due_at ? daysBetween(contact.next_due_at, now) : null
+  const dueAtMs = contact.next_due_at ? new Date(contact.next_due_at).getTime() : null
+  const owed = dueAtMs !== null && dueAtMs <= now.getTime()
+  const showFlag = owed && !flagHidden && !resting
+
   return (
     <section style={card} data-testid="where-things-stand">
       <div style={eyebrow}>Where things stand</div>
+
+      {/* THE FOLLOW-UP FLAG, dated, at the top where it is the first thing read.
+          It was a grey line below the composer saying "Follow-up reminder was 34
+          days ago", which is the single most actionable fact on the page and was
+          sitting under the fold in the quietest ink on the screen.
+
+          DISMISSAL IS SCOPED TO THIS DUE DATE, not to the contact. Waving away
+          "you were going to follow up on Aug 1" says nothing about the next
+          reminder, so the next one asks again and old keys expire by
+          themselves. It does not touch next_due_at: the engine owns that, and
+          a dismissal that silently cleared a date the user chose would be the
+          product overruling them. Snooze, below, is how you move the date. */}
+      {showFlag && (
+        <div style={flagBox} data-testid="reminder-flag">
+          <span style={flagDot} aria-hidden="true" />
+          <span style={{ flex: "1 1 220px", minWidth: 0, fontSize: 13.5, color: S.meaning.attention.ink }}>
+            <strong style={{ fontWeight: 800 }}>
+              {dueDays === 0 ? "Follow up today" : `Follow-up was due ${ago(dueDays ?? 0)}`}
+            </strong>
+            {contact.next_due_at ? <> · {fmtDate(contact.next_due_at)}</> : null}
+            {contact.next_due_reason ? <> · {REASON_LABELS[contact.next_due_reason] ?? ""}</> : null}
+          </span>
+          <button
+            type="button"
+            data-testid="reminder-flag-dismiss"
+            onClick={() => {
+              if (viewerId) dismissFlag(viewerId, contact.id, contact.next_due_at)
+              setFlagHidden(true)
+            }}
+            style={flagDismiss}
+            aria-label="Dismiss this reminder flag"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       <div style={headlineStyle} data-testid="wts-headline">{headline}</div>
       {read && <div style={readStyle} data-testid="wts-read">{read}</div>}
@@ -299,4 +367,22 @@ const offerBox: React.CSSProperties = {
 }
 const evidenceStyle: React.CSSProperties = {
   margin: "12px 0 0", color: S.text.muted, fontSize: 13, lineHeight: "19px",
+}
+
+// Attention, not error: a follow-up you have not sent is something that needs
+// you, and nothing has gone wrong.
+const flagBox: React.CSSProperties = {
+  display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap",
+  background: S.meaning.attention.fill,
+  border: `1px solid ${S.meaning.attention.accent}`,
+  borderRadius: 10, padding: "10px 13px", marginBottom: 14,
+}
+const flagDot: React.CSSProperties = {
+  width: 8, height: 8, borderRadius: "50%", flexShrink: 0,
+  background: S.meaning.attention.accent,
+}
+const flagDismiss: React.CSSProperties = {
+  background: "none", border: "none", padding: 0, fontFamily: "inherit",
+  fontSize: 12.5, fontWeight: 700, color: S.meaning.attention.ink,
+  opacity: 0.75, cursor: "pointer", flexShrink: 0,
 }

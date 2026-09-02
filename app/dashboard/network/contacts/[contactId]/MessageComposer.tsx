@@ -174,6 +174,14 @@ export function MessageComposer({
     <section style={wrap} data-testid="message-composer">
       <div style={eyebrow}>{draft ? "Your draft" : `Write to ${firstName}`}</div>
 
+      {/* AT THE TOP, because it sets the expectation before you write rather
+          than correcting it after. It replaces the same point made at the
+          bottom of the block: saying it twice on one card is what made the rest
+          of this page feel repetitive. */}
+      <p style={disclaimer} data-testid="composer-disclaimer">
+        Workshop your message here, then cut and paste it into your email.
+      </p>
+
       <div style={row}>
         <label style={lbl}>
           Channel
@@ -268,11 +276,6 @@ export function MessageComposer({
         )}
       </div>
 
-      {/* Said plainly, once. A product that drafts messages could reasonably be
-          assumed to send them, and this one never will. */}
-      <p style={note}>
-        SIGNAL does not send anything. Copy it, paste it into {channel === "email" ? "your email" : "LinkedIn"}, then mark it sent.
-      </p>
     </section>
   )
 }
@@ -309,4 +312,10 @@ const quiet: React.CSSProperties = {
 }
 const note: React.CSSProperties = {
   margin: 0, fontSize: 12.5, color: S.text.muted, lineHeight: "18px",
+}
+
+// Small print, and deliberately not a warning: nothing has gone wrong, this is
+// how the tool works. Muted, one line, above the fields it describes.
+const disclaimer: React.CSSProperties = {
+  margin: "-4px 0 2px", fontSize: 12.5, color: S.text.muted, lineHeight: "18px",
 }

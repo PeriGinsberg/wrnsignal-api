@@ -58,6 +58,16 @@ export async function signOutCompletely(): Promise<void> {
   // job, which would hand them a run id their token cannot read.
   sessionStorage.removeItem("signal_return_run")
   sessionStorage.removeItem("signal_return_title")
+  // Per-viewer networking UI state, in localStorage rather than sessionStorage
+  // because a dismissal that returns every session reads as broken. Same reason
+  // as the keys above: a second account on this browser must not inherit the
+  // first one's dismissals.
+  try {
+    localStorage.removeItem("signal_net_empty_company_dismissed_v1")
+    localStorage.removeItem("signal_net_reminder_flag_dismissed_v1")
+  } catch {
+    // Storage unavailable. Nothing else to do.
+  }
 
   // A full navigation, not router.push, so the app re-initialises from scratch
   // in the unauthenticated state.
