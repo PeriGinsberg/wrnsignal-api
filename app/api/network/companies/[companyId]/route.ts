@@ -16,7 +16,9 @@
 
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
-import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
+import { routeError } from "../../../_lib/routeError"
+import { getSupabaseAdmin } from "@/lib/collab/identity"
+import { resolveOwnerScope } from "@/lib/collab/scope"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -30,7 +32,9 @@ export async function OPTIONS(req: NextRequest) { return corsOptionsResponse(req
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ companyId: string }> }) {
   try {
     const { companyId } = await params
-    const { profileId } = await resolveCaller(req)
+    // Owner-only by design; resolveOwnerScope never consults the query
+    // string, so this cannot widen into coach access by accident.
+    const scope = await resolveOwnerScope(req)
     const supabase = getSupabaseAdmin()
 
     // Load by id, then owner-gate — authority comes from the row's own owner,
@@ -38,7 +42,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ co
     const { data: existing } = await supabase
       .from("network_companies").select("id, client_profile_id").eq("id", companyId).maybeSingle()
     if (!existing) return withCorsJson(req, { ok: false, error: "Company not found" }, 404)
-    if (existing.client_profile_id !== profileId)
+    if (existing.client_profile_id !== scope.subjectId)
       return withCorsJson(req, { ok: false, error: "Forbidden: company edits are owner-only" }, 403)
 
     const body = await req.json().catch(() => null)
@@ -78,22 +82,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ co
 
     return withCorsJson(req, { ok: true, company: updated }, 200)
   } catch (err: any) {
-    const msg = err?.message || String(err)
-    const status = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500
-    return withCorsJson(req, { ok: false, error: msg }, status)
+    return routeError(req, err)
   }
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ companyId: string }> }) {
   try {
     const { companyId } = await params
-    const { profileId } = await resolveCaller(req)
+    // Owner-only by design; resolveOwnerScope never consults the query
+    // string, so this cannot widen into coach access by accident.
+    const scope = await resolveOwnerScope(req)
     const supabase = getSupabaseAdmin()
 
     const { data: existing } = await supabase
       .from("network_companies").select("id, client_profile_id, name").eq("id", companyId).maybeSingle()
     if (!existing) return withCorsJson(req, { ok: false, error: "Company not found" }, 404)
-    if (existing.client_profile_id !== profileId)
+    if (existing.client_profile_id !== scope.subjectId)
       return withCorsJson(req, { ok: false, error: "Forbidden: delete is owner-only" }, 403)
 
     // Count BEFORE the delete — afterwards the link is gone and the number is
@@ -109,8 +113,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ c
     // contacts_released: made standalone by ON DELETE SET NULL, not deleted.
     return withCorsJson(req, { ok: true, deleted: 1, contacts_released: count ?? 0, name: existing.name }, 200)
   } catch (err: any) {
-    const msg = err?.message || String(err)
-    const status = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500
-    return withCorsJson(req, { ok: false, error: msg }, status)
+    return routeError(req, err)
   }
 }

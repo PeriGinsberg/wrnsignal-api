@@ -1,7 +1,7 @@
 // app/api/network/contacts/[contactId]/route.ts
 // GET one contact record: the contact + its company + its action log (newest first).
 //   Owner or an authorized coach ('view'). Authority comes from the contact's own
-//   owner (client_profile_id), resolved before any read — never from a URL param.
+//   the owner (client_profile_id), resolved before any read — never from a URL param.
 // PATCH the contact's own notes. OWNER-ONLY — like every pipeline write, a coach
 //   cannot edit contact fields in v1 (coach access is view/annotate). No engine
 //   involvement: notes do not affect due dates.
@@ -11,8 +11,9 @@
 
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
-import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
-import { assertBoardAccess } from "@/lib/network-tracker/access"
+import { routeError } from "../../../_lib/routeError"
+import { getSupabaseAdmin } from "@/lib/collab/identity"
+import { resolveActor, resolveOwnerScope, resolveScope } from "@/lib/collab/scope"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -25,7 +26,7 @@ export async function OPTIONS(req: NextRequest) { return corsOptionsResponse(req
 export async function GET(req: NextRequest, { params }: { params: Promise<{ contactId: string }> }) {
   try {
     const { contactId } = await params
-    const { profileId } = await resolveCaller(req)
+    const actor = await resolveActor(req)
     const supabase = getSupabaseAdmin()
 
     const { data: contact, error } = await supabase
@@ -36,8 +37,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ cont
     if (error) throw new Error(`Contact lookup failed: ${error.message}`)
     if (!contact) return withCorsJson(req, { ok: false, error: "Contact not found" }, 404)
 
-    const acc = await assertBoardAccess(supabase, profileId, contact.client_profile_id, "view")
-    if (!acc) return withCorsJson(req, { ok: false, error: "Forbidden" }, 403)
+    // Row-derived subject: the contact says whose board it is, the ladder says
+    // whether this actor may reach it. Same "view" level as before.
+    await resolveScope(supabase, actor, { subject: contact.client_profile_id, require: "read" })
 
     const { data: actions } = await supabase
       .from("network_actions")
@@ -47,23 +49,23 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ cont
 
     return withCorsJson(req, { ok: true, contact, actions: actions ?? [] }, 200)
   } catch (err: any) {
-    const msg = err?.message || String(err)
-    const status = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500
-    return withCorsJson(req, { ok: false, error: msg }, status)
+    return routeError(req, err)
   }
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ contactId: string }> }) {
   try {
     const { contactId } = await params
-    const { profileId } = await resolveCaller(req)
+    // Owner-only by design; resolveOwnerScope never consults the query
+    // string, so this cannot widen into coach access by accident.
+    const scope = await resolveOwnerScope(req)
     const supabase = getSupabaseAdmin()
 
     // Load by id, then owner-gate. Pipeline/contact edits are owner-only in v1.
     const { data: c } = await supabase
       .from("network_contacts").select("id, client_profile_id").eq("id", contactId).maybeSingle()
     if (!c) return withCorsJson(req, { ok: false, error: "Contact not found" }, 404)
-    if (c.client_profile_id !== profileId)
+    if (c.client_profile_id !== scope.subjectId)
       return withCorsJson(req, { ok: false, error: "Forbidden: contact edits are owner-only" }, 403)
 
     const body = await req.json().catch(() => null)
@@ -98,23 +100,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ co
 
     return withCorsJson(req, { ok: true, contact: updated }, 200)
   } catch (err: any) {
-    const msg = err?.message || String(err)
-    const status = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500
-    return withCorsJson(req, { ok: false, error: msg }, status)
+    return routeError(req, err)
   }
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ contactId: string }> }) {
   try {
     const { contactId } = await params
-    const { profileId } = await resolveCaller(req)
+    // Owner-only by design; resolveOwnerScope never consults the query
+    // string, so this cannot widen into coach access by accident.
+    const scope = await resolveOwnerScope(req)
     const supabase = getSupabaseAdmin()
 
     // Load by id, then owner-gate. Deletion is owner-only (coaches cannot).
     const { data: c } = await supabase
       .from("network_contacts").select("id, client_profile_id").eq("id", contactId).maybeSingle()
     if (!c) return withCorsJson(req, { ok: false, error: "Contact not found" }, 404)
-    if (c.client_profile_id !== profileId)
+    if (c.client_profile_id !== scope.subjectId)
       return withCorsJson(req, { ok: false, error: "Forbidden: delete is owner-only" }, 403)
 
     // Hard delete — network_actions + network_comments cascade.
@@ -123,8 +125,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ c
 
     return withCorsJson(req, { ok: true, deleted: 1 }, 200)
   } catch (err: any) {
-    const msg = err?.message || String(err)
-    const status = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500
-    return withCorsJson(req, { ok: false, error: msg }, status)
+    return routeError(req, err)
   }
 }

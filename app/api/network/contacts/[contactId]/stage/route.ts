@@ -10,7 +10,9 @@
 
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
-import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
+import { routeError } from "../../../../_lib/routeError"
+import { getSupabaseAdmin } from "@/lib/collab/identity"
+import { resolveOwnerScope } from "@/lib/collab/scope"
 import { computeNextDue, type ContactStage } from "@/lib/network-tracker/reminder-engine"
 
 export const runtime = "nodejs"
@@ -28,7 +30,9 @@ export async function OPTIONS(req: NextRequest) { return corsOptionsResponse(req
 export async function POST(req: NextRequest, { params }: { params: Promise<{ contactId: string }> }) {
   try {
     const { contactId } = await params
-    const { profileId } = await resolveCaller(req)
+    // Owner-only by design; resolveOwnerScope never consults the query
+    // string, so this cannot widen into coach access by accident.
+    const scope = await resolveOwnerScope(req)
     const supabase = getSupabaseAdmin()
 
     const { data: c } = await supabase
@@ -36,7 +40,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
       .select("id, client_profile_id, stage, created_at, reminder_override, dormant_since, cycle_started_at, first_touch_at, first_replied_at, first_chat_at")
       .eq("id", contactId).maybeSingle()
     if (!c) return withCorsJson(req, { ok: false, error: "Contact not found" }, 404)
-    if (c.client_profile_id !== profileId)
+    if (c.client_profile_id !== scope.subjectId)
       return withCorsJson(req, { ok: false, error: "Forbidden: pipeline edits are owner-only" }, 403)
 
     const body = await req.json().catch(() => null)
@@ -94,8 +98,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
 
     return withCorsJson(req, { ok: true, contact: updated }, 200)
   } catch (err: any) {
-    const msg = err?.message || String(err)
-    const status = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500
-    return withCorsJson(req, { ok: false, error: msg }, status)
+    return routeError(req, err)
   }
 }

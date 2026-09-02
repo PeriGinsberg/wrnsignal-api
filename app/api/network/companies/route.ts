@@ -5,8 +5,9 @@
 
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
-import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
-import { assertBoardAccess } from "@/lib/network-tracker/access"
+import { routeError } from "../../_lib/routeError"
+import { getSupabaseAdmin } from "@/lib/collab/identity"
+import { resolveOwnerScope, resolveRequestScope } from "@/lib/collab/scope"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -19,17 +20,15 @@ export async function OPTIONS(req: NextRequest) { return corsOptionsResponse(req
 
 export async function GET(req: NextRequest) {
   try {
-    const { profileId } = await resolveCaller(req)
     const supabase = getSupabaseAdmin()
-    const target = new URL(req.url).searchParams.get("client_profile_id") || profileId
-
-    const acc = await assertBoardAccess(supabase, profileId, target, "view")
-    if (!acc) return withCorsJson(req, { ok: false, error: "Forbidden" }, 403)
+    // Actor, subject and authorisation in one call. The `|| profileId` default
+    // and the "view" level are unchanged; they moved inside resolveRequestScope.
+    const scope = await resolveRequestScope(req, supabase, { require: "read" })
 
     const { data, error } = await supabase
       .from("network_companies")
       .select("id, name, domain, tier, status, notes, created_at, network_contacts(count)")
-      .eq("client_profile_id", target)
+      .eq("client_profile_id", scope.subjectId)
       .order("name", { ascending: true })
     if (error) throw new Error(`Company board failed: ${error.message}`)
 
@@ -40,9 +39,7 @@ export async function GET(req: NextRequest) {
     }))
     return withCorsJson(req, { ok: true, companies }, 200)
   } catch (err: any) {
-    const msg = err?.message || String(err)
-    const status = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500
-    return withCorsJson(req, { ok: false, error: msg }, status)
+    return routeError(req, err)
   }
 }
 
@@ -57,7 +54,9 @@ export async function GET(req: NextRequest) {
 // a 23505 comes back as a clean 409, never a raw Postgres error.
 export async function POST(req: NextRequest) {
   try {
-    const { profileId } = await resolveCaller(req)
+    // Owner-only by design; resolveOwnerScope never consults the query
+    // string, so this cannot widen into coach access by accident.
+    const scope = await resolveOwnerScope(req)
     const supabase = getSupabaseAdmin()
 
     const body = await req.json().catch(() => null)
@@ -72,7 +71,7 @@ export async function POST(req: NextRequest) {
     const { data: company, error: insErr } = await supabase
       .from("network_companies")
       .insert({
-        client_profile_id: profileId,
+        client_profile_id: scope.subjectId,
         name,
         tier,
         status,
@@ -92,8 +91,6 @@ export async function POST(req: NextRequest) {
     // Shape-match GET so the client can drop it straight into board state.
     return withCorsJson(req, { ok: true, company: { ...company, contact_count: 0 } }, 201)
   } catch (err: any) {
-    const msg = err?.message || String(err)
-    const status = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500
-    return withCorsJson(req, { ok: false, error: msg }, status)
+    return routeError(req, err)
   }
 }

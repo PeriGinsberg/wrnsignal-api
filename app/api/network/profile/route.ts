@@ -3,7 +3,7 @@
 // PATCH — edit fields; records which fields the user has touched.
 //
 // BOTH the client and their coach may edit (last save wins), per the locked
-// template rule. PATCH therefore gates on assertBoardAccess(..., "full") rather
+// template rule. PATCH therefore gates on resolveScope(..., require: "write") rather
 // than the owner-only check every pipeline write uses. That is a DELIBERATE
 // exception to "coaches cannot mutate": that rule protects the client's own work
 // record (stages, actions, reminders), whereas this profile is shared copy a
@@ -28,8 +28,9 @@
 
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
-import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
-import { assertBoardAccess } from "@/lib/network-tracker/access"
+import { routeError } from "../../_lib/routeError"
+import { getSupabaseAdmin } from "@/lib/collab/identity"
+import { resolveActor, resolveRequestScope, resolveScope } from "@/lib/collab/scope"
 import { extractResumeRoles } from "@/app/api/jobfit/llmResumeExtractor"
 import { inferTargetFamilies } from "@/app/api/_lib/jobfitProfileAdapter"
 import {
@@ -130,29 +131,25 @@ async function hasResumeText(supabase: ReturnType<typeof getSupabaseAdmin>, clie
 
 export async function GET(req: NextRequest) {
   try {
-    const { profileId } = await resolveCaller(req)
     const supabase = getSupabaseAdmin()
-    const target = new URL(req.url).searchParams.get("client_profile_id") || profileId
-
-    const acc = await assertBoardAccess(supabase, profileId, target, "view")
-    if (!acc) return withCorsJson(req, { ok: false, error: "Forbidden" }, 403)
+    const scope = await resolveRequestScope(req, supabase, { require: "read" })
 
     let row = must(await supabase
-      .from("network_client_profile").select(PROFILE_COLS).eq("client_profile_id", target).maybeSingle<ProfileRow>(),
+      .from("network_client_profile").select(PROFILE_COLS).eq("client_profile_id", scope.subjectId).maybeSingle<ProfileRow>(),
       "read networking profile")
 
     // First open: materialise + seed. ON CONFLICT DO NOTHING makes this safe
     // against a second tab racing it.
     if (!row) {
-      const seed = computeSeed(await loadSources(supabase, target, { withResume: false }))
+      const seed = computeSeed(await loadSources(supabase, scope.subjectId, { withResume: false }))
       must(await supabase
         .from("network_client_profile")
         .upsert(
-          { client_profile_id: target, ...seed, seeded_at: new Date().toISOString(), touched_fields: [] },
+          { client_profile_id: scope.subjectId, ...seed, seeded_at: new Date().toISOString(), touched_fields: [] },
           { onConflict: "client_profile_id", ignoreDuplicates: true },
         ), "seed networking profile")
       row = must(await supabase
-        .from("network_client_profile").select(PROFILE_COLS).eq("client_profile_id", target).maybeSingle<ProfileRow>(),
+        .from("network_client_profile").select(PROFILE_COLS).eq("client_profile_id", scope.subjectId).maybeSingle<ProfileRow>(),
         "re-read networking profile after seed")
     }
 
@@ -163,7 +160,7 @@ export async function GET(req: NextRequest) {
     let autoFilled: string[] = []
     if (row && hasFillableBlanks(row as never, (row.touched_fields as string[]) ?? [])) {
       const fill = computeAutoFill(
-        await loadSources(supabase, target, { withResume: false }),
+        await loadSources(supabase, scope.subjectId, { withResume: false }),
         row as never,
         (row.touched_fields as string[]) ?? [],
       )
@@ -171,7 +168,7 @@ export async function GET(req: NextRequest) {
         const refilled = must(await supabase
           .from("network_client_profile")
           .update({ ...fill, seeded_at: new Date().toISOString() })
-          .eq("client_profile_id", target).select(PROFILE_COLS).single<ProfileRow>(), "auto-fill networking profile")
+          .eq("client_profile_id", scope.subjectId).select(PROFILE_COLS).single<ProfileRow>(), "auto-fill networking profile")
         if (refilled) row = refilled
         autoFilled = Object.keys(fill)
       }
@@ -187,45 +184,44 @@ export async function GET(req: NextRequest) {
       !row!.current_role_title && !row!.current_employer &&
       !touched.has("current_role_title") && !touched.has("current_employer") &&
       !row!.resume_seed_attempted_at &&
-      (await hasResumeText(supabase, target))
+      (await hasResumeText(supabase, scope.subjectId))
 
     return withCorsJson(req, {
       ok: true, profile: row, resume_pending: resumePending, auto_filled: autoFilled,
       completeness: completeness((row ?? {}) as never),
     }, 200)
   } catch (err: any) {
-    const msg = err?.message || String(err)
-    const status = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500
-    return withCorsJson(req, { ok: false, error: msg }, status)
+    return routeError(req, err)
   }
 }
 
 export async function PATCH(req: NextRequest) {
   try {
-    const { profileId } = await resolveCaller(req)
+    const actor = await resolveActor(req)
     const supabase = getSupabaseAdmin()
     const body = await req.json().catch(() => null)
     if (!body || typeof body !== "object")
       return withCorsJson(req, { ok: false, error: "nothing to update" }, 400)
 
-    const target = String(body.client_profile_id || "") || profileId
+    // Body-carried subject: handed in because the body is already consumed.
     // Client AND coach may edit — last save wins, per the locked template rule.
     // 'full' is the strongest coach level; note this is a DELIBERATE exception to
     // "coaches cannot mutate", which is scoped to the PIPELINE (stage, actions,
     // reminders). The networking profile is shared copy a coach is expected to
     // help write, not the client's own work record.
-    const acc = await assertBoardAccess(supabase, profileId, target, "full")
-    if (!acc) return withCorsJson(req, { ok: false, error: "Forbidden" }, 403)
+    const scope = await resolveScope(supabase, actor, {
+      subject: String(body.client_profile_id || ""), require: "write",
+    })
 
     const existing = must(await supabase
-      .from("network_client_profile").select("id, touched_fields").eq("client_profile_id", target).maybeSingle(),
+      .from("network_client_profile").select("id, touched_fields").eq("client_profile_id", scope.subjectId).maybeSingle(),
       "read networking profile for edit")
     if (!existing) return withCorsJson(req, { ok: false, error: "Profile not initialised — open it first." }, 404)
 
     // ── phase 2 of the seed: the two résumé-derived fields ──
     if (body.action === "seed_resume") {
       const touched = new Set<string>(existing.touched_fields ?? [])
-      const src = await loadSources(supabase, target, { withResume: true })
+      const src = await loadSources(supabase, scope.subjectId, { withResume: true })
       const patch: Record<string, string> = {}
       for (const [k, v] of Object.entries(computeSeed(src))) {
         // Never clobber a field the user got to first — they may well have typed
@@ -238,22 +234,22 @@ export async function PATCH(req: NextRequest) {
       if (Object.keys(patch).length === 0) {
         const unchanged = must(await supabase
           .from("network_client_profile").update(stamp)
-          .eq("client_profile_id", target).select(PROFILE_COLS).single<ProfileRow>(), "stamp resume seed attempt")
+          .eq("client_profile_id", scope.subjectId).select(PROFILE_COLS).single<ProfileRow>(), "stamp resume seed attempt")
         return withCorsJson(req, { ok: true, profile: unchanged, completeness: completeness((unchanged ?? {}) as never) }, 200)
       }
       const updated = must(await supabase
         .from("network_client_profile").update({ ...patch, ...stamp })
-        .eq("client_profile_id", target).select(PROFILE_COLS).single<ProfileRow>(), "apply resume seed")
+        .eq("client_profile_id", scope.subjectId).select(PROFILE_COLS).single<ProfileRow>(), "apply resume seed")
       return withCorsJson(req, { ok: true, profile: updated, completeness: completeness((updated ?? {}) as never) }, 200)
     }
 
     // ── refresh from profile: re-seed ONLY untouched fields ──
     if (body.action === "refresh") {
-      const patch = computeRefresh(await loadSources(supabase, target, { withResume: true }), existing.touched_fields ?? [])
+      const patch = computeRefresh(await loadSources(supabase, scope.subjectId, { withResume: true }), existing.touched_fields ?? [])
       const updated = must(await supabase
         .from("network_client_profile")
         .update({ ...patch, seeded_at: new Date().toISOString() })
-        .eq("client_profile_id", target).select(PROFILE_COLS).single<ProfileRow>(), "refresh networking profile")
+        .eq("client_profile_id", scope.subjectId).select(PROFILE_COLS).single<ProfileRow>(), "refresh networking profile")
       return withCorsJson(req, {
         ok: true, profile: updated, refreshed: Object.keys(patch),
         completeness: completeness((updated ?? {}) as never),
@@ -269,12 +265,12 @@ export async function PATCH(req: NextRequest) {
       const surface = String(body.surface || "").trim()
       if (!surface) return withCorsJson(req, { ok: false, error: "surface required" }, 400)
       const cur = must(await supabase
-        .from("network_client_profile").select("help_dismissed").eq("client_profile_id", target).maybeSingle(),
+        .from("network_client_profile").select("help_dismissed").eq("client_profile_id", scope.subjectId).maybeSingle(),
         "read help dismissals")
       const next = { ...((cur?.help_dismissed as Record<string, boolean>) ?? {}), [surface]: body.dismissed !== false }
       const updated = must(await supabase
         .from("network_client_profile").update({ help_dismissed: next })
-        .eq("client_profile_id", target).select(PROFILE_COLS).single<ProfileRow>(), "record help dismissal")
+        .eq("client_profile_id", scope.subjectId).select(PROFILE_COLS).single<ProfileRow>(), "record help dismissal")
       return withCorsJson(req, { ok: true, profile: updated, completeness: completeness((updated ?? {}) as never) }, 200)
     }
 
@@ -291,14 +287,12 @@ export async function PATCH(req: NextRequest) {
     const { data: updated, error: updErr } = await supabase
       .from("network_client_profile")
       .update({ ...patch, touched_fields: mergeTouched(existing.touched_fields ?? [], Object.keys(patch)) })
-      .eq("client_profile_id", target).select(PROFILE_COLS).single<ProfileRow>()
+      .eq("client_profile_id", scope.subjectId).select(PROFILE_COLS).single<ProfileRow>()
     if (updErr) throw new Error(`Update failed: ${updErr.message}`)
 
     return withCorsJson(req, { ok: true, profile: updated, completeness: completeness((updated ?? {}) as never) }, 200)
   } catch (err: any) {
-    const msg = err?.message || String(err)
-    const status = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500
-    return withCorsJson(req, { ok: false, error: msg }, status)
+    return routeError(req, err)
   }
 }
 

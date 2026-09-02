@@ -6,7 +6,9 @@
 
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
-import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
+import { errorStatus } from "../../../_lib/routeError"
+import { getSupabaseAdmin } from "@/lib/collab/identity"
+import { resolveOwnerScope } from "@/lib/collab/scope"
 import { parseFile, dataRows, MAX_ROWS } from "@/lib/network-tracker/import-parse"
 import { resolveImportedName, displayName } from "@/lib/network-tracker/parse-name"
 import { matchOrCreateCompany } from "@/lib/network-tracker/company"
@@ -24,7 +26,9 @@ export async function OPTIONS(req: NextRequest) { return corsOptionsResponse(req
 
 export async function POST(req: NextRequest) {
   try {
-    const { profileId: owner } = await resolveCaller(req)
+    // Owner-only by design; resolveOwnerScope never consults the query
+    // string, so this cannot widen into coach access by accident.
+    const scope = await resolveOwnerScope(req)
     const supabase = getSupabaseAdmin()
 
     const form = await req.formData()
@@ -58,12 +62,12 @@ export async function POST(req: NextRequest) {
 
     // ── dedup pre-fetch: existing (lower first, lower last, company_id) keys ──
     const { data: existing } = await supabase
-      .from("network_contacts").select("first_name, last_name, company_id").eq("client_profile_id", owner)
+      .from("network_contacts").select("first_name, last_name, company_id").eq("client_profile_id", scope.subjectId)
     const seen = new Set<string>((existing ?? []).map((c) => `${lc(c.first_name)}|${lc(c.last_name)}|${c.company_id ?? ""}`))
 
     // ── company cache (existing names -> id), for reuse + counting new ones ──
     const { data: existingCos } = await supabase
-      .from("network_companies").select("id, name").eq("client_profile_id", owner)
+      .from("network_companies").select("id, name").eq("client_profile_id", scope.subjectId)
     const companyCache = new Map<string, string>((existingCos ?? []).map((c) => [lc(c.name), c.id]))
     const preExisting = new Set(companyCache.keys())
     let newCompanies = 0
@@ -74,7 +78,7 @@ export async function POST(req: NextRequest) {
       const key = lc(nm)
       const cached = companyCache.get(key)
       if (cached) return cached
-      const id = await matchOrCreateCompany(supabase, owner, nm)
+      const id = await matchOrCreateCompany(supabase, scope.subjectId, nm)
       companyCache.set(key, id)
       if (!preExisting.has(key)) newCompanies++
       return id
@@ -125,7 +129,7 @@ export async function POST(req: NextRequest) {
 
       toInsert.push({
         _key: key,
-        client_profile_id: owner,
+        client_profile_id: scope.subjectId,
         company_id: companyId,
         first_name: first,
         last_name: last,
@@ -180,8 +184,16 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     const msg = err?.message || String(err)
     console.error("[import/commit]", err?.stack || msg)
-    if (/unauthorized/i.test(msg)) return withCorsJson(req, { ok: false, error: "Please sign in again." }, 401)
-    if (/profile not found/i.test(msg)) return withCorsJson(req, { ok: false, error: "We couldn't find your profile." }, 404)
+    // Status from the shared mapper, prose from here. The import routes are the
+    // two that answer in user-facing sentences rather than the raw error, so
+    // they keep their own copy; what they no longer keep is their own opinion
+    // about which error means which status.
+    const status = errorStatus(err)
+    if (status === 401) return withCorsJson(req, { ok: false, error: "Please sign in again." }, 401)
+    // Unreachable while this route is owner-only, and here so that it stays
+    // correct rather than 500-with-import-prose if it ever is not.
+    if (status === 403) return withCorsJson(req, { ok: false, error: "You do not have access to that board." }, 403)
+    if (status === 404) return withCorsJson(req, { ok: false, error: "We couldn't find your profile." }, 404)
     return withCorsJson(req, { ok: false, error: "The import didn't finish. Nothing was changed — please try again." }, 500)
   }
 }

@@ -11,7 +11,9 @@
 
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
-import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
+import { routeError } from "../../../_lib/routeError"
+import { getSupabaseAdmin } from "@/lib/collab/identity"
+import { resolveOwnerScope } from "@/lib/collab/scope"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -22,7 +24,9 @@ export async function OPTIONS(req: NextRequest) { return corsOptionsResponse(req
 
 export async function POST(req: NextRequest) {
   try {
-    const { profileId } = await resolveCaller(req)
+    // Owner-only by design; resolveOwnerScope never consults the query
+    // string, so this cannot widen into coach access by accident.
+    const scope = await resolveOwnerScope(req)
     const supabase = getSupabaseAdmin()
 
     const body = await req.json().catch(() => null)
@@ -38,15 +42,13 @@ export async function POST(req: NextRequest) {
     const { data, error } = await supabase
       .from("network_contacts")
       .delete()
-      .eq("client_profile_id", profileId)
+      .eq("client_profile_id", scope.subjectId)
       .in("id", ids)
       .select("id")
     if (error) throw new Error(`Batch delete failed: ${error.message}`)
 
     return withCorsJson(req, { ok: true, deleted: data?.length ?? 0 }, 200)
   } catch (err: any) {
-    const msg = err?.message || String(err)
-    const status = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500
-    return withCorsJson(req, { ok: false, error: msg }, status)
+    return routeError(req, err)
   }
 }

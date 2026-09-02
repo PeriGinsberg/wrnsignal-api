@@ -8,7 +8,8 @@
 
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
-import { resolveCaller } from "@/lib/collab/identity"
+import { errorStatus } from "../../../_lib/routeError"
+import { resolveOwnerScope } from "@/lib/collab/scope"
 import { parseFile, detectHeaderRow, dataRows, MAX_ROWS } from "@/lib/network-tracker/import-parse"
 import { guessMapping } from "@/lib/network-tracker/import-fields"
 
@@ -20,7 +21,9 @@ export async function OPTIONS(req: NextRequest) { return corsOptionsResponse(req
 
 export async function POST(req: NextRequest) {
   try {
-    await resolveCaller(req) // owner-gate: must be an authenticated SIGNAL user
+    // Auth gate only: the result is deliberately discarded. Preview reads
+    // nothing scoped, so it needs a caller, not a subject.
+    await resolveOwnerScope(req)
 
     const form = await req.formData()
     const file = form.get("file") as File | null
@@ -63,8 +66,16 @@ export async function POST(req: NextRequest) {
   } catch (err: any) {
     const msg = err?.message || String(err)
     console.error("[import/preview]", err?.stack || msg)
-    if (/unauthorized/i.test(msg)) return withCorsJson(req, { ok: false, error: "Please sign in again." }, 401)
-    if (/profile not found/i.test(msg)) return withCorsJson(req, { ok: false, error: "We couldn't find your profile." }, 404)
+    // Status from the shared mapper, prose from here. The import routes are the
+    // two that answer in user-facing sentences rather than the raw error, so
+    // they keep their own copy; what they no longer keep is their own opinion
+    // about which error means which status.
+    const status = errorStatus(err)
+    if (status === 401) return withCorsJson(req, { ok: false, error: "Please sign in again." }, 401)
+    // Unreachable while this route is owner-only, and here so that it stays
+    // correct rather than 500-with-import-prose if it ever is not.
+    if (status === 403) return withCorsJson(req, { ok: false, error: "You do not have access to that board." }, 403)
+    if (status === 404) return withCorsJson(req, { ok: false, error: "We couldn't find your profile." }, 404)
     return withCorsJson(req, { ok: false, error: "Something went wrong reading that file. Please try again." }, 500)
   }
 }

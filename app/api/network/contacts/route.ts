@@ -19,8 +19,9 @@
 
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
-import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
-import { assertBoardAccess } from "@/lib/network-tracker/access"
+import { routeError } from "../../_lib/routeError"
+import { getSupabaseAdmin } from "@/lib/collab/identity"
+import { resolveOwnerScope, resolveRequestScope } from "@/lib/collab/scope"
 import { matchOrCreateCompany } from "@/lib/network-tracker/company"
 
 export const runtime = "nodejs"
@@ -37,13 +38,11 @@ export async function OPTIONS(req: NextRequest) { return corsOptionsResponse(req
 
 export async function GET(req: NextRequest) {
   try {
-    const { profileId } = await resolveCaller(req)
     const supabase = getSupabaseAdmin()
     const params = new URL(req.url).searchParams
-    const target = params.get("client_profile_id") || profileId
-
-    const acc = await assertBoardAccess(supabase, profileId, target, "view")
-    if (!acc) return withCorsJson(req, { ok: false, error: "Forbidden" }, 403)
+    // Actor, subject and authorisation in one call. The `|| profileId` default
+    // and the "view" level are unchanged; they moved inside resolveRequestScope.
+    const scope = await resolveRequestScope(req, supabase, { require: "read" })
 
     let q = supabase
       .from("network_contacts")
@@ -53,7 +52,7 @@ export async function GET(req: NextRequest) {
       // chat rates their "or beyond" semantics — stamped once, never recomputed, so a
       // contact now at nurture still counts as having replied.
       "id, first_name, last_name, title, email, stage, relationship, priority, segment, next_due_at, next_due_reason, last_action_at, company_id, network_companies(name), first_touch_at, first_replied_at, first_chat_at, outcome_type")
-      .eq("client_profile_id", target)
+      .eq("client_profile_id", scope.subjectId)
 
     // optional filters
     const stage = params.get("stage")
@@ -73,15 +72,15 @@ export async function GET(req: NextRequest) {
     if (error) throw new Error(`Contact list failed: ${error.message}`)
     return withCorsJson(req, { ok: true, contacts: data ?? [] }, 200)
   } catch (err: any) {
-    const msg = err?.message || String(err)
-    const status = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500
-    return withCorsJson(req, { ok: false, error: msg }, status)
+    return routeError(req, err)
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { profileId } = await resolveCaller(req)
+    // Owner-only by design; resolveOwnerScope never consults the query
+    // string, so this cannot widen into coach access by accident.
+    const scope = await resolveOwnerScope(req)
     const supabase = getSupabaseAdmin()
 
     const body = await req.json().catch(() => null)
@@ -111,14 +110,14 @@ export async function POST(req: NextRequest) {
     const additionalInfo = str(body?.additional_info)
 
     // ── resolve the company (optional) — shared match-or-create ──
-    const companyId: string | null = companyName ? await matchOrCreateCompany(supabase, profileId, companyName) : null
+    const companyId: string | null = companyName ? await matchOrCreateCompany(supabase, scope.subjectId, companyName) : null
 
     // ── create the contact ── (stage/dates/reminders come from DB defaults:
     // stage 'identified', next_due_at NULL — never from the body)
     const { data: contact, error: insErr } = await supabase
       .from("network_contacts")
       .insert({
-        client_profile_id: profileId,
+        client_profile_id: scope.subjectId,
         company_id: companyId,
         first_name: firstName,
         last_name: lastName,
@@ -147,8 +146,6 @@ export async function POST(req: NextRequest) {
 
     return withCorsJson(req, { ok: true, contact }, 201)
   } catch (err: any) {
-    const msg = err?.message || String(err)
-    const status = /unauthorized/i.test(msg) ? 401 : /profile not found/i.test(msg) ? 404 : 500
-    return withCorsJson(req, { ok: false, error: msg }, status)
+    return routeError(req, err)
   }
 }
