@@ -9,7 +9,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, waitFor, cleanup, fireEvent } from "@testing-library/react"
-import ContactsPage from "./page"
+import { NetworkLanding as ContactsPage } from "../NetworkLanding"
 
 // Swapped between renders to simulate the URL changing under the component.
 let params = new URLSearchParams()

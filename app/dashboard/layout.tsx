@@ -73,15 +73,11 @@ const D2C_NAV: NavGroup[] = [
         label: "Networking",
         matchPrefix: true,
         icon: <NetworkIcon size={20} />,
-        // Templates is gone for phase one, and Summary is dropped in favour of
-        // the Dashboard being the single "what needs you" surface.
-        children: [
-          { href: "/dashboard/network/companies", label: "Companies", matchPrefix: true, icon: <CompaniesIcon size={17} /> },
-          { href: "/dashboard/network/contacts", label: "Contacts", matchPrefix: true, icon: <ProfileIcon size={17} /> },
-          // The temporary "Networking profile" entry is GONE (step 8). The
-          // outreach identity is now My Profile > Networking, and the old route
-          // redirects there for anything that still links to it.
-        ],
+        // NO CHILDREN. Companies and Contacts were two tabs over one dataset
+        // and they are one page now; a sub-nav with a single entry pointing at
+        // its own parent is furniture. Templates and the networking profile
+        // went with the retirement, and Summary was dropped in favour of the
+        // Dashboard being the single "what needs you" surface.
       },
       { href: "/dashboard/profile", label: "My Profile", matchPrefix: true, icon: <ProfileIcon size={20} /> },
       // The temporary "Log out" entry is GONE (step 8). Signing out is now
@@ -156,8 +152,10 @@ const COACH_NAV: NavGroup[] = [
 const LIGHT_ROUTES: string[] = [
   // Step 3 the list, step 4 the record. The "/*" covers both: the only
   // descendant of this route is the contact record itself.
-  "/dashboard/network/contacts/*",
-  "/dashboard/network/companies",   // step 5, the board. The per-company hub
+  "/dashboard/network/contacts/*",  // the contact record, and the legacy
+                                    // roster URL that now redirects.
+  "/dashboard/network",             // the merged roster. EXACT: nothing
+                                    // below it is converted by implication.
                                     // page arrives with the Phase B merge.
   "/dashboard/tracker/*",           // step 7, all three views plus the
                                     // application detail page.

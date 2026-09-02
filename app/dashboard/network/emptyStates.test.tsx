@@ -15,7 +15,7 @@ import { render, screen, waitFor, cleanup } from "@testing-library/react"
 // keeps testing it at its new address rather than dropping the case. If the
 // worklist is ever re-routed, its empty state is still guarded.
 import { LegacyWorklist as WorklistPage } from "./LegacyWorklist"
-import ContactsPage from "./contacts/page"
+import { NetworkLanding as ContactsPage } from "./NetworkLanding"
 import CompaniesPage from "./companies/page"
 
 // The Contacts page derives its filters from the URL, so it needs the router

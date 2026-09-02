@@ -56,7 +56,11 @@ export function CompanyCard({
 }: {
   company: Company
   onChanged: (patch: Partial<Company>) => void
-  onRequestDelete: () => void
+  /** Optional. Omitted by CompanyPanel: removing a company from inside a
+   *  contact's side panel would silently unlink the contact you opened it
+   *  from and leave the panel describing something gone. No handler, no
+   *  button, rather than a Remove that quietly does something else. */
+  onRequestDelete?: () => void
 }) {
   const [open, setOpen] = useState(false)
   const [loaded, setLoaded] = useState(false)
@@ -245,15 +249,17 @@ export function CompanyCard({
             </span>
           )}
         </button>
-        <button
-          onClick={onRequestDelete}
-          style={{
-            background: "none", border: "none", color: S.action.quietInk,
-            fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-          }}
-        >
-          Remove
-        </button>
+        {onRequestDelete && (
+          <button
+            onClick={onRequestDelete}
+            style={{
+              background: "none", border: "none", color: S.action.quietInk,
+              fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+            }}
+          >
+            Remove
+          </button>
+        )}
       </div>
 
       {open && (

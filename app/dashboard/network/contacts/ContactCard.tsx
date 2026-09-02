@@ -43,6 +43,24 @@ function meaningFor(stage: string): MeaningKey {
   return PHASE_MEANING[STAGE_PHASE[stage] ?? "idle"]
 }
 
+const companyChip: React.CSSProperties = {
+  alignSelf: "center",
+  flexShrink: 0,
+  maxWidth: 150,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+  background: "none",
+  border: `1px solid ${S.borderSoft}`,
+  borderRadius: 999,
+  padding: "5px 11px",
+  fontSize: 12.5,
+  fontWeight: 700,
+  fontFamily: "inherit",
+  color: S.action.quietInk,
+  cursor: "pointer",
+}
+
 /** Title and company, joined only when both are there, so no stray separator. */
 function subtitle(c: Contact): string {
   const company = c.network_companies?.name ?? null
@@ -55,12 +73,16 @@ export function ContactCard({
   checked = false,
   onToggle,
   flash = false,
+  onOpenCompany,
 }: {
   contact: Contact
   selectMode?: boolean
   checked?: boolean
   onToggle?: () => void
   flash?: boolean
+  /** Opens the company side panel. Absent on surfaces with no panel to open,
+   *  in which case the company stays plain text in the subtitle. */
+  onOpenCompany?: (companyId: string) => void
 }) {
   const [hover, setHover] = useState(false)
 
@@ -198,6 +220,24 @@ export function ContactCard({
           </span>
         </span>
       </a>
+
+      {/* THE COMPANY, as a way in rather than as a word.
+          Outside the anchor above, deliberately: the whole card is a link to the
+          contact, and a button inside an anchor is both invalid and ambiguous to
+          click. This sits beside the status instead, and only when there is a
+          company and somewhere to open it. Contacts with no company render
+          nothing here, which is the majority case the merge exists to support. */}
+      {onOpenCompany && c.company_id && c.network_companies?.name ? (
+        <button
+          type="button"
+          onClick={() => onOpenCompany(c.company_id as string)}
+          style={companyChip}
+          title={`About ${c.network_companies.name}`}
+          data-testid="open-company-panel"
+        >
+          {c.network_companies.name}
+        </button>
+      ) : null}
 
       {/* Status, and when it last moved. Recency sits with STATE rather than in
           the identity line, because "replied, three weeks ago" is one thought:

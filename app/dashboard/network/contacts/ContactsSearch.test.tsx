@@ -5,7 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, waitFor, cleanup, fireEvent } from "@testing-library/react"
-import ContactsPage from "./page"
+import { NetworkLanding as ContactsPage } from "../NetworkLanding"
 
 let params = new URLSearchParams()
 const replaceMock = vi.fn((url: string) => {

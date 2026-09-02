@@ -1,28 +1,22 @@
 "use client"
 
-// /dashboard/network — a REDIRECT to Contacts.
+// /dashboard/network — THE Networking page. One screen, not two tabs.
 //
-// This route used to be the networking Daily Worklist, and it was still the
-// destination of the "Networking" nav item, so clicking Networking landed on an
-// unconverted dark screen in the middle of a light app. That is the "old
-// screen" a tester hits first, from the nav, on the way to everything else.
+// This route used to be a redirect into /contacts, which itself was one of two
+// sibling tabs, the other being /companies. That split asked the student to
+// decide whether they were thinking about a person or an organisation before
+// they were allowed to look at either, and the answer is almost always both:
+// you look at a company because you are about to write to someone who works
+// there. So the roster is the page, companies open as a panel off a row, and
+// the companies nobody works at yet are a strip above the list.
 //
-// The build plan drops the per-area Summary outright: the Dashboard is the
-// single "what needs you" surface, and a second worklist answers the same
-// question in different words. Contacts is the right landing because it is the
-// area's actual workspace.
-//
-// The old component is kept at LegacyWorklist.tsx, unrouted. It is the only
-// reader of GET /api/network/worklist, so deleting it would strand an endpoint
-// before anyone has confirmed the Dashboard covers every case it did.
+// The implementation is NetworkLanding rather than this file so that
+// /dashboard/network/contacts can redirect here without either route file
+// holding the screen. 44 links across the app still point at the old contacts
+// URL and they all keep working.
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { NetworkLanding } from "./NetworkLanding"
 
-export default function NetworkIndexRedirect() {
-  const router = useRouter()
-  useEffect(() => {
-    router.replace("/dashboard/network/contacts")
-  }, [router])
-  return null
+export default function NetworkPage() {
+  return <NetworkLanding />
 }

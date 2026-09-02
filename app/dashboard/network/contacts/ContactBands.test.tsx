@@ -12,7 +12,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, waitFor, cleanup, within } from "@testing-library/react"
-import ContactsPage from "./page"
+import { NetworkLanding as ContactsPage } from "../NetworkLanding"
 import { ContactCard } from "./ContactCard"
 
 const params = new URLSearchParams()
