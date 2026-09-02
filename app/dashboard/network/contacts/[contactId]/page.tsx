@@ -28,7 +28,6 @@
 import { use as usePromise, useCallback, useEffect, useState } from "react"
 import { LIGHT as S, PHASE_MEANING, action as actionStyle, tile, tileIdle } from "../../../../../lib/theme/surfaces"
 import { authFetch } from "../../authFetch"
-import { ActionBox } from "./ActionBox"
 import { WhereThingsStand } from "./WhereThingsStand"
 import { Collapsible } from "./Collapsible"
 import { ActionLog } from "./ActionLog"
@@ -222,7 +221,21 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
       )}
 
       {/* ── The thing you came here to do ──────────────────────── */}
-      <ActionBox contact={contact as never} onLogged={load} />
+      {/* THE ACTION BOX STOOD HERE, a navy hero titled "Your next message,
+          ready to send", wrapping SendPanel. Both are gone with the templates
+          and the networking profile they read from: SendPanel fetched
+          /api/network/templates and /api/network/profile on mount and ran
+          pickTemplate over the result, so it could not outlive them.
+
+          LOGGING AN ACTION IS NOT LOST. It moved down rather than away: Log an
+          action and Notes both POST to the same
+          /api/network/contacts/<id>/actions they always did, so last_action_at,
+          the reminder engine and the roster's new activity filter all keep
+          working. What is gone is the DRAFTING, which depended on a template
+          library nobody had ever customised: 0 rows in production.
+
+          The record is reference plus logging until messages become rows of
+          their own. That step owns what replaces this. */}
 
       {/* ── Reminder, one line ─────────────────────────────────── */}
       <ReminderLine contact={contact} onChanged={load} />

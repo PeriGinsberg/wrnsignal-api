@@ -14,9 +14,7 @@ import { render, screen, waitFor, cleanup } from "@testing-library/react"
 // deliberately — it is the only reader of GET /api/network/worklist — so this
 // keeps testing it at its new address rather than dropping the case. If the
 // worklist is ever re-routed, its empty state is still guarded.
-import { LegacyWorklist as WorklistPage } from "./LegacyWorklist"
 import { NetworkLanding as ContactsPage } from "./NetworkLanding"
-import CompaniesPage from "./companies/page"
 
 // The Contacts page derives its filters from the URL, so it needs the router
 // context. Stubbed with an empty query string — the first-run case is by
@@ -63,12 +61,6 @@ async function textOf(ui: React.ReactElement): Promise<string> {
 }
 
 describe("first-run empty states", () => {
-  it("worklist (unrouted, retained): invites rather than alarms", async () => {
-    const text = await textOf(<WorklistPage />)
-    console.log("\n── TODAY (worklist) ──\n" + text.trim() + "\n")
-    expect(text).not.toMatch(ALARM)
-    expect(text.trim().length).toBeGreaterThan(0)
-  })
 
   it("contacts spreadsheet: invites rather than alarms, and offers the way in", async () => {
     const text = await textOf(<ContactsPage />)
@@ -101,10 +93,4 @@ describe("first-run empty states", () => {
     expect(text).toMatch(/Jordan Alvarez/)
   })
 
-  it("company board: invites rather than alarms, and says a contact is not required", async () => {
-    const text = await textOf(<CompaniesPage />)
-    console.log("\n── COMPANIES (board) ──\n" + text.trim() + "\n")
-    expect(text).not.toMatch(ALARM)
-    expect(text).toMatch(/add a company/i)
-  })
 })

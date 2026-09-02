@@ -160,8 +160,6 @@ const LIGHT_ROUTES: string[] = [
   "/dashboard/tracker/*",           // step 7, all three views plus the
                                     // application detail page.
   "/dashboard/profile",             // step 8, the sectioned settings home.
-  "/dashboard/network/profile",     // redirects into the section above; light
-                                    // so the hop does not flash dark.
   "/dashboard",                     // step 6, the stateful home. EXACT: every
                                     // converted descendant is listed by name.
 ]

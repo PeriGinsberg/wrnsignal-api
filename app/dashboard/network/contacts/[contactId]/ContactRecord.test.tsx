@@ -11,7 +11,6 @@
 import { Suspense } from "react"
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { render, screen, fireEvent, waitFor, cleanup, within } from "@testing-library/react"
-import { displayName } from "../../templates/templateNames"
 import ContactRecordPage from "./page"
 import { DEFAULTS_BY_ID } from "../../../../../lib/network-tracker/templates"
 
@@ -87,107 +86,12 @@ async function open() {
   // every page in one; without it here the FIRST mount throws on the suspend and
   // only later tests pass, off React's cached promise.
   const utils = render(<Suspense fallback={null}><ContactRecordPage params={params} /></Suspense>)
-  // Wait for the SendPanel's own fetches too, not just the page's. Returning at
-  // the action box alone lands mid-"Loading templates…", so every assertion
-  // about the message would race the render rather than test it.
-  await waitFor(() => expect(screen.queryByTestId("action-box")).toBeTruthy())
-  await waitFor(() => expect(screen.queryByText(/Loading templates/)).toBeNull())
+  // The action box and its two template fetches are gone with SendPanel, so the
+  // stage pill is the anchor now: it is in the header, it renders from the
+  // contact the page already loaded, and it is present on every fixture here.
+  await waitFor(() => expect(screen.queryByTestId("stage-pill")).toBeTruthy())
   return utils
 }
-
-describe("the action box is the screen", () => {
-  it("renders the suggested template, filled in, above everything else", async () => {
-    await open()
-    // 8c chose C2 from relationship=cold + next_due_reason=touch_2; 8b filled it.
-    const msg = (screen.getByTestId("rendered-message") as HTMLTextAreaElement).value
-    expect(msg).toContain("Priya")
-    expect(msg).not.toMatch(/\[NAME\]/)
-
-    // It comes FIRST. The old screen had this at the bottom under four text areas.
-    const main = screen.getByTestId("action-box").closest("main")!
-    const order = Array.from(main.querySelectorAll('[data-testid]')).map((e) => e.getAttribute("data-testid"))
-    expect(order.indexOf("action-box")).toBeLessThan(order.indexOf("drawer-details"))
-    expect(order.indexOf("action-box")).toBeLessThan(order.indexOf("reminder-line"))
-  })
-
-  it("copy and mark as sent still copies first and logs the due reason's action", async () => {
-    await open()
-    fireEvent.click(screen.getByRole("button", { name: /Copy and mark as sent/i }))
-    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
-
-    const log = authFetchMock.mock.calls.find((c) => String(c[0]).includes("/actions"))
-    expect(JSON.parse(log![1].body).type).toBe("touch_2")
-  })
-
-  it("keeps the per-contact scratchpad — an edit is what gets copied", async () => {
-    await open()
-    const box = screen.getByTestId("rendered-message") as HTMLTextAreaElement
-    fireEvent.change(box, { target: { value: "hand-written for Priya" } })
-    fireEvent.click(screen.getByRole("button", { name: /Copy only/i }))
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith("hand-written for Priya"))
-  })
-})
-
-describe("the first send — a contact nobody has contacted yet", () => {
-  // The bug the redesign could not ship with. `identified` has no due reason
-  // (the engine schedules nothing there), so on the old derivation the action
-  // box showed "Nothing due" with no primary button: the screen built for
-  // sending could not send the first message without a manual stage move first.
-  const NOT_CONTACTED = {
-    ...BASE, stage: "identified", next_due_at: null, next_due_reason: null,
-  }
-
-  it("shows the first-outreach template with a LIVE send button", async () => {
-    contact = { ...NOT_CONTACTED }
-    await open()
-
-    // pickTemplate falls to touch 1 for the relationship — C1 for a cold contact.
-    expect(screen.getByTestId("active-template").textContent).toBe(displayName("C1"))
-    expect((screen.getByTestId("rendered-message") as HTMLTextAreaElement).value).toContain("Priya")
-
-    // The button exists and is not the "nothing due" fallback.
-    expect(screen.getByRole("button", { name: /Copy and mark as sent/i })).toBeTruthy()
-    expect(screen.queryByText(/Nothing due/i)).toBeNull()
-  })
-
-  it("sending logs touch_1 AND moves the contact to Message sent, with no manual stage move", async () => {
-    contact = { ...NOT_CONTACTED }
-    // The mock applies the server's rule (stageAfterAction), so the move is
-    // OBSERVED through the refetch rather than assumed from the request.
-    authFetchMock.mockImplementation((url: string, init?: { method?: string; body?: string }) => {
-      const u = String(url)
-      if (u.includes("/actions")) {
-        const type = JSON.parse(init!.body!).type
-        if (type === "touch_1" && (contact as { stage: string }).stage === "identified") {
-          contact = { ...contact, stage: "sequence_active", next_due_reason: "touch_2" }
-        }
-        return json({ ok: true })
-      }
-      return api()(url, init)
-    })
-
-    await open()
-    expect(screen.getByTestId("stage-pill").textContent).toBe("Not started")
-
-    fireEvent.click(screen.getByRole("button", { name: /Copy and mark as sent/i }))
-    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1))
-
-    const log = authFetchMock.mock.calls.find((c) => String(c[0]).includes("/actions"))
-    expect(JSON.parse(log![1].body).type).toBe("touch_1")
-
-    // The stage moved, and NOT via the stage route — one action, one request.
-    await waitFor(() => expect(screen.getByTestId("stage-pill").textContent).toBe("Message sent"))
-    expect(authFetchMock.mock.calls.some((c) => String(c[0]).includes("/stage"))).toBe(false)
-  })
-
-  it("still offers the picker when there is no relationship to choose a family from", async () => {
-    contact = { ...NOT_CONTACTED, relationship: null }
-    await open()
-    // No suggestion is a real answer, not an error — the full list is offered.
-    expect(screen.getByText(/Set a relationship to get a suggested template/i)).toBeTruthy()
-    expect((screen.getByLabelText("Template") as HTMLSelectElement).options.length).toBe(25)
-  })
-})
 
 describe("the header carries status", () => {
   it("shows one stage pill instead of the seven-segment bar", async () => {
