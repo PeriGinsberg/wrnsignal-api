@@ -64,8 +64,12 @@ export type EngineInput = {
   /**
    * This contact's logged actions. action_date is required for touch counting
    * whenever cycleStartedAt is set; callers must select it.
+   *
+   * `status` arrives because network_actions now also holds MESSAGES, and a
+   * draft is not a thing that happened. Callers should select it; a row without
+   * it is treated as a logged action, which is what every pre-message row is.
    */
-  actions: { type: string; action_date?: Date | string | null }[];
+  actions: { type: string; action_date?: Date | string | null; status?: string | null }[];
   /**
    * When the CURRENT outreach cycle began — stamped on any transition into
    * sequence_active. Only touches logged at/after this instant count toward the
@@ -161,6 +165,17 @@ export function computeNextDue(input: EngineInput): EngineResult {
       // over-counting is what causes a premature flip to dormant.
       const cycleStart = toDate(input.cycleStartedAt);
       const touches = input.actions.filter((a) => {
+        // A DRAFT IS NOT A TOUCH. network_actions holds messages now, and a
+        // draft carries a real type (touch_2, say) because it is the outreach
+        // it will become. Counting it would advance the sequence for a message
+        // nobody sent, and then flip the contact to dormant for silence in
+        // response to nothing.
+        //
+        // FILTERED HERE, NOT AT THE CALL SITES, deliberately. Three routes feed
+        // this function and each selects its own columns; putting the rule in
+        // any of them means the next one has to remember it. A pure function
+        // that ignores drafts cannot be called wrongly.
+        if (a.status === "draft") return false;
         if (a.type !== "touch_2" && a.type !== "touch_3") return false;
         if (!cycleStart) return true;
         const at = toDate(a.action_date);

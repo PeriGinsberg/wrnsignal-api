@@ -40,7 +40,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
       override = d.toISOString()
     }
 
-    const { data: acts } = await supabase.from("network_actions").select("type, action_date").eq("contact_id", contactId)
+    const { data: acts } = await supabase.from("network_actions").select("type, action_date, status")   // status: the engine drops drafts, which are not touches.eq("contact_id", contactId)
     // NO pipelineActivity here: this route is where the override is SET, so
     // consuming it would clear the snooze on the way in.
     const due = computeNextDue({

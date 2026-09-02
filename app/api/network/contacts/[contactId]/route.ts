@@ -43,7 +43,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ cont
 
     const { data: actions } = await supabase
       .from("network_actions")
-      .select("id, type, action_date, note, author_role, author_id, created_at")
+      // body/channel/subject/status/application_id: the timeline holds MESSAGES
+      // as well as logged actions now. Same table, one ordered sequence, so the
+      // record does not have to union two reads and cannot get that union wrong.
+      .select("id, type, action_date, note, author_role, author_id, created_at, body, channel, subject, status, application_id")
       .eq("contact_id", contactId)
       .order("action_date", { ascending: false })
 

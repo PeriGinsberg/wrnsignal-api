@@ -62,7 +62,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
     const enteringSequence = stage === "sequence_active" && c.stage !== "sequence_active"
     const cycleStartedAt = enteringSequence ? now.toISOString() : c.cycle_started_at
 
-    const { data: acts } = await supabase.from("network_actions").select("type, action_date").eq("contact_id", contactId)
+    const { data: acts } = await supabase.from("network_actions").select("type, action_date, status")   // status: the engine drops drafts, which are not touches.eq("contact_id", contactId)
     const due = computeNextDue({
       stage: stage as ContactStage, createdAt: c.created_at, lastActionAt: now,   // fresh clock on a stage change
       reminderOverride: c.reminder_override, dormantSince,

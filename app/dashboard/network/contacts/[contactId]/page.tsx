@@ -31,6 +31,7 @@ import { authFetch } from "../../authFetch"
 import { WhereThingsStand } from "./WhereThingsStand"
 import { Collapsible } from "./Collapsible"
 import { ActionLog } from "./ActionLog"
+import { MessageComposer, type Message } from "./MessageComposer"
 import { NotesLog } from "./NotesLog"
 import { AppliedHere } from "./AppliedHere"
 import { readBackTarget, DEFAULT_BACK } from "../../backTarget"
@@ -75,6 +76,13 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
 
   const [contact, setContact] = useState<Contact | null>(null)
   const [actions, setActions] = useState<Action[]>([])
+  // The draft the composer edits. Derived rather than fetched: drafts arrive in
+  // the same `actions` payload as everything else, because they are the same
+  // table. The newest is the one offered; a second open draft is possible in
+  // the data and would need a picker nobody has asked for.
+  const draft: Message | null = (actions as unknown as Message[])
+    .filter((a) => a.status === "draft")
+    .sort((a, b) => (b.action_date || "").localeCompare(a.action_date || ""))[0] ?? null
   /**
    * The action type just logged, if any — the input to the stage offer.
    *
@@ -221,21 +229,21 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
       )}
 
       {/* ── The thing you came here to do ──────────────────────── */}
-      {/* THE ACTION BOX STOOD HERE, a navy hero titled "Your next message,
-          ready to send", wrapping SendPanel. Both are gone with the templates
-          and the networking profile they read from: SendPanel fetched
-          /api/network/templates and /api/network/profile on mount and ran
-          pickTemplate over the result, so it could not outlive them.
+      {/* WRITE THE MESSAGE. The action box and SendPanel stood here; that pair
+          rendered a template from a library and asked you to copy it, and both
+          went when the library did. This keeps what you write instead.
 
-          LOGGING AN ACTION IS NOT LOST. It moved down rather than away: Log an
-          action and Notes both POST to the same
-          /api/network/contacts/<id>/actions they always did, so last_action_at,
-          the reminder engine and the roster's new activity filter all keep
-          working. What is gone is the DRAFTING, which depended on a template
-          library nobody had ever customised: 0 rows in production.
-
-          The record is reference plus logging until messages become rows of
-          their own. That step owns what replaces this. */}
+          A draft and a sent message are the same row in network_actions, so
+          they arrive in `actions` with everything else and the timeline below
+          shows one sequence rather than two. */}
+      <MessageComposer
+        contactId={contact.id}
+        companyId={contact.network_companies?.id ?? null}
+        companyName={contact.network_companies?.name ?? null}
+        firstName={contact.first_name}
+        draft={draft}
+        onSaved={load}
+      />
 
       {/* ── Reminder, one line ─────────────────────────────────── */}
       <ReminderLine contact={contact} onChanged={load} />

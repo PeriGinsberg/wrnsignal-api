@@ -21,7 +21,16 @@ type Action = {
   action_date: string
   note: string | null
   author_role: string
+  // MESSAGES SHARE THIS TABLE. A row with a body is a message; the rest are
+  // logged actions, exactly as before. Optional because the pre-message rows
+  // (78 in dev) have none of it and must keep rendering unchanged.
+  body?: string | null
+  channel?: string | null
+  subject?: string | null
+  status?: string | null
 }
+
+const CHANNEL_LABEL: Record<string, string> = { email: "Email", linkedin: "LinkedIn" }
 
 // Action type vocabulary is shared (see ../../vocab).
 const ACTION_TYPES = ACTION_TYPE_OPTIONS
@@ -151,7 +160,35 @@ export function ActionLog({
               <span style={{ color: S.text.primary, fontSize: 14, fontWeight: 700, flex: "0 0 auto" }}>
                 {TYPE_LABEL[a.type] ?? a.type}
               </span>
-              {a.note && <span style={{ color: S.text.secondary, fontSize: 14 }}>{a.note}</span>}
+              {/* A MESSAGE RENDERS AS ITS TEXT, a logged action as its note.
+                  One sequence, two shapes: the timeline is what you did AND
+                  what you wrote, and collapsing a message to "Touch 1" would
+                  throw away the only part of it worth re-reading.
+
+                  A DRAFT SAYS SO, because an unsent message sitting in a log of
+                  things that happened is otherwise a lie about the past. */}
+              {a.body ? (
+                <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0, flex: 1 }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    {a.status === "draft" && (
+                      <span style={draftPill} data-testid="timeline-draft">DRAFT</span>
+                    )}
+                    {a.channel && (
+                      <span style={{ color: S.text.dim, fontSize: 11.5, fontWeight: 800, letterSpacing: 0.4 }}>
+                        {(CHANNEL_LABEL[a.channel] ?? a.channel).toUpperCase()}
+                      </span>
+                    )}
+                    {a.subject && (
+                      <span style={{ color: S.text.primary, fontSize: 13.5, fontWeight: 700 }}>{a.subject}</span>
+                    )}
+                  </span>
+                  <span style={{ color: S.text.secondary, fontSize: 14, lineHeight: "20px", whiteSpace: "pre-wrap" }}>
+                    {a.body}
+                  </span>
+                </span>
+              ) : (
+                a.note && <span style={{ color: S.text.secondary, fontSize: 14 }}>{a.note}</span>
+              )}
               {a.author_role === "coach" && (
                 <span
                   style={{
@@ -177,4 +214,16 @@ const control: React.CSSProperties = {
   background: S.card, border: `1px solid ${S.border}`, borderRadius: 10,
   height: 42, padding: "0 12px", fontSize: 14, color: S.text.primary,
   fontFamily: "inherit", boxSizing: "border-box",
+}
+
+// Amber-free: this is the ATTENTION meaning, "not done yet", which is what an
+// unsent draft is. It is not an error and it is not a warning.
+const draftPill: React.CSSProperties = {
+  background: S.meaning.attention.fill,
+  color: S.meaning.attention.ink,
+  fontSize: 10.5,
+  fontWeight: 900,
+  letterSpacing: 0.6,
+  borderRadius: 999,
+  padding: "2px 8px",
 }
