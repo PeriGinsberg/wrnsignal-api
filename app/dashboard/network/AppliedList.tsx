@@ -33,7 +33,7 @@ export type ScopedApp = {
 
 export function AppliedList({ applications }: { applications: ScopedApp[] }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
       {applications.map((a) => {
         const st = statusStyle(S, statusMeaning(a.application_status))
         // applied_date is the honest date and is null until they actually
@@ -41,31 +41,44 @@ export function AppliedList({ applications }: { applications: ScopedApp[] }) {
         // us rather than about them, so it is never shown here.
         const when = a.applied_date ? formatShort(a.applied_date) : null
         return (
-          <div key={a.id} style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-            <a
-              href={`/dashboard/tracker/${a.id}`}
-              style={{
-                fontSize: 14.5, fontWeight: 700, color: S.action.quietInk,
-                textDecoration: "none", minWidth: 0,
-              }}
-            >
+          <div key={a.id} style={line}>
+            {/* A LINK THAT LOOKS LIKE ONE. It was 14.5px bold with no underline,
+                which at that weight reads as a heading you happen to be able to
+                click; three of them stacked read as a list of records rather
+                than as somewhere to go. Underlined, one size down, normal
+                weight: this is reference, not the subject of the page. */}
+            <a href={`/dashboard/tracker/${a.id}`} style={link}>
               {a.job_title || "Untitled role"}
             </a>
-            {/* Status is a dot plus text, never a button, and the words come
-                from the tracker's own vocabulary so they cannot say one thing
-                here and another on the tracker itself. */}
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
-              <span style={st.dot} />
-              <span style={{ ...st.text, fontSize: 13.5, whiteSpace: "nowrap" }}>
-                {statusLabel(a.application_status)}
-              </span>
+            {/* The status keeps its meaning colour and LOSES ITS DOT. The dot
+                plus label is the tracker's treatment, where status is the thing
+                being managed; here it is trailing context on a reference line,
+                and at 12.5px a coloured disc beside it is just noise. The words
+                still come from the tracker's own vocabulary so the two surfaces
+                cannot disagree. */}
+            <span style={{ ...meta, color: st.text.color }}>
+              {statusLabel(a.application_status)}
             </span>
-            {when && <span style={{ fontSize: 13, color: S.text.muted, whiteSpace: "nowrap" }}>{when}</span>}
+            {when && <span style={meta}>{when}</span>}
           </div>
         )
       })}
     </div>
   )
+}
+
+// Middots between the parts, so the row reads as one sentence rather than three
+// columns that happen to be adjacent.
+const line: React.CSSProperties = {
+  display: "flex", alignItems: "baseline", gap: 7, flexWrap: "wrap",
+  fontSize: 13, lineHeight: "19px",
+}
+const link: React.CSSProperties = {
+  fontSize: 13, fontWeight: 600, color: S.action.quietInk,
+  textDecoration: "underline", textUnderlineOffset: 2, minWidth: 0,
+}
+const meta: React.CSSProperties = {
+  fontSize: 12.5, color: S.text.muted, whiteSpace: "nowrap",
 }
 
 /** "a job" reads better than "1 jobs", and the count is the point of the line. */

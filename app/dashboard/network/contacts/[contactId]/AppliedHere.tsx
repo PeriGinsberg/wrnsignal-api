@@ -78,11 +78,13 @@ export function AppliedHere({
         borderLeft: `3px solid ${S.meaning.replied.accent}`,
       }}
     >
-      <div style={{ fontSize: 15, fontWeight: 800, color: S.text.primary, lineHeight: "22px" }}>
+      {/* Down with the list. At 15px/800 over 13px lines this was the loudest
+          thing in a block that is CONTEXT for the message, not the message. */}
+      <div style={{ fontSize: 13.5, fontWeight: 700, color: S.text.secondary, lineHeight: "19px" }}>
         {appliedHeadline(apps.length, companyName)}
       </div>
 
-      <div style={{ marginTop: 9 }}>
+      <div style={{ marginTop: 6 }}>
         <AppliedList applications={apps} />
       </div>
     </section>
