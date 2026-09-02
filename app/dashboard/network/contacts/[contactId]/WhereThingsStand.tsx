@@ -1,118 +1,123 @@
 "use client"
 
-// "Where things stand" — the state of this relationship, in one card.
+// WHERE THINGS STAND — the last thing you did, when, and whether it is your move.
 //
-// Replaces QuickActions, which was a row of stage buttons under the heading
-// "Something happened?". Same capability, better question: the card ANSWERS
-// where you are before it offers to change it.
+// REPLACES A NINE-CIRCLE STEPPER. That stepper drew the whole eleven-stage path
+// with the current step lit, and it was the wrong answer to the question people
+// arrive with. Nobody opens a contact asking "which of nine stages is this in";
+// they ask "where did I leave this, and do I need to do something". The path
+// answered the first question beautifully and the second not at all.
 //
-// The position is a LABELLED STEP-CIRCLE STEPPER, the same pattern as the
-// Coaches Center prospects pipeline: completed steps filled and ticked, the
-// current step marked, every circle labelled with its stage. A plain progress
-// bar showed how far along you were but never said what any segment MEANT, so
-// the position was only legible next to a separate status label. With the
-// stepper the position is self-evident, which is why the header no longer
-// repeats the stage in words.
+// It was also the third statement of one fact. The circles said "Message sent",
+// "Next step: They replied" said it again as a stage name pretending to be an
+// instruction, and the More stages dropdown said it a third time. Meanwhile the
+// only thing that answered the real question, "Touch 2, Jul 25", sat at the
+// bottom of the page inside a collapsed History drawer.
 //
-// COLOUR, mapped into light and kept inside the exclusivity rule:
-//   done     teal, our positive colour (light has no green)
-//   current  ROSE: the accent as the ring, the darkened ink as the numeral and
-//            the label, on the pale rose fill
-//   ahead    muted, a hairline circle
-// Rose replaced amber here (2026-08-04). Amber was borrowed from `attention`,
-// and it was saying the wrong thing: attention means something needs you, while
-// the current step means this is where you stand, which can be true with
-// nothing owing. Rose is its own meaning now, `meaning.current`, so the two can
-// appear on one screen without arguing. Peach stays action-only either way; the
-// ring is rose, not peach. See COLOR-SYSTEM.md section 6.10.
+// So: one sentence of fact, one sentence of read, one button, and the stage
+// demoted to a pill you can correct. The stage still matters and is still
+// one click away; it is simply not the headline, because it never was.
 //
-// THE CIRCLES ARE THE CONTROL, same as the prospects pipeline. The pair of
-// "They replied" / "We talked" buttons underneath said the same thing the
-// circles already said, so the circles absorbed them: clicking a step ahead of
-// you advances to it. Everything those buttons could do still can be done.
-//   forward   click the circle. "They replied" and "Chat happened" are the same
-//             two moves those buttons made, by the same words.
-//   backward  Change, which offers all eleven stages in any direction. The
-//             buttons could go backward too, so this is where that went.
-//   terminal  Change. `outcome` sits on the path so you can SEE it coming, but
-//             it is not clickable: a rare irreversible-feeling move should not
-//             be one accidental tap away on a screen built for someone with no
-//             coach to undo it for them. The dormant stages are off the path
-//             entirely and were never one tap.
-// No circle is peach. Advancing a stage is bookkeeping; peach belongs to the
-// message.
+// DRAFTS ARE NOT ACTIONS. `actions` now carries messages too, and an unsent
+// draft has not happened. Counting one here would tell someone they wrote to a
+// contact when they only thought about it.
 
-import { Fragment, useState } from "react"
+import { useMemo, useState } from "react"
 import { LIGHT as S, action as actionStyle } from "../../../../../lib/theme/surfaces"
 import { authFetch } from "../../authFetch"
+import { STAGE_LABELS, REASON_LABELS, ACTION_TYPE_LABEL } from "../../vocab"
+import { impliedStageAhead, historyImpliesAhead } from "../../../../../lib/network-tracker/action-semantics"
 import { ChangeStage } from "./ChangeStage"
-import { STAGE_LABELS, ACTION_TYPE_LABEL } from "../../vocab"
-import { STAGE_PATH, impliedStageAhead, historyImpliesAhead } from "../../../../../lib/network-tracker/action-semantics"
-import { StepCompleteIcon, StepRestingIcon } from "../../../../../components/icons"
 
 type Contact = {
   id: string
+  first_name: string
   stage: string
-  outcome_type: string | null
-  relationship: string | null
+  next_due_at?: string | null
+  next_due_reason?: string | null
+  relationship?: string | null
+  [k: string]: unknown
 }
 
-/**
- * The linear path, in order. The two dormant stages are deliberately absent:
- * "No answer" and "Declined" are not steps forward, they are where a thread
- * stops, so putting them on the path would imply progress toward them. A
- * contact sitting in one is handled below the stepper instead.
- *
- * Shared with action-semantics, which needs the SAME order to decide whether an
- * action implies a stage that is ahead. Two copies would eventually disagree,
- * and the symptom would be a prompt offering a move backwards.
- */
-const PATH = STAGE_PATH
-
-/** Short, and no year: the log is recent by definition and a year makes a quiet
- *  line look like a record locator. Order follows the VIEWER'S locale, as every
- *  other date on this screen does — "Jun 12" or "12 Jun" depending on where
- *  they are. */
-function fmtEvidenceDate(iso: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return "an earlier date"
-  return d.toLocaleDateString(undefined, { day: "numeric", month: "short" })
+type Entry = {
+  type: string
+  action_date: string
+  status?: string | null
+  body?: string | null
 }
 
-const RESTING = new Set(["dormant_no_answer", "dormant_declined"])
+// Past tense, and a sentence rather than a label. ACTION_TYPE_LABEL is built
+// for a dropdown ("Touch 2"), which reads as a database value the moment you
+// put it in prose. These are what a person would say happened.
+const DID: Record<string, string> = {
+  touch_1: "reached out",
+  touch_2: "sent a second follow-up",
+  touch_3: "sent a third follow-up",
+  intro_request: "asked for an intro",
+  thank_you: "sent a thank-you",
+  connection_request: "sent a connection request",
+  engage_on_post: "engaged with their post",
+  chat_scheduled: "booked a chat",
+  chat_done: "had the chat",
+  ask: "made the ask",
+  note_logged: "logged activity",
+  note: "left a note",
+  other: "logged something",
+}
 
-/** On the path so you can see it coming, but never one tap. Set it from Change. */
-const NOT_ONE_TAP = new Set(["outcome"])
+// The read on where that leaves you. One short sentence per stage, and none of
+// them repeat the stage label: the pill beside them already says that.
+const READ: Record<string, string> = {
+  identified: "",
+  intro_requested: "Waiting on the intro.",
+  sequence_active: "No reply yet.",
+  replied: "They wrote back. Your move.",
+  chat_scheduled: "The chat is booked.",
+  chat_done: "You have talked. Worth keeping warm.",
+  nurture: "Ticking over. Nothing urgent.",
+  ask_made: "The ask is with them.",
+  outcome: "This one landed.",
+  dormant_no_answer: "No answer in the end. Resting.",
+  dormant_declined: "They passed. Resting.",
+}
+
+function fmtDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+}
+
+function daysBetween(iso: string, now: Date): number {
+  const then = new Date(iso)
+  if (Number.isNaN(then.getTime())) return 0
+  const d = (now.getTime() - then.getTime()) / 86400000
+  return Math.max(0, Math.round(d))
+}
+
+function ago(days: number): string {
+  if (days <= 0) return "today"
+  if (days === 1) return "yesterday"
+  if (days < 14) return `${days} days ago`
+  if (days < 60) return `${Math.round(days / 7)} weeks ago`
+  return `${Math.round(days / 30)} months ago`
+}
 
 export function WhereThingsStand({
-  contact, onChanged, actions = [], justLogged = null, onOfferSettled,
+  contact, onChanged, actions = [], onWrite, justLogged = null, onOfferSettled,
 }: {
   contact: Contact
   onChanged: () => void
-  /** The contact's logged history. Already loaded by the record, so the
-   *  evidence line below costs no extra request. */
-  actions?: { type: string; action_date: string }[]
-  /** The action type just logged, if any. Drives the offer below the stepper. */
+  /** The contact's history, already loaded by the record. Includes messages. */
+  actions?: Entry[]
+  /** Focuses the composer. The card offers the next move; the composer is where
+   *  it happens, so this scrolls rather than opening a fourth way to act. */
+  onWrite?: () => void
+  /** The action just logged, if any. Drives the one-tap stage offer below. */
   justLogged?: string | null
-  /** Called once the offer is taken or dismissed, so it does not re-appear. */
+  /** Called once that offer is taken or dismissed, so it does not re-appear. */
   onOfferSettled?: () => void
 }) {
   const [busy, setBusy] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
-
-  const resting = RESTING.has(contact.stage)
-  // Null unless the action just logged implies a stage strictly ahead of where
-  // this contact already is. Backdated, repeat and backwards cases all fall out
-  // of impliedStageAhead rather than being special-cased here.
-  const offered = justLogged ? impliedStageAhead(contact.stage, justLogged) : null
-  // What the LOG says, independent of anything just logged. Suppressed while an
-  // offer is on screen: the offer already names the same move, and saying it
-  // twice turns a quiet fact into nagging.
-  const evidence = offered ? null : historyImpliesAhead(contact.stage, actions)
-  // -1 when resting or unrecognised: nothing on the path is current, so nothing
-  // is filled, and the caption below carries the state instead.
-  const currentIndex = resting ? -1 : PATH.indexOf(contact.stage as (typeof PATH)[number])
-  const nextStage = currentIndex >= 0 ? PATH[currentIndex + 1] ?? null : null
+  const now = new Date()
 
   async function move(stage: string) {
     setBusy(stage); setErr(null)
@@ -131,192 +136,55 @@ export function WhereThingsStand({
     }
   }
 
+  // The last thing that actually HAPPENED. Drafts excluded for the same reason
+  // the reminder engine excludes them: writing is not doing.
+  const last = useMemo(() => {
+    const done = (actions ?? []).filter((a) => a.status !== "draft" && a.action_date)
+    return done.sort((a, b) => b.action_date.localeCompare(a.action_date))[0] ?? null
+  }, [actions])
+
+  const stage = contact.stage
+  const read = READ[stage] ?? ""
+
+  // Stage and history describing the same events without responding to each
+  // other is what a tester reported as the two contradicting: logging "Chat
+  // done" left the stage reading "Message sent". The stage stays something the
+  // user ASSERTS, so these only notice the gap.
+  const offered = justLogged ? impliedStageAhead(stage, justLogged) : null
+  // Suppressed while an offer is up: it names the same move, and saying it
+  // twice turns a quiet fact into nagging.
+  const evidence = offered ? null : historyImpliesAhead(stage, (actions ?? []).filter((a) => a.status !== "draft") as never)
+
+  // Line one. The whole point of the card: what you did, and how long ago.
+  const headline = last
+    ? `You ${DID[last.type] ?? "logged something"} ${ago(daysBetween(last.action_date, now))}.`
+    : `You have not reached out to ${contact.first_name} yet.`
+
+  // The button. next_due_reason is the engine's own answer to "what next", so
+  // it is used rather than re-derived; REASON_LABELS already phrases each one
+  // as an instruction. With nothing scheduled it falls back to the honest
+  // generic, and with no history at all it names the first step explicitly,
+  // which is the "do I need to start" case.
+  const cta = !last
+    ? "Write the first message"
+    : contact.next_due_reason
+      ? REASON_LABELS[contact.next_due_reason] ?? `Write to ${contact.first_name}`
+      : `Write to ${contact.first_name}`
+
+  const resting = stage === "dormant_no_answer" || stage === "dormant_declined"
+
   return (
-    <section
-      style={{
-        marginTop: 14, padding: "20px 22px", borderRadius: 14,
-        background: S.card, border: `1px solid ${S.borderSoft}`, boxShadow: S.shadow.card,
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <span
-          style={{
-            fontSize: 12, fontWeight: 800, letterSpacing: 1.4,
-            textTransform: "uppercase", color: S.text.muted,
-          }}
-        >
-          Where things stand
-        </span>
-        <ChangeStage contact={contact} onChanged={onChanged} />
-      </div>
+    <section style={card} data-testid="where-things-stand">
+      <div style={eyebrow}>Where things stand</div>
 
-      {/* Horizontal band. Overflow-x keeps the connectors continuous and the
-          labels readable rather than wrapping nine columns into a grid. */}
-      <div style={{ overflowX: "auto", padding: "16px 0 4px" }}>
-        <div style={{ display: "flex", alignItems: "flex-start", minWidth: "min-content" }}>
-          {PATH.map((stageKey, i) => {
-            const done = currentIndex >= 0 && i < currentIndex
-            const isCurrent = i === currentIndex
-            // The current ring is the rose ACCENT at full chroma, not its ink:
-            // a ring is structure, so it takes the vivid value, and the numeral
-            // inside it takes the ink that has to be read.
-            const circleInk = isCurrent ? S.meaning.current.ink : done ? S.meaning.replied.ink : S.text.dim
-            const circleBg = isCurrent ? S.meaning.current.fill : done ? S.meaning.replied.fill : "transparent"
-            const circleBorder = isCurrent ? S.meaning.current.accent : done ? S.meaning.replied.accent : S.border
-            // Only steps AHEAD of you advance. Behind is history and is changed
-            // through Change; the terminal step is never one tap.
-            const advanceable =
-              currentIndex >= 0 && i > currentIndex && !NOT_ONE_TAP.has(stageKey) && busy === null
+      <div style={headlineStyle} data-testid="wts-headline">{headline}</div>
+      {read && <div style={readStyle} data-testid="wts-read">{read}</div>}
 
-            return (
-              <Fragment key={stageKey}>
-                {/* Connector to the previous step, filled once this step is
-                    reached, so the completed path reads as one run. */}
-                {i > 0 && (
-                  <div
-                    aria-hidden
-                    style={{
-                      flex: "0 0 22px", height: 2, marginTop: 13,
-                      background: done || isCurrent ? S.meaning.replied.accent : S.borderSoft,
-                    }}
-                  />
-                )}
-                <button
-                  type="button"
-                  data-testid={`step-${stageKey}`}
-                  onClick={() => { if (advanceable) void move(stageKey) }}
-                  disabled={!advanceable}
-                  // title is a TOOLTIP, not an accessible name, and it never
-                  // appears on touch. aria-label carries the same sentence to a
-                  // screen reader, which is what makes the control exist for
-                  // anyone not using a mouse.
-                  aria-label={
-                    advanceable ? `Advance to ${STAGE_LABELS[stageKey]}`
-                      : isCurrent ? `Current stage: ${STAGE_LABELS[stageKey]}`
-                      : done ? `Already past ${STAGE_LABELS[stageKey]}`
-                      : `${STAGE_LABELS[stageKey]}, set this from More stages`
-                  }
-                  title={
-                    advanceable ? `Advance to ${STAGE_LABELS[stageKey]}`
-                      : NOT_ONE_TAP.has(stageKey) ? "Set this from More stages"
-                      : isCurrent ? "Where this stands now"
-                      : done ? "Already past this"
-                      : undefined
-                  }
-                  style={{
-                    flex: "0 0 auto", width: 86,
-                    display: "flex", flexDirection: "column", alignItems: "center", gap: 7,
-                    padding: "0 3px", background: "none", border: "none", fontFamily: "inherit",
-                    cursor: advanceable ? "pointer" : "default",
-                    opacity: busy === stageKey ? 0.55 : 1,
-                  }}
-                >
-                  {done ? (
-                    // The drawn tick, teal, matching the stepper's done state.
-                    <StepCompleteIcon size={28} />
-                  ) : (
-                    <span
-                      aria-hidden
-                      style={{
-                        width: 28, height: 28, borderRadius: 999, flexShrink: 0,
-                        display: "inline-flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 12, fontWeight: 900,
-                        // The current step gets the heavier ring. It is the one
-                        // circle that has to be found without reading.
-                        // Dashed on the steps you can take: visible at rest,
-                        // distinct from the current step's solid heavy ring,
-                        // and it needs no hover to be seen.
-                        border: `${isCurrent ? 2 : 1.5}px ${advanceable ? "dashed" : "solid"} ${advanceable ? S.meaning.current.accent : circleBorder}`,
-                        background: circleBg,
-                        color: circleInk,
-                      }}
-                    >
-                      {/* THE AFFORDANCE, AND IT HAS TO BE PERSISTENT.
-                          These circles were buttons whose only signals were
-                          cursor:pointer and a title tooltip — so on a keyboard
-                          you had to guess, and on TOUCH, where there is no
-                          hover at all, there was no discoverable way to advance
-                          a stage. That is a missing control on mobile, not a
-                          polish item.
-                          The numeral is replaced by a chevron on the steps you
-                          can actually take, which reads as a target without
-                          adding a caption under all nine or turning the
-                          descriptive sentence below into a second control. */}
-                      {advanceable ? "›" : i + 1}
-                    </span>
-                  )}
-                  {/* The CURRENT step's label is the screen's statement of the
-                      stage, which is why it carries the stage-pill hook: the
-                      header used to say it in words and no longer needs to. */}
-                  <span
-                    {...(isCurrent ? { "data-testid": "stage-pill" } : {})}
-                    style={{
-                      fontSize: 11.5, lineHeight: "15px", textAlign: "center",
-                      color: isCurrent ? S.meaning.current.ink : done ? S.text.secondary : S.text.dim,
-                      fontWeight: isCurrent ? 800 : done ? 700 : 500,
-                    }}
-                  >
-                    {STAGE_LABELS[stageKey]}
-                  </span>
-                </button>
-              </Fragment>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Off the path. A resting contact has no position to mark, so it is
-          stated rather than drawn, and it carries the stage hook in that case. */}
-      {resting && (
-        <div
-          data-testid="stage-pill"
-          style={{ marginTop: 6, color: S.meaning.dormant.ink, fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}
-        >
-          <StepRestingIcon size={26} />
-          {STAGE_LABELS[contact.stage] ?? contact.stage}
-        </div>
-      )}
-
-      {/* THE ONE AUTOMATIC CASE, SAID OUT LOUD.
-          Everywhere else a logged action only OFFERS a stage. From `identified`
-          a first outreach applies it without asking, and that exception is not
-          arbitrary: `identified` has no due reason, so a contact left there
-          after being written to has no due date at all — parked silently, which
-          is the failure this whole area is being fixed for. The rule used to
-          live only in a comment in action-semantics.ts, where the person it
-          affects cannot read it. */}
-      {contact.stage === "identified" && (
-        <p
-          data-testid="auto-advance-note"
-          style={{ margin: "14px 0 0", color: S.text.muted, fontSize: 13 }}
-        >
-          Logging your first outreach moves this to{" "}
-          <strong style={{ color: S.text.secondary, fontWeight: 700 }}>
-            {STAGE_LABELS.sequence_active}
-          </strong>{" "}
-          on its own, so it starts getting reminders.
-        </p>
-      )}
-
-      {/* THE OFFER. Actions and stages described the same events and did not
-          respond to each other — logging "Chat done" left the stage reading
-          "Message sent", and a tester reported the two as contradicting.
-          The stage stays something you ASSERT (people under-log, and a coach
-          has to be able to park a contact with nothing logged), so this only
-          NOTICES the gap and offers to close it. One tap, dismissible, and it
-          appears here rather than beside the log because the confusion was that
-          the two systems looked unrelated: the consequence has to show up where
-          the stage is stated. */}
+      {/* THE OFFER, one tap and dismissible. It appears where the stage is
+          STATED rather than beside the log, because the confusion it fixes was
+          that the two systems looked unrelated. */}
       {offered && (
-        <div
-          data-testid="stage-offer"
-          style={{
-            marginTop: 14, padding: "12px 14px", borderRadius: 10,
-            background: S.meaning.current.fill,
-            border: `1px solid ${S.meaning.current.accent}`,
-            display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
-          }}
-        >
+        <div style={offerBox} data-testid="stage-offer">
           <span style={{ fontSize: 13.5, color: S.text.primary, flex: "1 1 220px", minWidth: 0 }}>
             You logged {ACTION_TYPE_LABEL[justLogged ?? ""] ?? "an action"}. Move this to{" "}
             <strong style={{ fontWeight: 800 }}>{STAGE_LABELS[offered]}</strong>?
@@ -326,10 +194,7 @@ export function WhereThingsStand({
             data-testid="stage-offer-accept"
             disabled={busy !== null}
             onClick={() => { void move(offered); onOfferSettled?.() }}
-            style={{
-              ...actionStyle(S, "primary"), borderRadius: 9, padding: "7px 14px",
-              fontSize: 13, fontFamily: "inherit", cursor: busy ? "default" : "pointer",
-            }}
+            style={{ ...actionStyle(S, "primary"), borderRadius: 9, padding: "7px 14px", fontSize: 13, fontFamily: "inherit", cursor: busy ? "default" : "pointer" }}
           >
             Move it
           </button>
@@ -337,95 +202,101 @@ export function WhereThingsStand({
             type="button"
             data-testid="stage-offer-dismiss"
             onClick={() => onOfferSettled?.()}
-            style={{
-              background: "none", border: "none", padding: 0, fontFamily: "inherit",
-              fontSize: 13, fontWeight: 700, color: S.text.muted, cursor: "pointer",
-            }}
+            style={{ background: "none", border: "none", padding: 0, fontFamily: "inherit", fontSize: 13, fontWeight: 700, color: S.text.muted, cursor: "pointer" }}
           >
             Not yet
           </button>
         </div>
       )}
 
-      {/* WHAT THE LOG SHOWS. Not a prompt, not a correction, no buttons.
-          The offer at logging time is dismissible and its dismissal is session
-          state, so one dismissal used to leave a contact contradicting its own
-          history permanently with nothing ever saying so. This closes that
-          without asking anything — and that is the whole design: a QUESTION
-          demands an answer and answers have to be remembered, which is a
-          column, a migration and a decision about what "dismissed" means. A
-          STATEMENT can simply be true on every visit, the same way "Overdue 4
-          days" is, and needs none of it.
-          THE WORDING IS EVIDENCE, NOT A CORRECTION. Being behind your own log
-          is a legitimate position — the chat went nowhere, you are parking
-          them, you disagree that it counted. The stage is still a fact the user
-          asserts, so this reports and does not judge. Nothing here may imply a
-          mistake, and no "should" or "update this" belongs in it. */}
+      {/* EVIDENCE, NOT A CORRECTION. Being behind your own log is a legitimate
+          position: the chat went nowhere, you are parking them, you disagree
+          that it counted. This reports and does not judge, and asks nothing, so
+          there is no dismissal to remember. */}
       {evidence && (
-        <p
-          data-testid="log-evidence"
-          style={{ margin: "12px 0 0", color: S.text.muted, fontSize: 13, lineHeight: "19px" }}
-        >
+        <p style={evidenceStyle} data-testid="log-evidence">
           Your log shows{" "}
           <strong style={{ color: S.text.secondary, fontWeight: 700 }}>
             {ACTION_TYPE_LABEL[evidence.type] ?? evidence.type}
           </strong>{" "}
-          on {fmtEvidenceDate(evidence.action_date)}.
+          on {fmtDate(evidence.action_date)}.
         </p>
       )}
 
-      {/* THE TWO EXITS, VISIBLE WHERE PEOPLE LOOK FOR STAGES.
-          "No answer yet" and "Not interested" are real stages a user can reach,
-          and until now the only route to them was a dropdown behind a button
-          labelled "Other moves" — so a tester hunted for them and reported them
-          as missing. Every stage someone can reach should be visible where they
-          look for stages.
-          They are NOT on the path, and that stays right: a stepper whose last
-          circle reads "Not interested" makes it look like a goal. So they sit
-          beneath, deliberately styled as not-steps — resting colour, no circle,
-          no connector, no number — which is the whole visual argument that they
-          are exits rather than progress. */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 14, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 12.5, color: S.text.dim }}>Or the thread stopped:</span>
-        {(["dormant_no_answer", "dormant_declined"] as const).map((stageKey) => {
-          const isCurrent = contact.stage === stageKey
-          return (
-            <button
-              key={stageKey}
-              type="button"
-              data-testid={`exit-${stageKey}`}
-              onClick={() => { if (!isCurrent && busy === null) void move(stageKey) }}
-              disabled={isCurrent || busy !== null}
-              title={isCurrent ? "Where this stands now" : `Mark as ${STAGE_LABELS[stageKey]}`}
-              style={{
-                background: "none", border: "none", padding: 0, fontFamily: "inherit",
-                fontSize: 13, fontWeight: isCurrent ? 800 : 700,
-                color: S.meaning.dormant.ink,
-                textDecoration: isCurrent ? "none" : "underline",
-                textUnderlineOffset: 3,
-                cursor: isCurrent || busy !== null ? "default" : "pointer",
-                opacity: busy === stageKey ? 0.55 : 1,
-              }}
-            >
-              {STAGE_LABELS[stageKey]}
-            </button>
-          )
-        })}
+      {/* THE ONE AUTOMATIC CASE, said before it happens. Stage is normally
+          something the user asserts, and a first outreach is the exception:
+          `identified` has no due reason, so a contact left there after being
+          written to has no due date at all, parked silently. That rule used to
+          live only in a comment in action-semantics.ts, where the person it
+          affects cannot read it. */}
+      {stage === "identified" && (
+        <p style={evidenceStyle} data-testid="auto-advance-note">
+          Your first message moves this to{" "}
+          <strong style={{ color: S.text.secondary, fontWeight: 700 }}>
+            {STAGE_LABELS.sequence_active}
+          </strong>{" "}
+          on its own, so it starts getting reminders.
+        </p>
+      )}
+
+      {err && <p style={{ ...evidenceStyle, color: S.meaning.error.ink, fontWeight: 700 }}>{err}</p>}
+
+      <div style={footer}>
+        {/* Not offered on a resting contact. Suggesting a follow-up to someone
+            who said no is the product arguing with the user's own decision;
+            the stage pill still lets them reopen it deliberately. */}
+        {!resting && (
+          <button type="button" onClick={onWrite} style={cta_btn} data-testid="wts-write">
+            {cta}
+          </button>
+        )}
+        <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={pill} data-testid="stage-pill">{STAGE_LABELS[stage] ?? stage}</span>
+          <ChangeStage contact={contact as never} onChanged={onChanged} />
+        </span>
       </div>
-
-      {/* Plain text, not a button. The advance lives on the circle above; saying
-          it twice is what we just removed. This only names what comes next. */}
-      {nextStage && (
-        <p style={{ margin: "14px 0 0", color: S.text.muted, fontSize: 14 }}>
-          Next step: <strong style={{ color: S.text.secondary, fontWeight: 700 }}>{STAGE_LABELS[nextStage]}</strong>
-        </p>
-      )}
-
-      {err && (
-        <div style={{ color: S.meaning.error.ink, fontSize: 13, marginTop: 10 }} data-testid="quick-error">
-          {err}
-        </div>
-      )}
     </section>
   )
+}
+
+const card: React.CSSProperties = {
+  marginTop: 16, borderRadius: 16, padding: "20px 24px",
+  background: S.card, border: `1px solid ${S.borderSoft}`, boxShadow: S.shadow.card,
+}
+const eyebrow: React.CSSProperties = {
+  fontSize: 12, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase",
+  color: S.text.muted, marginBottom: 12,
+}
+// The fact, at reading size. It is the reason the card exists, so it is the
+// biggest thing in it.
+const headlineStyle: React.CSSProperties = {
+  fontSize: 19, fontWeight: 700, color: S.text.primary, lineHeight: "26px",
+}
+const readStyle: React.CSSProperties = {
+  fontSize: 15, color: S.text.secondary, marginTop: 4, lineHeight: "22px",
+}
+const footer: React.CSSProperties = {
+  display: "flex", alignItems: "center", gap: 12, marginTop: 16, flexWrap: "wrap",
+}
+// Navy, not peach. Peach is the composer's Send; this only scrolls to it, and
+// two peach buttons on one screen would each dilute the other.
+const cta_btn: React.CSSProperties = {
+  background: S.action.fill, color: S.action.ink, border: "none",
+  borderRadius: 10, padding: "10px 16px", fontSize: 14, fontWeight: 800,
+  fontFamily: "inherit", cursor: "pointer",
+}
+const pill: React.CSSProperties = {
+  background: S.well, border: `1px solid ${S.border}`, borderRadius: 999,
+  padding: "5px 12px", fontSize: 13, fontWeight: 700, color: S.text.primary,
+  whiteSpace: "nowrap",
+}
+
+const offerBox: React.CSSProperties = {
+  marginTop: 14, padding: "12px 14px", borderRadius: 10,
+  background: S.meaning.current.fill,
+  border: `1px solid ${S.meaning.current.accent}`,
+  display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+}
+const evidenceStyle: React.CSSProperties = {
+  margin: "12px 0 0", color: S.text.muted, fontSize: 13, lineHeight: "19px",
 }

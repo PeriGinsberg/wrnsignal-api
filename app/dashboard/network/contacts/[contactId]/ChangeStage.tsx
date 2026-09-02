@@ -11,14 +11,21 @@
 // the outcome-type sub-attribute, and the "requesting an intro usually means
 // Referral" suggestion.
 //
-// Redesign step 4: light theme, and it opens inside the "Where things stand"
-// card. The trigger reads "OTHER MOVES", not "Change", because that is what it
-// holds once the stepper circles took over forward progress. Everything the
-// circles cannot reach is in here and nowhere else:
+// Opens inside the "Where things stand" card, and is now the ONLY stage
+// control on the page: the nine-circle stepper it used to sit beside is gone.
+//
+// SO THE TRIGGER SAYS "CHANGE STAGE", not "More stages". "More" only made
+// sense as "more than the circles offer", and with no circles it named itself
+// against something the user cannot see. It also matters for findability: a
+// tester once hunted for "Not interested" and reported it missing, which is
+// why those two were surfaced as separate buttons for a while. A control
+// labelled with the thing it changes is a better answer than two buttons.
+//
+// Everything is in here and nowhere else:
+//   - the whole forward path, which the circles used to carry
 //   - the two off-path stages, "No answer" and "Declined"
-//   - "Outcome", which is on the path but deliberately never one tap
-//   - every BACKWARD move, since a circle behind you is disabled. This is the
-//     only undo on the screen, which "Change" did not advertise.
+//   - "Outcome", deliberately never one tap
+//   - every BACKWARD move. This is the only undo on the screen.
 //   - the outcome-type sub-attribute, whose only writer is this component
 //   - the "an intro request usually means Referral" relationship prompt
 
@@ -88,7 +95,7 @@ export function ChangeStage({ contact, onChanged }: { contact: Contact; onChange
   if (!open) {
     return (
       <button onClick={() => setOpen(true)} data-testid="change-stage-open" style={quiet}>
-        More stages ▾
+        Change stage ▾
       </button>
     )
   }

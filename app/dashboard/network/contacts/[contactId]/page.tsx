@@ -215,6 +215,14 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
         actions={actions}
         justLogged={justLogged}
         onOfferSettled={() => setJustLogged(null)}
+        onWrite={() => {
+          // Scroll rather than act. The card names the next move; the composer
+          // is where it happens, and giving the card its own compose box would
+          // be the fourth way to do one thing on this page.
+          const el = document.querySelector('[data-testid="message-composer"]')
+          el?.scrollIntoView({ behavior: "smooth", block: "start" })
+          ;(el?.querySelector("textarea") as HTMLTextAreaElement | null)?.focus()
+        }}
       />
 
       {/* ── What you've already applied to here ─────────────────

@@ -64,6 +64,16 @@ export function ActionLog({
   const [note, setNote] = useState("")
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  // SHUT BY DEFAULT. History mostly writes itself now: sending a message
+  // logs one, and a stage change logs one. Leaving a form open above the
+  // list made the drawer read as data entry, and made logging look like
+  // something you were expected to do by hand.
+  //
+  // Kept rather than deleted, because the form is the ONLY way to record
+  // what happened off SIGNAL: a phone call, a coffee, a reply that arrived
+  // somewhere else, or anything at all from before this account existed.
+  // The date input is backdatable for exactly that reason.
+  const [manualOpen, setManualOpen] = useState(false)
 
   async function add() {
     if (!type) return   // the button is disabled, but a form must not depend on that
@@ -92,8 +102,22 @@ export function ActionLog({
 
   return (
     <div>
+      {!manualOpen && (
+        <button
+          type="button"
+          onClick={() => setManualOpen(true)}
+          data-testid="log-manual-open"
+          style={{
+            background: "none", border: "none", padding: 0, fontFamily: "inherit",
+            fontSize: 13.5, fontWeight: 700, color: S.action.quietInk, cursor: "pointer",
+          }}
+        >
+          Log something that happened elsewhere
+        </button>
+      )}
+
       {/* add form */}
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
+      <div style={{ display: manualOpen ? "flex" : "none", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
         <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           <span style={label}>Action</span>
           <select value={type} onChange={(e) => setType(e.target.value)} style={{ ...control, width: 200 }}>

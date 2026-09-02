@@ -40,6 +40,7 @@ const BASE = {
   network_companies: { name: "Nodal Exchange" },
 }
 
+const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString()
 let contact: Record<string, unknown> = { ...BASE }
 let actions: Array<Record<string, unknown>> = []
 
@@ -93,6 +94,57 @@ async function open() {
   return utils
 }
 
+/**
+ * WHERE THINGS STAND, after the stepper.
+ *
+ * The nine-circle path answered "which of eleven stages is this in", which is
+ * not the question anyone arrives with. These pin the question it answers now:
+ * what did I last do, when, and do I need to start. If a future change makes
+ * the card stop saying one of those, that is the regression.
+ */
+describe("where things stand says what you last did and when", () => {
+  it("names the last action and how long ago, not a stage", async () => {
+    contact = { ...BASE, stage: "sequence_active" }
+    actions = [
+      { id: "a2", type: "touch_2", action_date: daysAgo(39), note: null, author_role: "client" },
+      { id: "a1", type: "touch_1", action_date: daysAgo(94), note: null, author_role: "client" },
+    ]
+    await open()
+    const head = screen.getByTestId("wts-headline").textContent ?? ""
+    expect(head).toContain("second follow-up")
+    expect(head).toMatch(/weeks ago|months ago|days ago/)
+    // The read is a separate sentence, and must not restate the stage label.
+    expect(screen.getByTestId("wts-read").textContent).toContain("No reply yet")
+  })
+
+  it("says plainly when nothing has happened, and offers the first step", async () => {
+    contact = { ...BASE, stage: "identified", next_due_reason: null }
+    actions = []
+    await open()
+    expect(screen.getByTestId("wts-headline").textContent).toContain("not reached out")
+    expect(screen.getByTestId("wts-write").textContent).toContain("Write the first message")
+  })
+
+  it("does NOT count an unsent draft as something you did", async () => {
+    contact = { ...BASE, stage: "sequence_active" }
+    actions = [
+      { id: "d1", type: "touch_3", action_date: daysAgo(1), status: "draft", body: "hi", author_role: "client" },
+      { id: "a1", type: "touch_1", action_date: daysAgo(60), note: null, author_role: "client" },
+    ]
+    await open()
+    // The draft is newer. If it counted, the headline would say touch_3.
+    expect(screen.getByTestId("wts-headline").textContent).toContain("reached out")
+  })
+
+  it("keeps the stage, demoted to a pill rather than a path", async () => {
+    contact = { ...BASE, stage: "replied" }
+    await open()
+    expect(screen.getByTestId("stage-pill").textContent).toBe("They replied")
+    // And the nine circles are gone, not hidden.
+    expect(document.querySelectorAll('[data-testid^="step-"]')).toHaveLength(0)
+  })
+})
+
 describe("the header carries status", () => {
   it("shows one stage pill instead of the seven-segment bar", async () => {
     await open()
@@ -103,60 +155,13 @@ describe("the header carries status", () => {
 })
 
 describe("quick actions — split by likelihood", () => {
-  it("the frequent forward moves are one tap and set the right stage", async () => {
-    await open()
-    // By ACCESSIBLE NAME, not testid: the testid is derived from the stage, so it
-    // would still find the right button if the words on it were wired to the
-    // wrong move. The name gained an "Advance to " prefix when the circles got a
-    // real aria-label — title is a tooltip, never an accessible name, and it
-    // does not exist on touch at all. Same claim, current wording.
-    fireEvent.click(screen.getByRole("button", { name: "Advance to They replied" }))
-    await waitFor(() => expect(authFetchMock.mock.calls.some((c) => String(c[0]).includes("/stage"))).toBe(true))
-    const call = authFetchMock.mock.calls.findIndex((c) => String(c[0]).includes("/stage"))
-    expect(bodyOf(call).stage).toBe("replied")
 
-    // LABEL FOLLOWS THE WORDS ON SCREEN. This move was a button reading "We
-    // talked", then the chat_done circle reading "Chat happened", and after the
-    // warm-wording pass it reads "You talked". The stage key never moved. Still
-    // looked up by label, not testid, so the wording still has to be wired to
-    // the right move.
-    fireEvent.click(screen.getByRole("button", { name: "Advance to You talked" }))
-    await waitFor(() => {
-      const stageCalls = authFetchMock.mock.calls.filter((c) => String(c[0]).includes("/stage"))
-      expect(stageCalls).toHaveLength(2)
-      expect(JSON.parse(stageCalls[1][1].body).stage).toBe("chat_done")
-    })
-  })
-
-  it("OUTCOME is still not one tap — it stays behind More stages", async () => {
-    // Narrowed 2026-08-09. This used to claim the same of the two DORMANT
-    // stages; they are now reachable at the tracker as off-path exits (see the
-    // block below) because a tester hunted for them and reported them missing.
-    // `outcome` is unchanged: it is a real result on a screen built for someone
-    // with no coach to undo a stray tap.
-    await open()
-    expect(screen.queryByTestId("quick-outcome")).toBeNull()
-    expect(screen.queryByTestId("step-outcome")).toBeTruthy()   // on the path, just not tappable
-    expect(screen.queryByLabelText("Stage")).toBeNull()
-
-    fireEvent.click(screen.getByTestId("change-stage-open"))
-    const select = screen.getByLabelText("Stage") as HTMLSelectElement
-    const values = Array.from(select.options).map((o) => o.value)
-    expect(values).toContain("dormant_declined")
-    expect(values).toContain("outcome")
-    expect(select.options).toHaveLength(11)   // all eleven, per the addition to the spec
-  })
 
   /**
    * Every stage a user can reach has to be visible where they look for stages.
    * These two were reachable ONLY through a dropdown behind a button that said
    * "Other moves", so a tester hunted for them and reported them as absent.
    */
-  it("the two dormant stages are VISIBLE at the tracker, not only in the dropdown", async () => {
-    await open()
-    expect(screen.getByTestId("exit-dormant_no_answer").textContent).toBe("No answer yet")
-    expect(screen.getByTestId("exit-dormant_declined").textContent).toBe("Not interested")
-  })
 
   it("…but they are NOT steps on the path", async () => {
     // The reason they were excluded in the first place still holds: a stepper
@@ -166,37 +171,15 @@ describe("quick actions — split by likelihood", () => {
     expect(screen.queryByTestId("step-dormant_declined")).toBeNull()
   })
 
-  it("clicking an exit sets that stage", async () => {
-    await open()
-    fireEvent.click(screen.getByTestId("exit-dormant_no_answer"))
-    await waitFor(() => expect(authFetchMock.mock.calls.some((c) => String(c[0]).includes("/stage"))).toBe(true))
-    const call = authFetchMock.mock.calls.findIndex((c) => String(c[0]).includes("/stage"))
-    expect(bodyOf(call).stage).toBe("dormant_no_answer")
-  })
 
-  it("does not offer the exit the contact is already sitting in", async () => {
-    contact = { ...BASE, stage: "dormant_declined" }
-    await open()
-    expect((screen.getByTestId("exit-dormant_declined") as HTMLButtonElement).disabled).toBe(true)
-    expect((screen.getByTestId("exit-dormant_no_answer") as HTMLButtonElement).disabled).toBe(false)
-  })
 
   it("the dropdown is labelled by what is in it", async () => {
     // "Other moves" named the mechanism, not the content, which is why someone
     // looking for a STAGE did not open it.
     await open()
-    expect(screen.getByTestId("change-stage-open").textContent).toContain("More stages")
+    expect(screen.getByTestId("change-stage-open").textContent).toContain("Change stage")
   })
 
-  it("does not offer a move to the stage the contact is already at", async () => {
-    contact = { ...BASE, stage: "replied" }
-    await open()
-    // The circles replaced the quick buttons, so the handle moved from
-    // quick-<stage> to step-<stage>. Same assertion: you cannot advance to
-    // where you already are, and you can advance to what is ahead.
-    expect((screen.getByTestId("step-replied") as HTMLButtonElement).disabled).toBe(true)
-    expect((screen.getByTestId("step-chat_done") as HTMLButtonElement).disabled).toBe(false)
-  })
 })
 
 describe("the drawers", () => {
@@ -252,8 +235,10 @@ describe("the drawers", () => {
     expect(screen.getByTestId("drawer-body-notes")).toBeTruthy()
 
     // Any save on the page refetches the contact. The drawer must survive it.
-    fireEvent.click(screen.getByTestId("step-replied"))
-    await waitFor(() => expect(authFetchMock.mock.calls.some((c) => String(c[0]).includes("/stage"))).toBe(true))
+    // Was a click on a stepper circle; the circles went with the Where Things
+    // Stand redesign, and this test never cared WHICH save it was.
+    fireEvent.click(within(screen.getByTestId("reminder-line")).getByTitle("Snooze 7 days"))
+    await waitFor(() => expect(authFetchMock.mock.calls.some((c) => String(c[0]).includes("/reminder"))).toBe(true))
     expect(screen.getByTestId("drawer-body-notes")).toBeTruthy()
   })
 })
@@ -383,6 +368,9 @@ describe("logging an action offers the stage it implies", () => {
     await open()
     // Log a chat from the History drawer.
     fireEvent.click(screen.getByTestId("drawer-toggle-history"))
+    // The manual form is shut by default now: history mostly writes itself,
+    // and this records the off-SIGNAL case. Open it before logging.
+    fireEvent.click(screen.getByTestId("log-manual-open"))
     fireEvent.change(screen.getByLabelText("Action"), { target: { value: "chat_done" } })
     fireEvent.click(screen.getByRole("button", { name: /Log it/i }))
 
@@ -396,6 +384,9 @@ describe("logging an action offers the stage it implies", () => {
     contact = { ...BASE, stage: "sequence_active" }
     await open()
     fireEvent.click(screen.getByTestId("drawer-toggle-history"))
+    // The manual form is shut by default now: history mostly writes itself,
+    // and this records the off-SIGNAL case. Open it before logging.
+    fireEvent.click(screen.getByTestId("log-manual-open"))
     fireEvent.change(screen.getByLabelText("Action"), { target: { value: "chat_done" } })
     fireEvent.click(screen.getByRole("button", { name: /Log it/i }))
     fireEvent.click(await screen.findByTestId("stage-offer-accept"))
@@ -411,6 +402,9 @@ describe("logging an action offers the stage it implies", () => {
     contact = { ...BASE, stage: "sequence_active" }
     await open()
     fireEvent.click(screen.getByTestId("drawer-toggle-history"))
+    // The manual form is shut by default now: history mostly writes itself,
+    // and this records the off-SIGNAL case. Open it before logging.
+    fireEvent.click(screen.getByTestId("log-manual-open"))
     fireEvent.change(screen.getByLabelText("Action"), { target: { value: "chat_done" } })
     fireEvent.click(screen.getByRole("button", { name: /Log it/i }))
     fireEvent.click(await screen.findByTestId("stage-offer-dismiss"))
@@ -424,6 +418,9 @@ describe("logging an action offers the stage it implies", () => {
     contact = { ...BASE, stage: "sequence_active" }
     await open()
     fireEvent.click(screen.getByTestId("drawer-toggle-history"))
+    // The manual form is shut by default now: history mostly writes itself,
+    // and this records the off-SIGNAL case. Open it before logging.
+    fireEvent.click(screen.getByTestId("log-manual-open"))
     fireEvent.change(screen.getByLabelText("Action"), { target: { value: "note_logged" } })
     fireEvent.click(screen.getByRole("button", { name: /Log it/i }))
     await waitFor(() => expect(authFetchMock.mock.calls.some((c) => String(c[0]).includes("/actions"))).toBe(true))
@@ -436,6 +433,9 @@ describe("logging an action offers the stage it implies", () => {
     contact = { ...BASE, stage: "nurture" }
     await open()
     fireEvent.click(screen.getByTestId("drawer-toggle-history"))
+    // The manual form is shut by default now: history mostly writes itself,
+    // and this records the off-SIGNAL case. Open it before logging.
+    fireEvent.click(screen.getByTestId("log-manual-open"))
     fireEvent.change(screen.getByLabelText("Action"), { target: { value: "chat_done" } })
     fireEvent.click(screen.getByRole("button", { name: /Log it/i }))
     await waitFor(() => expect(authFetchMock.mock.calls.some((c) => String(c[0]).includes("/actions"))).toBe(true))
@@ -456,7 +456,7 @@ describe("the one automatic case explains itself on screen", () => {
     contact = { ...BASE, stage: "identified" }
     await open()
     const note = screen.getByTestId("auto-advance-note")
-    expect(note.textContent).toContain("first outreach")
+    expect(note.textContent).toContain("first message")
     expect(note.textContent).toContain("Message sent")
   })
 
@@ -482,44 +482,6 @@ describe("the two kinds of note are not both called Note", () => {
   })
 })
 
-/**
- * The circles were buttons whose only signals were cursor:pointer and a title
- * tooltip. On a keyboard you had to guess; on TOUCH, where there is no hover,
- * there was no discoverable way to advance a stage at all — a missing control
- * on mobile rather than a polish item.
- */
-describe("the stage circles are discoverable without a mouse", () => {
-  it("gives an advanceable step an accessible name that says what it DOES", async () => {
-    contact = { ...BASE, stage: "sequence_active" }
-    await open()
-    // Not bare "They replied" — a noun tells a screen-reader user nothing about
-    // whether the thing is actionable.
-    expect(screen.getByRole("button", { name: "Advance to They replied" })).toBeTruthy()
-  })
-
-  it("names the current and past steps as STATE, not as actions", async () => {
-    contact = { ...BASE, stage: "sequence_active" }
-    await open()
-    expect(screen.getByRole("button", { name: /Current stage: Message sent/ })).toBeTruthy()
-    expect(screen.getByRole("button", { name: /Already past Not started/ })).toBeTruthy()
-  })
-
-  it("points at the terminal step's real route rather than a button that no longer exists", async () => {
-    contact = { ...BASE, stage: "sequence_active" }
-    await open()
-    expect(screen.getByRole("button", { name: /Got a result, set this from More stages/ })).toBeTruthy()
-  })
-
-  it("marks the advanceable steps visibly, not only on hover", async () => {
-    contact = { ...BASE, stage: "sequence_active" }
-    await open()
-    // The chevron replaces the numeral on steps you can take, so the target is
-    // visible at rest and on touch. Asserted on the rendered glyph.
-    expect(screen.getByTestId("step-replied").textContent).toContain("›")
-    // A past step keeps none.
-    expect(screen.getByTestId("step-identified").textContent).not.toContain("›")
-  })
-})
 
 /**
  * The offer at logging time is dismissible and its dismissal is session state,
