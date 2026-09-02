@@ -156,7 +156,9 @@ const LIGHT_ROUTES: string[] = [
                                     // roster URL that now redirects.
   "/dashboard/network",             // the merged roster. EXACT: nothing
                                     // below it is converted by implication.
-                                    // page arrives with the Phase B merge.
+  "/dashboard/network/companies",   // the retired board, now a redirect to
+                                    // the roster. Listed so the hop does not
+                                    // flash the dark shell on the way.
   "/dashboard/tracker/*",           // step 7, all three views plus the
                                     // application detail page.
   "/dashboard/profile",             // step 8, the sectioned settings home.
