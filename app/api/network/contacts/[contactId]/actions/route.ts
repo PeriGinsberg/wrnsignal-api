@@ -60,7 +60,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
 
     // 3) reload actions, run the engine ONCE (the only place due dates are computed)
     // action_date is required: the engine scopes follow-up counting to the current cycle.
-    const { data: acts } = await supabase.from("network_actions").select("type, action_date, status")   // status: the engine drops drafts, which are not touches.eq("contact_id", contactId)
+    // status: the engine drops drafts, which are not touches.
+    const { data: acts } = await supabase.from("network_actions")
+      .select("type, action_date, status").eq("contact_id", contactId)
     // The action may imply a stage move (first outreach from `identified`).
     // Applied BEFORE the engine runs so it schedules from the stage the contact
     // is moving TO — computing against `identified` would return no due date and
