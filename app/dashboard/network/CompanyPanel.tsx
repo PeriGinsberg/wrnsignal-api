@@ -22,12 +22,25 @@ import { authFetch } from "./authFetch"
 import { CompanyCard, type Company } from "./companies/CompanyCard"
 
 export function CompanyPanel({
-  companyId, onClose, onChanged,
+  companyId, onClose, onChanged, onAddContact, reloadToken = 0,
 }: {
   companyId: string | null
   onClose: () => void
   /** Bubbles a company edit up so the list can re-render names. */
   onChanged?: () => void
+  /**
+   * Opens Add a contact with this company already filled in.
+   *
+   * Looking at a company, reading who you already know there, and realising
+   * you want to add someone is one thought, and until now it cost a close, a
+   * scroll to the header, and retyping the company name you were just looking
+   * at. Absent, the button does not render, so surfaces with nowhere to put a
+   * form are unaffected.
+   */
+  onAddContact?: (companyName: string) => void
+  /** Bumped by the parent after a contact is added here, to reload the card's
+   *  contact list and count rather than leave them a person short. */
+  reloadToken?: number
 }) {
   const [company, setCompany] = useState<Company | null>(null)
   const [loading, setLoading] = useState(false)
@@ -54,7 +67,7 @@ export function CompanyPanel({
   useEffect(() => {
     if (companyId) void load(companyId)
     else setCompany(null)
-  }, [companyId, load])
+  }, [companyId, load, reloadToken])
 
   // Escape closes. A panel that can only be dismissed by hitting a small × is a
   // panel people leave open.
@@ -86,6 +99,11 @@ export function CompanyPanel({
 
         {company && (
           <CompanyCard
+            // Remounts when the token changes. CompanyCard loads its own
+            // contacts lazily and holds them in its own state, so a fresh key
+            // is the honest way to make it show the person just added rather
+            // than reaching into it.
+            key={`${company.id}:${reloadToken}`}
             company={company}
             onChanged={(patch) => {
               setCompany((prev) => (prev ? { ...prev, ...patch } : prev))
@@ -99,9 +117,38 @@ export function CompanyPanel({
 
           />
         )}
+
+        {company && onAddContact && (
+          <button
+            type="button"
+            onClick={() => onAddContact(company.name)}
+            style={addContactBtn}
+            data-testid="panel-add-contact"
+          >
+            + Add a contact at {company.name}
+          </button>
+        )}
       </aside>
     </div>
   )
+}
+
+// Quiet, not primary. The panel's job is to tell you about the company; adding
+// someone is a way out of it, and a filled button here would compete with the
+// action on the card the panel was opened from.
+const addContactBtn: React.CSSProperties = {
+  marginTop: 14,
+  width: "100%",
+  background: S.card,
+  border: `1px solid ${S.border}`,
+  borderRadius: 12,
+  padding: "11px 16px",
+  fontSize: 13.5,
+  fontWeight: 800,
+  color: S.text.primary,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  textAlign: "left",
 }
 
 const scrim: React.CSSProperties = {

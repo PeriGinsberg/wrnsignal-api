@@ -24,10 +24,22 @@ const created = () =>
     json: async () => ({ ok: true, contact: { id: "ct-9", first_name: "Dana", last_name: "Reed" } }),
   } as unknown as Response)
 
+/** The company list the typeahead reads on mount. */
+const companies = () =>
+  Promise.resolve({
+    ok: true, status: 200,
+    json: async () => ({ ok: true, companies: [{ id: "co-1", name: "Globex" }] }),
+  } as unknown as Response)
+
+/** The POST, found by method rather than by call index. */
+const postCall = () =>
+  authFetchMock.mock.calls.find((c) => (c[1] as RequestInit | undefined)?.method === "POST")
+
 afterEach(cleanup)
 beforeEach(() => {
   authFetchMock.mockReset()
-  authFetchMock.mockImplementation(created)
+  authFetchMock.mockImplementation((url: string, init?: RequestInit) =>
+    init?.method === "POST" ? created() : companies())
 })
 
 function fillAndSubmit() {
@@ -45,8 +57,36 @@ describe("AddContactForm prefill", () => {
   it("sends that company on submit", async () => {
     render(<AddContactForm initialCompany="Globex" onClose={() => {}} onCreated={() => {}} />)
     fillAndSubmit()
+    await waitFor(() => expect(postCall()).toBeTruthy())
+    expect(JSON.parse((postCall()![1] as RequestInit).body as string).company_name).toBe("Globex")
+  })
+
+  // The route matches case-insensitively and CREATES on no match, which is
+  // correct and silent. These assert the field says which one is about to
+  // happen, so a typo is caught before it becomes a duplicate company.
+  it("says the company already exists when the name matches one", async () => {
+    render(<AddContactForm initialCompany="globex" onClose={() => {}} onCreated={() => {}} />)
+    await waitFor(() => expect(screen.getByTestId("company-hint").textContent).toBe("Adds to Globex"))
+  })
+
+  it("warns that an unmatched name will create a company", async () => {
+    render(<AddContactForm initialCompany="Globbex" onClose={() => {}} onCreated={() => {}} />)
+    await waitFor(() =>
+      expect(screen.getByTestId("company-hint").textContent).toBe("New company. It will be created."))
+  })
+
+  it("says nothing at all when the field is empty", async () => {
+    render(<AddContactForm onClose={() => {}} onCreated={() => {}} />)
     await waitFor(() => expect(authFetchMock).toHaveBeenCalled())
-    expect(JSON.parse((authFetchMock.mock.calls[0][1] as RequestInit).body as string).company_name).toBe("Globex")
+    expect(screen.queryByTestId("company-hint")).toBeNull()
+  })
+
+  it("offers the board's companies as suggestions", async () => {
+    const { container } = render(<AddContactForm onClose={() => {}} onCreated={() => {}} />)
+    await waitFor(() =>
+      expect(container.querySelector('datalist option[value="Globex"]')).toBeTruthy())
+    expect((screen.getByLabelText(/^Company/) as HTMLInputElement).getAttribute("list"))
+      .toBe("add-contact-companies")
   })
 })
 

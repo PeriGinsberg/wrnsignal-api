@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { T, input as inputStyle, select as selectStyle, selectOption } from "../../../lib/dashboard-theme"
 import { authFetch, withSubject } from "./authFetch"
 import { RELATIONSHIPS, PRIORITIES, RELATIONSHIP_LABELS, STAGE_LABELS, FIELD_LABELS } from "./vocab"
@@ -48,6 +48,45 @@ export function AddContactForm({
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [created, setCreated] = useState<{ id: string; name: string } | null>(null)
+
+  // THE COMPANIES ALREADY ON THIS BOARD, for the field below.
+  //
+  // Fetched here rather than passed in. This form is opened from the roster
+  // header, from the empty-company strip and now from the company panel, and a
+  // list threaded through three callers is a list one of them will forget. The
+  // request is small, it only fires while the modal is open, and authFetch adds
+  // the subject, so a coach sees the CLIENT'S companies rather than their own.
+  //
+  // A failure is silent on purpose: with no suggestions the field is exactly
+  // the free-text box it has always been, which still works.
+  const [knownCompanies, setKnownCompanies] = useState<string[]>([])
+  useEffect(() => {
+    let live = true
+    ;(async () => {
+      try {
+        const res = await authFetch("/api/network/companies")
+        const j = await res.json()
+        if (live && res.ok && j?.ok !== false) {
+          setKnownCompanies((j.companies ?? []).map((c: { name: string }) => c.name).filter(Boolean))
+        }
+      } catch { /* suggestions are an aid, not a dependency */ }
+    })()
+    return () => { live = false }
+  }, [])
+
+  // WHAT WILL HAPPEN TO WHAT YOU TYPED, said before you submit.
+  //
+  // The route matches a company name case-insensitively and CREATES one on no
+  // match, which is the right behaviour and an invisible one: "Northwind
+  // Frieght" silently becomes a second company sitting next to the real one,
+  // and nothing on this form ever said so. Matching is done here exactly as
+  // matchOrCreateCompany does it, lowercased and trimmed, so the hint cannot
+  // disagree with what the server is about to do.
+  const companyMatch = useMemo(() => {
+    const typed = company.trim().toLowerCase()
+    if (!typed) return null
+    return knownCompanies.find((n) => n.toLowerCase() === typed) ?? null
+  }, [company, knownCompanies])
 
   const canSubmit = firstName.trim() && lastName.trim() && !busy
 
@@ -134,7 +173,28 @@ export function AddContactForm({
               <Field label="Title" value={title} onChange={setTitle} placeholder="VP Operations" />
             </div>
             <div style={{ marginTop: 10 }}>
-              <Field label="Company (optional — leave blank for a standalone contact)" value={company} onChange={setCompany} placeholder="Northwind Freight" />
+              {/* A LIST, NOT A DROPDOWN, and the difference matters. A <select>
+                  would make an existing company the only possible answer, and
+                  adding someone at a company you have not tracked yet is the
+                  normal case, not the exception. A datalist suggests without
+                  constraining, and it is the browser's own control: keyboard
+                  and screen-reader behaviour come for free, and there is no
+                  blur-versus-click race to get wrong. */}
+              <Field
+                label="Company (optional — leave blank for a standalone contact)"
+                value={company}
+                onChange={setCompany}
+                placeholder="Northwind Freight"
+                listId="add-contact-companies"
+                hint={
+                  !company.trim() ? null
+                    : companyMatch ? { text: `Adds to ${companyMatch}`, tone: "known" }
+                    : { text: "New company. It will be created.", tone: "new" }
+                }
+              />
+              <datalist id="add-contact-companies">
+                {knownCompanies.map((n) => <option key={n} value={n} />)}
+              </datalist>
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
               <Field label="Email" value={email} onChange={setEmail} placeholder="name@company.com" />
@@ -188,12 +248,18 @@ function Field({
   onChange,
   placeholder,
   autoFocus,
+  listId,
+  hint,
 }: {
   label: string
   value: string
   onChange: (v: string) => void
   placeholder?: string
   autoFocus?: boolean
+  /** Binds the input to a <datalist> rendered by the caller. */
+  listId?: string
+  /** One line under the field saying what the value will do. */
+  hint?: { text: string; tone: "known" | "new" } | null
 }) {
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 0 }}>
@@ -203,8 +269,20 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         autoFocus={autoFocus}
+        list={listId}
         style={{ ...inputStyle, height: 40 }}
       />
+      {hint && (
+        // Not a warning. Creating a company is a legitimate outcome and the
+        // second half of what this field is for; the line reports which of the
+        // two is about to happen, so a typo is visible before it is submitted.
+        <span
+          data-testid="company-hint"
+          style={{ fontSize: 10.5, fontWeight: 700, color: hint.tone === "known" ? T.MUTED : T.WRN_ORANGE }}
+        >
+          {hint.text}
+        </span>
+      )}
     </label>
   )
 }
@@ -217,7 +295,10 @@ const overlay: React.CSSProperties = {
   alignItems: "flex-start",
   justifyContent: "center",
   padding: "10vh 16px",
-  zIndex: 50,
+  // ABOVE THE COMPANY PANEL (60), because this form can now be opened FROM it
+  // and the panel is deliberately left standing behind: you came from a
+  // company, and you should still be looking at it when you are done.
+  zIndex: 70,
 }
 const panel: React.CSSProperties = {
   background: T.CARD,

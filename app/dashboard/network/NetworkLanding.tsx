@@ -70,9 +70,13 @@ function ContactsInner() {
   // empty", and conflating that with "not loaded" wiped the dismissals.
   const [allCompanies, setAllCompanies] = useState<{ id: string; name: string; contact_count: number }[] | null>(null)
   const [panelCompanyId, setPanelCompanyId] = useState<string | null>(null)
-  // Set by the strip, so "add someone at Globex" opens the form knowing where.
-  // Falls back to the ?company= param the add-from-a-company flow already used.
-  const [stripPrefill, setStripPrefill] = useState("")
+  // Bumped after a contact is added from inside the panel, so the panel's card
+  // reloads instead of sitting one person out of date under the modal.
+  const [panelReload, setPanelReload] = useState(0)
+  // The company Add a contact should open with, set by whichever surface asked
+  // for it: the empty-company strip, or the company panel. Falls back to the
+  // ?company= param the add-from-a-company flow already used.
+  const [companyPrefill, setCompanyPrefill] = useState("")
   const [selectMode, setSelectMode] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -434,11 +438,18 @@ function ContactsInner() {
 
       {addOpen && (
         <AddContactForm
-          initialCompany={stripPrefill || prefillCompany}
+          initialCompany={companyPrefill || prefillCompany}
           returnTo={returnTo}
           returnLabel={returnLabel}
-          onClose={() => { setAddOpen(false); setStripPrefill('') }}
-          onCreated={() => { void load(); void loadCompanies() }}
+          onClose={() => { setAddOpen(false); setCompanyPrefill('') }}
+          onCreated={() => {
+            void load(); void loadCompanies()
+            // Cheap and unconditional: if the panel is shut this changes a
+            // number nothing reads, and if it is open behind the modal it is
+            // the difference between the card showing the person you just
+            // added and quietly not.
+            setPanelReload((n) => n + 1)
+          }}
         />
       )}
 
@@ -581,7 +592,7 @@ function ContactsInner() {
           nothing when every company has somebody at it. */}
       <EmptyCompanyStrip
         companies={emptyCompanies}
-        onAddContact={(name) => { setStripPrefill(name); setAddOpen(true) }}
+        onAddContact={(name) => { setCompanyPrefill(name); setAddOpen(true) }}
       />
 
       {filtered.length > 0 && (
@@ -624,8 +635,14 @@ function ContactsInner() {
           shell. */}
       <CompanyPanel
         companyId={panelCompanyId}
+        reloadToken={panelReload}
         onClose={() => setPanelCompanyId(null)}
         onChanged={() => { void load(); void loadCompanies() }}
+        // The panel stays OPEN behind the form. You came here from a company,
+        // you are adding someone at that company, and you will want to see the
+        // list you were reading once you have. The form sits above it (z-index
+        // 70 against the panel's 60) rather than replacing it.
+        onAddContact={(name) => { setCompanyPrefill(name); setAddOpen(true) }}
       />
     </main>
   )
