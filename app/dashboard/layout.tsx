@@ -944,7 +944,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // prefix appears in this list.
   const isD2C = !isCoach && !pathname.startsWith("/dashboard/coach")
 
-  // THE ONE PLACE A COACH ACCOUNT GETS THE LIGHT GROUND.
+  // THE ONE PLACE A COACH ACCOUNT GETS THE LIGHT GROUND: networking.
   //
   // A coach opening a client's networking board is looking at the client's own
   // screen, and the point is that it is the same screen: when the two of them
@@ -952,13 +952,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // light networking pages on the dark coach ground would not just look wrong,
   // it would make the coach's view a different artefact from the client's.
   //
-  // Scoped as narrowly as it can be: this account is a coach, the route is a
-  // networking route that has actually been redesigned (isLightRoute below
-  // still gates it), and the URL names a subject. No other coach surface moves,
-  // and a coach on their OWN networking board has no subject param, so they get
-  // today's behaviour unchanged.
+  // THIS IS DELIBERATELY NOT GATED ON A SUBJECT BEING PRESENT, and that is a
+  // correction rather than a widening. Gating it on the subject made the shell
+  // depend on a query parameter surviving every link in the tree, so ONE link
+  // that forgot to carry it produced navy text on a navy ground. A missing
+  // subject is a real bug and it must be fixed where it happens, but it must
+  // not also make the page unreadable: those are separate failures and tying
+  // them together meant the cheap one could hide behind the loud one. A coach
+  // on their OWN networking board reaches the same pages and needs them legible
+  // for exactly the same reason.
+  //
+  // Still narrow: NETWORKING routes only, and isLightRoute still gates each one
+  // on having actually been redesigned. The coach tracker, profile and Coaches
+  // Center surfaces are untouched.
+  const onNetworking = pathname.startsWith("/dashboard/network")
   const coachOnClientBoard = isCoach && boardClientId !== null
-  const useLight = (isD2C || coachOnClientBoard) && isLightRoute(pathname)
+  const useLight = (isD2C || (isCoach && onNetworking)) && isLightRoute(pathname)
   const S = LIGHT
 
   // Nav chrome. Navy in both themes because navy is structure; only the active

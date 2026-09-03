@@ -32,7 +32,7 @@ import {
 import { STAGE_LABELS, STAGE_PHASE, REASON_LABELS } from "../vocab"
 import { timeAgo } from "../../../../lib/relativeTime"
 import { dueOf, type Contact } from "./ContactRow"
-import { subjectId } from "../authFetch"
+import { subjectId, withSubject } from "../authFetch"
 
 /**
  * "Added by your coach", and its two variants.
@@ -122,7 +122,14 @@ export function ContactCard({
   const key = meaningFor(c.stage)
   const idle = key === "idle"
   const st = statusStyle(S, key)
-  const href = `/dashboard/network/contacts/${c.id}`
+  // THE ROSTER'S WAY INTO THE RECORD, and it must carry the subject.
+  //
+  // Both anchors below use this one value: the whole card, and the action
+  // button. Dropping the subject here does not 404 and does not 403, it loads
+  // the record against the VIEWER'S board, which for a coach means a dark shell
+  // under light components and, worse, a page that would have written to the
+  // wrong board had they acted on it.
+  const href = withSubject(`/dashboard/network/contacts/${c.id}`)
 
   // What this contact needs from the student, if anything. A due reason is the
   // engine saying "this one is on you now", so it earns the filled action. A
