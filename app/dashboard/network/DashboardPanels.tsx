@@ -14,13 +14,16 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { T, PHASE, card, fieldLabel } from "../../../lib/dashboard-theme"
-import { authFetch } from "./authFetch"
+import { authFetch, withSubject } from "./authFetch"
 import type { Contact } from "./contacts/ContactRow"
 import {
   funnel, conversion, splitBy, weeklyFirstTouches, needsAttention, pct,
   MIN_SPLIT_N, BENCHMARK_MIN_REACHED, STALLED_DAYS, WEEKLY_TARGET_MIN, WEEKLY_TARGET_MAX,
 } from "./dashboardMetrics"
 
+// Every link built from this runs through withSubject(), so a coach drilling
+// from a panel into the filtered roster stays on the client's board instead of
+// silently arriving at their own.
 const CONTACTS = "/dashboard/network/contacts"
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
@@ -76,7 +79,7 @@ export function DashboardPanels({ contacts }: { contacts: Contact[] }) {
           {groups.map((g) => (
             <Link
               key={g.phase}
-              href={`${CONTACTS}?phase=${g.phase}`}
+              href={withSubject(`${CONTACTS}?phase=${g.phase}`)}
               data-testid={`funnel-${g.phase}`}
               data-count={g.count}
               style={{ flex: 1, minWidth: 0, textDecoration: "none" }}
@@ -129,13 +132,13 @@ export function DashboardPanels({ contacts }: { contacts: Contact[] }) {
       {/* 6 — NEEDS ATTENTION, only when non-empty. */}
       {(attn.stalled.length + attn.priorityAIdentified.length + attn.resurfacing.length + attn.noRelationship.length) > 0 && (
         <Panel title="Needs attention">
-          <AttnRow n={attn.stalled.length} href={`${CONTACTS}?status=stalled`}
+          <AttnRow n={attn.stalled.length} href={withSubject(`${CONTACTS}?status=stalled`)}
             text={`stalled in outreach for ${STALLED_DAYS}+ days`} />
-          <AttnRow n={attn.priorityAIdentified.length} href={`${CONTACTS}?priority=A&stage=identified`}
+          <AttnRow n={attn.priorityAIdentified.length} href={withSubject(`${CONTACTS}?priority=A&stage=identified`)}
             text="Priority A, not contacted yet" />
-          <AttnRow n={attn.resurfacing.length} href={`${CONTACTS}?phase=resting`}
+          <AttnRow n={attn.resurfacing.length} href={withSubject(`${CONTACTS}?phase=resting`)}
             text="resting, resurfacing this week" />
-          <AttnRow n={attn.noRelationship.length} href={`${CONTACTS}?relationship=__none__`}
+          <AttnRow n={attn.noRelationship.length} href={withSubject(`${CONTACTS}?relationship=__none__`)}
             text="with no relationship set" />
         </Panel>
       )}
@@ -166,7 +169,7 @@ function SplitList({ title, rows, param }: {
       ) : (
         rows.map((r) => (
           <div key={r.key} style={{ display: "flex", alignItems: "center", gap: 10, padding: "4px 0" }}>
-            <Link href={`${CONTACTS}?${param}=${encodeURIComponent(r.key)}`}
+            <Link href={withSubject(`${CONTACTS}?${param}=${encodeURIComponent(r.key)}`)}
               style={{ width: 130, color: T.TEXT, fontSize: 12, fontWeight: 700, textDecoration: "none", flexShrink: 0 }}>
               {r.label}
             </Link>

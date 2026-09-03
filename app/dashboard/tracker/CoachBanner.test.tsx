@@ -18,6 +18,10 @@ import { ApplicationsView } from "./ApplicationsView"
 vi.mock("../network/authFetch", () => ({
   authFetch: vi.fn(() => Promise.resolve({ ok: true, json: async () => ({}) })),
   getToken: async () => "test-token",
+  // Real behaviour under a test URL with no ?client_profile_id: no subject,
+  // and every href passes through untouched.
+  subjectId: () => null,
+  withSubject: (href: string) => href,
 }))
 
 const rec = (i: number, over: Record<string, unknown> = {}) => ({

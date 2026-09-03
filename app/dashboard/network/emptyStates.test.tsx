@@ -29,6 +29,10 @@ const authFetchMock = vi.fn()
 vi.mock("./authFetch", () => ({
   authFetch: (...args: unknown[]) => authFetchMock(...args),
   getToken: async () => "test-token",
+  // Real behaviour under a test URL with no ?client_profile_id: no subject,
+  // and every href passes through untouched.
+  subjectId: () => null,
+  withSubject: (href: string) => href,
 }))
 
 // The three list pages sit at different depths, so each resolves the shared
@@ -36,6 +40,10 @@ vi.mock("./authFetch", () => ({
 vi.mock("../authFetch", () => ({
   authFetch: (...args: unknown[]) => authFetchMock(...args),
   getToken: async () => "test-token",
+  // Real behaviour under a test URL with no ?client_profile_id: no subject,
+  // and every href passes through untouched.
+  subjectId: () => null,
+  withSubject: (href: string) => href,
 }))
 
 // A brand-new account: every collection is present and empty. Not an error —

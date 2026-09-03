@@ -24,6 +24,10 @@ const authFetchMock = vi.fn((_url: string, _init?: RequestInit) =>
 vi.mock("../network/authFetch", () => ({
   authFetch: (url: string, init?: RequestInit) => authFetchMock(url, init),
   getToken: async () => "t",
+  // Real behaviour under a test URL with no ?client_profile_id: no subject,
+  // and every href passes through untouched.
+  subjectId: () => null,
+  withSubject: (href: string) => href,
 }))
 
 afterEach(cleanup)

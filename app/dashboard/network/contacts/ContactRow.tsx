@@ -9,7 +9,7 @@
 
 import { useState } from "react"
 import { T, select as selectStyle, selectOption } from "../../../../lib/dashboard-theme"
-import { authFetch } from "../authFetch"
+import { authFetch, withSubject } from "../authFetch"
 import { STAGE_LABELS, REASON_LABELS, REASON_TO_ACTION, RELATIONSHIP_LABELS, stagePillStyle } from "../vocab"
 
 export type Contact = {
@@ -33,6 +33,14 @@ export type Contact = {
   first_replied_at?: string | null
   first_chat_at?: string | null
   outcome_type?: string | null
+  // ATTRIBUTION, as booleans rather than ids. The roster route resolves
+  // created_by_role/created_by_id into these and drops the id, because a board
+  // owner has no reason to hold their coach's profile id in order to render a
+  // caption. Optional: every caller that predates coach write access sends
+  // neither, and a missing flag renders as no badge, which is correct for the
+  // contacts those callers are showing.
+  added_by_coach?: boolean
+  added_by_you?: boolean
 }
 
 const DAY = 86400000
@@ -141,7 +149,7 @@ export function Row({
       </td>
       <td style={td}>{c.network_companies?.name ?? <span style={{ color: T.DIM }}>Standalone</span>}</td>
       <td style={td}>
-        <a href={`/dashboard/network/contacts/${c.id}`} style={{ color: T.WRN_BLUE, fontWeight: 700, textDecoration: "none" }}>
+        <a href={withSubject(`/dashboard/network/contacts/${c.id}`)} style={{ color: T.WRN_BLUE, fontWeight: 700, textDecoration: "none" }}>
           {c.first_name} {c.last_name}
         </a>
       </td>

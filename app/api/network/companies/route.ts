@@ -7,7 +7,7 @@ import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { routeError } from "../../_lib/routeError"
 import { getSupabaseAdmin } from "@/lib/collab/identity"
-import { resolveOwnerScope, resolveRequestScope } from "@/lib/collab/scope"
+import { createdBy, resolveRequestScope } from "@/lib/collab/scope"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -46,7 +46,8 @@ export async function GET(req: NextRequest) {
 // POST: add a company directly — no contact required. A wishlist firm with zero
 // contacts is first-class on the board (that is the whole point of the tier
 // view: a dream employer you have no way into yet is exactly what you need to
-// see). OWNER-ONLY, like every board write.
+// see). Owner, or a coach holding 'full' on this client. created_by_role
+// records which of the two it was, permanently.
 //
 // Only `name` is required. tier/status/domain/notes are all optional and stay
 // NULL when absent — the board renders a blank status as "—" rather than
@@ -54,10 +55,14 @@ export async function GET(req: NextRequest) {
 // a 23505 comes back as a clean 409, never a raw Postgres error.
 export async function POST(req: NextRequest) {
   try {
-    // Owner-only by design; resolveOwnerScope never consults the query
-    // string, so this cannot widen into coach access by accident.
-    const scope = await resolveOwnerScope(req)
     const supabase = getSupabaseAdmin()
+    // A coach with full access can add a company to the client's board.
+    //
+    // "write" means FULL access, not merely view: resolveRequestScope refuses
+    // a coach holding view or annotate before this line returns. A request
+    // naming no subject still resolves to the caller's own board, so the owner
+    // path is unchanged from what the owner-only helper did.
+    const scope = await resolveRequestScope(req, supabase, { require: "write" })
 
     const body = await req.json().catch(() => null)
     const name = clean(body?.name)
@@ -72,6 +77,7 @@ export async function POST(req: NextRequest) {
       .from("network_companies")
       .insert({
         client_profile_id: scope.subjectId,
+        ...createdBy(scope),
         name,
         tier,
         status,

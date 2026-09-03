@@ -35,6 +35,7 @@ import { inActivityWindow, ACTIVITY_LABELS, type ActivityWindow } from "./contac
 import { EmptyCompanyStrip, type EmptyCompany } from "./EmptyCompanyStrip"
 import { CompanyPanel } from "./CompanyPanel"
 import { SearchIcon, ImportIcon } from "../../../components/icons"
+import { subjectId } from "./authFetch"
 import { STAGE_PHASE, PHASE_LABELS, RELATIONSHIP_LABELS } from "./vocab"
 import { isStalled, STALLED_DAYS } from "./dashboardMetrics"
 import type { PhaseKey } from "../../../lib/dashboard-theme"
@@ -392,6 +393,20 @@ function ContactsInner() {
     }
   }
 
+  // WHAT A COACH DOES NOT GET, and why it is hidden rather than disabled.
+  //
+  // Import and bulk delete are the two controls whose routes are still
+  // owner-only, and resolveOwnerScope IGNORES the subject parameter by design.
+  // So for a coach these do not fail, which would be fine; they succeed against
+  // the COACH'S OWN board. An import run from a client's screen would quietly
+  // deposit that client's contacts in the coach's own roster, and the coach
+  // would have no reason to look for them there.
+  //
+  // Hidden rather than greyed out because there is nothing the coach could do
+  // to earn them. A disabled control is a promise that the right permission
+  // would unlock it, and no permission level unlocks these.
+  const viewingClientBoard = subjectId() !== null
+
   const companyCount = companies.length
   const countLine = loading
     ? "Loading…"
@@ -408,7 +423,9 @@ function ContactsInner() {
           <p style={{ color: S.text.muted, fontSize: 14.5, marginTop: 6 }}>{countLine}</p>
         </div>
         <div style={{ display: "flex", gap: 10, flex: "0 0 auto", alignItems: "center" }}>
-          <a href="/dashboard/network/import" style={{ ...secondaryBtn, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 9 }}><ImportIcon size={19} />Import</a>
+          {!viewingClientBoard && (
+            <a href="/dashboard/network/import" style={{ ...secondaryBtn, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 9 }}><ImportIcon size={19} />Import</a>
+          )}
           <button onClick={() => setAddOpen(true)} style={{ ...actionStyle(S, "primary"), ...primarySize }}>
             + Add contact
           </button>
@@ -477,13 +494,16 @@ function ContactsInner() {
             <option value="">Any time</option>
             {Object.entries(ACTIVITY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
-          <button
-            type="button"
-            onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
-            style={quietBtn}
-          >
-            {selectMode ? "Done selecting" : "Select"}
-          </button>
+          {/* Select exists only to feed bulk delete, so it goes with it. */}
+          {!viewingClientBoard && (
+            <button
+              type="button"
+              onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
+              style={quietBtn}
+            >
+              {selectMode ? "Done selecting" : "Select"}
+            </button>
+          )}
           {anyFilter && (
             <button type="button" onClick={clearFilters} style={quietBtn}>Clear filters</button>
           )}

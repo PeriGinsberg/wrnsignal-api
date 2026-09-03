@@ -27,7 +27,7 @@
 
 import { use as usePromise, useCallback, useEffect, useState } from "react"
 import { LIGHT as S, PHASE_MEANING, action as actionStyle, tile, tileIdle } from "../../../../../lib/theme/surfaces"
-import { authFetch } from "../../authFetch"
+import { authFetch, subjectId, withSubject } from "../../authFetch"
 import { WhereThingsStand } from "./WhereThingsStand"
 import { Collapsible } from "./Collapsible"
 import { ActionLog } from "./ActionLog"
@@ -72,7 +72,7 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
   // Resolved in an effect: sessionStorage does not exist during SSR, so the
   // first paint uses the default and swaps to the recorded origin on mount.
   const [backHref, setBackHref] = useState(DEFAULT_BACK)
-  useEffect(() => { setBackHref(readBackTarget()) }, [])
+  useEffect(() => { setBackHref(withSubject(readBackTarget())) }, [])
 
   const [contact, setContact] = useState<Contact | null>(null)
   const [actions, setActions] = useState<Action[]>([])
@@ -323,7 +323,11 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
         </Collapsible>
 
         <Collapsible icon={<SignOutIcon size={20} />} title="Close out this contact" testId="danger" summary="Remove them and their history">
-          <DeleteContactControl contact={contact} />
+          {/* Owner-only route, and resolveOwnerScope ignores the subject, so
+              for a coach this would act against their own board rather than
+              this one. Deleting a client's contact is also not something the
+              permission model grants at any level. */}
+          {!subjectId() && <DeleteContactControl contact={contact} />}
         </Collapsible>
       </div>
     </main>
@@ -547,6 +551,11 @@ function ReminderLine({ contact, onChanged }: { contact: Contact; onChanged: () 
           </>
         ) : "No reminder set."}
       </span>
+      {/* The reminder READING stays visible to a coach: it is the client's
+          cadence and the coach needs to see it. Only the controls go, because
+          the route behind them is owner-only and a snooze is the client's own
+          decision about their own week. */}
+      {!subjectId() && (
       <span style={{ display: "flex", alignItems: "center", gap: 7, flex: "0 0 auto" }}>
         <span style={{ color: S.text.dim, fontSize: 12.5, fontWeight: 700 }}>Snooze</span>
         {[3, 7, 14].map((d) => (
@@ -574,6 +583,7 @@ function ReminderLine({ contact, onChanged }: { contact: Contact; onChanged: () 
           </button>
         )}
       </span>
+      )}
       {err && <div style={{ flexBasis: "100%", color: S.meaning.error.ink, fontSize: 13 }}>{err}</div>}
     </div>
   )

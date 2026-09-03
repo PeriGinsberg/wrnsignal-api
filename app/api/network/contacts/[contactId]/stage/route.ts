@@ -1,5 +1,7 @@
 // app/api/network/contacts/[contactId]/stage/route.ts
-// POST: change a contact's stage. OWNER-ONLY. The client sets the stage (and,
+// POST: change a contact's stage. Owner, or a coach holding 'full' on this
+// client: advancing a relationship is the coaching act itself, so a coach who
+// could read the board but not move it could watch and not work. Sets the stage (and,
 // on 'outcome', outcome_type); the engine computes the due date for the NEW
 // stage ONCE. A stage change is a fresh touch, so last_action_at resets to now
 // (the new stage's interval measures from the change).
@@ -13,7 +15,7 @@ import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { routeError } from "../../../../_lib/routeError"
 import { must } from "../../../../_lib/must"
 import { getSupabaseAdmin } from "@/lib/collab/identity"
-import { resolveOwnerScope } from "@/lib/collab/scope"
+import { resolveRequestScope } from "@/lib/collab/scope"
 import { computeNextDue, type ContactStage } from "@/lib/network-tracker/reminder-engine"
 
 export const runtime = "nodejs"
@@ -30,11 +32,17 @@ export async function OPTIONS(req: NextRequest) { return corsOptionsResponse(req
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ contactId: string }> }) {
   try {
-    const { contactId } = await params
-    // Owner-only by design; resolveOwnerScope never consults the query
-    // string, so this cannot widen into coach access by accident.
-    const scope = await resolveOwnerScope(req)
     const supabase = getSupabaseAdmin()
+    const { contactId } = await params
+    // A coach with full access can move a contact's stage. Advancing a
+    // relationship is the coaching act itself, so a coach who could read the
+    // board but not move it could watch and not work.
+    //
+    // "write" means FULL access, not merely view: resolveRequestScope refuses
+    // a coach holding view or annotate before this line returns. A request
+    // naming no subject still resolves to the caller's own board, so the owner
+    // path is unchanged from what the owner-only helper did.
+    const scope = await resolveRequestScope(req, supabase, { require: "write" })
 
     const { data: c } = await supabase
       .from("network_contacts")
@@ -42,7 +50,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
       .eq("id", contactId).maybeSingle()
     if (!c) return withCorsJson(req, { ok: false, error: "Contact not found" }, 404)
     if (c.client_profile_id !== scope.subjectId)
-      return withCorsJson(req, { ok: false, error: "Forbidden: pipeline edits are owner-only" }, 403)
+      return withCorsJson(req, { ok: false, error: "Forbidden: that contact is not on this board" }, 403)
 
     const body = await req.json().catch(() => null)
     const stage = body?.stage

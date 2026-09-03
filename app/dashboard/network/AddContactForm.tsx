@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { T, input as inputStyle, select as selectStyle, selectOption } from "../../../lib/dashboard-theme"
-import { authFetch } from "./authFetch"
+import { authFetch, withSubject } from "./authFetch"
 import { RELATIONSHIPS, PRIORITIES, RELATIONSHIP_LABELS, STAGE_LABELS, FIELD_LABELS } from "./vocab"
 
 // "Add a contact" — a small modal form. Company is OPTIONAL (leave it blank for a
@@ -105,10 +105,10 @@ export function AddContactForm({
                   <a href={returnTo} style={primaryBtn} data-testid="return-to-origin">
                     {returnLabel ? `Back to ${returnLabel}` : "Back to where you were"}
                   </a>
-                  <a href={`/dashboard/network/contacts/${created.id}`} style={secondaryBtn}>Open contact</a>
+                  <a href={withSubject(`/dashboard/network/contacts/${created.id}`)} style={secondaryBtn}>Open contact</a>
                 </>
               ) : (
-                <a href={`/dashboard/network/contacts/${created.id}`} style={primaryBtn}>Open contact</a>
+                <a href={withSubject(`/dashboard/network/contacts/${created.id}`)} style={primaryBtn}>Open contact</a>
               )}
               <button
                 onClick={() => { setCreated(null); setFirstName(""); setLastName(""); setTitle(""); setCompany(initialCompany); setEmail(""); setLinkedin(""); setRelationship(""); setPriority(""); setSegment("") }}

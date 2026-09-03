@@ -271,6 +271,53 @@ function HandoffDegradedBanner() {
   )
 }
 
+/**
+ * The strip a coach gets while looking at a client's networking board.
+ *
+ * It does two jobs, and the second is the one that matters. It says WHOSE board
+ * this is, because the page below is the client's own screen rendered exactly
+ * as the client sees it, and a coach who forgets that will read their own
+ * follow-ups off it. And it gives the way back to the client, which the coach
+ * nav does not: COACH_NAV lists places, not the client you were just inside.
+ */
+function CoachBoardBar({ clientId, clientName }: { clientId: string; clientName: string | null }) {
+  return (
+    <div
+      style={{
+        width: "100%",
+        minHeight: 40,
+        background: LIGHT.well,
+        borderBottom: `1px solid ${LIGHT.border}`,
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+        padding: "8px 20px",
+        flexShrink: 0,
+      }}
+    >
+      <a
+        href={`/dashboard/coach/clients/${clientId}`}
+        style={{
+          color: LIGHT.text.primary,
+          fontSize: 13,
+          fontWeight: 800,
+          textDecoration: "none",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {"←"} Back to {clientName || "the client"}
+      </a>
+      <span style={{ color: LIGHT.text.muted, fontSize: 12.5 }}>
+        {/* Present tense and second person, because the risk is a coach acting
+            on this board as if it were their own. Naming the client is the
+            correction; naming the permission would not be. */}
+        You are viewing {clientName ? `${clientName}'s` : "this client's"} networking board.
+        Anything you add here is recorded as yours.
+      </span>
+    </div>
+  )
+}
+
 function FramerBanner({ runId, jobTitle }: { runId: string | null; jobTitle: string | null }) {
   return (
     <div
@@ -381,6 +428,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // below for why that is now a visible state instead of a silent one.
   const [handoffDegraded, setHandoffDegraded] = useState(false)
   const [isCoach, setIsCoach] = useState(false)
+  // The client whose board a coach is currently looking at, read off the URL
+  // rather than threaded down, for the same reason authFetch reads it: the
+  // networking pages already treat the query string as their state.
+  const [boardClientId, setBoardClientId] = useState<string | null>(null)
+  const [boardClientName, setBoardClientName] = useState<string | null>(null)
   // True when this D2C account has an ACTIVE coach (from /api/profile's `coached`
   // gate). Gates the coached-only "Coaching Tools" nav item.
   const [coached, setCoached] = useState(false)
@@ -433,6 +485,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     // dashboard and took the return control with it.
     if (sessionStorage.getItem("signal_from_framer") === "1") setFromFramer(true)
   }, [])
+
+  // Reads location directly rather than useSearchParams(), which would force a
+  // Suspense boundary around the whole dashboard shell. Re-runs on pathname so
+  // leaving the networking tree clears the bar rather than stranding it.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const onBoard = window.location.pathname.startsWith("/dashboard/network")
+    const id = onBoard ? new URLSearchParams(window.location.search).get("client_profile_id") : null
+    setBoardClientId(id)
+    if (!id || !isCoach) { setBoardClientName(null); return }
+
+    // The name is FETCHED, not passed in the URL. A name in the query string is
+    // text the page would render on someone else's say-so, and the coach client
+    // route already owns the answer and the access check for it.
+    let live = true
+    ;(async () => {
+      try {
+        const { data } = await getSupabaseBrowser().auth.getSession()
+        const token = data.session?.access_token || sessionStorage.getItem("signal_handoff_token")
+        const res = await fetch(`/api/coach/clients/${id}/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const j = await res.json().catch(() => null)
+        if (live && res.ok && j?.ok) setBoardClientName(j.profile?.name || j.profile?.email || null)
+      } catch {
+        // The bar still says "Back to the client" and still links correctly.
+        // A missing name is a worse bar, not a broken one.
+      }
+    })()
+    return () => { live = false }
+  }, [pathname, isCoach])
 
   useEffect(() => {
     const supabase = getSupabaseBrowser()
@@ -860,7 +943,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // to change: the page starts sitting on the light ground the moment its
   // prefix appears in this list.
   const isD2C = !isCoach && !pathname.startsWith("/dashboard/coach")
-  const useLight = isD2C && isLightRoute(pathname)
+
+  // THE ONE PLACE A COACH ACCOUNT GETS THE LIGHT GROUND.
+  //
+  // A coach opening a client's networking board is looking at the client's own
+  // screen, and the point is that it is the same screen: when the two of them
+  // talk about "the card at the top", it has to be the same card. Rendering the
+  // light networking pages on the dark coach ground would not just look wrong,
+  // it would make the coach's view a different artefact from the client's.
+  //
+  // Scoped as narrowly as it can be: this account is a coach, the route is a
+  // networking route that has actually been redesigned (isLightRoute below
+  // still gates it), and the URL names a subject. No other coach surface moves,
+  // and a coach on their OWN networking board has no subject param, so they get
+  // today's behaviour unchanged.
+  const coachOnClientBoard = isCoach && boardClientId !== null
+  const useLight = (isD2C || coachOnClientBoard) && isLightRoute(pathname)
   const S = LIGHT
 
   // Nav chrome. Navy in both themes because navy is structure; only the active
@@ -879,6 +977,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div style={{ minHeight: "100vh", background: useLight ? S.page : T.BG, display: "flex", flexDirection: "column" }}>
+      {coachOnClientBoard && boardClientId && (
+        <CoachBoardBar clientId={boardClientId} clientName={boardClientName} />
+      )}
       {(fromFramer || returnRun) && (
         <FramerBanner runId={returnRun} jobTitle={returnTitle} />
       )}

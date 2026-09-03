@@ -803,6 +803,38 @@ export default function CoachClientPage() {
             {t.label}
           </button>
         ))}
+
+        {/* NETWORKING IS A LINK, NOT A TAB, and the arrow says so.
+            Every tab beside it renders in this page's dark shell. The
+            networking screens are the light redesign, so embedding them here
+            would mean either white cards on the dark ground or a second copy
+            of four components that would drift from the client's within a
+            release. Sending the coach to the client's actual board avoids
+            both: there is one networking UI, and coach and client are looking
+            at the same one. app/dashboard/layout.tsx lights the shell and
+            puts the way back at the top. */}
+        <a
+          href={`/dashboard/network?client_profile_id=${encodeURIComponent(clientId)}`}
+          style={{
+            fontSize: 12, fontWeight: 900, padding: "8px 16px", borderRadius: 10,
+            border: `1px solid ${T.BORDER_SOFT}`,
+            background: "rgba(255,255,255,0.04)",
+            color: T.MUTED,
+            textDecoration: "none",
+            display: "inline-flex", alignItems: "center", gap: 6,
+            transition: "background 120ms ease, color 120ms ease",
+          }}
+          onMouseEnter={(e) => {
+            ;(e.currentTarget.style as any).background = "rgba(255,255,255,0.08)"
+            ;(e.currentTarget.style as any).color = T.TEXT
+          }}
+          onMouseLeave={(e) => {
+            ;(e.currentTarget.style as any).background = "rgba(255,255,255,0.04)"
+            ;(e.currentTarget.style as any).color = T.MUTED
+          }}
+        >
+          Networking <span aria-hidden="true">{"↗"}</span>
+        </a>
       </div>
 
       {/* TAB 0 — Dashboard (default landing) */}

@@ -18,6 +18,10 @@ const authFetchMock = vi.fn()
 vi.mock("../../authFetch", () => ({
   authFetch: (...a: unknown[]) => authFetchMock(...a),
   getToken: async () => "t",
+  // Real behaviour under a test URL with no ?client_profile_id: no subject,
+  // and every href passes through untouched.
+  subjectId: () => null,
+  withSubject: (href: string) => href,
 }))
 
 const writeText = vi.fn((_t: string) => Promise.resolve())

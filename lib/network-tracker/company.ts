@@ -17,6 +17,16 @@ export async function matchOrCreateCompany(
   supabase: SupabaseClient,
   ownerId: string,
   name: string,
+  // Who is causing the company to exist, when the name does not match one
+  // already on the board. ownerId is the BOARD, which is not the same question
+  // once a coach can add a contact: the company belongs to the client and was
+  // created by the coach, and the row has to be able to say both.
+  //
+  // Optional because the match path creates nothing, so most callers have
+  // nothing to attribute. Omitting it falls through to the column default
+  // ('client'), which is the right answer for every caller that predates
+  // coach write access.
+  createdBy?: { created_by_role: "client" | "coach"; created_by_id: string },
 ): Promise<string> {
   const findMatch = async () => {
     const { data } = await supabase
@@ -32,7 +42,7 @@ export async function matchOrCreateCompany(
 
   const { data: created, error } = await supabase
     .from("network_companies")
-    .insert({ client_profile_id: ownerId, name })
+    .insert({ client_profile_id: ownerId, name, ...(createdBy ?? {}) })
     .select("id")
     .single()
   if (error) {

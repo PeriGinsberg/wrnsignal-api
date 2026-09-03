@@ -190,3 +190,44 @@ export async function resolveRequestScope(
     require: opts.require,
   })
 }
+
+/**
+ * The scope's actor, in the vocabulary the DATABASE uses.
+ *
+ * Two vocabularies exist and neither is wrong. `Scope.actorRole` is about the
+ * request ("self" = you are acting on your own board), and it is relative: the
+ * same person is "self" on their board and "coach" on someone else's. The
+ * `author_role` columns are about the ROW, and are absolute and permanent:
+ * network_actions has stored 'client' | 'coach' | 'system' since v1, and a row
+ * written by the board's owner reads 'client' forever, including when a coach
+ * later looks at it and is themselves the "self" of some other request.
+ *
+ * Translating at the boundary keeps both honest. Storing "self" would record
+ * the request instead of the fact, and every later reader would have to know
+ * whose request it was to interpret the row, which is exactly the information
+ * that is gone by then.
+ */
+export function authorRole(scope: Scope): "client" | "coach" {
+  return scope.actorRole === "coach" ? "coach" : "client"
+}
+
+/**
+ * The created_by / edited_by pair for an INSERT, from a resolved scope.
+ *
+ * Both halves come from the same scope in one call, because the failure mode
+ * worth designing out is a row that says a coach created it and carries the
+ * client's id, which is unfalsifiable afterwards and quietly wrong in the UI.
+ */
+export function createdBy(scope: Scope): { created_by_role: "client" | "coach"; created_by_id: string } {
+  return { created_by_role: authorRole(scope), created_by_id: scope.actorId }
+}
+
+/** The edited_by triple for an UPDATE. `edited_at` is set here, not by the DB,
+ *  so an edit that touches no column still cannot claim a fresh timestamp. */
+export function editedBy(scope: Scope): {
+  edited_by_role: "client" | "coach"
+  edited_by_id: string
+  edited_at: string
+} {
+  return { edited_by_role: authorRole(scope), edited_by_id: scope.actorId, edited_at: new Date().toISOString() }
+}

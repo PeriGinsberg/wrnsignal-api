@@ -3,9 +3,9 @@
 // MESSAGES. Rows in network_actions with a body, which is what makes them
 // messages; see 20260902_network_messages.sql for the shape rule.
 //
-// OWNER-ONLY, like every other pipeline write. author_role is written as
-// "client" from the SESSION, never from the body, so the column carries real
-// attribution already and nothing has to be backfilled when coaches arrive.
+// Owner, or a coach holding 'full' on this client. author_role is written from
+// the SESSION, never from the body, so a caller cannot claim to be someone else
+// by posting a role: the column says who actually wrote the row.
 //
 // SIGNAL DOES NOT SEND ANYTHING. "Sent" is the user saying they sent it, in
 // their own mail client or on LinkedIn. That is why the send path takes no
@@ -25,7 +25,7 @@ import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { routeError } from "../../../../_lib/routeError"
 import { must } from "../../../../_lib/must"
 import { getSupabaseAdmin } from "@/lib/collab/identity"
-import { resolveOwnerScope } from "@/lib/collab/scope"
+import { authorRole, resolveRequestScope } from "@/lib/collab/scope"
 import { computeNextDue } from "@/lib/network-tracker/reminder-engine"
 import { ACTION_TYPES, isPipelineAction, stageAfterAction } from "@/lib/network-tracker/action-semantics"
 
@@ -84,14 +84,20 @@ async function applySend(supabase: any, c: any, type: string, sentAt: Date) {
 /** POST — write a message. `status` decides whether it is a draft or a send. */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ contactId: string }> }) {
   try {
-    const { contactId } = await params
-    const scope = await resolveOwnerScope(req)
     const supabase = getSupabaseAdmin()
+    const { contactId } = await params
+    // A coach with full access can draft and send a message on the client's behalf.
+    //
+    // "write" means FULL access, not merely view: resolveRequestScope refuses
+    // a coach holding view or annotate before this line returns. A request
+    // naming no subject still resolves to the caller's own board, so the owner
+    // path is unchanged from what the owner-only helper did.
+    const scope = await resolveRequestScope(req, supabase, { require: "write" })
 
     const c = await ownedContact(supabase, contactId)
     if (!c) return withCorsJson(req, { ok: false, error: "Contact not found" }, 404)
     if (c.client_profile_id !== scope.subjectId)
-      return withCorsJson(req, { ok: false, error: "Forbidden: pipeline edits are owner-only" }, 403)
+      return withCorsJson(req, { ok: false, error: "Forbidden: that contact is not on this board" }, 403)
 
     const b = await req.json().catch(() => null)
     const body = typeof b?.body === "string" ? b.body.trim() : ""
@@ -110,7 +116,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
     const { data: row, error: insErr } = await supabase.from("network_actions").insert({
       contact_id: contactId, type, action_date: when.toISOString(),
       body, channel, subject, status, application_id: applicationId,
-      author_role: "client", author_id: scope.subjectId,
+      author_role: authorRole(scope), author_id: scope.actorId,
     }).select(MESSAGE_COLS).single()
     if (insErr) throw new Error(`Save failed: ${insErr.message}`)
 
@@ -133,14 +139,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
  */
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ contactId: string }> }) {
   try {
-    const { contactId } = await params
-    const scope = await resolveOwnerScope(req)
     const supabase = getSupabaseAdmin()
+    const { contactId } = await params
+    // A coach with full access can edit a draft. Sent messages stay immutable
+    // for everyone: the 409 below does not care who is asking.
+    //
+    // "write" means FULL access, not merely view: resolveRequestScope refuses
+    // a coach holding view or annotate before this line returns. A request
+    // naming no subject still resolves to the caller's own board, so the owner
+    // path is unchanged from what the owner-only helper did.
+    const scope = await resolveRequestScope(req, supabase, { require: "write" })
 
     const c = await ownedContact(supabase, contactId)
     if (!c) return withCorsJson(req, { ok: false, error: "Contact not found" }, 404)
     if (c.client_profile_id !== scope.subjectId)
-      return withCorsJson(req, { ok: false, error: "Forbidden: pipeline edits are owner-only" }, 403)
+      return withCorsJson(req, { ok: false, error: "Forbidden: that contact is not on this board" }, 403)
 
     const b = await req.json().catch(() => null)
     const id = typeof b?.id === "string" ? b.id : ""
@@ -189,14 +202,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ co
  *  reason it is not editable. */
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ contactId: string }> }) {
   try {
-    const { contactId } = await params
-    const scope = await resolveOwnerScope(req)
     const supabase = getSupabaseAdmin()
+    const { contactId } = await params
+    // A coach with full access can discard a draft, and only a draft. The
+    // guard below refuses a sent message for coach and client alike.
+    //
+    // "write" means FULL access, not merely view: resolveRequestScope refuses
+    // a coach holding view or annotate before this line returns. A request
+    // naming no subject still resolves to the caller's own board, so the owner
+    // path is unchanged from what the owner-only helper did.
+    const scope = await resolveRequestScope(req, supabase, { require: "write" })
 
     const c = await ownedContact(supabase, contactId)
     if (!c) return withCorsJson(req, { ok: false, error: "Contact not found" }, 404)
     if (c.client_profile_id !== scope.subjectId)
-      return withCorsJson(req, { ok: false, error: "Forbidden: pipeline edits are owner-only" }, 403)
+      return withCorsJson(req, { ok: false, error: "Forbidden: that contact is not on this board" }, 403)
 
     const b = await req.json().catch(() => null)
     const id = typeof b?.id === "string" ? b.id : ""

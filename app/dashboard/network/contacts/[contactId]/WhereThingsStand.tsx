@@ -24,7 +24,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { LIGHT as S, action as actionStyle } from "../../../../../lib/theme/surfaces"
-import { authFetch } from "../../authFetch"
+import { authFetch, subjectId } from "../../authFetch"
 import { STAGE_LABELS, REASON_LABELS, ACTION_TYPE_LABEL } from "../../vocab"
 import { impliedStageAhead, historyImpliesAhead } from "../../../../../lib/network-tracker/action-semantics"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
@@ -179,9 +179,20 @@ export function WhereThingsStand({
   const evidence = offered ? null : historyImpliesAhead(stage, (actions ?? []).filter((a) => a.status !== "draft") as never)
 
   // Line one. The whole point of the card: what you did, and how long ago.
+  // FIRST PERSON ONLY WHEN IT IS TRUE. On the client's own board "you" is the
+  // whole point of the card. Read by a coach it is a lie in the one direction
+  // that matters: it tells them they did something they did not do, on a card
+  // whose entire job is to say what has happened and when. The neutral form is
+  // used rather than naming the client because the board's owner's name is not
+  // in scope here, and a wrong name would be worse than none.
+  const asCoach = subjectId() !== null
   const headline = last
-    ? `You ${DID[last.type] ?? "logged something"} ${ago(daysBetween(last.action_date, now))}.`
-    : `You have not reached out to ${contact.first_name} yet.`
+    ? asCoach
+      ? `Last action: ${DID[last.type] ?? "something logged"}, ${ago(daysBetween(last.action_date, now))}.`
+      : `You ${DID[last.type] ?? "logged something"} ${ago(daysBetween(last.action_date, now))}.`
+    : asCoach
+      ? `No one has reached out to ${contact.first_name} yet.`
+      : `You have not reached out to ${contact.first_name} yet.`
 
   // The button. next_due_reason is the engine's own answer to "what next", so
   // it is used rather than re-derived; REASON_LABELS already phrases each one

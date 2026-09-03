@@ -8,7 +8,7 @@ import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
 import { errorStatus } from "../../../_lib/routeError"
 import { getSupabaseAdmin } from "@/lib/collab/identity"
-import { resolveOwnerScope } from "@/lib/collab/scope"
+import { createdBy, resolveOwnerScope } from "@/lib/collab/scope"
 import { parseFile, dataRows, MAX_ROWS } from "@/lib/network-tracker/import-parse"
 import { resolveImportedName, displayName } from "@/lib/network-tracker/parse-name"
 import { matchOrCreateCompany } from "@/lib/network-tracker/company"
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
       const key = lc(nm)
       const cached = companyCache.get(key)
       if (cached) return cached
-      const id = await matchOrCreateCompany(supabase, scope.subjectId, nm)
+      const id = await matchOrCreateCompany(supabase, scope.subjectId, nm, createdBy(scope))
       companyCache.set(key, id)
       if (!preExisting.has(key)) newCompanies++
       return id
@@ -130,6 +130,7 @@ export async function POST(req: NextRequest) {
       toInsert.push({
         _key: key,
         client_profile_id: scope.subjectId,
+        ...createdBy(scope),
         company_id: companyId,
         first_name: first,
         last_name: last,

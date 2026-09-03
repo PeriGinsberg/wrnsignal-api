@@ -5,8 +5,8 @@
 //   NO activity (last_action_at NULL) come FIRST, then most-recently-active —
 //   so a just-added contact surfaces at the top, not buried nulls-last. Optional
 //   filters: ?stage=, ?company_id=, ?standalone=1.
-// POST: create a contact. OWNER-ONLY (creation is a pipeline write; a coach
-//   cannot add contacts in v1). Company is genuinely OPTIONAL — a standalone
+// POST: create a contact. Owner, or a coach holding 'full' on this client;
+//   created_by_role records which. Company is genuinely OPTIONAL — a standalone
 //   contact (company_id NULL) is first-class. A provided company name is
 //   matched case-insensitively to an existing company or created blank
 //   (priority/status stay NULL, same as import).
@@ -21,7 +21,7 @@ import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { routeError } from "../../_lib/routeError"
 import { getSupabaseAdmin } from "@/lib/collab/identity"
-import { resolveOwnerScope, resolveRequestScope } from "@/lib/collab/scope"
+import { createdBy, resolveRequestScope } from "@/lib/collab/scope"
 import { matchOrCreateCompany } from "@/lib/network-tracker/company"
 
 export const runtime = "nodejs"
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
       // list (no aggregate route in v1). The milestone stamps are what give reply and
       // chat rates their "or beyond" semantics — stamped once, never recomputed, so a
       // contact now at nurture still counts as having replied.
-      "id, first_name, last_name, title, email, stage, relationship, priority, segment, next_due_at, next_due_reason, last_action_at, company_id, network_companies(name), first_touch_at, first_replied_at, first_chat_at, outcome_type")
+      "id, first_name, last_name, title, email, stage, relationship, priority, segment, next_due_at, next_due_reason, last_action_at, company_id, network_companies(name), first_touch_at, first_replied_at, first_chat_at, outcome_type, created_by_role, created_by_id")
       .eq("client_profile_id", scope.subjectId)
 
     // optional filters
@@ -70,7 +70,24 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await q
     if (error) throw new Error(`Contact list failed: ${error.message}`)
-    return withCorsJson(req, { ok: true, contacts: data ?? [] }, 200)
+
+    // Attribution, resolved to something renderable and nothing more.
+    //
+    // created_by_id NEVER LEAVES THE ROUTE. The board owner has no business
+    // holding their coach's profile id just to render a caption, and the id is
+    // the only part of the row that would be useful to anyone who should not
+    // have it. What the UI actually needs is two booleans' worth of fact, so
+    // that is what it gets.
+    //
+    // `added_by_you` is the coach's own view: a coach looking at a board they
+    // have added people to should see which ones are theirs, and cannot tell
+    // from created_by_role alone if another coach has also worked the board.
+    const contacts = (data ?? []).map(({ created_by_id, ...c }) => ({
+      ...c,
+      added_by_coach: c.created_by_role === "coach",
+      added_by_you: c.created_by_role === "coach" && created_by_id === scope.actorId,
+    }))
+    return withCorsJson(req, { ok: true, contacts }, 200)
   } catch (err: any) {
     return routeError(req, err)
   }
@@ -78,10 +95,14 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    // Owner-only by design; resolveOwnerScope never consults the query
-    // string, so this cannot widen into coach access by accident.
-    const scope = await resolveOwnerScope(req)
     const supabase = getSupabaseAdmin()
+    // A coach with full access can add a contact to the client's board.
+    //
+    // "write" means FULL access, not merely view: resolveRequestScope refuses
+    // a coach holding view or annotate before this line returns. A request
+    // naming no subject still resolves to the caller's own board, so the owner
+    // path is unchanged from what the owner-only helper did.
+    const scope = await resolveRequestScope(req, supabase, { require: "write" })
 
     const body = await req.json().catch(() => null)
     const firstName = typeof body?.first_name === "string" ? body.first_name.trim() : ""
@@ -110,7 +131,9 @@ export async function POST(req: NextRequest) {
     const additionalInfo = str(body?.additional_info)
 
     // ── resolve the company (optional) — shared match-or-create ──
-    const companyId: string | null = companyName ? await matchOrCreateCompany(supabase, scope.subjectId, companyName) : null
+    const companyId: string | null = companyName
+      ? await matchOrCreateCompany(supabase, scope.subjectId, companyName, createdBy(scope))
+      : null
 
     // ── create the contact ── (stage/dates/reminders come from DB defaults:
     // stage 'identified', next_due_at NULL — never from the body)
@@ -118,6 +141,7 @@ export async function POST(req: NextRequest) {
       .from("network_contacts")
       .insert({
         client_profile_id: scope.subjectId,
+        ...createdBy(scope),
         company_id: companyId,
         first_name: firstName,
         last_name: lastName,

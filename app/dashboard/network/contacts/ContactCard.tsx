@@ -32,6 +32,39 @@ import {
 import { STAGE_LABELS, STAGE_PHASE, REASON_LABELS } from "../vocab"
 import { timeAgo } from "../../../../lib/relativeTime"
 import { dueOf, type Contact } from "./ContactRow"
+import { subjectId } from "../authFetch"
+
+/**
+ * "Added by your coach", and its two variants.
+ *
+ * Shown ONLY for a contact a coach created. A caption on every client-created
+ * row would be noise on the overwhelming majority of the board, and the fact
+ * worth surfacing is the one the client did not do themselves.
+ *
+ * The wording turns on who is reading. On their own board the client has
+ * exactly one coach, so "your coach" is both true and the most useful phrasing.
+ * A coach reading a client's board may not be the coach who added the row, so
+ * they get "a coach" unless the row is theirs.
+ */
+function attributionLabel(c: Contact): string | null {
+  if (c.added_by_you) return "Added by you"
+  if (!c.added_by_coach) return null
+  return subjectId() ? "Added by a coach" : "Added by your coach"
+}
+
+// Navy on the pale blue fill: 12.1:1, and deliberately NOT one of the meaning
+// colours' own inks. Attribution is a fact about the row, not a status on it,
+// so it must not read as another phase.
+const attributionPill: React.CSSProperties = {
+  display: "inline-block",
+  marginTop: 4,
+  padding: "2px 7px",
+  borderRadius: 999,
+  fontSize: 11,
+  fontWeight: 700,
+  letterSpacing: 0.1,
+  whiteSpace: "nowrap",
+}
 
 function initials(c: Contact): string {
   const a = (c.first_name || "").trim().charAt(0)
@@ -218,6 +251,14 @@ export function ContactCard({
           >
             {subtitle(c) || "No title yet"}
           </span>
+          {attributionLabel(c) ? (
+            <span
+              data-testid="contact-attribution"
+              style={{ ...attributionPill, background: S.meaning.progress.fill, color: S.text.primary }}
+            >
+              {attributionLabel(c)}
+            </span>
+          ) : null}
         </span>
       </a>
 

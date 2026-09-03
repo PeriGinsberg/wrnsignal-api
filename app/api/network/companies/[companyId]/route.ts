@@ -1,7 +1,10 @@
 // app/api/network/companies/[companyId]/route.ts
 // PATCH a company's editable fields (tier, status, domain, notes, name).
-//   OWNER-ONLY — like every board write, a coach cannot edit in v1.
-// DELETE the company. OWNER-ONLY.
+//   Owner, or a coach holding 'full' on this client. A coach holding 'view' or
+//   'annotate' is refused before the row is read.
+// DELETE the company. OWNER-ONLY, and deliberately not widened alongside PATCH:
+//   editing a company is coaching. Destroying the record of which firm a set of
+//   people belonged to is not, and it has no undo.
 //
 // DELETE DOES NOT DELETE CONTACTS. network_contacts.company_id is
 // ON DELETE SET NULL (see 20260723_network_tracker_v3_reconcile.sql), so the
@@ -18,7 +21,7 @@ import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
 import { routeError } from "../../../_lib/routeError"
 import { getSupabaseAdmin } from "@/lib/collab/identity"
-import { resolveOwnerScope } from "@/lib/collab/scope"
+import { editedBy, resolveOwnerScope, resolveRequestScope } from "@/lib/collab/scope"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -31,19 +34,23 @@ export async function OPTIONS(req: NextRequest) { return corsOptionsResponse(req
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ companyId: string }> }) {
   try {
-    const { companyId } = await params
-    // Owner-only by design; resolveOwnerScope never consults the query
-    // string, so this cannot widen into coach access by accident.
-    const scope = await resolveOwnerScope(req)
     const supabase = getSupabaseAdmin()
+    const { companyId } = await params
+    // A coach with full access can edit a company on the client's board.
+    //
+    // "write" means FULL access, not merely view: resolveRequestScope refuses
+    // a coach holding view or annotate before this line returns. A request
+    // naming no subject still resolves to the caller's own board, so the owner
+    // path is unchanged from resolveOwnerScope.
+    const scope = await resolveRequestScope(req, supabase, { require: "write" })
 
-    // Load by id, then owner-gate — authority comes from the row's own owner,
+    // Load by id, then board-gate. Authority comes from the row's own owner,
     // never from a URL param.
     const { data: existing } = await supabase
       .from("network_companies").select("id, client_profile_id").eq("id", companyId).maybeSingle()
     if (!existing) return withCorsJson(req, { ok: false, error: "Company not found" }, 404)
     if (existing.client_profile_id !== scope.subjectId)
-      return withCorsJson(req, { ok: false, error: "Forbidden: company edits are owner-only" }, 403)
+      return withCorsJson(req, { ok: false, error: "Forbidden: that company is not on this board" }, 403)
 
     const body = await req.json().catch(() => null)
     if (body == null) return withCorsJson(req, { ok: false, error: "nothing to update" }, 400)
@@ -70,6 +77,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ co
     }
     if (Object.keys(patch).length === 0)
       return withCorsJson(req, { ok: false, error: "nothing to update" }, 400)
+
+    // Past the guard for the same reason as the contact PATCH: no edit, no
+    // editor. patch.name is read again in the 23505 branch below, so nothing
+    // added here may shadow it.
+    Object.assign(patch, editedBy(scope))
 
     const { data: updated, error: updErr } = await supabase
       .from("network_companies").update(patch).eq("id", companyId)

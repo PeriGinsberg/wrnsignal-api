@@ -1,5 +1,7 @@
 // app/api/network/contacts/[contactId]/actions/route.ts
-// POST: log a dated action. OWNER-ONLY (coaches cannot mutate the pipeline in v1).
+// POST: log a dated action. Owner, or a coach holding 'full' on this client.
+// author_role on the row records which, so a coach's outreach is never shown to
+// the client as their own.
 // Writes the log entry, then runs computeNextDue() ONCE and saves next_due_at /
 // next_due_reason / any stage->dormant flip. No interval math outside the engine.
 
@@ -8,7 +10,7 @@ import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { routeError } from "../../../../_lib/routeError"
 import { must } from "../../../../_lib/must"
 import { getSupabaseAdmin } from "@/lib/collab/identity"
-import { resolveOwnerScope } from "@/lib/collab/scope"
+import { authorRole, resolveRequestScope } from "@/lib/collab/scope"
 import { computeNextDue } from "@/lib/network-tracker/reminder-engine"
 import { ACTION_TYPES, isPipelineAction, stageAfterAction } from "@/lib/network-tracker/action-semantics"
 
@@ -21,11 +23,17 @@ export async function OPTIONS(req: NextRequest) { return corsOptionsResponse(req
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ contactId: string }> }) {
   try {
-    const { contactId } = await params
-    // Owner-only by design; resolveOwnerScope never consults the query
-    // string, so this cannot widen into coach access by accident.
-    const scope = await resolveOwnerScope(req)
     const supabase = getSupabaseAdmin()
+    const { contactId } = await params
+    // A coach with full access can log an action. author_role on the row
+    // records who did it, so a coach's outreach is never shown to the client as
+    // their own.
+    //
+    // "write" means FULL access, not merely view: resolveRequestScope refuses
+    // a coach holding view or annotate before this line returns. A request
+    // naming no subject still resolves to the caller's own board, so the owner
+    // path is unchanged from what the owner-only helper did.
+    const scope = await resolveRequestScope(req, supabase, { require: "write" })
 
     const { data: c } = await supabase
       .from("network_contacts")
@@ -33,7 +41,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
       .eq("id", contactId).maybeSingle()
     if (!c) return withCorsJson(req, { ok: false, error: "Contact not found" }, 404)
     if (c.client_profile_id !== scope.subjectId)
-      return withCorsJson(req, { ok: false, error: "Forbidden: pipeline edits are owner-only" }, 403)
+      return withCorsJson(req, { ok: false, error: "Forbidden: that contact is not on this board" }, 403)
 
     const body = await req.json().catch(() => null)
     const type = body?.type
@@ -47,7 +55,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
     // 1) write the log entry — author from the SESSION, never the body
     const { error: insErr } = await supabase.from("network_actions").insert({
       contact_id: contactId, type, action_date: actionDate.toISOString(), note,
-      author_role: "client", author_id: scope.subjectId,
+      author_role: authorRole(scope), author_id: scope.actorId,
     })
     if (insErr) throw new Error(`Log failed: ${insErr.message}`)
 

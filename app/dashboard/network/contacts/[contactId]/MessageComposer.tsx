@@ -15,7 +15,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { LIGHT as S, action as actionStyle } from "../../../../../lib/theme/surfaces"
-import { authFetch } from "../../authFetch"
+import { authFetch, subjectId } from "../../authFetch"
 import { ACTION_TYPE_OPTIONS } from "../../vocab"
 
 export type Message = {
@@ -179,7 +179,12 @@ export function MessageComposer({
           bottom of the block: saying it twice on one card is what made the rest
           of this page feel repetitive. */}
       <p style={disclaimer} data-testid="composer-disclaimer">
-        Workshop your message here, then cut and paste it into your email.
+        {/* "your email" is wrong for a coach drafting on a client's board, and
+            wrong in a way that matters: SIGNAL sends nothing, so who does the
+            sending is the entire instruction. */}
+        {subjectId()
+          ? "Workshop the message here, then hand it to your client to send from their own account."
+          : "Workshop your message here, then cut and paste it into your email."}
       </p>
 
       <div style={row}>
