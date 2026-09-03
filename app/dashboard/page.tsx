@@ -155,25 +155,43 @@ export default function DashboardPage() {
 // ── New student: one thing, and nothing competing with it ───────────────────
 function NewStudent({ model }: { model: DashboardModel }) {
   const { percent, missing } = model.completion
+  // FIRST VISIT AND HALF-DONE ARE DIFFERENT SENTENCES. This state fires for any
+  // incomplete profile, and "Finish your profile" is wrong for somebody who has
+  // just bought and never seen the app: it implies they started something and
+  // walked away. "Let's set up" is an invitation; "finish setting up" is a
+  // reminder. Same screen, one word apart, and percent is what tells them apart.
+  const untouched = percent === 0
   return (
     <>
       <section style={{ ...hero, marginTop: 22 }}>
         <div style={{ ...heroEyebrow, color: S.hero.accent }}>✦ Start here</div>
-        <h2 style={heroTitle}>Finish your profile</h2>
+        <h2 style={heroTitle}>
+          {untouched ? "To begin, let's set up your profile" : "Finish setting up your profile"}
+        </h2>
         <p style={heroBody}>
           Everything SIGNAL does, scoring jobs and writing your outreach, starts with knowing who you
           are and what you're after. About 3 minutes.
         </p>
-        <div style={{ display: "flex", alignItems: "center", gap: 14, margin: "22px 0 20px" }}>
-          <div style={{ flex: 1, height: 10, borderRadius: 999, background: "rgba(255,255,255,0.14)" }}>
-            <div style={{ width: `${percent}%`, height: "100%", borderRadius: 999, background: S.hero.accent }} />
+        {/* Hidden at 0%. An empty track under "let's set up your profile" says
+            only that you have done nothing, which the sentence just said, and a
+            progress bar with no progress reads as a system that is already
+            behind. It appears the moment there is progress to show. */}
+        {!untouched && (
+          <div style={{ display: "flex", alignItems: "center", gap: 14, margin: "22px 0 20px" }}>
+            <div style={{ flex: 1, height: 10, borderRadius: 999, background: "rgba(255,255,255,0.14)" }}>
+              <div style={{ width: `${percent}%`, height: "100%", borderRadius: 999, background: S.hero.accent }} />
+            </div>
+            <span style={{ color: S.hero.ink, fontSize: 15, fontWeight: 800 }}>{percent}%</span>
           </div>
-          <span style={{ color: S.hero.ink, fontSize: 15, fontWeight: 800 }}>{percent}%</span>
-        </div>
+        )}
+        {untouched && <div style={{ height: 22 }} />}
+        {/* Straight to My Profile, which is where the whole setup lives: the
+            basics, the resume, and the resume VERSIONS. Those are personas in
+            the database and are deliberately never called that to a student. */}
         <a href="/dashboard/profile" style={{ ...actionStyle(S, "primary"), ...bigBtn, textDecoration: "none" }}>
-          Finish my profile →
+          {untouched ? "Set up my profile →" : "Finish my profile →"}
         </a>
-        {missing > 0 && (
+        {missing > 0 && !untouched && (
           <span style={{ color: S.hero.muted, fontSize: 13.5, marginLeft: 14 }}>
             {missing} {missing === 1 ? "field" : "fields"} left
           </span>
