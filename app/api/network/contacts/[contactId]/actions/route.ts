@@ -6,6 +6,7 @@
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { routeError } from "../../../../_lib/routeError"
+import { must } from "../../../../_lib/must"
 import { getSupabaseAdmin } from "@/lib/collab/identity"
 import { resolveOwnerScope } from "@/lib/collab/scope"
 import { computeNextDue } from "@/lib/network-tracker/reminder-engine"
@@ -61,8 +62,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
     // 3) reload actions, run the engine ONCE (the only place due dates are computed)
     // action_date is required: the engine scopes follow-up counting to the current cycle.
     // status: the engine drops drafts, which are not touches.
-    const { data: acts } = await supabase.from("network_actions")
-      .select("type, action_date, status").eq("contact_id", contactId)
+    // must(): a swallowed read here makes the engine think the contact has
+    // never been touched, and its answer is WRITTEN to network_contacts.
+    const acts = must(await supabase.from("network_actions")
+      .select("type, action_date, status").eq("contact_id", contactId),
+      "read this contact's history")
     // The action may imply a stage move (first outreach from `identified`).
     // Applied BEFORE the engine runs so it schedules from the stage the contact
     // is moving TO — computing against `identified` would return no due date and

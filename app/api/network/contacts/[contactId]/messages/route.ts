@@ -23,6 +23,7 @@
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { routeError } from "../../../../_lib/routeError"
+import { must } from "../../../../_lib/must"
 import { getSupabaseAdmin } from "@/lib/collab/identity"
 import { resolveOwnerScope } from "@/lib/collab/scope"
 import { computeNextDue } from "@/lib/network-tracker/reminder-engine"
@@ -49,8 +50,15 @@ async function ownedContact(supabase: any, contactId: string) {
  *  Mirrors POST /actions step for step; the engine is not re-implemented. */
 async function applySend(supabase: any, c: any, type: string, sentAt: Date) {
   if (!isPipelineAction(type)) return null
-  const { data: acts } = await supabase
-    .from("network_actions").select("type, action_date, status").eq("contact_id", c.id)
+  // must(): same reason as the three engine routes. This one also runs on the
+  // send path, so a swallowed read would persist a wrong due date on a real
+  // outreach the student just made.
+  // The generic is explicit because this file takes `supabase: any`, so
+  // must() has nothing to infer T from and would land on {}.
+  const acts = must<{ type: string; action_date?: string | null; status?: string | null }[]>(
+    await supabase.from("network_actions")
+      .select("type, action_date, status").eq("contact_id", c.id),
+    "read this contact's history")
   const implied = stageAfterAction(c.stage, type)
   const effectiveStage = implied ?? c.stage
   const due = computeNextDue({

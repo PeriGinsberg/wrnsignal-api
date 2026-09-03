@@ -12,6 +12,7 @@
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
 import { routeError } from "../../../_lib/routeError"
+import { must } from "../../../_lib/must"
 import { getSupabaseAdmin } from "@/lib/collab/identity"
 import { resolveActor, resolveOwnerScope, resolveScope } from "@/lib/collab/scope"
 
@@ -41,14 +42,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ cont
     // whether this actor may reach it. Same "view" level as before.
     await resolveScope(supabase, actor, { subject: contact.client_profile_id, require: "read" })
 
-    const { data: actions } = await supabase
+    // must(): without it a missing column renders an EMPTY TIMELINE, which
+    // says "you have never done anything with this person" to somebody who
+    // has. The most misleading possible answer.
+    const actions = must(await supabase
       .from("network_actions")
       // body/channel/subject/status/application_id: the timeline holds MESSAGES
       // as well as logged actions now. Same table, one ordered sequence, so the
       // record does not have to union two reads and cannot get that union wrong.
       .select("id, type, action_date, note, author_role, author_id, created_at, body, channel, subject, status, application_id")
       .eq("contact_id", contactId)
-      .order("action_date", { ascending: false })
+      .order("action_date", { ascending: false }),
+      "read this contact's history")
 
     return withCorsJson(req, { ok: true, contact, actions: actions ?? [] }, 200)
   } catch (err: any) {

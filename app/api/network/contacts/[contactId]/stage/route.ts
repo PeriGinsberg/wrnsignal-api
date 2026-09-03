@@ -11,6 +11,7 @@
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { routeError } from "../../../../_lib/routeError"
+import { must } from "../../../../_lib/must"
 import { getSupabaseAdmin } from "@/lib/collab/identity"
 import { resolveOwnerScope } from "@/lib/collab/scope"
 import { computeNextDue, type ContactStage } from "@/lib/network-tracker/reminder-engine"
@@ -63,8 +64,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
     const cycleStartedAt = enteringSequence ? now.toISOString() : c.cycle_started_at
 
     // status: the engine drops drafts, which are not touches.
-    const { data: acts } = await supabase.from("network_actions")
-      .select("type, action_date, status").eq("contact_id", contactId)
+    // must(): a swallowed read here makes the engine think the contact has
+    // never been touched, and its answer is WRITTEN to network_contacts.
+    const acts = must(await supabase.from("network_actions")
+      .select("type, action_date, status").eq("contact_id", contactId),
+      "read this contact's history")
     const due = computeNextDue({
       stage: stage as ContactStage, createdAt: c.created_at, lastActionAt: now,   // fresh clock on a stage change
       reminderOverride: c.reminder_override, dormantSince,
