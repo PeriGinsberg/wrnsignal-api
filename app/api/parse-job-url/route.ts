@@ -37,17 +37,30 @@ function detectPlatform(hostname: string): Platform {
 }
 
 // ── Text cleaning ──
+// JobFit segments the JD by its lines (section headers, bullets), so the
+// description must keep its line structure and its qualifications section.
+// A 4000 cap cut most campus postings before "Qualifications".
+const MAX_JD_CHARS = 12000
+
+// Block-level tags become line breaks; everything else becomes a space.
+function stripTags(s: string): string {
+  return s
+    .replace(/<\s*(br|li|p|div|h[1-6]|tr|ul|ol)\b[^>]*>/gi, "\n")
+    .replace(/<\s*\/\s*(p|div|li|h[1-6]|tr|ul|ol)\s*>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+}
+
 function cleanText(raw: string): string {
-  // Strip HTML tags
-  const stripped = raw.replace(/<[^>]+>/g, " ")
-  // Decode HTML entities
-  const decoded = he.decode(stripped)
+  // Strip tags, decode entities, then strip again: JSON-LD descriptions are
+  // often entity-encoded HTML ("&lt;p&gt;") that only become tags on decode.
+  const decoded = stripTags(he.decode(stripTags(raw)))
   // Collapse excess whitespace / newlines
   const collapsed = decoded
     .replace(/\r\n/g, "\n")
     .replace(/\r/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
     .replace(/[ \t]{2,}/g, " ")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
     .trim()
   return collapsed
 }
@@ -96,7 +109,7 @@ function extractJsonLd(html: string): {
 
         const jobDescription = truncate(
           cleanText(item.description || ""),
-          4000
+          MAX_JD_CHARS
         )
 
         let location = ""
@@ -154,7 +167,7 @@ function parseIndeed(
       $(".jobsearch-jobDescriptionText").html() ||
       ""
     ),
-    4000
+    MAX_JD_CHARS
   )
 
   const location = cleanText(
@@ -202,7 +215,7 @@ function parseGreenhouse(
       $('[class*="description"]').html() ||
       ""
     ),
-    4000
+    MAX_JD_CHARS
   )
 
   const location = cleanText(
@@ -242,7 +255,7 @@ function parseLever(
       $('[class*="description"]').html() ||
       ""
     ),
-    4000
+    MAX_JD_CHARS
   )
 
   const location = cleanText(
@@ -282,7 +295,7 @@ function parseHandshake(
       $('[class*="description"]').html() ||
       ""
     ),
-    4000
+    MAX_JD_CHARS
   )
 
   const location = cleanText(
@@ -332,7 +345,7 @@ function parseWorkday(
       $('[class*="description"]').html() ||
       ""
     ),
-    4000
+    MAX_JD_CHARS
   )
 
   const location = cleanText(
@@ -373,7 +386,7 @@ function parseIcims(
       $('[class*="job-content"]').html() ||
       ""
     ),
-    4000
+    MAX_JD_CHARS
   )
 
   const location = cleanText(
@@ -420,7 +433,7 @@ function parseUnknown(
       $("main").html() ||
       ""
     ),
-    4000
+    MAX_JD_CHARS
   )
 
   const location = cleanText(
@@ -497,7 +510,7 @@ ${stripped}`
     return {
       jobTitle: cleanText(String(parsed.jobTitle || "")),
       companyName: cleanText(String(parsed.companyName || "")),
-      jobDescription: truncate(cleanText(String(parsed.jobDescription || "")), 4000),
+      jobDescription: truncate(cleanText(String(parsed.jobDescription || "")), MAX_JD_CHARS),
       location: cleanText(String(parsed.location || "")),
       jobType: cleanText(String(parsed.jobType || "")),
     }

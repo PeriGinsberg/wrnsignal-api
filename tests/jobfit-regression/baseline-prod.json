@@ -20647,7 +20647,7 @@
     "id": "prod-0d352f32-56f1-4091-9518-afdf9916d972",
     "label": "prod 0d352f32 — Development Coordinator, Regional Philanthropy @ Vanderbilt University (2026-06-01)",
     "decision": "Pass",
-    "score": 47,
+    "score": 55,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -20729,14 +20729,6 @@
         "kind": "execution",
         "strength": 4,
         "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "core"
-      },
-      {
-        "id": "f6173e2ab208f23d",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 10,
-        "label": "financial analysis and investment work",
         "requiredness": "core"
       }
     ],
@@ -21262,11 +21254,6 @@
         "weight": -18
       },
       {
-        "code": "RISK_FAMILY_MISMATCH",
-        "severity": "medium",
-        "weight": -12
-      },
-      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
@@ -21302,11 +21289,10 @@
         "credentialRequired": false,
         "credentialSponsored": false,
         "detectedDomain": null,
-        "financeSubFamily": "other_finance",
+        "financeSubFamily": null,
         "function_tags": [
           "communications_pr",
           "data_analytics_bi",
-          "finance_corp",
           "operations_general",
           "sales_bd"
         ],
@@ -21319,7 +21305,7 @@
         "isSeniorRole": true,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
-        "jobFamily": "Finance",
+        "jobFamily": "Sales",
         "jobIndustry": null,
         "jobTitle": "Development Coordinator, Regional Philanthropy",
         "location": {
@@ -21420,12 +21406,12 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_final",
@@ -21438,8 +21424,8 @@
           "note": "29.8"
         }
       ],
-      "raw_score": 47,
-      "clamped_score": 47
+      "raw_score": 67,
+      "clamped_score": 55
     }
   },
   "prod-0d760a13-41cc-4cf3-98f5-34bcf338c57c": {
@@ -22295,7 +22281,7 @@
           "powerpoint",
           "word"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -27650,14 +27636,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "74f262f3f7f47300",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 7,
-        "label": "financial analysis and investment work",
-        "requiredness": "supporting"
-      },
-      {
         "id": "7897dca1a5ee94b0",
         "key": "prospecting_pipeline_management",
         "kind": "execution",
@@ -28572,7 +28550,6 @@
           "content_social",
           "creative_design",
           "data_analytics_bi",
-          "finance_corp",
           "sales_bd"
         ],
         "gradYearHint": null,
@@ -32131,14 +32108,6 @@
         "requiredness": "core"
       },
       {
-        "id": "35ab403fb2969015",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 7,
-        "label": "financial analysis and investment work",
-        "requiredness": "core"
-      },
-      {
         "id": "6be5fb16c6641dab",
         "key": "communications_writing",
         "kind": "function",
@@ -32399,11 +32368,6 @@
         "weight": 0
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
@@ -32429,7 +32393,6 @@
           "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
-          "finance_corp",
           "operations_general",
           "sales_bd"
         ],
@@ -45603,7 +45566,7 @@
           "powerpoint",
           "word"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -51939,7 +51902,7 @@
     "traceMissing": false,
     "requirement_units": [
       {
-        "id": "49445a08438e6c90",
+        "id": "6ab50137af4f7dbf",
         "key": "financial_analysis",
         "kind": "function",
         "strength": 7,
@@ -82219,7 +82182,7 @@
           "powerpoint",
           "word"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -83214,7 +83177,7 @@
     "id": "prod-3c7567a1-1104-45a8-9e91-00d4dd179c57",
     "label": "prod 3c7567a1 — NYC Luxury Development Leasing Specialist @ Anywhere Real Estate Inc. (2026-05-14)",
     "decision": "Pass",
-    "score": 37,
+    "score": 44,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -83338,11 +83301,6 @@
     "why_codes": [],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      },
-      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -83453,7 +83411,7 @@
           "powerpoint",
           "word"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -83475,12 +83433,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -7,
-          "note": "7"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 37,
-      "clamped_score": 37
+      "raw_score": 44,
+      "clamped_score": 44
     }
   },
   "prod-3d486b05-1dd2-4b49-9d17-221445223544": {
@@ -89934,10 +89892,10 @@
         "requiredness": "supporting"
       },
       {
-        "id": "d3009d662f669ef6",
+        "id": "d38cc3903dfe5c92",
         "key": "financial_analysis",
         "kind": "function",
-        "strength": 7,
+        "strength": 10,
         "label": "financial analysis and investment work",
         "requiredness": "core"
       },
@@ -90357,7 +90315,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 85,
+        "weight": 86,
         "coverageScore": 59,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -90366,7 +90324,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 84,
+        "weight": 85,
         "coverageScore": 58,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -90375,7 +90333,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 86,
+        "weight": 87,
         "coverageScore": 60,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -90384,7 +90342,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 85,
+        "weight": 87,
         "coverageScore": 60,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -90393,7 +90351,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 85,
+        "weight": 86,
         "coverageScore": 59,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -90402,7 +90360,7 @@
       },
       {
         "match_strength": "direct",
-        "weight": 105,
+        "weight": 107,
         "coverageScore": 84,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -90411,7 +90369,7 @@
       },
       {
         "match_strength": "direct",
-        "weight": 102,
+        "weight": 103,
         "coverageScore": 80,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -90420,7 +90378,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 85,
+        "weight": 86,
         "coverageScore": 59,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -90429,7 +90387,7 @@
       },
       {
         "match_strength": "direct",
-        "weight": 106,
+        "weight": 108,
         "coverageScore": 85,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -90438,7 +90396,7 @@
       },
       {
         "match_strength": "direct",
-        "weight": 105,
+        "weight": 107,
         "coverageScore": 84,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -90447,7 +90405,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 82,
+        "weight": 83,
         "coverageScore": 56,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -90456,7 +90414,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 86,
+        "weight": 88,
         "coverageScore": 61,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -90479,7 +90437,7 @@
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 106,
+        "weight": 108,
         "match_strength": "direct",
         "match_key": "financial_analysis"
       }
@@ -98220,14 +98178,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "402d3879f2f97ab7",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 5,
-        "label": "financial analysis and investment work",
-        "requiredness": "supporting"
-      },
-      {
         "id": "750af7d0edcdd3f6",
         "key": "operations_execution",
         "kind": "execution",
@@ -98861,24 +98811,6 @@
         "profile_unit_id": "d21e3d64767d2a8a"
       },
       {
-        "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 56,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "3e6f9ec39c760bbb"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 97,
-        "coverageScore": 78,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "cac2b2da9a814dde"
-      },
-      {
         "match_strength": "direct",
         "weight": 102,
         "coverageScore": 82,
@@ -98929,12 +98861,6 @@
         "match_key": "brand_messaging"
       },
       {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 97,
-        "match_strength": "direct",
-        "match_key": "financial_analysis"
-      },
-      {
         "code": "WHY_EXECUTION_PROOF",
         "weight": 84,
         "match_strength": "adjacent",
@@ -98978,7 +98904,6 @@
         "function_tags": [
           "brand_marketing",
           "data_analytics_bi",
-          "finance_corp",
           "operations_general"
         ],
         "gradYearHint": null,
@@ -104278,7 +104203,7 @@
           "powerpoint",
           "word"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -110672,7 +110597,7 @@
           "powerpoint",
           "word"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -119812,7 +119737,7 @@
           "powerpoint",
           "word"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -120634,7 +120559,7 @@
     "id": "prod-58ce167b-ee39-4341-88d4-ef4410f29312",
     "label": "prod 58ce167b — Summer 2026 - Real Estate Intern @ HUGO BOSS (2026-05-02)",
     "decision": "Apply",
-    "score": 80,
+    "score": 78,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -120661,14 +120586,6 @@
         "strength": 7,
         "label": "excel tool usage",
         "requiredness": "supporting"
-      },
-      {
-        "id": "7f62c55161ecbbb5",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 10,
-        "label": "financial analysis and investment work",
-        "requiredness": "core"
       },
       {
         "id": "82929c1e62449f54",
@@ -121147,114 +121064,6 @@
       },
       {
         "match_strength": "direct",
-        "weight": 108,
-        "coverageScore": 85,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "225600f184025315"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 83,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "22eb3cc73056668d"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 88,
-        "coverageScore": 61,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "2f34d93f69fc7fce"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 88,
-        "coverageScore": 61,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "34fb04d6eace7719"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 107,
-        "coverageScore": 84,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "5c8804b508b3447f"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 83,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "9c9c0b2b76f0a347"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 86,
-        "coverageScore": 59,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "a8dad4d75bb952e6"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 88,
-        "coverageScore": 61,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "b07edfe670af6a8c"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 87,
-        "coverageScore": 60,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "b43bd9ea0cadd6be"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 87,
-        "coverageScore": 60,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "cf0fdd6abae6e9b8"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 107,
-        "coverageScore": 84,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "e1d3ce51b6f9f6ed"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 86,
-        "coverageScore": 59,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "f2a9aab29384a1d6"
-      },
-      {
-        "match_strength": "direct",
         "weight": 94,
         "coverageScore": 79,
         "match_kind": "tool",
@@ -121284,12 +121093,6 @@
         "weight": 107,
         "match_strength": "direct",
         "match_key": "analysis_reporting"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 107,
-        "match_strength": "direct",
-        "match_key": "financial_analysis"
       },
       {
         "code": "WHY_TOOL_PROOF",
@@ -121444,8 +121247,8 @@
           "note": "1.6"
         }
       ],
-      "raw_score": 80,
-      "clamped_score": 80
+      "raw_score": 78,
+      "clamped_score": 78
     }
   },
   "prod-58d30d71-794e-4454-b08f-d2313546d00a": {
@@ -123843,14 +123646,6 @@
         "strength": 4,
         "label": "prospecting, outreach, and pipeline management",
         "requiredness": "supporting"
-      },
-      {
-        "id": "e22cfaebd2138b41",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 7,
-        "label": "financial analysis and investment work",
-        "requiredness": "supporting"
       }
     ],
     "profile_evidence_units": [
@@ -124408,186 +124203,6 @@
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
         "profile_unit_id": "ffe7ad89d27e0bd7"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 79,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "053eb04105534c97"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 55,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "0c3109fd3312b19f"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 80,
-        "coverageScore": 57,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "11686a28217efd59"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 78,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "11fa10e8dd9e2982"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 80,
-        "coverageScore": 57,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "2125645c0ae51728"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 79,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "303deb7eba0bfa1a"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 80,
-        "coverageScore": 57,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "35d19c07769daf61"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 79,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "4558df6389cf1c42"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 79,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "4a45104e2315bdc6"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 79,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "651c3289534f650c"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 78,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "72fa2c67a179a5f3"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 80,
-        "coverageScore": 57,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "9070b2d530fac5d9"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 79,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "9dcf91a3e563204f"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 100,
-        "coverageScore": 81,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "b7e38f6abc913c19"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 100,
-        "coverageScore": 81,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "bb4c364094379bbd"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 79,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "bfb9d7a0d5353724"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 79,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "cd26ffcb98b2cf17"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 100,
-        "coverageScore": 81,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "d1c396534ed2011f"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 79,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "f8bafb3b61b54746"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 77,
-        "coverageScore": 54,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "ffe7ad89d27e0bd7"
       }
     ],
     "why_codes": [
@@ -124602,12 +124217,6 @@
         "weight": 100,
         "match_strength": "direct",
         "match_key": "analysis_reporting"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 100,
-        "match_strength": "direct",
-        "match_key": "financial_analysis"
       }
     ],
     "risk_codes": [
@@ -129707,7 +129316,7 @@
         "id": "823c78e5a61c96ed",
         "key": "financial_analysis",
         "kind": "function",
-        "strength": 8,
+        "strength": 7,
         "label": "financial analysis and investment work",
         "requiredness": "supporting"
       },
@@ -129994,7 +129603,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 79,
+        "weight": 78,
         "coverageScore": 55,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -130003,7 +129612,7 @@
       },
       {
         "match_strength": "direct",
-        "weight": 99,
+        "weight": 98,
         "coverageScore": 79,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -130021,7 +129630,7 @@
       },
       {
         "match_strength": "direct",
-        "weight": 101,
+        "weight": 100,
         "coverageScore": 81,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -130030,7 +129639,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 81,
+        "weight": 80,
         "coverageScore": 57,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -130039,7 +129648,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 81,
+        "weight": 80,
         "coverageScore": 57,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -130110,7 +129719,7 @@
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 101,
+        "weight": 100,
         "match_strength": "direct",
         "match_key": "financial_analysis"
       },
@@ -138304,7 +137913,7 @@
     "id": "prod-64e26ce9-bec6-4baa-bdc7-645774718953",
     "label": "prod 64e26ce9 — Summer 2026 - Real Estate Intern @ HUGO BOSS (2026-05-02)",
     "decision": "Apply",
-    "score": 80,
+    "score": 78,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -138331,14 +137940,6 @@
         "strength": 7,
         "label": "excel tool usage",
         "requiredness": "supporting"
-      },
-      {
-        "id": "7f62c55161ecbbb5",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 10,
-        "label": "financial analysis and investment work",
-        "requiredness": "core"
       },
       {
         "id": "82929c1e62449f54",
@@ -138817,114 +138418,6 @@
       },
       {
         "match_strength": "direct",
-        "weight": 108,
-        "coverageScore": 85,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "225600f184025315"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 83,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "22eb3cc73056668d"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 88,
-        "coverageScore": 61,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "2f34d93f69fc7fce"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 88,
-        "coverageScore": 61,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "34fb04d6eace7719"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 107,
-        "coverageScore": 84,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "5c8804b508b3447f"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 83,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "9c9c0b2b76f0a347"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 86,
-        "coverageScore": 59,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "a8dad4d75bb952e6"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 88,
-        "coverageScore": 61,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "b07edfe670af6a8c"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 87,
-        "coverageScore": 60,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "b43bd9ea0cadd6be"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 87,
-        "coverageScore": 60,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "cf0fdd6abae6e9b8"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 107,
-        "coverageScore": 84,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "e1d3ce51b6f9f6ed"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 86,
-        "coverageScore": 59,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "f2a9aab29384a1d6"
-      },
-      {
-        "match_strength": "direct",
         "weight": 94,
         "coverageScore": 79,
         "match_kind": "tool",
@@ -138954,12 +138447,6 @@
         "weight": 107,
         "match_strength": "direct",
         "match_key": "analysis_reporting"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 107,
-        "match_strength": "direct",
-        "match_key": "financial_analysis"
       },
       {
         "code": "WHY_TOOL_PROOF",
@@ -139114,16 +138601,16 @@
           "note": "1.6"
         }
       ],
-      "raw_score": 80,
-      "clamped_score": 80
+      "raw_score": 78,
+      "clamped_score": 78
     }
   },
   "prod-6536200a-0799-4de8-ad32-f4866607b11a": {
     "schema_version": 2,
     "id": "prod-6536200a-0799-4de8-ad32-f4866607b11a",
     "label": "prod 6536200a — 3rd Party Audit & Lease Compliance Manager @ Ross (2026-06-09)",
-    "decision": "Pass",
-    "score": 53,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -139264,11 +138751,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      },
-      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
@@ -139375,7 +138857,7 @@
           "powerpoint",
           "word"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -139383,26 +138865,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
-          "points": -11,
-          "note": "10.92"
+          "points": -4,
+          "note": "3.9199999999999995"
         }
       ],
-      "raw_score": 53,
-      "clamped_score": 53
+      "raw_score": 60,
+      "clamped_score": 60
     }
   },
   "prod-6570da7f-e162-45e7-b148-2b92cb17eeba": {
@@ -150810,14 +150292,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "850cc8466b2ff0d6",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 5,
-        "label": "financial analysis and investment work",
-        "requiredness": "supporting"
-      },
-      {
         "id": "984c448dbfe0ec86",
         "key": "powerpoint",
         "kind": "tool",
@@ -151092,114 +150566,6 @@
         "profile_unit_id": "fa95826366df40fb"
       },
       {
-        "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 55,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "1c8381c08f9b325c"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 77,
-        "coverageScore": 54,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "266348836f9c0b9e"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 79,
-        "coverageScore": 56,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "64b628dd0934b95a"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 56,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "7761ba41ee944ca6"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 55,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "7ea5868a08023b72"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 80,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "7fb9c0f4e2909b40"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 95,
-        "coverageScore": 76,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "9a10bf9e75c440c5"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 55,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "ba5b061e24547da1"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "ba61d688c3c8c6b7"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 80,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "c0a4c8169c52cfdc"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 75,
-        "coverageScore": 52,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "c65c71f5da44bc72"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 79,
-        "coverageScore": 57,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "ccdb61a16fadd320"
-      },
-      {
         "match_strength": "direct",
         "weight": 93,
         "coverageScore": 78,
@@ -151224,12 +150590,6 @@
         "weight": 82,
         "match_strength": "adjacent",
         "match_key": "communications_writing"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 99,
-        "match_strength": "direct",
-        "match_key": "financial_analysis"
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -151281,7 +150641,6 @@
         "function_tags": [
           "brand_marketing",
           "communications_pr",
-          "finance_corp",
           "sales_bd"
         ],
         "gradYearHint": null,
@@ -152237,7 +151596,7 @@
     "traceMissing": false,
     "requirement_units": [
       {
-        "id": "29870f84edba25ca",
+        "id": "6ab50137af4f7dbf",
         "key": "financial_analysis",
         "kind": "function",
         "strength": 7,
@@ -175184,14 +174543,6 @@
         "strength": 4,
         "label": "drafting, documentation, and written deliverables",
         "requiredness": "supporting"
-      },
-      {
-        "id": "e2d7a91d71573527",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 10,
-        "label": "financial analysis and investment work",
-        "requiredness": "supporting"
       }
     ],
     "profile_evidence_units": [
@@ -175350,11 +174701,6 @@
         "weight": 0
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
-        "weight": 0
-      },
-      {
         "code": "RISK_SENIORITY_MISMATCH",
         "severity": "medium",
         "weight": 0
@@ -175459,7 +174805,7 @@
           "powerpoint",
           "word"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -183430,7 +182776,7 @@
           "powerpoint",
           "word"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -186571,7 +185917,7 @@
     "id": "prod-890683c6-2292-43df-9938-0888e1e5a984",
     "label": "prod 890683c6 — 2026 Summer Analyst Intern @ PMP (2026-05-04)",
     "decision": "Apply",
-    "score": 86,
+    "score": 85,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -186598,22 +185944,6 @@
         "strength": 5,
         "label": "word tool usage",
         "requiredness": "supporting"
-      },
-      {
-        "id": "8ef63e41b9c127d2",
-        "key": "analysis_reporting",
-        "kind": "execution",
-        "strength": 7,
-        "label": "analysis, reporting, and measurement work",
-        "requiredness": "supporting"
-      },
-      {
-        "id": "b497f96b73f7a903",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 8,
-        "label": "financial analysis and investment work",
-        "requiredness": "core"
       },
       {
         "id": "bcd5232beaa88555",
@@ -186776,96 +186106,6 @@
     "matches": [
       {
         "match_strength": "direct",
-        "weight": 97,
-        "coverageScore": 79,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "020eb4e4e45bff96"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 79,
-        "coverageScore": 57,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "1b46ecdcb73943a5"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 77,
-        "coverageScore": 55,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "4d39b48eabd54679"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 95,
-        "coverageScore": 76,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "6554659df2fde04c"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 79,
-        "coverageScore": 57,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "782b0424022089a6"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "7e818b416769beb0"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "82ebc4bcf393041e"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 56,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "856d00fe3748982d"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 79,
-        "coverageScore": 57,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "ab37535ffe4dea39"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 77,
-        "coverageScore": 54,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "df70fbee4717c3fd"
-      },
-      {
-        "match_strength": "direct",
         "weight": 94,
         "coverageScore": 81,
         "match_kind": "tool",
@@ -186881,60 +186121,6 @@
         "match_key": "excel",
         "job_unit_key": "excel",
         "profile_unit_id": "ee8ee4d2024686b5"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 85,
-        "coverageScore": 59,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "020eb4e4e45bff96"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 105,
-        "coverageScore": 83,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "4d39b48eabd54679"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 82,
-        "coverageScore": 56,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "6554659df2fde04c"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 107,
-        "coverageScore": 85,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "782b0424022089a6"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 87,
-        "coverageScore": 61,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "7e818b416769beb0"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 87,
-        "coverageScore": 61,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "82ebc4bcf393041e"
       },
       {
         "match_strength": "direct",
@@ -187019,18 +186205,6 @@
       }
     ],
     "why_codes": [
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 99,
-        "match_strength": "direct",
-        "match_key": "analysis_reporting"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 107,
-        "match_strength": "direct",
-        "match_key": "financial_analysis"
-      },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 100,
@@ -187184,8 +186358,8 @@
           "note": "11"
         }
       ],
-      "raw_score": 86,
-      "clamped_score": 86
+      "raw_score": 85,
+      "clamped_score": 85
     }
   },
   "prod-8927e3a6-369c-4b6d-8303-5ec9494b516f": {
@@ -204848,18 +204022,10 @@
     "id": "prod-95dd6a47-d6c3-4f4b-86b7-d1fa0b3c8983",
     "label": "prod 95dd6a47 — Remote Sports Events Coordinator @ LC GROUP (2026-05-22)",
     "decision": "Review",
-    "score": 60,
+    "score": 68,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
-      {
-        "id": "3b349726149aa10f",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 9,
-        "label": "financial analysis and investment work",
-        "requiredness": "core"
-      },
       {
         "id": "5b51c0714b4dc900",
         "key": "operations_execution",
@@ -205330,11 +204496,6 @@
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": -8.399999999999999
       }
     ],
     "scalars": {
@@ -205347,9 +204508,8 @@
         "credentialRequired": false,
         "credentialSponsored": false,
         "detectedDomain": null,
-        "financeSubFamily": "fpa",
+        "financeSubFamily": null,
         "function_tags": [
-          "finance_corp",
           "operations_general"
         ],
         "gradYearHint": null,
@@ -205361,7 +204521,7 @@
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
-        "jobFamily": "Finance",
+        "jobFamily": "Operations",
         "jobIndustry": null,
         "jobTitle": "Remote Sports Events Coordinator",
         "location": {
@@ -205446,12 +204606,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -8,
-          "note": "8.399999999999999"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 60,
-      "clamped_score": 60
+      "raw_score": 68,
+      "clamped_score": 68
     }
   },
   "prod-95f1df10-773b-42bc-87d6-1bf18d9f8c34": {
@@ -221489,14 +220649,6 @@
     "traceMissing": false,
     "requirement_units": [
       {
-        "id": "079f50d214f8f105",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 5,
-        "label": "financial analysis and investment work",
-        "requiredness": "core"
-      },
-      {
         "id": "181e9cfa3bb296de",
         "key": "crm_usage",
         "kind": "tool",
@@ -222026,7 +221178,6 @@
           "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
-          "finance_corp",
           "operations_general",
           "sales_bd"
         ],
@@ -224471,7 +223622,7 @@
           "powerpoint",
           "word"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -236090,7 +235241,7 @@
           "powerpoint",
           "word"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -246323,22 +245474,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "8ef63e41b9c127d2",
-        "key": "analysis_reporting",
-        "kind": "execution",
-        "strength": 7,
-        "label": "analysis, reporting, and measurement work",
-        "requiredness": "supporting"
-      },
-      {
-        "id": "b497f96b73f7a903",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 8,
-        "label": "financial analysis and investment work",
-        "requiredness": "core"
-      },
-      {
         "id": "f1149dc1077fb179",
         "key": "sql",
         "kind": "tool",
@@ -246618,42 +245753,6 @@
     "matches": [
       {
         "match_strength": "direct",
-        "weight": 96,
-        "coverageScore": 78,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "57797496ddae5d1e"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "bb43f2dac68a9059"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 84,
-        "coverageScore": 58,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "57797496ddae5d1e"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 87,
-        "coverageScore": 61,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "bb43f2dac68a9059"
-      },
-      {
-        "match_strength": "direct",
         "weight": 92,
         "coverageScore": 78,
         "match_kind": "tool",
@@ -246753,18 +245852,6 @@
       }
     ],
     "why_codes": [
-      {
-        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
-        "weight": 87,
-        "match_strength": "adjacent",
-        "match_key": "financial_analysis"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 99,
-        "match_strength": "direct",
-        "match_key": "analysis_reporting"
-      },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 102,
@@ -246969,7 +246056,7 @@
         "requiredness": "supporting"
       },
       {
-        "id": "a036e40903a2fbca",
+        "id": "4d410b947c1556dd",
         "key": "financial_analysis",
         "kind": "function",
         "strength": 10,
@@ -258521,7 +257608,7 @@
           "powerpoint",
           "word"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -274467,7 +273554,7 @@
           "powerpoint",
           "word"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -290684,7 +289771,7 @@
           "powerpoint",
           "word"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -295777,14 +294864,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "8605c6761a792e95",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 9,
-        "label": "financial analysis and investment work",
-        "requiredness": "core"
-      },
-      {
         "id": "870fd0c16bba35ba",
         "key": "powerpoint",
         "kind": "tool",
@@ -296200,60 +295279,6 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 85,
-        "coverageScore": 59,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "020eb4e4e45bff96"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 105,
-        "coverageScore": 83,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "4d39b48eabd54679"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 83,
-        "coverageScore": 56,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "6554659df2fde04c"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 107,
-        "coverageScore": 85,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "782b0424022089a6"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 87,
-        "coverageScore": 61,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "7e818b416769beb0"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 87,
-        "coverageScore": 61,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "82ebc4bcf393041e"
-      },
-      {
-        "match_strength": "adjacent",
         "weight": 83,
         "coverageScore": 59,
         "match_kind": "execution",
@@ -296345,6 +295370,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+        "weight": 85,
+        "match_strength": "adjacent",
+        "match_key": "communications_writing"
+      },
+      {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 107,
         "match_strength": "direct",
@@ -296361,12 +295392,6 @@
         "weight": 106,
         "match_strength": "direct",
         "match_key": "drafting_documentation"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 107,
-        "match_strength": "direct",
-        "match_key": "financial_analysis"
       },
       {
         "code": "WHY_TOOL_PROOF",
@@ -296425,7 +295450,6 @@
           "consumer_insights_research",
           "content_social",
           "data_analytics_bi",
-          "finance_corp",
           "growth_performance",
           "operations_general"
         ],
@@ -298429,14 +297453,6 @@
     "traceMissing": false,
     "requirement_units": [
       {
-        "id": "52a48e8c8394934b",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 10,
-        "label": "financial analysis and investment work",
-        "requiredness": "core"
-      },
-      {
         "id": "98e5a46e4c101f52",
         "key": "powerpoint",
         "kind": "tool",
@@ -298856,11 +297872,6 @@
         "weight": -1.6
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "high",
         "weight": -8
@@ -298876,11 +297887,10 @@
         "credentialRequired": false,
         "credentialSponsored": false,
         "detectedDomain": null,
-        "financeSubFamily": "fpa",
+        "financeSubFamily": null,
         "function_tags": [
           "accounting_finops",
-          "data_analytics_bi",
-          "finance_corp"
+          "data_analytics_bi"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -298891,7 +297901,7 @@
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
-        "jobFamily": "Finance",
+        "jobFamily": "Accounting",
         "jobIndustry": null,
         "jobTitle": "Real Estate Intern",
         "location": {
@@ -307579,7 +306589,7 @@
           "powerpoint",
           "word"
         ],
-        "yearsExperienceApprox": 4
+        "yearsExperienceApprox": 5
       }
     },
     "score_breakdown": {
@@ -312521,7 +311531,7 @@
     "id": "prod-e267227c-81aa-4a64-89d4-a259e3406238",
     "label": "prod e267227c — Wealth Management Advisor @ The LifeWealth Group (2026-05-07)",
     "decision": "Pass",
-    "score": 50,
+    "score": 55,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -312550,10 +311560,18 @@
         "requiredness": "core"
       },
       {
-        "id": "c1c11d3ffc2fbb1f",
+        "id": "8ef63e41b9c127d2",
+        "key": "analysis_reporting",
+        "kind": "execution",
+        "strength": 7,
+        "label": "analysis, reporting, and measurement work",
+        "requiredness": "supporting"
+      },
+      {
+        "id": "b497f96b73f7a903",
         "key": "financial_analysis",
         "kind": "function",
-        "strength": 9,
+        "strength": 8,
         "label": "financial analysis and investment work",
         "requiredness": "core"
       },
@@ -312725,8 +311743,89 @@
     ],
     "matches": [
       {
+        "match_strength": "adjacent",
+        "weight": 77,
+        "coverageScore": 54,
+        "match_kind": "execution",
+        "match_key": "analysis_reporting",
+        "job_unit_key": "analysis_reporting",
+        "profile_unit_id": "37ed755a557dcfe8"
+      },
+      {
         "match_strength": "direct",
-        "weight": 105,
+        "weight": 97,
+        "coverageScore": 79,
+        "match_kind": "execution",
+        "match_key": "analysis_reporting",
+        "job_unit_key": "analysis_reporting",
+        "profile_unit_id": "42aa5098ed21fa15"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 79,
+        "coverageScore": 56,
+        "match_kind": "execution",
+        "match_key": "analysis_reporting",
+        "job_unit_key": "analysis_reporting",
+        "profile_unit_id": "554ed2c529a369e6"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 55,
+        "match_kind": "execution",
+        "match_key": "analysis_reporting",
+        "job_unit_key": "analysis_reporting",
+        "profile_unit_id": "576fda1c832220b4"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 77,
+        "coverageScore": 55,
+        "match_kind": "execution",
+        "match_key": "analysis_reporting",
+        "job_unit_key": "analysis_reporting",
+        "profile_unit_id": "92d249e3229fc076"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 79,
+        "coverageScore": 57,
+        "match_kind": "execution",
+        "match_key": "analysis_reporting",
+        "job_unit_key": "analysis_reporting",
+        "profile_unit_id": "99c768a1f057b627"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 55,
+        "match_kind": "execution",
+        "match_key": "analysis_reporting",
+        "job_unit_key": "analysis_reporting",
+        "profile_unit_id": "aac12907a0865db1"
+      },
+      {
+        "match_strength": "direct",
+        "weight": 98,
+        "coverageScore": 79,
+        "match_kind": "execution",
+        "match_key": "analysis_reporting",
+        "job_unit_key": "analysis_reporting",
+        "profile_unit_id": "ace32fa5558081f3"
+      },
+      {
+        "match_strength": "direct",
+        "weight": 98,
+        "coverageScore": 79,
+        "match_kind": "execution",
+        "match_key": "analysis_reporting",
+        "job_unit_key": "analysis_reporting",
+        "profile_unit_id": "f0b9e45a07adb866"
+      },
+      {
+        "match_strength": "direct",
+        "weight": 104,
         "coverageScore": 82,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -312744,7 +311843,7 @@
       },
       {
         "match_strength": "direct",
-        "weight": 107,
+        "weight": 106,
         "coverageScore": 84,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -312753,7 +311852,7 @@
       },
       {
         "match_strength": "direct",
-        "weight": 106,
+        "weight": 105,
         "coverageScore": 83,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -312771,7 +311870,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 86,
+        "weight": 85,
         "coverageScore": 59,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -312780,7 +311879,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 86,
+        "weight": 85,
         "coverageScore": 59,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -312987,8 +312086,8 @@
           "note": "25.64"
         }
       ],
-      "raw_score": 50,
-      "clamped_score": 50
+      "raw_score": 57,
+      "clamped_score": 55
     }
   },
   "prod-e2df6130-16ac-40e8-8516-246d0f0642aa": {
@@ -325923,8 +325022,8 @@
     "schema_version": 2,
     "id": "prod-ea0de07f-efa8-4879-b7e1-dd2efc9641f7",
     "label": "prod ea0de07f — Development Coordinator, Athletics @ Vanderbilt University (2026-05-14)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 74,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -325974,14 +325073,6 @@
         "kind": "stakeholder",
         "strength": 6,
         "label": "customer service, guest experience, and issue resolution",
-        "requiredness": "core"
-      },
-      {
-        "id": "bb46dc4c5c52c544",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 10,
-        "label": "financial analysis and investment work",
         "requiredness": "core"
       },
       {
@@ -326526,11 +325617,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_FAMILY_MISMATCH",
-        "severity": "medium",
-        "weight": -12
-      },
-      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -3.9199999999999995
@@ -326539,11 +325625,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -326561,11 +325642,10 @@
         "credentialRequired": false,
         "credentialSponsored": false,
         "detectedDomain": null,
-        "financeSubFamily": "other_finance",
+        "financeSubFamily": null,
         "function_tags": [
           "communications_pr",
           "data_analytics_bi",
-          "finance_corp",
           "operations_general",
           "sales_bd"
         ],
@@ -326578,7 +325658,7 @@
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
-        "jobFamily": "Finance",
+        "jobFamily": "Sales",
         "jobIndustry": null,
         "jobTitle": "Development Coordinator, Athletics",
         "location": {
@@ -326678,17 +325758,17 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -326696,8 +325776,8 @@
           "note": "11.72"
         }
       ],
-      "raw_score": 65,
-      "clamped_score": 55
+      "raw_score": 85,
+      "clamped_score": 74
     }
   },
   "prod-ea576569-067a-4e87-aeab-2c7cebea2c2b": {
@@ -327643,14 +326723,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "cbdbfc139383cbd2",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 7,
-        "label": "financial analysis and investment work",
-        "requiredness": "core"
-      },
-      {
         "id": "d39388bd2f182187",
         "key": "stakeholder_coordination",
         "kind": "stakeholder",
@@ -328321,11 +327393,6 @@
         "weight": -12
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
@@ -328352,7 +327419,6 @@
           "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
-          "finance_corp",
           "operations_general"
         ],
         "gradYearHint": null,
@@ -342786,8 +341852,8 @@
     "schema_version": 2,
     "id": "prod-f87cffb2-6685-4181-ac7f-5772cc5cc58d",
     "label": "prod f87cffb2 — Operations Associate @ ViewTrade Securities (2026-05-11)",
-    "decision": "Apply",
-    "score": 78,
+    "decision": "Review",
+    "score": 65,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -342800,27 +341866,11 @@
         "requiredness": "core"
       },
       {
-        "id": "8ef63e41b9c127d2",
-        "key": "analysis_reporting",
-        "kind": "execution",
-        "strength": 7,
-        "label": "analysis, reporting, and measurement work",
-        "requiredness": "supporting"
-      },
-      {
         "id": "b06d44d3a05813a0",
         "key": "customer_service_guest_experience",
         "kind": "stakeholder",
         "strength": 10,
         "label": "customer service, guest experience, and issue resolution",
-        "requiredness": "core"
-      },
-      {
-        "id": "b497f96b73f7a903",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 8,
-        "label": "financial analysis and investment work",
         "requiredness": "core"
       },
       {
@@ -343005,42 +342055,6 @@
     ],
     "matches": [
       {
-        "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 55,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "7164db46a0b8a8ca"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 79,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "8680295f2d98ec91"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 80,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "c865039491206999"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 76,
-        "coverageScore": 54,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "f2ece3a0f60c427a"
-      },
-      {
         "match_strength": "direct",
         "weight": 103,
         "coverageScore": 85,
@@ -343093,39 +342107,9 @@
         "match_key": "excel",
         "job_unit_key": "excel",
         "profile_unit_id": "dc5bb3f0e883f9fd"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 85,
-        "coverageScore": 59,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "8680295f2d98ec91"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 86,
-        "coverageScore": 60,
-        "match_kind": "function",
-        "match_key": "financial_analysis",
-        "job_unit_key": "financial_analysis",
-        "profile_unit_id": "c865039491206999"
       }
     ],
     "why_codes": [
-      {
-        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
-        "weight": 86,
-        "match_strength": "adjacent",
-        "match_key": "financial_analysis"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 99,
-        "match_strength": "direct",
-        "match_key": "analysis_reporting"
-      },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 103,
@@ -343263,17 +342247,17 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -343281,8 +342265,8 @@
           "note": "16.2"
         }
       ],
-      "raw_score": 78,
-      "clamped_score": 78
+      "raw_score": 65,
+      "clamped_score": 65
     }
   },
   "prod-fa105938-04eb-41e5-932e-891d16e16cd1": {

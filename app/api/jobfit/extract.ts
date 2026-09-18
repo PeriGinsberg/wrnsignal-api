@@ -974,13 +974,10 @@ const CAPABILITY_RULES: CapabilityRule[] = [
 "ad hoc financial",
 "fp&a",
 "fp &a",
-"financial planning",
+"financial planning and analysis",
+"financial planning & analysis",
 "variance analysis",
-"expense analysis", 
-"expense reporting",
-"management reporting",
-"budgeting",
-"budget management",
+"expense analysis",
 "financial forecast",
 "forecasting models",
 "cash flow",
@@ -988,8 +985,13 @@ const CAPABILITY_RULES: CapabilityRule[] = [
 "balance sheet",
 "revenue reporting",
 "financial package",
-"board-level reporting",
-"board level reporting",
+"budgeting and forecasting",
+"forecasting and budgeting",
+"variance and trend analys",
+// Removed as too generic to create a core requirement on their own:
+// "financial planning" (consulting practice-area lists), "budgeting",
+// "budget management", "expense reporting", "management reporting",
+// "board-level reporting".
     ],
     adjacentKeys: ["analysis_reporting"],
   },
@@ -1727,7 +1729,7 @@ const SECTION_HEADER_RULES: Array<{ pattern: RegExp; kind: SectionKind }> = [
   { pattern: /^(about (the )?company|about us|who we are|our story|our mission|company (overview|description|profile|background))$/, kind: "company" },
 
   // BENEFITS — what we offer, perks, compensation
-  { pattern: /^(benefits|perks( and benefits)?|what('s| is) in it for you|why (join|work at|work for|us)|compensation( and benefits)?|our offer|we offer|pay range|salary range|(base )?compensation)$/, kind: "benefits" },
+  { pattern: /^(benefits|perks( and benefits)?|what('s| is) in it for you|how you('ll| will) grow|why (join|work at|work for|us)|compensation( and benefits)?|our offer|we offer|pay range|salary range|(base )?compensation)$/, kind: "benefits" },
 
   // HOW TO APPLY
   { pattern: /^(how to apply|application (process|instructions)|to apply|next steps)$/, kind: "how_to_apply" },
@@ -1785,6 +1787,8 @@ function classifyHeader(line: string): SectionKind | null {
   const clean = String(line || "")
     .trim()
     .toLowerCase()
+    // Curly apostrophes ("What You’ll Do") so the you'll/what's rules match
+    .replace(/[’‘]/g, "'")
     // Strip trailing colon / dash / em-dash
     .replace(/[:：\-–—]\s*$/, "")
     // Collapse whitespace
@@ -3805,8 +3809,14 @@ export function extractJobSignals(
   const jobTitleSlice = userTitleNorm
     ? userTitleNorm + "\n" + normalized.slice(0, 1500)
     : normalized.slice(0, 1500)
-  const jobTitleIsFinance =
-    /\b(finance intern|financial analyst|fp&a|fpa intern|fpa analyst|fpa associate|treasury analyst|treasury associate|treasury|investment banking|accounting intern|financial intern|finance associate|finance coordinator|corporate finance|financial planning|financial reporting|project finance|investor relations|investment analyst|investment associate|capital markets|private equity analyst|private equity associate|private equity|venture capital analyst|vc analyst|asset management analyst|asset management|portfolio analyst|portfolio associate|wealth management|wealth advisor|financial advisor|financial professional|financial consultant|financial planner|client associate|client service associate|advisor development|wealth relationship|relationship manager|series 7|finra|securities|broker dealer|credit analyst|credit associate|risk analyst|risk associate|controller|assistant controller|budget analyst|financial coordinator)\b/i.test(jobTitleSlice)
+  const FINANCE_TITLE_RX =
+    /\b(finance intern|financial analyst|fp&a|fpa intern|fpa analyst|fpa associate|treasury analyst|treasury associate|treasury|investment banking|accounting intern|financial intern|finance associate|finance coordinator|corporate finance|financial planning|financial reporting|project finance|investor relations|investment analyst|investment associate|capital markets|private equity analyst|private equity associate|private equity|venture capital analyst|vc analyst|asset management analyst|asset management|portfolio analyst|portfolio associate|wealth management|wealth advisor|financial advisor|financial professional|financial consultant|financial planner|client associate|client service associate|advisor development|wealth relationship|relationship manager|series 7|finra|securities|broker dealer|credit analyst|credit associate|risk analyst|risk associate|controller|assistant controller|budget analyst|financial coordinator)\b/i
+  const jobTitleIsFinance = FINANCE_TITLE_RX.test(jobTitleSlice)
+  // Title only, no body. jobTitleSlice includes the first 1500 chars of the
+  // body, so a company blurb ("we serve law firms, banks and private equity
+  // firms") reads as a finance title. Fine as a family hint, not as grounds
+  // to invent a core financial_analysis requirement below.
+  const actualTitleIsFinance = FINANCE_TITLE_RX.test(userTitleNorm || norm(jobTitle || ""))
   const jobTitleIsSales =
     /\b(sales intern|account executive|account manager|business development|territory manager|sales representative|sales associate)\b/i.test(jobTitleSlice)
 
@@ -3986,7 +3996,7 @@ export function extractJobSignals(
     const hasFinanceUnit = requirementUnits.some(
       (u) => u.key === "financial_analysis" || u.key === "analysis_reporting" || u.key === "accounting_operations"
     )
-    if (!hasFinanceUnit) {
+    if (!hasFinanceUnit && actualTitleIsFinance) {
       requirementUnits.push(
         makeJobUnit(
           "financial_analysis",

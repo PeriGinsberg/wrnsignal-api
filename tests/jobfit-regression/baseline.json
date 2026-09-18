@@ -16987,7 +16987,7 @@
         "id": "06c5856ba51245f2",
         "key": "financial_analysis",
         "kind": "function",
-        "strength": 9,
+        "strength": 8,
         "label": "financial analysis and investment work",
         "requiredness": "supporting"
       },
@@ -19368,14 +19368,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "5fb05d27590d4488",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 7,
-        "label": "financial analysis and investment work",
-        "requiredness": "supporting"
-      },
-      {
         "id": "65a129bc5932c5c1",
         "key": "powerpoint",
         "kind": "tool",
@@ -19422,6 +19414,14 @@
         "strength": 6,
         "label": "analysis, reporting, and measurement work",
         "requiredness": "supporting"
+      },
+      {
+        "id": "96aafaa6062523ca",
+        "key": "financial_analysis",
+        "kind": "function",
+        "strength": 9,
+        "label": "financial analysis and investment work",
+        "requiredness": "core"
       },
       {
         "id": "fdbcbb42fdac6a53",
@@ -19936,6 +19936,24 @@
         "profile_unit_id": "51ae0fad94e6a95c"
       },
       {
+        "match_strength": "adjacent",
+        "weight": 83,
+        "coverageScore": 56,
+        "match_kind": "function",
+        "match_key": "financial_analysis",
+        "job_unit_key": "financial_analysis",
+        "profile_unit_id": "4a05837fa11e00d3"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 87,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "financial_analysis",
+        "job_unit_key": "financial_analysis",
+        "profile_unit_id": "f71a6df572bc603c"
+      },
+      {
         "match_strength": "direct",
         "weight": 60,
         "coverageScore": 79,
@@ -20022,6 +20040,12 @@
         "match_key": "communications_writing"
       },
       {
+        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+        "weight": 87,
+        "match_strength": "adjacent",
+        "match_key": "financial_analysis"
+      },
+      {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 99,
         "match_strength": "direct",
@@ -20038,12 +20062,6 @@
         "weight": 99,
         "match_strength": "direct",
         "match_key": "content_execution"
-      },
-      {
-        "code": "WHY_EXECUTION_PROOF",
-        "weight": 79,
-        "match_strength": "adjacent",
-        "match_key": "operations_execution"
       }
     ],
     "risk_codes": [],
@@ -20217,14 +20235,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "124f963e2be12f45",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 7,
-        "label": "financial analysis and investment work",
-        "requiredness": "supporting"
-      },
-      {
         "id": "1e0c934f2ff565e5",
         "key": "solidworks",
         "kind": "tool",
@@ -20271,6 +20281,14 @@
         "strength": 10,
         "label": "drafting, documentation, and written deliverables",
         "requiredness": "supporting"
+      },
+      {
+        "id": "982266e4b68ba061",
+        "key": "financial_analysis",
+        "kind": "function",
+        "strength": 9,
+        "label": "financial analysis and investment work",
+        "requiredness": "core"
       },
       {
         "id": "a467793e07e8da09",
@@ -20574,6 +20592,11 @@
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "high",
         "weight": 0
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": -8.399999999999999
       }
     ],
     "scalars": {
@@ -20693,12 +20716,12 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "decision_final",
@@ -20707,11 +20730,11 @@
         },
         {
           "label": "penalty_sum",
-          "points": 0,
-          "note": "0"
+          "points": -8,
+          "note": "8.399999999999999"
         }
       ],
-      "raw_score": 79,
+      "raw_score": 70,
       "clamped_score": 55
     }
   },
@@ -20719,8 +20742,8 @@
     "schema_version": 2,
     "id": "synthetic-0410ai",
     "label": "[synthetic] 0410ai — Sofia Ramirez / (no title)",
-    "decision": "Apply",
-    "score": 95,
+    "decision": "Priority Apply",
+    "score": 97,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -20728,7 +20751,7 @@
         "id": "01b1dd26a7e7a5cd",
         "key": "financial_analysis",
         "kind": "function",
-        "strength": 8,
+        "strength": 7,
         "label": "financial analysis and investment work",
         "requiredness": "supporting"
       },
@@ -21442,13 +21465,7 @@
         "match_key": "clinical_stakeholder_fluency"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
-        "weight": 0
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -21562,7 +21579,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
@@ -21571,7 +21588,7 @@
         }
       ],
       "raw_score": 97,
-      "clamped_score": 95
+      "clamped_score": 97
     }
   },
   "synthetic-0410aj": {
@@ -21619,7 +21636,7 @@
         "id": "ddc53437d8cf5def",
         "key": "financial_analysis",
         "kind": "function",
-        "strength": 9,
+        "strength": 8,
         "label": "financial analysis and investment work",
         "requiredness": "supporting"
       }
@@ -22161,7 +22178,7 @@
       },
       {
         "match_strength": "direct",
-        "weight": 99,
+        "weight": 98,
         "coverageScore": 78,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -22197,7 +22214,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 78,
+        "weight": 77,
         "coverageScore": 53,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -22215,7 +22232,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 80,
+        "weight": 79,
         "coverageScore": 55,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -22233,7 +22250,7 @@
       },
       {
         "match_strength": "direct",
-        "weight": 99,
+        "weight": 98,
         "coverageScore": 78,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -22251,7 +22268,7 @@
       },
       {
         "match_strength": "direct",
-        "weight": 100,
+        "weight": 99,
         "coverageScore": 79,
         "match_kind": "function",
         "match_key": "financial_analysis",
@@ -25143,14 +25160,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "77a41f42848d6a30",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 10,
-        "label": "financial analysis and investment work",
-        "requiredness": "core"
-      },
-      {
         "id": "aa9840086ba80492",
         "key": "gcp",
         "kind": "tool",
@@ -25881,11 +25890,6 @@
         "weight": 0
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
@@ -26039,19 +26043,11 @@
     "schema_version": 2,
     "id": "synthetic-0410c",
     "label": "[synthetic] 0410c — Jordan Williams / (no title)",
-    "decision": "Apply",
-    "score": 89,
+    "decision": "Priority Apply",
+    "score": 97,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
-      {
-        "id": "01767727be7ae121",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 10,
-        "label": "financial analysis and investment work",
-        "requiredness": "core"
-      },
       {
         "id": "1c5361679c699a02",
         "key": "indesign",
@@ -26775,13 +26771,7 @@
         "match_key": "photoshop"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": -8.399999999999999
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -26907,26 +26897,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -8,
-          "note": "8.399999999999999"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 89,
-      "clamped_score": 89
+      "raw_score": 97,
+      "clamped_score": 97
     }
   },
   "synthetic-0410d": {
@@ -29307,7 +29297,7 @@
         "id": "0febae746da70ac8",
         "key": "financial_analysis",
         "kind": "function",
-        "strength": 9,
+        "strength": 8,
         "label": "financial analysis and investment work",
         "requiredness": "supporting"
       },
@@ -33159,7 +33149,7 @@
         "id": "f2908d2b25e74870",
         "key": "financial_analysis",
         "kind": "function",
-        "strength": 9,
+        "strength": 8,
         "label": "financial analysis and investment work",
         "requiredness": "supporting"
       }
@@ -33648,12 +33638,12 @@
         "requiredness": "core"
       },
       {
-        "id": "7dfb2da4a4c5a618",
+        "id": "4fc81e50090a9c69",
         "key": "financial_analysis",
         "kind": "function",
-        "strength": 7,
+        "strength": 10,
         "label": "financial analysis and investment work",
-        "requiredness": "supporting"
+        "requiredness": "core"
       },
       {
         "id": "b11299a45f878d9b",
@@ -34026,6 +34016,11 @@
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -34954,7 +34949,7 @@
     "id": "synthetic-0410q",
     "label": "[synthetic] 0410q — Amara Johnson / (no title)",
     "decision": "Pass",
-    "score": 27,
+    "score": 31,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -34983,14 +34978,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "19d4040751f9504f",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 7,
-        "label": "financial analysis and investment work",
-        "requiredness": "supporting"
-      },
-      {
         "id": "2a1125e14fd05b7c",
         "key": "drafting_documentation",
         "kind": "deliverable",
@@ -35013,6 +35000,14 @@
         "strength": 7,
         "label": "kubernetes tool usage",
         "requiredness": "supporting"
+      },
+      {
+        "id": "52ef8084b9267301",
+        "key": "financial_analysis",
+        "kind": "function",
+        "strength": 9,
+        "label": "financial analysis and investment work",
+        "requiredness": "core"
       },
       {
         "id": "567d72b90269ff7d",
@@ -35158,6 +35153,33 @@
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
         "profile_unit_id": "a173f1b6780d53be"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 85,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "financial_analysis",
+        "job_unit_key": "financial_analysis",
+        "profile_unit_id": "0a6f29df0e94e451"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "financial_analysis",
+        "job_unit_key": "financial_analysis",
+        "profile_unit_id": "0bbf7c734f061669"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 87,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "financial_analysis",
+        "job_unit_key": "financial_analysis",
+        "profile_unit_id": "2816cfa6e3968e69"
       }
     ],
     "why_codes": [],
@@ -35166,11 +35188,6 @@
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "high",
         "weight": -30
-      },
-      {
-        "code": "RISK_LIMITED_MATCH_EVIDENCE",
-        "severity": "medium",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_TOOLS",
@@ -35308,8 +35325,8 @@
           "note": "8"
         }
       ],
-      "raw_score": 27,
-      "clamped_score": 27
+      "raw_score": 31,
+      "clamped_score": 31
     }
   },
   "synthetic-0410r": {
@@ -36324,7 +36341,7 @@
         "id": "660eaed1b85eac09",
         "key": "financial_analysis",
         "kind": "function",
-        "strength": 9,
+        "strength": 8,
         "label": "financial analysis and investment work",
         "requiredness": "supporting"
       },
@@ -36664,7 +36681,7 @@
         "id": "5aabab385e706747",
         "key": "financial_analysis",
         "kind": "function",
-        "strength": 9,
+        "strength": 8,
         "label": "financial analysis and investment work",
         "requiredness": "supporting"
       },
@@ -37881,7 +37898,7 @@
         "id": "b7cacf92465cf33c",
         "key": "financial_analysis",
         "kind": "function",
-        "strength": 9,
+        "strength": 8,
         "label": "financial analysis and investment work",
         "requiredness": "supporting"
       }
@@ -38226,14 +38243,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "72e2b6c034d88d78",
-        "key": "financial_analysis",
-        "kind": "function",
-        "strength": 7,
-        "label": "financial analysis and investment work",
-        "requiredness": "supporting"
-      },
-      {
         "id": "7f9ccc2a8a32575c",
         "key": "sql",
         "kind": "tool",
@@ -38256,6 +38265,14 @@
         "strength": 5,
         "label": "Software Engineering",
         "requiredness": "supporting"
+      },
+      {
+        "id": "b0c10c01f782b053",
+        "key": "financial_analysis",
+        "kind": "function",
+        "strength": 10,
+        "label": "financial analysis and investment work",
+        "requiredness": "core"
       },
       {
         "id": "ba6f4db7d2f43785",
@@ -38907,6 +38924,105 @@
         "profile_unit_id": "c61571975181253a"
       },
       {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "financial_analysis",
+        "job_unit_key": "financial_analysis",
+        "profile_unit_id": "02acd45e81f26f04"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "financial_analysis",
+        "job_unit_key": "financial_analysis",
+        "profile_unit_id": "04c14744e995b5c1"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 85,
+        "coverageScore": 58,
+        "match_kind": "function",
+        "match_key": "financial_analysis",
+        "job_unit_key": "financial_analysis",
+        "profile_unit_id": "3fdcaab9e036478c"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "financial_analysis",
+        "job_unit_key": "financial_analysis",
+        "profile_unit_id": "46112f5b1f6af42f"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "financial_analysis",
+        "job_unit_key": "financial_analysis",
+        "profile_unit_id": "4bd4c48deff6e9e9"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 83,
+        "coverageScore": 56,
+        "match_kind": "function",
+        "match_key": "financial_analysis",
+        "job_unit_key": "financial_analysis",
+        "profile_unit_id": "649a4cce1c4d97a5"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "financial_analysis",
+        "job_unit_key": "financial_analysis",
+        "profile_unit_id": "704fa8c0ab613dfe"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "financial_analysis",
+        "job_unit_key": "financial_analysis",
+        "profile_unit_id": "a456d347589c2d40"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 87,
+        "coverageScore": 60,
+        "match_kind": "function",
+        "match_key": "financial_analysis",
+        "job_unit_key": "financial_analysis",
+        "profile_unit_id": "c94126acccb531de"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "financial_analysis",
+        "job_unit_key": "financial_analysis",
+        "profile_unit_id": "d3f9d8b59569b108"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "financial_analysis",
+        "job_unit_key": "financial_analysis",
+        "profile_unit_id": "dff4677d75951143"
+      },
+      {
         "match_strength": "direct",
         "weight": 95,
         "coverageScore": 81,
@@ -39241,7 +39357,7 @@
           "note": "8"
         }
       ],
-      "raw_score": 55,
+      "raw_score": 59,
       "clamped_score": 55
     }
   },
@@ -39817,7 +39933,7 @@
         "id": "f90a29e353235830",
         "key": "financial_analysis",
         "kind": "function",
-        "strength": 8,
+        "strength": 7,
         "label": "financial analysis and investment work",
         "requiredness": "supporting"
       }
@@ -40260,11 +40376,6 @@
       },
       {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
-        "severity": "medium",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
         "severity": "medium",
         "weight": 0
       },
