@@ -21,16 +21,20 @@ if (!URL || !KEY) {
 }
 const sb = createClient(URL, KEY, { auth: { persistSession: false } })
 const send = process.argv.includes("--send")
+const srcIdx = process.argv.indexOf("--source")
+const onlySource = srcIdx >= 0 ? process.argv[srcIdx + 1] : undefined
 
 ;(async () => {
   console.log("nightly ingest sweep  ->  " + URL)
   for (const s of await loadSources(sb)) {
-    console.log("  " + s.adapter.source.padEnd(17) + "filtering=" + s.adapter.filtering.padEnd(8) + s.boards.join(", "))
+    if (onlySource && s.adapter.source !== onlySource) continue
+    console.log("  " + s.adapter.source.padEnd(17) + "filtering=" + s.adapter.filtering.padEnd(8) + s.boards.length + " boards")
   }
+  if (onlySource) console.log("  source : " + onlySource)
   console.log("  mode   : " + (send ? "SEND" : "dry run, prints the alert instead of sending"))
   console.log("\nrunning...\n")
 
-  const res = await runNightly(sb, { dryRun: !send })
+  const res = await runNightly(sb, { dryRun: !send, source: onlySource })
 
   console.log("  pairs    " + res.totals.pairs)
   console.log("  boards   " + res.totals.boards)

@@ -185,19 +185,33 @@ export const greenhouseAdapter: SourceAdapter = {
     const narrows = unfiltered > filtered
     const rejects = nonsense === 0
 
-    // AN EMPTY BOARD IS NOT A FAILED CONTROL. There is nothing to narrow, so
-    // `narrows` is false without anything being wrong. Reporting false here
-    // would veto the pair across every other board because one employer has no
-    // open roles. null says "could not be performed", which is the truth.
+    // ONLY `rejects` CAN VETO. The two assertions answer different questions
+    // and only one of them is evidence of a broken filter:
+    //
+    //   rejects=false  the predicate matched a term that cannot exist. It is
+    //                  not filtering, and nothing from this board can be
+    //                  trusted. This is the veto.
+    //
+    //   narrows=false  the predicate kept everything, which on a small
+    //                  specialist board means every posting genuinely mentions
+    //                  the term. Orenda and Dirac both did this for "engineer"
+    //                  -- 18 of 18 and 6 of 6 -- and the predicate was working
+    //                  perfectly; there was simply nothing to remove.
+    //
+    // Treating narrows=false as a veto cost 96 of 447 board-runs on the first
+    // 149-board sweep, cancelled by two small boards that had done nothing
+    // wrong. null says "could not be performed", which is the truth.
+    //
+    //   empty board    same thing in the limit: 0 > 0 is false.
     const empty = unfiltered === 0
-    const passed = empty ? null : narrows && rejects
-    const reason = empty
-      ? "board is empty: 0 postings, nothing to narrow"
-      : passed
-        ? null
-        : [!narrows ? "predicate did not narrow the board" : null, !rejects ? "nonsense term matched " + nonsense + " posting(s)" : null]
-            .filter(Boolean)
-            .join("; ")
+    const passed = !rejects ? false : empty || !narrows ? null : true
+    const reason = !rejects
+      ? "nonsense term matched " + nonsense + " posting(s): the predicate is not filtering"
+      : empty
+        ? "board is empty: 0 postings, nothing to narrow"
+        : !narrows
+          ? "predicate kept all " + unfiltered + " postings: every one matches, nothing to narrow"
+          : null
 
     return {
       passed,

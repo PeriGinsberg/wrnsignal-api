@@ -6,16 +6,20 @@
       "schedule": "0 13 * * *"
     },
     {
+      "path": "/api/internal/ingest/run-nightly/grnhse",
+      "schedule": "0 3 * * *"
+    },
+    {
       "path": "/api/internal/lanes/run-due",
       "schedule": "0 9 * * *"
     },
     {
-      "path": "/api/internal/ingest/run-nightly",
-      "schedule": "0 3 * * *"
-    },
-    {
       "path": "/api/internal/ingest/staleness",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/internal/ingest/run-nightly/smartrecruiters",
+      "schedule": "30 4 * * *"
     }
   ]
 }

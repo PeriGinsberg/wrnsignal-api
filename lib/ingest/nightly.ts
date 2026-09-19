@@ -50,13 +50,24 @@ async function loadPairs(sb: SupabaseClient): Promise<IngestPair[]> {
 
 export async function runNightly(
   sb: SupabaseClient,
-  opts: { environment?: string; dryRun?: boolean } = {}
+  opts: { environment?: string; dryRun?: boolean; source?: string } = {}
 ): Promise<NightlyResult> {
   const environment = opts.environment ?? process.env.VERCEL_ENV ?? "local"
   const startedAt = Date.now()
 
   const pairs = await loadPairs(sb)
-  const sources = await loadSources(sb)
+  // ONE SOURCE PER CALL when `source` is given. Each source now has its own
+  // cron on its own schedule: a 149-board combined sweep took 731s against a
+  // 300s function ceiling, and one source failing should not delay or cancel
+  // the other. Each writes its own ingest_runs rows and alerts on its own.
+  const allSources = await loadSources(sb)
+  const sources = opts.source ? allSources.filter((s) => s.adapter.source === opts.source) : allSources
+  if (opts.source && !sources.length) {
+    throw new Error(
+      `no active boards for source "${opts.source}" in ingest_boards ` +
+        `(configured: ${allSources.map((s) => s.adapter.source).join(", ") || "none"})`
+    )
+  }
   const runs: NightlyResult["runs"] = []
 
   for (const { adapter, boards } of sources) {
