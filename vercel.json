@@ -8,6 +8,14 @@
     {
       "path": "/api/internal/lanes/run-due",
       "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/internal/ingest/run-nightly",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/internal/ingest/staleness",
+      "schedule": "0 9 * * *"
     }
   ]
 }
