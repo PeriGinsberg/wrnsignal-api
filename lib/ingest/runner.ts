@@ -29,7 +29,8 @@
  */
 
 import { type SupabaseClient } from "@supabase/supabase-js"
-import type { FetchedPosting, IngestPair, SourceAdapter } from "./types"
+import type { ControlResult, FetchedPosting, IngestPair, SourceAdapter } from "./types"
+import { foldByFingerprint } from "./fingerprint"
 
 export type BoardOutcome = {
   runId: string | null
@@ -48,60 +49,102 @@ export type BoardOutcome = {
 const SPACING_MS = 500
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-type Classification = "added" | "refound" | "intra_run_duplicate"
+/**
+ * How many postings travel in one INSERT ... ON CONFLICT.
+ *
+ * 200 keeps the statement and its RETURNING payload comfortably inside
+ * PostgREST limits while cutting a 1,000-posting board from 1,000 round trips
+ * to 5. The exact number is not load-bearing; the batching is.
+ */
+const BATCH_SIZE = 200
+
+type Counts = { added: number; refound: number; dup: number }
 
 /**
- * Write one posting and say which of the three it was.
+ * Write a board's postings and classify every one of them.
  *
- * ADDED is read off the row itself: on insert first_seen_at and last_seen_at
- * take the same statement timestamp, and on update postings_touch_last_seen
- * advances last_seen_at while pinning first_seen_at, so they differ. Equal
- * means inserted.
+ * THE FOLD HAPPENS BEFORE THE SEND, AND IT HAS TO.
+ * Postgres rejects an INSERT ... ON CONFLICT that touches the same row twice
+ * ("ON CONFLICT DO UPDATE command cannot affect row a second time", 21000) and
+ * it rejects the ENTIRE statement. Two postings sharing a fingerprint would
+ * therefore take the other 199 rows down with them. So duplicates are collapsed
+ * here, using the TypeScript mirror in fingerprint.ts, and the ones collapsed
+ * away are counted as intra_run_duplicate -- which is what they already were.
  *
- * REFOUND vs INTRA_RUN_DUPLICATE is then decided by whether this run has
- * already touched that fingerprint. The fingerprint comes back from the
- * database rather than being recomputed here, because a TypeScript mirror of
- * the SQL normalization is a thing that drifts.
- *
- * ONE ROW AT A TIME, on purpose. Two postings in one batch can share a
- * fingerprint, and Postgres rejects a statement that touches one row twice
- * rather than picking a winner. Batching needs the fold done in SQL.
+ * THE DATABASE IS STILL THE AUTHORITY ON IDENTITY. The mirror decides only
+ * which rows may share a statement. added vs refound is still read off the row
+ * Postgres returns: on insert first_seen_at and last_seen_at take the same
+ * statement timestamp, and on update postings_touch_last_seen advances
+ * last_seen_at while pinning first_seen_at, so they differ. Equal means
+ * inserted. A mirror that was somehow wrong would cost a rejected batch, never
+ * a wrong count or a merged posting.
  */
-async function upsertPosting(
+async function upsertBatch(
   sb: SupabaseClient,
   source: string,
   org: string,
-  p: FetchedPosting,
+  postings: FetchedPosting[],
   seen: Set<string>
-): Promise<Classification> {
-  const { data, error } = await sb
-    .from("postings")
-    .upsert(
-      {
-        source,
-        org_slug: org,
-        source_job_id: p.source_job_id,
-        title: p.title,
-        company: p.company,
-        location: p.location,
-        apply_url: p.apply_url,
-        posted_at: p.posted_at,
-        raw: p.raw,
-        // first_seen_at and last_seen_at are deliberately absent. See types.ts.
-      },
-      { onConflict: "fingerprint", ignoreDuplicates: false }
-    )
-    .select("fingerprint, first_seen_at, last_seen_at")
+): Promise<Counts> {
+  const counts: Counts = { added: 0, refound: 0, dup: 0 }
+  if (postings.length === 0) return counts
 
-  if (error) throw new Error(`upsert failed for "${p.title}" @ ${p.company}: ${error.message}`)
-  const row = data?.[0]
-  if (!row) throw new Error(`upsert returned no row for "${p.title}" @ ${p.company}`)
+  const { kept, folded } = foldByFingerprint(postings)
+  counts.dup += folded
 
-  const alreadyThisRun = seen.has(row.fingerprint)
-  seen.add(row.fingerprint)
+  // Already written earlier in this same board run: count it and keep it out of
+  // the statement rather than touching the row twice for nothing.
+  const fresh = kept.filter((k) => {
+    if (seen.has(k.fingerprint)) { counts.dup++; return false }
+    return true
+  })
 
-  if (alreadyThisRun) return "intra_run_duplicate"
-  return Date.parse(row.first_seen_at) === Date.parse(row.last_seen_at) ? "added" : "refound"
+  for (let i = 0; i < fresh.length; i += BATCH_SIZE) {
+    const chunk = fresh.slice(i, i + BATCH_SIZE)
+    const { data, error } = await sb
+      .from("postings")
+      .upsert(
+        chunk.map(({ row: p }) => ({
+          source,
+          org_slug: org,
+          source_job_id: p.source_job_id,
+          title: p.title,
+          company: p.company,
+          location: p.location,
+          apply_url: p.apply_url,
+          posted_at: p.posted_at,
+          raw: p.raw,
+          // first_seen_at and last_seen_at are deliberately absent. See types.ts.
+        })),
+        { onConflict: "fingerprint", ignoreDuplicates: false }
+      )
+      .select("fingerprint, first_seen_at, last_seen_at")
+
+    if (error) {
+      throw new Error(
+        `upsert failed for ${chunk.length} posting(s) @ ${org}: ${error.code ?? ""} ${error.message}`
+      )
+    }
+    const rows = data ?? []
+    if (rows.length !== chunk.length) {
+      // Silently losing rows here would make found stop reconciling, so it is
+      // an error rather than a discrepancy to notice later.
+      throw new Error(
+        `upsert returned ${rows.length} row(s) for ${chunk.length} sent @ ${org}`
+      )
+    }
+
+    for (const row of rows) {
+      // Trust the database's fingerprint, not the mirror's, for what has been
+      // seen: identity is the database's to define.
+      if (seen.has(row.fingerprint)) { counts.dup++; continue }
+      seen.add(row.fingerprint)
+      if (Date.parse(row.first_seen_at) === Date.parse(row.last_seen_at)) counts.added++
+      else counts.refound++
+    }
+  }
+
+  return counts
 }
 
 /**
@@ -112,6 +155,19 @@ async function upsertPosting(
  * A module-level cache would quietly serve yesterday's board.
  */
 export type BoardCache = Map<string, unknown>
+
+/**
+ * Control verdicts already established in this sweep, keyed by board and the
+ * adapter's declared controlScope.
+ *
+ * Only adapters that implement controlScope() participate. An adapter without
+ * one is assumed to depend on the whole pair and its control is re-run for
+ * every pair, which is the safe default and what Greenhouse wants.
+ *
+ * Sweep-scoped for the same reason BoardCache is: a verdict is evidence about
+ * how a board behaved a few minutes ago, not a standing fact.
+ */
+export type ControlCache = Map<string, ControlResult>
 
 /**
  * Run several pairs against the same boards, downloading each board once.
@@ -129,9 +185,12 @@ export async function runSweep(
   sb: SupabaseClient
 ): Promise<{ pair: IngestPair; outcomes: BoardOutcome[] }[]> {
   const cache: BoardCache | null = adapter.filtering === "local" ? new Map() : null
+  // Independent of `cache`: a server-filtering source has no board to reuse but
+  // may still have a control verdict that does not vary by pair.
+  const controls: ControlCache = new Map()
   const results: { pair: IngestPair; outcomes: BoardOutcome[] }[] = []
   for (const pair of pairs) {
-    results.push({ pair, outcomes: await runPair(adapter, pair, orgs, sb, cache) })
+    results.push({ pair, outcomes: await runPair(adapter, pair, orgs, sb, cache, controls) })
   }
   return results
 }
@@ -141,7 +200,8 @@ export async function runPair(
   pair: IngestPair,
   orgs: string[],
   sb: SupabaseClient,
-  cache?: BoardCache | null
+  cache?: BoardCache | null,
+  controlCache?: ControlCache | null
 ): Promise<BoardOutcome[]> {
   const startedAt = Date.now()
 
@@ -199,21 +259,41 @@ export async function runPair(
     }
   >()
 
+  // A control verdict is reusable across pairs only when the adapter says what
+  // its control depends on. No controlScope means "assume it depends on the
+  // whole pair", which re-runs it -- the conservative default.
+  const scope = adapter.controlScope ? adapter.controlScope(pair) : null
+
   for (const org of orgs) {
     let spent = 0
     try {
-      const c = await adapter.control(pair, org, cache?.get(org))
-      spent = c.requests
+      const cacheKey = scope === null ? null : org + " " + scope
+      const reused = cacheKey !== null ? controlCache?.get(cacheKey) : undefined
+
+      const c = reused ?? (await adapter.control(pair, org, cache?.get(org)))
+      if (cacheKey !== null && !reused) controlCache?.set(cacheKey, c)
+
+      // A reused verdict cost nothing on this pair. Reporting its original
+      // request count again would inflate requests_made across the sweep and
+      // make "how many times did we call this board" unanswerable.
+      spent = reused ? 0 : c.requests
       // Keep whatever the adapter handed back, so the next pair in this sweep
       // gets it instead of downloading the board again.
       if (cache && c.carry !== undefined) cache.set(org, c.carry)
       controls.set(org, {
         passed: c.passed,
-        requests: c.requests,
+        requests: spent,
         // Stamped by the runner rather than trusted from the adapter, so every
         // row says which claim its control_passed is making even if an adapter
-        // forgets to put it in its own detail.
-        detail: { filtering: adapter.filtering, ...(c.detail ?? {}) },
+        // forgets to put it in its own detail. control_reused says whether this
+        // board actually ran the control on this pair or inherited the verdict,
+        // so a zero in requests_made is explainable from the row itself.
+        detail: {
+          filtering: adapter.filtering,
+          control_reused: Boolean(reused),
+          control_scope: scope,
+          ...(c.detail ?? {}),
+        },
         error: null,
         carry: c.carry,
       })
@@ -308,12 +388,10 @@ export async function runPair(
       const r = await adapter.fetch(pair, org, c.carry)
       requests += r.requests
       found = r.postings.length
-      for (const p of r.postings) {
-        const kind = await upsertPosting(sb, adapter.source, org, p, seen)
-        if (kind === "added") added++
-        else if (kind === "refound") refound++
-        else dup++
-      }
+      const counts = await upsertBatch(sb, adapter.source, org, r.postings, seen)
+      added = counts.added
+      refound = counts.refound
+      dup = counts.dup
       const runId = await writeRun({
         org, status: "ok", controlPassed: c.passed, requests, found, added, refound, dup,
         controlDetail: c.detail, error: null,

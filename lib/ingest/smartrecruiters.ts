@@ -85,6 +85,13 @@ export const smartRecruitersAdapter: SourceAdapter = {
   // here is evidence about SmartRecruiters, not about this file.
   filtering: "server",
 
+  // The control sends a CONSTANT nonsense term plus the pair's city. It never
+  // sends pair.title, so two pairs differing only in title get an identical
+  // request and an identical answer. The city is the whole dependency.
+  controlScope(pair: IngestPair): string {
+    return cityOf(pair.location) ?? "*no-location*"
+  },
+
   async control(pair: IngestPair, org: string): Promise<ControlResult> {
     const city = cityOf(pair.location)
     const params: Record<string, string> = { q: NONSENSE, limit: "1" }

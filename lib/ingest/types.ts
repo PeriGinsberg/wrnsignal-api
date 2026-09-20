@@ -127,6 +127,29 @@ export interface SourceAdapter {
   control(pair: IngestPair, org: string, cached?: unknown): Promise<ControlResult>
 
   /**
+   * What this adapter's control actually depends on, besides the board.
+   *
+   * When present, the runner may run control() ONCE PER BOARD PER SWEEP for
+   * each distinct scope, instead of once per board per pair, and reuse the
+   * verdict for every other pair with the same scope.
+   *
+   * The scope must name every part of the pair the control reads. Omit the
+   * method entirely to opt out, which is the safe default: a control with no
+   * declared scope is assumed to depend on the whole pair and is re-run.
+   *
+   * SmartRecruiters' control issues a nonsense keyword with the pair's city,
+   * so its verdict depends on the city and nothing else -- the nonsense term is
+   * a constant and the pair's title is never sent. With 33 pairs that all carry
+   * no location, that is 52 control requests per sweep instead of 1,716.
+   *
+   * Greenhouse deliberately does NOT implement this. Its control asserts that
+   * the local predicate narrows the board FOR THIS PAIR'S TITLE, so the verdict
+   * is different for every title and there is nothing to reuse. It is already
+   * free after the first pair because the board itself is cached via `carry`.
+   */
+  controlScope?(pair: IngestPair): string
+
+  /**
    * The real query. One page; pagination is a later concern.
    *
    * `carry` is whatever this adapter's own control() returned, or undefined.
