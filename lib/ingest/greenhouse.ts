@@ -169,29 +169,37 @@ function fullHaystack(job: GhJob): string {
  * order. Both sides are padded so the first and last words are bounded too,
  * which is what stops "ip" matching inside "ownership".
  *
- * TRAILING-S TOLERANCE, on the LAST word only. "attorney" matches "attorneys"
- * and "project manager" matches "project managers", because a plural head noun
- * is the same role and a title like "Staff Attorneys" should not be invisible.
- *
- * Only the last word, because that is where English puts the plural in a job
- * title: "project managers", not "projects manager". Tolerating an s on every
- * word would let "operations" match "operation" and widen the predicate in
- * directions nobody asked for.
- *
- * It is one-directional: the HAYSTACK may carry the extra s, never the needle.
- * A pair written as "attorneys" still has to find "attorneys".
- *
- * MEASURED COST, recorded because it is not free: on the prod corpus every
- * posting this recovers has the plural in the DESCRIPTION, not the title
- * ("our attorneys", "work with project managers"). It therefore buys back
- * exactly the scattered-mention noise the phrase fix removed. Kept because a
- * pluralised TITLE is a real shape that would otherwise be missed, but the
- * title-vs-description split is where to look first if the pair ever looks
- * inflated again.
+ * EXACT. No plural tolerance. See containsPhraseInTitle for where that lives.
  */
 export function containsPhrase(hay: string, needle: string): boolean {
   if (needle === "") return false
-  const padded = " " + hay + " "
+  return (" " + hay + " ").includes(" " + needle + " ")
+}
+
+/**
+ * The same test, plus a trailing "s" on the LAST word, FOR TITLES ONLY.
+ *
+ * WHY IT IS RESTRICTED TO THE TITLE. A pluralised title is a real posting
+ * shape: "Staff Attorneys" is an attorney role and should not be invisible to
+ * the pair "attorney". A pluralised DESCRIPTION is not the same thing at all --
+ * "work with our attorneys" is a sentence about colleagues, not a statement of
+ * what the job is.
+ *
+ * Applying the tolerance to the whole haystack was measured on the 6,026 stored
+ * prod postings and recovered 196 postings, of which ZERO had the plural in the
+ * title. Every one was a description mention: exactly the scattered-mention
+ * noise the phrase fix had just removed. So the tolerance now applies only
+ * where it earns its keep.
+ *
+ * Last word only, because that is where English puts the plural in a job title:
+ * "project managers", not "projects manager".
+ *
+ * One-directional: the TITLE may carry the extra s, never the needle. A pair
+ * written as "attorneys" still has to find "attorneys".
+ */
+export function containsPhraseInTitle(titleHay: string, needle: string): boolean {
+  if (needle === "") return false
+  const padded = " " + titleHay + " "
   return padded.includes(" " + needle + " ") || padded.includes(" " + needle + "s ")
 }
 
@@ -202,13 +210,17 @@ export function matches(job: GhJob, title: string, city: string | null): boolean
   const titleHay = norm(job.title)
 
   // Seniority first: it reads the title only, so it is cheap, and failing here
-  // avoids flattening a 20 KB description to learn nothing.
+  // avoids flattening a 20 KB description to learn nothing. Title-only, so the
+  // plural tolerance applies: "Project Managers" carries "manager".
   for (const tok of phrase.split(" ").filter(Boolean)) {
-    if (SENIORITY_TOKENS.has(tok) && !containsPhrase(titleHay, tok)) return false
+    if (SENIORITY_TOKENS.has(tok) && !containsPhraseInTitle(titleHay, tok)) return false
   }
 
-  // The pair as a phrase, in the title or the description.
-  if (!containsPhrase(fullHaystack(job), phrase)) return false
+  // The pair as a phrase: exact anywhere in title or description, OR pluralised
+  // in the title. An exact title hit is already covered by the first arm, since
+  // the title is part of the full haystack, so the second arm adds exactly one
+  // thing: a plural head noun in the title.
+  if (!containsPhrase(fullHaystack(job), phrase) && !containsPhraseInTitle(titleHay, phrase)) return false
 
   if (!city) return true
   return containsPhrase(norm(job.location?.name), norm(city))
