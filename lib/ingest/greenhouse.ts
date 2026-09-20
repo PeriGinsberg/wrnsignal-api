@@ -104,39 +104,114 @@ const SENIORITY_TOKENS = new Set([
 ])
 
 /**
- * THE LOCAL PREDICATE, SPLIT BY TOKEN KIND.
+ * THE LOCAL PREDICATE: WHOLE-WORD PHRASE, PLUS A TITLE CONSTRAINT ON SENIORITY.
  *
- *   seniority token -> must appear in the TITLE
- *   any other token -> may appear in the TITLE OR DESCRIPTION
+ *   the pair, as a PHRASE -> must appear in the TITLE OR DESCRIPTION,
+ *                            contiguous, in order, on whole-word boundaries
+ *   each seniority token   -> must ALSO appear in the TITLE, as a whole word
  *
- * WIDENED FROM TITLE-ONLY, deliberately, and it trades precision for recall.
- * Title-only found 40% of what this finds. It also pulls in postings that
- * merely MENTION the term -- "Academy Senior Recruiter" matched "analyst"
- * because the body says so -- and that is accepted: this is a recall filter
- * feeding JobFit, which does the real relevance work. A posting that never
- * reaches the scorer cannot be scored.
+ * TWO BUGS THIS REPLACES, both measured on the 6,026 stored prod postings.
  *
- * Substring, not word-boundary: "data" matches "Database". Same bare-.includes()
- * weakness the JobFit CAPABILITY_RULES carry, and widening the haystack to the
- * whole description makes it bite harder than it did on titles alone. Written
- * in one place so it can be tightened in one place.
+ * 1. SUBSTRING MATCHING. The old predicate used bare .includes(), so a token
+ *    matched inside any longer word. "ip associate" matched 2,555 postings and
+ *    only 43 of them on the title: "ip" was landing inside multIPle, ownerSHIP,
+ *    relationSHIPs, shIPping, leaderSHIP and particIPates, while "associate"
+ *    landed inside the boilerplate "working conditions associated with this
+ *    job". 2,537 of the 2,555 had a token that never appeared as a whole word
+ *    anywhere in the posting. Two accidental substrings in unrelated prose are
+ *    not a match.
+ *
+ * 2. SCATTERED TOKENS. Each token was checked independently, so a multi-word
+ *    pair matched if its words appeared ANYWHERE, however far apart.
+ *    "process engineering" matched 1,950 postings and exactly ONE on the title,
+ *    because "during the interview process" plus "our engineering team" appears
+ *    in a large share of tech descriptions. Requiring the phrase is what makes
+ *    a two-word pair mean the two-word thing.
+ *
+ * WHOLE-WORD IS CHEAP HERE because norm() has already reduced the text to
+ * lowercase alphanumeric tokens separated by single spaces. Padding both sides
+ * with a space turns " phrase " into an exact word-boundary test with no regex
+ * and nothing to escape.
+ *
+ * STILL A RECALL FILTER, NOT A RELEVANCE JUDGEMENT. The phrase may appear in
+ * the description rather than the title, so a posting that merely discusses the
+ * role still comes through. That is deliberate and unchanged: JobFit does the
+ * real relevance work, and a posting that never reaches the scorer cannot be
+ * scored. What changed is that the phrase now has to actually be there.
+ *
+ * THE SENIORITY RULE IS UNCHANGED and remains a separate, additional test.
+ * "manager" in a pair still has to be in the title, so a Coordinator posting
+ * whose body mentions a project manager is still rejected.
  */
-export function matches(job: GhJob, title: string, city: string | null): boolean {
-  const titleHay = norm(job.title)
-  // Built only if a domain token needs it. Flattening a 20 KB description for
-  // a pair that is nothing but seniority words would be pure waste.
-  let fullHay: string | null = null
+/**
+ * norm(title + description) per job, memoized for the life of the sweep.
+ *
+ * Flattening a 20 KB description is the expensive part of matching, and a
+ * cached board is matched against EVERY pair in the sweep: at 33 pairs that is
+ * the same HTML stripped 33 times per job for an identical result. Keyed on the
+ * job object itself and held weakly, so it dies with the cached board rather
+ * than growing for the life of the process.
+ */
+const HAYSTACKS = new WeakMap<object, string>()
 
-  for (const tok of norm(title).split(" ").filter(Boolean)) {
-    if (SENIORITY_TOKENS.has(tok)) {
-      if (!titleHay.includes(tok)) return false
-    } else {
-      if (fullHay === null) fullHay = norm(job.title + " " + plainText((job as any).content))
-      if (!fullHay.includes(tok)) return false
-    }
+function fullHaystack(job: GhJob): string {
+  const hit = HAYSTACKS.get(job as unknown as object)
+  if (hit !== undefined) return hit
+  const built = norm(job.title + " " + plainText((job as any).content))
+  HAYSTACKS.set(job as unknown as object, built)
+  return built
+}
+
+/**
+ * Whole-word containment on already-normalized text.
+ *
+ * `needle` may be several words; it then has to appear contiguously and in
+ * order. Both sides are padded so the first and last words are bounded too,
+ * which is what stops "ip" matching inside "ownership".
+ *
+ * TRAILING-S TOLERANCE, on the LAST word only. "attorney" matches "attorneys"
+ * and "project manager" matches "project managers", because a plural head noun
+ * is the same role and a title like "Staff Attorneys" should not be invisible.
+ *
+ * Only the last word, because that is where English puts the plural in a job
+ * title: "project managers", not "projects manager". Tolerating an s on every
+ * word would let "operations" match "operation" and widen the predicate in
+ * directions nobody asked for.
+ *
+ * It is one-directional: the HAYSTACK may carry the extra s, never the needle.
+ * A pair written as "attorneys" still has to find "attorneys".
+ *
+ * MEASURED COST, recorded because it is not free: on the prod corpus every
+ * posting this recovers has the plural in the DESCRIPTION, not the title
+ * ("our attorneys", "work with project managers"). It therefore buys back
+ * exactly the scattered-mention noise the phrase fix removed. Kept because a
+ * pluralised TITLE is a real shape that would otherwise be missed, but the
+ * title-vs-description split is where to look first if the pair ever looks
+ * inflated again.
+ */
+export function containsPhrase(hay: string, needle: string): boolean {
+  if (needle === "") return false
+  const padded = " " + hay + " "
+  return padded.includes(" " + needle + " ") || padded.includes(" " + needle + "s ")
+}
+
+export function matches(job: GhJob, title: string, city: string | null): boolean {
+  const phrase = norm(title)
+  if (phrase === "") return false
+
+  const titleHay = norm(job.title)
+
+  // Seniority first: it reads the title only, so it is cheap, and failing here
+  // avoids flattening a 20 KB description to learn nothing.
+  for (const tok of phrase.split(" ").filter(Boolean)) {
+    if (SENIORITY_TOKENS.has(tok) && !containsPhrase(titleHay, tok)) return false
   }
+
+  // The pair as a phrase, in the title or the description.
+  if (!containsPhrase(fullHaystack(job), phrase)) return false
+
   if (!city) return true
-  return norm(job.location?.name).includes(norm(city))
+  return containsPhrase(norm(job.location?.name), norm(city))
 }
 
 /** location "New York, NY" -> the part worth matching on. */
