@@ -244,6 +244,7 @@ export default function CoachingHubPage() {
             but a coach asking for something is still the more urgent thing on
             the page. Renders nothing at all unless a proof project exists. */}
         <ProofProjectEntry />
+        <WorkbooksEntry />
         <MyPlanSection
           groups={groups}
           loading={loading}
@@ -354,7 +355,91 @@ const coachActionRequiredNotes: ActionProvider = {
     ),
 }
 
-const ACTION_PROVIDERS: ActionProvider[] = [unreviewedSourcedJobs, coachActionRequiredNotes]
+// Provider: interview workbooks the coach shared or sent back that the client
+// has not opened since. Opening the workbook stamps the send (opened_at), so the
+// item clears on the next load. Read-and-jump, like the sourced jobs.
+type MyWorkbook = {
+  id: string
+  company: string | null
+  role: string | null
+  coach_first_name: string | null
+  sends_to_client: number
+  last_to_client_at: string | null
+  last_to_client_opened_at: string | null
+}
+
+async function loadMyWorkbooks(token: string): Promise<MyWorkbook[]> {
+  const res = await fetch("/api/me/workbooks", { headers: { Authorization: `Bearer ${token}` } })
+  const j = await res.json().catch(() => ({}))
+  if (!res.ok || !j?.ok) throw new Error(j?.error || `Couldn't load workbooks (${res.status})`)
+  return j.workbooks || []
+}
+
+const workbooksFromCoach: ActionProvider = {
+  kind: "workbook",
+  load: async ({ token }) =>
+    (await loadMyWorkbooks(token))
+      .filter((w) => w.last_to_client_at && !w.last_to_client_opened_at)
+      .map((w) => {
+        const coach = w.coach_first_name || "Your coach"
+        return {
+          id: w.id,
+          kind: "workbook",
+          label: w.sends_to_client > 1 ? `${coach} sent your workbook back` : `${coach} shared an interview workbook`,
+          title: w.company || "Interview workbook",
+          subtitle: w.role || null,
+          note: null,
+          decision: null,
+          score: null,
+          href: `/dashboard/workbooks/${w.id}`,
+          sentAt: w.last_to_client_at,
+        }
+      }),
+}
+
+const ACTION_PROVIDERS: ActionProvider[] = [unreviewedSourcedJobs, coachActionRequiredNotes, workbooksFromCoach]
+
+// The client's way back into their workbooks, whether or not anything is new.
+// Renders nothing when there are none, like ProofProjectEntry.
+function WorkbooksEntry() {
+  const [workbooks, setWorkbooks] = useState<MyWorkbook[]>([])
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const token = await getToken()
+        if (!token) return
+        const list = await loadMyWorkbooks(token)
+        if (mounted) setWorkbooks(list)
+      } catch {
+        /* entry point only: Required Actions above reports a failed load */
+      }
+    })()
+    return () => { mounted = false }
+  }, [])
+
+  if (workbooks.length === 0) return null
+
+  return (
+    <section style={{ ...surfaceCard(S), padding: 24 }}>
+      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", color: S.text.muted, marginBottom: 16 }}>
+        Interview workbooks
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {workbooks.map((w) => (
+          <a key={w.id} href={`/dashboard/workbooks/${w.id}`}
+            style={{ display: "block", textDecoration: "none", padding: "14px 16px", borderRadius: 12, border: `1px solid ${S.borderSoft}` }}>
+            <span style={{ display: "block", fontSize: 15.5, color: S.text.primary, fontWeight: 700 }}>
+              {w.company || "Interview workbook"}
+              {w.role && <span style={{ color: S.text.secondary, fontWeight: 500 }}> · {w.role}</span>}
+            </span>
+            <span style={{ display: "block", fontSize: 13, color: S.text.muted, marginTop: 4 }}>Open your workbook →</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  )
+}
 
 function RequiredActionsSection({ groups }: { groups: PlanGroup[] }) {
   const [actions, setActions] = useState<RequiredAction[]>([])

@@ -30,6 +30,7 @@ import { DashboardView } from "./dashboard/DashboardView"
 import { EngagementsTab } from "./EngagementsTab"
 import { LibraryTab } from "./LibraryTab"
 import { HistoryTab } from "./HistoryTab"
+import { WorkbooksTab } from "./WorkbooksTab"
 import { JobDetailPanel, type PanelSection } from "./JobDetailPanel"
 import { describeClientStatus } from "@/lib/coachRecommendations"
 
@@ -39,7 +40,7 @@ import { describeClientStatus } from "@/lib/coachRecommendations"
 // retained (data is preserved; only the surface is gone).
 // "engagements" added for the attached-package snapshots (Client Engagement UI).
 // "history" added for the read-only event timeline (Client Event Log UI).
-type Tab = "dashboard" | "tracker" | "source" | "lanes" | "notes" | "analysis" | "engagements" | "library" | "history"
+type Tab = "dashboard" | "tracker" | "source" | "lanes" | "notes" | "analysis" | "engagements" | "workbooks" | "library" | "history"
 
 // Status filter buckets exposed to Job Tracker tab via URL ?status= param
 // or in-app tile click. "all" = no filter.
@@ -633,6 +634,7 @@ export default function CoachClientPage() {
     { id: "notes", label: "Notes" },
     { id: "analysis", label: "Profile & Personas" },
     { id: "engagements", label: "Engagements" },
+    { id: "workbooks", label: "Workbooks" },
     { id: "library", label: "Library" },
     { id: "history", label: "History" },
   ]
@@ -1939,6 +1941,14 @@ export default function CoachClientPage() {
       {tab === "engagements" && (
         <EngagementsTab
           coachClientId={coachClientId}
+          clientName={clientProfile?.name || clientProfile?.email || "this client"}
+        />
+      )}
+
+      {/* Workbooks — interview workbooks; its content area uses the workbook style */}
+      {tab === "workbooks" && (
+        <WorkbooksTab
+          clientId={clientId}
           clientName={clientProfile?.name || clientProfile?.email || "this client"}
         />
       )}

@@ -152,7 +152,7 @@ export async function GET(req: NextRequest) {
     // Active scope only (open + not soft-deleted action items).
     let q = supabase
       .from("coach_client_notes")
-      .select("id, body, priority, created_at, client_profile_id, coach_client_id, coach_profile_id")
+      .select("id, body, priority, created_at, client_profile_id, coach_client_id, coach_profile_id, link_tab")
       .in("coach_client_id", finalSet)
       .eq("type", "action_item")
       .is("completed_at", null)
@@ -252,6 +252,9 @@ export async function GET(req: NextRequest) {
           client_email: email,
           author_name: authorNameById.get(n.coach_profile_id as string) ?? null,
           is_self: n.coach_profile_id === coachProfileId,
+          // Which client-page tab the row opens (e.g. "workbooks" for a
+          // workbook sent for review). Null for coach-written items.
+          link_tab: (n.link_tab as string | null) ?? null,
         }
       })
       .sort((a, b) => {

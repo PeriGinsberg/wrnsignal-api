@@ -1,0 +1,370 @@
+{
+  "schema_version": 1,
+  "slug": "skyhawks-le-coordinator",
+  "client": { "first_name": "Ryan", "full_name": "Ryan Hecht" },
+  "interview": {
+    "company": "College Park Skyhawks",
+    "role": "Live Entertainment & Production Coordinator",
+    "date": null,
+    "time": null,
+    "interviewer_name": null,
+    "interviewer_title": null,
+    "location": null
+  },
+  "coach": { "first_name": "Peri" },
+  "block_types_note": "text | heading | list | callout | coach_note | big_quote | field | word_track | pick | star | scenario | coach_only. coach_only blocks never render for the client.",
+  "sections": [
+    {
+      "id": "job-decoded",
+      "number": 1,
+      "title": "The Job, Decoded",
+      "blocks": [
+        { "type": "text", "body": "Job descriptions are written in company language. Here's what this one actually means." },
+        { "type": "callout", "tone": "paleblue", "title": "What the job is", "body": "You'd be the person who makes sure everything that isn't basketball goes right on game day, and at events outside the arena. You report to the Director of Live Entertainment & Production and help run the show." },
+        { "type": "heading", "text": "Part 1: Taking care of the talent" },
+        { "type": "text", "label": "What the posting says", "body": "Primary liaison for anthem, halftime, primetime, and specialty acts, from booking through game day." },
+        { "type": "text", "label": "What it means", "body": "You're the performers' go-to person. You book them, tell them when to show up, get them parked and credentialed, make sure their paperwork is signed, run the green room, and get them on stage on time." },
+        { "type": "field", "key": "decode.part1", "input": "long", "label": "Where I've done something like this" },
+        { "type": "heading", "text": "Part 2: Planning and running events" },
+        { "type": "text", "label": "What the posting says", "body": "Lead event coordination through timelines, checklists, and run-of-show documents; point of contact for offsite appearances; maintain the internal database." },
+        { "type": "text", "label": "What it means", "body": "You build the plan, not just follow it. You write the minute-by-minute schedule for the night, keep track of every booking, and run appearances outside the arena, including mascots." },
+        { "type": "field", "key": "decode.part2", "input": "long", "label": "Where I've done something like this" },
+        { "type": "heading", "text": "Part 3: Keeping things running behind the scenes" },
+        { "type": "text", "label": "What the posting says", "body": "Support inventory of giveaways, props, and equipment; assist with facilities; flexible team resource." },
+        { "type": "text", "label": "What it means", "body": "You keep track of the stuff (giveaways, props, equipment) across the arena, offices, and storage, and you jump in wherever the team needs help." },
+        { "type": "field", "key": "decode.part3", "input": "long", "label": "Where I've done something like this" },
+        { "type": "text", "label": "What they require", "body": "Talent management and event production experience, highly organized, strong communication, multitasking in a fast-paced environment, and Microsoft Word, Excel, and Outlook." },
+        { "type": "text", "label": "The reality", "body": "Nights, weekends, holidays, able to lift 50+ pounds, and on your feet for long stretches." },
+        { "type": "callout", "tone": "peach", "title": "The one line that matters most", "body": "\"Lead event coordination.\" This job is about owning the plan. Everything you say should show you're ready to do that." }
+      ]
+    },
+    {
+      "id": "hook",
+      "number": 2,
+      "title": "What Will They Remember You For?",
+      "blocks": [
+        { "type": "text", "size": "lead", "body": "Picture this: you're the 7th interview of the day." },
+        { "type": "text", "size": "lead", "body": "Assume every candidate they picked looks good on paper. They're qualified. They've worked games. They love sports. They're \"hardworking\" and \"passionate.\"" },
+        { "type": "text", "size": "lead", "body": "So when the hiring team sits down at the end of the day to compare notes, why are they going to remember you?" },
+        { "type": "coach_note", "body": "Not your resume. Not a strength. Something uniquely you." },
+        { "type": "big_quote", "text": "\"Oh yeah, Ryan. The guy who ______.\"" },
+        { "type": "heading", "text": "The test" },
+        { "type": "callout", "tone": "paleblue", "body": "Fill in the blank: \"Oh yeah, Ryan. The guy who ______.\" If another candidate could fill in that same blank, it's not your hook yet. Keep digging." },
+        { "type": "heading", "text": "What a hook is not" },
+        { "type": "list", "style": "bullets", "items": ["A resume line (\"worked for the Braves\")", "A strength (\"I'm really organized\")", "A job title or a degree", "Something you say about yourself that anyone could say"] },
+        { "type": "heading", "text": "What a hook sounds like" },
+        { "type": "list", "style": "quotes", "items": ["One client is an identical triplet.", "Another's family runs a huge dog rescue.", "Another has been to Antarctica."] },
+        { "type": "text", "body": "None of those are about work. All of them are impossible to forget." },
+        { "type": "heading", "text": "Find yours" },
+        { "type": "coach_note", "body": "Answer these fast. Don't filter." },
+        { "type": "field", "key": "hook.q1", "input": "long", "number": 1, "label": "What's something about your family that surprises people?" },
+        { "type": "field", "key": "hook.q2", "input": "long", "number": 2, "label": "Where have you been that most people your age haven't?" },
+        { "type": "field", "key": "hook.q3", "input": "long", "number": 3, "label": "What have you done that nobody else you know has done?" },
+        { "type": "field", "key": "hook.q4", "input": "long", "number": 4, "label": "What do people always ask you about once they find out?" },
+        { "type": "field", "key": "hook.q5", "input": "long", "number": 5, "label": "What's a story your friends make you tell?" },
+        { "type": "heading", "text": "Where your hook goes" },
+        { "type": "text", "body": "Plant it in the Present part of your Tell Me About Yourself. If it fits, bring it back once more, in a story or when you close. Once or twice is enough. They'll remember it." },
+        { "type": "field", "key": "hook.final", "input": "short", "style": "hook", "label": "My hook", "prefix": "Oh yeah, Ryan. The guy who", "placeholder": "Finish the sentence" }
+      ]
+    },
+    {
+      "id": "tmay",
+      "number": 3,
+      "title": "Tell Me About Yourself",
+      "blocks": [
+        { "type": "text", "body": "This is almost always the first question. It sets the tone for the whole interview. It is not your resume out loud. It's a 60 to 90 second answer that shows who you are and why you're in that chair." },
+        { "type": "heading", "text": "The framework: Present, Past, Future" },
+        { "type": "list", "style": "numbers", "items": [
+          "PRESENT: Who you are right now. Where you are today: your degree, your current roles. This is also the place for your hook. A little personal context makes you relatable and memorable.",
+          "PAST: What prepared you for this role. Pick one or two experiences, not everything. Choose moments where you built the skills this job needs. Leave the rest for later questions.",
+          "FUTURE: What you're looking for now, and where it leads. What excites you about this opportunity and how it fits where you're headed."
+        ] },
+        { "type": "callout", "tone": "paleblue", "title": "Then close with this line", "body": "\"That was a really quick summary. If there is anything in particular on my resume you would like me to dive into, please let me know.\"" },
+        { "type": "text", "body": "That line tells them you didn't skip anything, you're ready to talk about all of it, and it lets them choose what comes next." },
+        { "type": "heading", "text": "Four rules" },
+        { "type": "list", "style": "bullets", "items": [
+          "Add a personal touch. Your hook goes here.",
+          "Keep it relevant. Only the highlights that match this job.",
+          "Practice, but don't memorize. Familiar, not robotic.",
+          "Be concise. 60 to 90 seconds."
+        ] },
+        { "type": "heading", "text": "Build yours" },
+        { "type": "field", "key": "tmay.present", "input": "long", "label": "PRESENT: who I am now, plus my hook" },
+        { "type": "coach_note", "body": "Keep Past to two sentences. Don't walk through your jobs. Lead with the big picture: you've worked game days in five different sports (basketball, baseball, soccer, hockey, and indoor football). Your second sentence says what that range taught you or proves about you. The details can wait for later questions." },
+        { "type": "field", "key": "tmay.past", "input": "long", "label": "PAST: two sentences" },
+        { "type": "coach_note", "body": "Start with what you're looking for in your next step. Connect it to where you want your career to go. Done right, this answers \"Why this role?\" before they ever ask it." },
+        { "type": "word_track", "label": "Suggested word track (make it sound like you)", "body": "\"I've loved every game day I've worked so far. But when I look back, most of it has been executing someone else's plan. Now I want to own the plan. I want to keep growing inside an NBA organization, take on more responsibility, and be the person who's accountable when the night comes together. Long term, I see myself ______, and this is the next step toward that.\"" },
+        { "type": "word_track", "label": "Shorter version, if your answer is running long", "body": "\"I've loved my game day experience so far, but it's been about executing the plan, not owning it. I want to keep growing inside an NBA organization and take on real accountability for how the night goes.\"" },
+        { "type": "pick", "key": "tmay.longterm_pick", "label": "Long term, I see myself...", "help": "Pick the one that's actually true for you. If you can't picture yourself doing it, the interviewer won't either.", "options": [
+          "...running game presentation for an NBA team.",
+          "...leading live entertainment and production for a team or arena.",
+          "...leading the fan experience side of a pro team.",
+          "...in talent and event management in sports.",
+          "...in community and partnership events for a pro team."
+        ], "allow_other": true },
+        { "type": "field", "key": "tmay.future", "input": "long", "label": "FUTURE: in my own words" },
+        { "type": "callout", "tone": "peach", "title": "Close", "body": "\"That was a really quick summary. If there is anything in particular on my resume you would like me to dive into, please let me know.\"" },
+        { "type": "field", "key": "tmay.time", "input": "short", "label": "Time it. Say it out loud and record yourself. My time:" }
+      ]
+    },
+    {
+      "id": "stories",
+      "number": 4,
+      "title": "Your Stories",
+      "blocks": [
+        { "type": "text", "body": "Behavioral questions start with \"Tell me about a time when...\" or \"Give me an example of...\" They aren't trick questions. Your past behavior shows them how you'll handle this job." },
+        { "type": "heading", "text": "Think through every behavioral question in 3 steps" },
+        { "type": "list", "style": "numbers", "items": [
+          "Identify the skill they're testing. Behind every question is a skill: communication, staying calm, organization, teamwork.",
+          "Choose a relevant story. It doesn't have to be dramatic. It has to be real, specific, and relevant. Pick one where something changed because of what you did.",
+          "Use STAR to tell it."
+        ] },
+        { "type": "heading", "text": "STAR" },
+        { "type": "list", "style": "bullets", "items": [
+          "Situation: Set the stage. What was happening? Who was involved?",
+          "Task: What was your responsibility or the challenge?",
+          "Action: What did you do? Walk through your steps.",
+          "Result: What happened in the end? What did you learn or achieve?"
+        ] },
+        { "type": "callout", "tone": "peach", "title": "Bonus", "body": "End with a short reflection. \"That experience taught me how important it is to...\" It shows maturity." },
+        { "type": "text", "body": "Keep it under 90 seconds. Know the beats of your story, not a script." },
+        { "type": "heading", "text": "What to avoid" },
+        { "type": "list", "style": "bullets", "items": [
+          "Being vague (\"there was this one time... I think...\")",
+          "Saying \"we\" when they need to hear \"I\"",
+          "Skipping the result",
+          "Getting lost in details and rambling",
+          "Saying \"I've never had that experience\" without offering something related"
+        ] },
+        { "type": "heading", "text": "Your stories for this job" },
+        { "type": "text", "body": "Each question below comes from what this job actually asks for. Pick a story for each. One story can cover more than one question." },
+        { "type": "star", "key": "star.contact", "number": 1, "title": "Being the main point of contact", "question": "Tell me about a time you were responsible for taking care of someone important, like a VIP, a performer, or a partner.", "skill": "Communication, reliability, follow-through." },
+        { "type": "star", "key": "star.live", "number": 2, "title": "When something went wrong live", "question": "Tell me about a time something went wrong during an event and you had to fix it on the spot.", "skill": "Staying calm, thinking fast." },
+        { "type": "star", "key": "star.plan", "number": 3, "title": "Owning the plan", "question": "Tell me about a time you planned something from start to finish.", "skill": "Organization, ownership. This is the most important one for this job." },
+        { "type": "star", "key": "star.juggle", "number": 4, "title": "Juggling a lot at once", "question": "Tell me about a time you had several things due at once. How did you decide what came first?", "skill": "Prioritizing, working under deadlines." },
+        { "type": "star", "key": "star.detail", "number": 5, "title": "Details that mattered", "question": "Tell me about a time your attention to detail prevented a problem.", "skill": "Being detail oriented." },
+        { "type": "star", "key": "star.team", "number": 6, "title": "Working with a boss or team", "question": "Tell me about a time you had to work closely with a supervisor or team to pull something off.", "skill": "Teamwork, taking direction." },
+        { "type": "star", "key": "star.difficult", "number": 7, "title": "Dealing with difficult people", "question": "Tell me about a time you had to work with someone who was difficult or demanding.", "skill": "Patience, professionalism, keeping things on track." }
+      ]
+    },
+    {
+      "id": "hr",
+      "number": 5,
+      "title": "HR Questions",
+      "blocks": [
+        { "type": "heading", "text": "1. What are your greatest strengths?" },
+        { "type": "text", "body": "This is your chance to show you know yourself and what you bring." },
+        { "type": "list", "style": "bullets", "title": "A strong answer", "items": [
+          "Names one or two strengths that matter for this job",
+          "Explains why they matter at work",
+          "Includes a short, specific story that shows the strength in action",
+          "Ends by connecting it to the role"
+        ] },
+        { "type": "list", "style": "bullets", "title": "What this job description says they're looking for", "items": [
+          "Detail oriented", "Highly organized", "Resourceful", "Able to prioritize tasks", "Hits tight deadlines",
+          "Can multitask in a fast-paced environment", "Strong interpersonal, written, and verbal communication",
+          "A quick learner", "Passionate about creating memorable experiences for guests", "Committed to making the team better"
+        ] },
+        { "type": "text", "body": "Circle the one or two that are truly you and that you can back up with a story." },
+        { "type": "coach_note", "body": "Feel free to offer a strength that isn't in the posting if it sets you apart, makes you memorable, and makes you an even better fit for the role." },
+        { "type": "field", "key": "hr.strength", "input": "short", "label": "My strength(s)" },
+        { "type": "field", "key": "hr.strength_why", "input": "long", "label": "Why it matters in this job" },
+        { "type": "field", "key": "hr.strength_proof", "input": "long", "label": "My proof story" },
+
+        { "type": "heading", "text": "2. What is your greatest weakness?" },
+        { "type": "text", "body": "Nobody expects you to be perfect. They're looking for self-awareness, honesty, and a willingness to grow. This question is less about the weakness and more about how you handle it." },
+        { "type": "list", "style": "bullets", "title": "A strong answer", "items": [
+          "Shares a real weakness, without disqualifying yourself",
+          "Explains how it has shown up",
+          "Describes what you've done to work on it",
+          "Shows you've improved and are still growing"
+        ] },
+        { "type": "callout", "tone": "peach", "title": "Important", "body": "Avoid fake weaknesses like \"I care too much\" or \"I'm a perfectionist.\" Pick something real, but not a core requirement of this job. For this role, that rules out organization, attention to detail, communication, and handling a lot at once." },
+        { "type": "field", "key": "hr.weakness", "input": "short", "label": "My weakness" },
+        { "type": "field", "key": "hr.weakness_shown", "input": "long", "label": "How it has shown up" },
+        { "type": "field", "key": "hr.weakness_work", "input": "long", "label": "What I've done about it" },
+        { "type": "field", "key": "hr.weakness_now", "input": "long", "label": "Where I am now" },
+
+        { "type": "heading", "text": "3. Where do you see yourself in five years?" },
+        { "type": "text", "body": "You don't need a detailed five-year plan. They want to see direction, intention, and how this role fits your bigger goals. Think in terms of the skills, environments, and impact you want, not just a job title." },
+        { "type": "list", "style": "numbers", "items": [
+          "Acknowledge where you are in your journey.",
+          "Highlight the themes or interests that matter to you.",
+          "Connect your answer to this opportunity."
+        ] },
+        { "type": "coach_note", "body": "This should match the long-term goal you picked in your Tell Me About Yourself." },
+        { "type": "field", "key": "hr.5yr_now", "input": "long", "label": "Where I am now" },
+        { "type": "field", "key": "hr.5yr_matters", "input": "long", "label": "What matters to me" },
+        { "type": "field", "key": "hr.5yr_role", "input": "long", "label": "How this role gets me there" },
+
+        { "type": "heading", "text": "4. What are your compensation requirements?" },
+        { "type": "list", "style": "numbers", "title": "Before the interview", "items": [
+          "Check the posting. If it lists pay, you already know the range.",
+          "Research online. Look up what similar roles pay so you know if an offer is fair."
+        ] },
+        { "type": "list", "style": "bullets", "title": "When they ask", "items": [
+          "If the posting lists pay: \"I'm comfortable with the range in the posting.\"",
+          "If it doesn't: \"Although I would want to be paid fairly based on the market, it's equally important to me to get this experience and grow with the organization.\""
+        ] },
+        { "type": "text", "body": "Then stop talking." },
+        { "type": "callout", "tone": "paleblue", "title": "What I found", "body": "This posting: no pay listed. Use the second answer.\n\nA similar Skyhawks job: a Seasonal Assistant, Game Operations role with the Skyhawks was posted at $16 to $22 an hour. The duties overlap with yours, including talent submissions for anthems and halftimes and stage managing games. (Source: ZipRecruiter posting)\n\nNational benchmark: Game Presentation Coordinator jobs average about $53,900 a year, with the middle range between $42,000 and $63,000. (Source: ZipRecruiter salary data, Sept. 2026)\n\nWhat this means for you: go in with realistic expectations. If they make an offer, you'll know whether it's fair." },
+
+        { "type": "heading", "text": "5. Why should we hire you?" },
+        { "type": "text", "body": "This is your final chance to advocate for yourself. They want clarity and confidence, not arrogance. Bring your whole interview full circle." },
+        { "type": "list", "style": "numbers", "items": [
+          "Show you understand the role. Reference what they're looking for in the job description.",
+          "Highlight your most relevant strengths. Connect what excites you about the job to what you're good at.",
+          "Share an example. Something specific you've done that proves you're ready.",
+          "Express enthusiasm. What you're genuinely excited about and what you hope to contribute."
+        ] },
+        { "type": "text", "body": "Be confident but humble. Focus on what you bring them, not just what you get." },
+        { "type": "field", "key": "hr.hire_looking", "input": "long", "label": "What they're looking for" },
+        { "type": "field", "key": "hr.hire_strengths", "input": "long", "label": "My most relevant strengths" },
+        { "type": "field", "key": "hr.hire_proof", "input": "long", "label": "My proof" },
+        { "type": "field", "key": "hr.hire_excites", "input": "long", "label": "What excites me" }
+      ]
+    },
+    {
+      "id": "hard",
+      "number": 6,
+      "title": "The Hard Questions",
+      "blocks": [
+        { "type": "text", "body": "These are the questions that could trip you up for this specific job. None of them are traps. Each one is a chance to show you've thought it through." },
+        { "type": "heading", "text": "1. \"Do you have experience managing talent?\"" },
+        { "type": "text", "body": "The posting lists this as a requirement. Never answer with \"no\" and stop. Offer the closest real experience you have, then show how it transfers. Ask yourself: when have I been the point of contact for someone who needed to be taken care of?" },
+        { "type": "field", "key": "hard.talent_closest", "input": "long", "label": "Closest experience I have" },
+        { "type": "field", "key": "hard.talent_did", "input": "long", "label": "What I actually did" },
+        { "type": "field", "key": "hard.talent_transfer", "input": "long", "label": "How it transfers to this job" },
+        { "type": "heading", "text": "2. \"Why leave guest experience for this?\"" },
+        { "type": "text", "body": "Frame it as growth, not escape. Never say anything negative about your current role. This connects to the Future part of your Tell Me About Yourself: you want to own the plan, not just execute it." },
+        { "type": "field", "key": "hard.why_gained", "input": "long", "label": "What I've gained in my current role" },
+        { "type": "field", "key": "hard.why_next", "input": "long", "label": "What I'm ready for next" },
+        { "type": "heading", "text": "3. \"How comfortable are you in Excel?\"" },
+        { "type": "text", "body": "Be honest about your level, then give a specific example of how you've used it. If it's light, say what you're doing to build it, and make sure that's true before your interview." },
+        { "type": "field", "key": "hard.excel_level", "input": "short", "label": "My honest level" },
+        { "type": "field", "key": "hard.excel_example", "input": "long", "label": "A specific time I used it" },
+        { "type": "field", "key": "hard.excel_building", "input": "long", "label": "What I'm doing to get stronger" },
+        { "type": "heading", "text": "4. \"This role is nights, weekends, and holidays, and it's seasonal. Are you okay with that?\"" },
+        { "type": "text", "body": "Answer clearly and confidently. You're already working these hours, so say so. Save your questions about what happens after the season for when it's your turn to ask." },
+        { "type": "field", "key": "hard.hours_answer", "input": "long", "label": "My answer" },
+        { "type": "field", "key": "hard.hours_proof", "input": "long", "label": "Proof I'm already doing it" },
+        { "type": "heading", "text": "5. \"You also work for the Braves. How would that work?\"" },
+        { "type": "text", "body": "Be upfront. Make it clear this role comes first. Know the dates: the Skyhawks' 2026-27 season runs from early November through late March." },
+        { "type": "field", "key": "hard.braves_answer", "input": "long", "label": "My answer" },
+        { "type": "coach_only", "body": "This role would also replace his Hawks Smile Maker job. Confirm his plan for both current jobs before the interview." }
+      ]
+    },
+    {
+      "id": "scenarios",
+      "number": 7,
+      "title": "Game-Day Scenarios",
+      "blocks": [
+        { "type": "text", "body": "This job is about making the night work, even when something goes wrong. They may ask \"What would you do if...\" These aren't STAR questions because they haven't happened yet. Use this approach instead." },
+        { "type": "list", "style": "numbers", "title": "How to answer a scenario", "items": [
+          "Stay calm. Take a breath. Show them you don't panic.",
+          "Fix it now. What's your first move to keep the night on track?",
+          "Communicate. Who do you tell? The Director, the talent, the production team?",
+          "Prevent it next time. What would you change so it doesn't happen again?"
+        ] },
+        { "type": "callout", "tone": "peach", "title": "Bonus", "body": "If you've handled something similar before, say so. \"Actually, something like this happened when I was at...\" turns a hypothetical into proof." },
+        { "type": "scenario", "key": "scn.anthem", "number": 1, "prompt": "Your anthem singer isn't here, and tip-off is in 20 minutes." },
+        { "type": "scenario", "key": "scn.music", "number": 2, "prompt": "The halftime act is on the court, and their music won't play." },
+        { "type": "scenario", "key": "scn.credential", "number": 3, "prompt": "A performer arrives, and their name isn't on the credential list." },
+        { "type": "scenario", "key": "scn.demand", "number": 4, "prompt": "A halftime performer tells you they won't go on until a demand is met." },
+        { "type": "scenario", "key": "scn.waiver", "number": 5, "prompt": "A performer is about to go on, and you realize their waiver was never signed." },
+        { "type": "scenario", "key": "scn.offsite", "number": 6, "prompt": "An offsite mascot appearance is running late, and you're needed back at the arena for game setup." }
+      ]
+    },
+    {
+      "id": "company",
+      "number": 8,
+      "title": "Know the Skyhawks",
+      "blocks": [
+        { "type": "callout", "tone": "peach", "body": "You're interviewing with the College Park Skyhawks, the NBA G League affiliate of the Atlanta Hawks. Not the Hawks. Know the difference, and use the right name every time." },
+        { "type": "list", "style": "bullets", "title": "The basics", "items": [
+          "Home court: Gateway Center Arena @ College Park. It seats 3,500 for basketball, and it's also home to the Atlanta Dream (WNBA).",
+          "2026-27 season: a 14-game Tip-Off Tournament, then a 36-game regular season.",
+          "Opening night: Friday, Nov. 6, at home against Raptors 905.",
+          "Season ends: March 27 against the Cleveland Charge.",
+          "Home games: 24, all broadcast on Peachtree Sports Network.",
+          "Themed nights: last season included Education Day and a Holiday Game, each with a sponsor.",
+          "They lean into entertainment: their 2025-26 schedule release featured Yung Joc and Manni Supreme."
+        ] },
+        { "type": "list", "style": "numbers", "title": "Your homework", "items": [
+          "Follow the Skyhawks on social media. Scroll back through last season's game nights.",
+          "Find one promotion, halftime act, or fan moment you liked. Know why you liked it.",
+          "Look at this season's schedule. Notice the mix: weeknights, weekend afternoons, and an 11 a.m. weekday game.",
+          "Find out who's interviewing you, and connect with them. Look them up on LinkedIn. The day before your interview, send a connection request with a short note: \"Hi [Name], looking forward to speaking with you tomorrow about the Live Entertainment & Production Coordinator role. Best, Ryan\"",
+          "If you can, visit Gateway Center Arena before your interview."
+        ] },
+        { "type": "coach_note", "body": "Why the LinkedIn request: your name pops up on their screen the day before. It shows you're doing your research, you're preparing, and you want this. Be memorable before you ever walk in the room." },
+        { "type": "field", "key": "co.moment", "input": "long", "label": "A Skyhawks moment I noticed" },
+        { "type": "field", "key": "co.why", "input": "long", "label": "Why it stood out to me" },
+        { "type": "field", "key": "co.learn", "input": "long", "label": "Something I'd want to learn more about" },
+        { "type": "field", "key": "co.interviewer", "input": "short", "label": "Who's interviewing me and their role" }
+      ]
+    },
+    {
+      "id": "questions",
+      "number": 9,
+      "title": "Your Questions for Them",
+      "blocks": [
+        { "type": "text", "body": "Your questions aren't about sounding smart. They're about finding out if this job is right for you." },
+        { "type": "list", "style": "numbers", "title": "The rules", "items": [
+          "Start with them. Your first question is always about the interviewer.",
+          "React before you move on. After they answer, respond to what they said before asking your next question.",
+          "Build one on the spot. At least one question should come from something they said during the interview."
+        ] },
+        { "type": "callout", "tone": "peach", "title": "Always ask first", "body": "\"What specifically brought you to the Skyhawks, and what keeps you here?\"" },
+        { "type": "list", "style": "bullets", "title": "About talent", "items": [
+          "\"Can you tell me a little more about how you manage talent? How far in advance do you book?\"",
+          "\"How do you decide which performers are the best fit for your fans?\"",
+          "\"What makes an appearance a real success in your eyes?\""
+        ] },
+        { "type": "list", "style": "bullets", "title": "About game days and the team", "items": [
+          "\"What does a home game day look like for this role, start to finish?\"",
+          "\"Can you tell me more about the team and who I'd be working alongside?\""
+        ] },
+        { "type": "list", "style": "bullets", "title": "About doing well here", "items": [
+          "\"How will I know I'm doing a good job along the way?\"",
+          "\"What would make you say at the end of the season, 'we made the right hire'?\""
+        ] },
+        { "type": "list", "style": "bullets", "title": "About what's next", "items": [
+          "\"Since this is a seasonal role, what happens after the season ends?\"",
+          "\"Where have people in this role gone from here?\""
+        ] },
+        { "type": "field", "key": "q.spot_said", "input": "long", "label": "My on-the-spot question: something they said" },
+        { "type": "field", "key": "q.spot_question", "input": "long", "label": "My question about it" },
+        { "type": "field", "key": "q.top1", "input": "short", "label": "My top three (after \"What brought you here\"): 1" },
+        { "type": "field", "key": "q.top2", "input": "short", "label": "2" },
+        { "type": "field", "key": "q.top3", "input": "short", "label": "3" }
+      ]
+    }
+  ],
+  "summary": {
+    "title": "Ryan, here's your game plan.",
+    "eyebrow": "READ THIS 1 HOUR BEFORE",
+    "blocks": [
+      { "type": "interview_details" },
+      { "type": "hook", "field": "hook.final", "prefix": "Oh yeah, Ryan. The guy who", "note": "Plant it in Present. Bring it back once if it fits." },
+      { "type": "tmay", "present": "tmay.present", "past": "tmay.past", "future": "tmay.future", "close": "\"That was a really quick summary. If there is anything in particular on my resume you would like me to dive into, please let me know.\"", "note": "60 to 90 seconds. Say it out loud once before you go in." },
+      { "type": "story_map", "title": "If they ask about...", "note": "Go to this story. Situation, Task, Action, Result. Under 90 seconds.", "stars": ["star.contact", "star.live", "star.plan", "star.juggle", "star.detail", "star.team", "star.difficult"] },
+      { "type": "quick_answers", "items": [
+        { "label": "STRENGTH", "field": "hr.strength" },
+        { "label": "WEAKNESS", "field": "hr.weakness" },
+        { "label": "5 YEARS", "field": "hr.5yr_role" },
+        { "label": "WHY HIRE ME", "field": "hr.hire_strengths" },
+        { "label": "PAY", "static": "\"Although I would want to be paid fairly based on the market, it's equally important to me to get this experience and grow with the organization.\" Then stop talking." }
+      ] },
+      { "type": "questions", "first": "\"What specifically brought you to the Skyhawks, and what keeps you here?\"", "fields": ["q.top1", "q.top2", "q.top3"], "note": "React to each answer before you ask the next one. Build one question on the spot from something they said." },
+      { "type": "checklist", "items": [
+        "LinkedIn connection sent to my interviewer yesterday",
+        "Said my Tell Me About Yourself out loud once",
+        "It's the Skyhawks, not the Hawks. Gateway Center Arena.",
+        "Know my hook and where it goes",
+        "Phone on silent"
+      ] },
+      { "type": "signoff", "text": "Now go get it.", "from": "Peri" }
+    ]
+  }
+}

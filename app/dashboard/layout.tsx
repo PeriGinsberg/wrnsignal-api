@@ -166,6 +166,16 @@ const LIGHT_ROUTES: string[] = [
                                     // converted descendant is listed by name.
 ]
 
+// Full-bleed routes: signed-in like every dashboard route, but rendered without
+// the nav shell because they carry their own header and navigation. The
+// interview workbook (spec: its own editorial style, left section nav, phone
+// bottom bar) is the only one.
+const BARE_ROUTES = ["/dashboard/workbooks/"]
+
+function isBareRoute(pathname: string): boolean {
+  return BARE_ROUTES.some((r) => pathname.startsWith(r))
+}
+
 function isLightRoute(pathname: string): boolean {
   return LIGHT_ROUTES.some((r) =>
     r.endsWith("/*")
@@ -983,6 +993,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navActiveInk = isD2C ? "#FFFFFF" : T.WRN_ORANGE
   const navActiveBg = isD2C ? "rgba(255,255,255,0.12)" : T.NAV_ACTIVE_BG
   const navActiveBorder = isD2C ? "rgba(255,255,255,0.16)" : T.NAV_ACTIVE_BORDER
+
+  // After the auth gates above: a bare route is still signed-in only.
+  if (isBareRoute(pathname)) return <>{children}</>
 
   return (
     <div style={{ minHeight: "100vh", background: useLight ? S.page : T.BG, display: "flex", flexDirection: "column" }}>

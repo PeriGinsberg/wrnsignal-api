@@ -30,6 +30,8 @@ export type CrossClientActionItem = {
   coach_client_id: string
   client_name: string | null
   client_email: string | null
+  // Client-page tab to open, when the item belongs to one (workbooks).
+  link_tab?: string | null
 }
 
 const PRIORITY_LABEL: Record<Priority, string> = {
@@ -198,7 +200,7 @@ export function CrossClientActionItemsList({
                 key={item.note_id}
                 onClick={() => {
                   const href = item.client_id
-                    ? `/dashboard/coach/clients/${item.client_id}`
+                    ? `/dashboard/coach/clients/${item.client_id}${item.link_tab ? `?tab=${encodeURIComponent(item.link_tab)}` : ""}`
                     : `/dashboard/coach/prospects/${item.coach_client_id}`
                   router.push(href)
                 }}
