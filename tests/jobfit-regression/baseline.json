@@ -20221,8 +20221,8 @@
     "schema_version": 2,
     "id": "synthetic-0410ah",
     "label": "[synthetic] 0410ah — Aiden Park / (no title)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Apply",
+    "score": 77,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -20240,14 +20240,6 @@
         "kind": "tool",
         "strength": 7,
         "label": "solidworks tool usage",
-        "requiredness": "supporting"
-      },
-      {
-        "id": "2a6018b8d339b03e",
-        "key": "analysis_reporting",
-        "kind": "execution",
-        "strength": 6,
-        "label": "analysis, reporting, and measurement work",
         "requiredness": "supporting"
       },
       {
@@ -20333,7 +20325,7 @@
         "id": "3d5bb0fbb5532b62",
         "key": "mechanical_engineering",
         "kind": "function",
-        "strength": 3,
+        "strength": 4,
         "label": "Mechanical Engineering"
       },
       {
@@ -20400,6 +20392,13 @@
         "label": "matlab tool usage"
       },
       {
+        "id": "bff28dfda2580dfe",
+        "key": "mechanical_engineering",
+        "kind": "function",
+        "strength": 10,
+        "label": "Mechanical Engineering"
+      },
+      {
         "id": "c3ce27c156e8f0dc",
         "key": "operations_execution",
         "kind": "execution",
@@ -20450,15 +20449,6 @@
       }
     ],
     "matches": [
-      {
-        "match_strength": "adjacent",
-        "weight": 74,
-        "coverageScore": 52,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "c3ce27c156e8f0dc"
-      },
       {
         "match_strength": "direct",
         "weight": 60,
@@ -20534,7 +20524,7 @@
       {
         "match_strength": "direct",
         "weight": 96,
-        "coverageScore": 77,
+        "coverageScore": 78,
         "match_kind": "function",
         "match_key": "mechanical_engineering",
         "job_unit_key": "mechanical_engineering",
@@ -20548,6 +20538,15 @@
         "match_key": "mechanical_engineering",
         "job_unit_key": "mechanical_engineering",
         "profile_unit_id": "56ed61da2cc9ea14"
+      },
+      {
+        "match_strength": "direct",
+        "weight": 99,
+        "coverageScore": 81,
+        "match_kind": "function",
+        "match_key": "mechanical_engineering",
+        "job_unit_key": "mechanical_engineering",
+        "profile_unit_id": "bff28dfda2580dfe"
       },
       {
         "match_strength": "direct",
@@ -20586,11 +20585,18 @@
         "profile_unit_id": "79573ec271264189"
       }
     ],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 99,
+        "match_strength": "direct",
+        "match_key": "mechanical_engineering"
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
-        "severity": "high",
+        "severity": "medium",
         "weight": 0
       },
       {
@@ -20612,7 +20618,6 @@
         "financeSubFamily": null,
         "function_tags": [
           "communications_pr",
-          "data_analytics_bi",
           "engineering_technical",
           "finance_corp"
         ],
@@ -20716,17 +20721,17 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -20734,8 +20739,8 @@
           "note": "8.399999999999999"
         }
       ],
-      "raw_score": 70,
-      "clamped_score": 55
+      "raw_score": 77,
+      "clamped_score": 77
     }
   },
   "synthetic-0410ai": {
@@ -27059,6 +27064,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "68488e68c3d775af",
+        "key": "mechanical_engineering",
+        "kind": "function",
+        "strength": 10,
+        "label": "Mechanical Engineering"
+      },
+      {
         "id": "7049d6030b92faf7",
         "key": "structural_engineering",
         "kind": "function",
@@ -27279,6 +27291,15 @@
         "match_key": "mechanical_engineering",
         "job_unit_key": "mechanical_engineering",
         "profile_unit_id": "357cbc310dd5d0db"
+      },
+      {
+        "match_strength": "direct",
+        "weight": 99,
+        "coverageScore": 81,
+        "match_kind": "function",
+        "match_key": "mechanical_engineering",
+        "job_unit_key": "mechanical_engineering",
+        "profile_unit_id": "68488e68c3d775af"
       },
       {
         "match_strength": "direct",
@@ -36315,14 +36336,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "2cca0afaca289053",
-        "key": "analysis_reporting",
-        "kind": "execution",
-        "strength": 6,
-        "label": "analysis, reporting, and measurement work",
-        "requiredness": "core"
-      },
-      {
         "id": "3cf0f54d7139714b",
         "key": "solidworks",
         "kind": "tool",
@@ -36460,15 +36473,6 @@
     "matches": [
       {
         "match_strength": "adjacent",
-        "weight": 82,
-        "coverageScore": 58,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "dab73236390882f2"
-      },
-      {
-        "match_strength": "adjacent",
         "weight": 76,
         "coverageScore": 54,
         "match_kind": "deliverable",
@@ -36496,7 +36500,7 @@
       },
       {
         "code": "RISK_MISSING_PROOF",
-        "severity": "high",
+        "severity": "medium",
         "weight": 0
       },
       {
@@ -36523,7 +36527,6 @@
         "financeSubFamily": null,
         "function_tags": [
           "communications_pr",
-          "data_analytics_bi",
           "engineering_technical",
           "finance_corp"
         ],
@@ -39472,6 +39475,20 @@
         "label": "Skilled Trades"
       },
       {
+        "id": "32384254a8a3fae9",
+        "key": "mechanical_engineering",
+        "kind": "function",
+        "strength": 9,
+        "label": "Mechanical Engineering"
+      },
+      {
+        "id": "48c53c46e944849d",
+        "key": "mechanical_engineering",
+        "kind": "function",
+        "strength": 10,
+        "label": "Mechanical Engineering"
+      },
+      {
         "id": "4910e61df58c35d2",
         "key": "operations_execution",
         "kind": "execution",
@@ -39519,6 +39536,13 @@
         "kind": "function",
         "strength": 7,
         "label": "Skilled Trades"
+      },
+      {
+        "id": "5eb8143d4c3ccb5c",
+        "key": "mechanical_engineering",
+        "kind": "function",
+        "strength": 10,
+        "label": "Mechanical Engineering"
       },
       {
         "id": "5ed136991ff54f69",

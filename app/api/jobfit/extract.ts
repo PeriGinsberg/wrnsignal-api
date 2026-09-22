@@ -264,7 +264,13 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     jobPhrases: [
       "dashboard",
       "reporting",
-      "analysis",
+      // Bare "analysis" fired core on an ME JD's "thermal analysis" (C003).
+      // Engineering analysis is not reporting work; "data analysis" below
+      // still matches a JD that has both.
+      {
+        phrase: "analysis",
+        negativeContext: ["thermal analysis", "structural analysis", "stress analysis", "failure analysis", "vibration analysis", "modal analysis", "finite element", "fea"],
+      },
       "data analysis",
       "data visualization",
       "metrics",
@@ -1329,7 +1335,9 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     label: "Mechanical Engineering",
     kind: "function" as EvidenceKind,
     functionTag: "engineering_technical" as FunctionTag,
-    profilePhrases: ["mechanical design", "thermodynamics", "fluid mechanics", "cad design", "manufacturing engineering", "tolerance analysis"],
+    // Work-evidence phrases added after C003: a BSME with CAD-led design, FEA,
+    // heat-exchanger design and ~100 pages of drawings produced no unit.
+    profilePhrases: ["mechanical design", "thermodynamics", "fluid mechanics", "cad design", "manufacturing engineering", "tolerance analysis", "engineering drawings", "finite element", "fea", "gd&t", "heat exchanger", "safety factor", "thermal simulation", "design loads"],
     jobPhrases: ["mechanical design", "thermodynamics", "fluid mechanics", "manufacturing engineering", "tolerance analysis", "mechanical engineering", "product design engineering"],
     adjacentKeys: [],
   },
