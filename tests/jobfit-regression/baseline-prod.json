@@ -15316,10 +15316,10 @@
         "requiredness": "core"
       },
       {
-        "id": "aa526c052e7d04a8",
+        "id": "7a70871562eeb0be",
         "key": "software_engineering",
         "kind": "function",
-        "strength": 5,
+        "strength": 7,
         "label": "Software Engineering",
         "requiredness": "core"
       },
@@ -31056,14 +31056,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "68c9ad6b27fd5b35",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 7,
-        "label": "Software Engineering",
-        "requiredness": "supporting"
-      },
-      {
         "id": "6a332fa4b5181fdb",
         "key": "word",
         "kind": "tool",
@@ -31563,8 +31555,7 @@
           "communications_pr",
           "content_social",
           "data_analytics_bi",
-          "operations_general",
-          "software_it"
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": true,
@@ -39731,9 +39722,9 @@
     "schema_version": 2,
     "id": "prod-1f6b7ce2-d900-4809-9711-10b2f357bab1",
     "label": "prod 1f6b7ce2 — Video Design Intern @ FIRST (2026-04-14)",
-    "decision": "Pass",
-    "score": 55,
-    "gateType": "force_pass",
+    "decision": "Apply",
+    "score": 84,
+    "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
       {
@@ -39751,14 +39742,6 @@
         "strength": 10,
         "label": "content and channel execution",
         "requiredness": "core"
-      },
-      {
-        "id": "aebe7c5f0fbb6283",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 5,
-        "label": "Software Engineering",
-        "requiredness": "supporting"
       },
       {
         "id": "d5b51316a6a38453",
@@ -40343,7 +40326,26 @@
         "profile_unit_id": "c93aad87d7cfbe90"
       }
     ],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 108,
+        "match_strength": "direct",
+        "match_key": "content_execution"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 99,
+        "match_strength": "direct",
+        "match_key": "visual_communication"
+      },
+      {
+        "code": "WHY_TOOL_PROOF",
+        "weight": 92,
+        "match_strength": "direct",
+        "match_key": "photoshop"
+      }
+    ],
     "risk_codes": [],
     "scalars": {
       "job": {
@@ -40363,8 +40365,7 @@
         ],
         "function_tags": [
           "content_social",
-          "creative_design",
-          "software_it"
+          "creative_design"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -40375,7 +40376,7 @@
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
-        "jobFamily": "IT_Software",
+        "jobFamily": "Other",
         "jobIndustry": null,
         "jobTitle": "Video Design Intern",
         "location": {
@@ -40484,12 +40485,12 @@
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Pass"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -40498,7 +40499,7 @@
         }
       ],
       "raw_score": 84,
-      "clamped_score": 55
+      "clamped_score": 84
     }
   },
   "prod-1fabb15b-4fd3-47f8-b841-99e4008c59ea": {
@@ -41676,14 +41677,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "c2e478e6d478605c",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 7,
-        "label": "Software Engineering",
-        "requiredness": "supporting"
-      },
-      {
         "id": "f24e09d3d3a6ded9",
         "key": "crm",
         "kind": "tool",
@@ -42486,8 +42479,7 @@
           "communications_pr",
           "data_analytics_bi",
           "growth_performance",
-          "sales_bd",
-          "software_it"
+          "sales_bd"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -102790,14 +102782,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "6c5721222f9ed67f",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 9,
-        "label": "Software Engineering",
-        "requiredness": "supporting"
-      },
-      {
         "id": "a519eebe5724d8b4",
         "key": "canva",
         "kind": "tool",
@@ -103128,8 +103112,7 @@
           "brand_marketing",
           "communications_pr",
           "content_social",
-          "creative_design",
-          "software_it"
+          "creative_design"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -132838,14 +132821,6 @@
         "strength": 5,
         "label": "salesforce tool usage",
         "requiredness": "core"
-      },
-      {
-        "id": "e9b99c515fe4641d",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 5,
-        "label": "Software Engineering",
-        "requiredness": "core"
       }
     ],
     "profile_evidence_units": [
@@ -133042,11 +133017,6 @@
         "weight": 0
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "medium",
         "weight": -4
@@ -133073,8 +133043,7 @@
         ],
         "function_tags": [
           "communications_pr",
-          "sales_bd",
-          "software_it"
+          "sales_bd"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -133085,7 +133054,7 @@
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
-        "jobFamily": "IT_Software",
+        "jobFamily": "Sales",
         "jobIndustry": null,
         "jobTitle": "Salesforce Life Sciences Functional Architect",
         "location": {
@@ -133622,14 +133591,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "35d5baa837906721",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 5,
-        "label": "Software Engineering",
-        "requiredness": "supporting"
-      },
-      {
         "id": "3907041036884afe",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -134050,8 +134011,7 @@
           "content_social",
           "data_analytics_bi",
           "operations_general",
-          "sales_bd",
-          "software_it"
+          "sales_bd"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -141950,7 +141910,7 @@
     "id": "prod-673cd373-0047-4b8a-b001-1ab82eec568c",
     "label": "prod 673cd373 — Product Manager, Enterprise Digital Product Office @ Optum (2026-06-17)",
     "decision": "Review",
-    "score": 70,
+    "score": 61,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -141968,14 +141928,6 @@
         "kind": "function",
         "strength": 7,
         "label": "consumer, market, or user research",
-        "requiredness": "core"
-      },
-      {
-        "id": "a98f2b3442e5ab7b",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 9,
-        "label": "Software Engineering",
         "requiredness": "core"
       },
       {
@@ -142228,15 +142180,6 @@
         "profile_unit_id": "e48c363849633d84"
       },
       {
-        "match_strength": "direct",
-        "weight": 107,
-        "coverageScore": 84,
-        "match_kind": "function",
-        "match_key": "software_engineering",
-        "job_unit_key": "software_engineering",
-        "profile_unit_id": "68a30edd3421c1c6"
-      },
-      {
         "match_strength": "adjacent",
         "weight": 75,
         "coverageScore": 56,
@@ -142258,12 +142201,6 @@
         "weight": 104,
         "match_strength": "direct",
         "match_key": "analysis_reporting"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 107,
-        "match_strength": "direct",
-        "match_key": "software_engineering"
       },
       {
         "code": "WHY_EXECUTION_PROOF",
@@ -142294,8 +142231,7 @@
         "function_tags": [
           "consumer_insights_research",
           "data_analytics_bi",
-          "operations_general",
-          "software_it"
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -142393,8 +142329,8 @@
           "note": "0"
         }
       ],
-      "raw_score": 70,
-      "clamped_score": 70
+      "raw_score": 61,
+      "clamped_score": 61
     }
   },
   "prod-67db2a14-03a0-45fe-a1f6-db3f9646f25b": {
@@ -145287,14 +145223,6 @@
         "strength": 5,
         "label": "Chemical Engineering",
         "requiredness": "supporting"
-      },
-      {
-        "id": "ca540416a3a133be",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 5,
-        "label": "Software Engineering",
-        "requiredness": "supporting"
       }
     ],
     "profile_evidence_units": [
@@ -145417,8 +145345,7 @@
         "financeSubFamily": null,
         "flaggableTools": [],
         "function_tags": [
-          "engineering_technical",
-          "software_it"
+          "engineering_technical"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -151598,9 +151525,9 @@
     "schema_version": 2,
     "id": "prod-6f759e55-3a8f-4d0e-95f3-7feb0f0e0d20",
     "label": "prod 6f759e55 — Social Media Content Creator @ PETA (2026-06-14)",
-    "decision": "Pass",
-    "score": 55,
-    "gateType": "force_pass",
+    "decision": "Apply",
+    "score": 75,
+    "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
       {
@@ -151617,14 +151544,6 @@
         "kind": "function",
         "strength": 5,
         "label": "content and channel execution",
-        "requiredness": "core"
-      },
-      {
-        "id": "6712bf2adb27c813",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 5,
-        "label": "Software Engineering",
         "requiredness": "core"
       },
       {
@@ -151936,22 +151855,48 @@
         "profile_unit_id": "dc59ca1db487c207"
       }
     ],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+        "weight": 80,
+        "match_strength": "adjacent",
+        "match_key": "visual_communication"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 105,
+        "match_strength": "direct",
+        "match_key": "content_execution"
+      },
+      {
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 81,
+        "match_strength": "adjacent",
+        "match_key": "analysis_reporting"
+      },
+      {
+        "code": "WHY_TOOL_PROOF",
+        "weight": 100,
+        "match_strength": "direct",
+        "match_key": "illustrator"
+      },
+      {
+        "code": "WHY_TOOL_PROOF",
+        "weight": 100,
+        "match_strength": "direct",
+        "match_key": "photoshop"
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_FAMILY_MISMATCH",
-        "severity": "high",
-        "weight": -30
+        "severity": "medium",
+        "weight": -12
       },
       {
         "code": "RISK_HOURLY",
         "severity": "medium",
         "weight": -1.6
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -151988,8 +151933,7 @@
         "function_tags": [
           "content_social",
           "creative_design",
-          "data_analytics_bi",
-          "software_it"
+          "data_analytics_bi"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -152000,7 +151944,7 @@
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
-        "jobFamily": "IT_Software",
+        "jobFamily": "Analytics",
         "jobIndustry": null,
         "jobTitle": "Social Media Content Creator",
         "location": {
@@ -152086,17 +152030,17 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Pass"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Pass"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -152104,8 +152048,8 @@
           "note": "5.6"
         }
       ],
-      "raw_score": 57,
-      "clamped_score": 55
+      "raw_score": 75,
+      "clamped_score": 75
     }
   },
   "prod-6f8ea846-1722-4469-8c5f-3060859ef295": {
@@ -168609,14 +168553,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "68c9ad6b27fd5b35",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 7,
-        "label": "Software Engineering",
-        "requiredness": "supporting"
-      },
-      {
         "id": "6a332fa4b5181fdb",
         "key": "word",
         "kind": "tool",
@@ -169116,8 +169052,7 @@
           "communications_pr",
           "content_social",
           "data_analytics_bi",
-          "operations_general",
-          "software_it"
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": true,
@@ -226742,9 +226677,9 @@
     "schema_version": 2,
     "id": "prod-a7a19ab1-aa58-4e27-b092-923e06c8a19d",
     "label": "prod a7a19ab1 — Social Media Coordinator @ Indy Ignite - Major League Volleyball (2026-06-01)",
-    "decision": "Pass",
-    "score": 55,
-    "gateType": "force_pass",
+    "decision": "Apply",
+    "score": 89,
+    "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
       {
@@ -226753,14 +226688,6 @@
         "kind": "execution",
         "strength": 4,
         "label": "analysis, reporting, and measurement work",
-        "requiredness": "core"
-      },
-      {
-        "id": "2ee01cfb530cb3ab",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 7,
-        "label": "Software Engineering",
         "requiredness": "core"
       },
       {
@@ -227477,17 +227404,49 @@
         "profile_unit_id": "dcd2aada7605e2cd"
       }
     ],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 102,
+        "match_strength": "direct",
+        "match_key": "analysis_reporting"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 99,
+        "match_strength": "direct",
+        "match_key": "communications_writing"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 99,
+        "match_strength": "direct",
+        "match_key": "content_execution"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 102,
+        "match_strength": "direct",
+        "match_key": "event_operations_live_execution"
+      },
+      {
+        "code": "WHY_TOOL_PROOF",
+        "weight": 93,
+        "match_strength": "direct",
+        "match_key": "illustrator"
+      },
+      {
+        "code": "WHY_TOOL_PROOF",
+        "weight": 93,
+        "match_strength": "direct",
+        "match_key": "photoshop"
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -227515,8 +227474,7 @@
           "content_social",
           "data_analytics_bi",
           "finance_corp",
-          "operations_general",
-          "software_it"
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": true,
@@ -227527,7 +227485,7 @@
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "execution",
-        "jobFamily": "IT_Software",
+        "jobFamily": "Marketing",
         "jobIndustry": null,
         "jobTitle": "Social Media Coordinator",
         "location": {
@@ -227613,12 +227571,12 @@
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Pass"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -227627,7 +227585,7 @@
         }
       ],
       "raw_score": 89,
-      "clamped_score": 55
+      "clamped_score": 89
     }
   },
   "prod-a8b4a5f8-4134-410d-90dc-f853730206db": {
@@ -282610,14 +282568,6 @@
         "requiredness": "core"
       },
       {
-        "id": "1eeb3aa8d80c0729",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 5,
-        "label": "Software Engineering",
-        "requiredness": "supporting"
-      },
-      {
         "id": "34c5c1e66cd39091",
         "key": "communications_writing",
         "kind": "function",
@@ -283078,8 +283028,7 @@
           "content_social",
           "data_analytics_bi",
           "legal_regulatory",
-          "sales_bd",
-          "software_it"
+          "sales_bd"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -329069,9 +329018,9 @@
     "schema_version": 2,
     "id": "prod-ec3524e4-02ca-4836-9fd8-0ee5c8969b63",
     "label": "prod ec3524e4 — Assistant Director, Communications @ University of Pittsburgh (2026-05-28)",
-    "decision": "Pass",
-    "score": 55,
-    "gateType": "force_pass",
+    "decision": "Apply",
+    "score": 79,
+    "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
       {
@@ -329088,14 +329037,6 @@
         "kind": "tool",
         "strength": 5,
         "label": "illustrator tool usage",
-        "requiredness": "supporting"
-      },
-      {
-        "id": "4e9a12525be2e2f5",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 5,
-        "label": "Software Engineering",
         "requiredness": "supporting"
       },
       {
@@ -329807,7 +329748,38 @@
         "profile_unit_id": "f5a13d8a40f9d408"
       }
     ],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 98,
+        "match_strength": "direct",
+        "match_key": "communications_writing"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 100,
+        "match_strength": "direct",
+        "match_key": "content_execution"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 95,
+        "match_strength": "direct",
+        "match_key": "drafting_documentation"
+      },
+      {
+        "code": "WHY_TOOL_PROOF",
+        "weight": 94,
+        "match_strength": "direct",
+        "match_key": "indesign"
+      },
+      {
+        "code": "WHY_TOOL_PROOF",
+        "weight": 92,
+        "match_strength": "direct",
+        "match_key": "photoshop"
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_EXPERIENCE",
@@ -329833,8 +329805,7 @@
         ],
         "function_tags": [
           "communications_pr",
-          "content_social",
-          "software_it"
+          "content_social"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -329845,7 +329816,7 @@
         "isSeniorRole": true,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
-        "jobFamily": "IT_Software",
+        "jobFamily": "Marketing",
         "jobIndustry": null,
         "jobTitle": "Assistant Director, Communications",
         "location": {
@@ -329933,12 +329904,12 @@
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Pass"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -329947,7 +329918,7 @@
         }
       ],
       "raw_score": 79,
-      "clamped_score": 55
+      "clamped_score": 79
     }
   },
   "prod-ec49ccc8-7151-4304-a391-b96dd91d1451": {

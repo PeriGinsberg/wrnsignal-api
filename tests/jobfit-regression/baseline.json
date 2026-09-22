@@ -1641,14 +1641,6 @@
     "traceMissing": false,
     "requirement_units": [
       {
-        "id": "30803eb300097a6c",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 7,
-        "label": "Software Engineering",
-        "requiredness": "core"
-      },
-      {
         "id": "b9562248472e539a",
         "key": "drafting_documentation",
         "kind": "deliverable",
@@ -1849,11 +1841,6 @@
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": -8.399999999999999
       }
     ],
     "scalars": {
@@ -1870,8 +1857,7 @@
         "flaggableTools": [],
         "function_tags": [
           "communications_pr",
-          "data_analytics_bi",
-          "software_it"
+          "data_analytics_bi"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -2006,11 +1992,11 @@
         },
         {
           "label": "penalty_sum",
-          "points": -8,
-          "note": "8.399999999999999"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 81,
+      "raw_score": 89,
       "clamped_score": 74
     }
   },

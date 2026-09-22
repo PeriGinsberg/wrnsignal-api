@@ -53,6 +53,22 @@ type CapabilityRule = {
 // "report"/"analysis"/"metrics" on comms/marketing/sports lines from seeding
 // finance credit, while real finance/analytics lines (which carry these
 // anchors) still match. Deliberately excludes pure-marketing terms.
+// Co-occurrence anchors for the generic tech nouns in software_engineering's
+// jobPhrases. "cloud" / "api" next to any of these is a software role; on its
+// own it is just a business JD naming a technology.
+const SOFTWARE_ENGINEERING_ANCHORS: string[] = [
+  "software", "engineer", "engineering", "developer", "programming", "code", "codebase",
+  "repository", "git", "sdk", "rest api", "endpoint", "deploy", "deployment", "ci/cd",
+  "kubernetes", "docker", "terraform", "aws", "azure", "gcp", "cloud infrastructure",
+  "cloud architecture", "cloud native", "microservices", "devops", "backend", "frontend",
+  "full stack", "python", "java", "javascript", "typescript",
+  // Data-platform vocabulary: "cloud databases (Snowflake)" and "APIs, data
+  // pipelines, and cloud data platforms" are real technical requirements.
+  // Singular AND plural, because anchors match on word boundaries.
+  "database", "databases", "data pipeline", "data pipelines", "data platform",
+  "data platforms", "snowflake", "databricks", "data warehouse", "etl",
+]
+
 const QUANT_ANALYSIS_ANCHORS: string[] = [
   "data", "dataset", "dashboard", "kpi", "kpis", "sql", "excel", "spreadsheet",
   "pivottable", "statistic", "statistical", "regression", "forecast", "forecasting",
@@ -1374,7 +1390,25 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     kind: "function" as EvidenceKind,
     functionTag: "software_it" as FunctionTag,
     profilePhrases: ["software development", "full stack", "backend", "frontend", "api development", "microservices", "devops", "cloud infrastructure"],
-    jobPhrases: ["software engineer", "software development", "full stack", "backend", "frontend", "api", "microservices", "devops", "cloud", "software developer"],
+    // Generic tech nouns need software context. Bare "cloud" alone classified a
+    // KPMG "Advisory Intern, Customer & Operations" posting as IT_Software off
+    // "cutting-edge technology trends, including cloud, machine learning and AI"
+    // and "cloud-based technology platforms (Oracle, Workday, SAP)" — which then
+    // force-passed a consulting candidate on GATE_FIELD_MISMATCH. The unqualified
+    // phrases below ("software engineer", "microservices", …) are unambiguous on
+    // their own and stay ungated.
+    jobPhrases: [
+      "software engineer",
+      "software development",
+      "software developer",
+      "full stack",
+      "microservices",
+      "devops",
+      { phrase: "api", requiresNearby: SOFTWARE_ENGINEERING_ANCHORS },
+      { phrase: "cloud", requiresNearby: SOFTWARE_ENGINEERING_ANCHORS },
+      { phrase: "backend", requiresNearby: SOFTWARE_ENGINEERING_ANCHORS },
+      { phrase: "frontend", requiresNearby: SOFTWARE_ENGINEERING_ANCHORS },
+    ],
     adjacentKeys: [],
   },
   {

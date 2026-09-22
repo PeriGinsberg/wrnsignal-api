@@ -84,7 +84,7 @@ Severity key: **S1** = wrong top-line verdict, user acts on bad advice. **S2** =
 | DEF-013 | V5 renderer (RISK bullets) | renderer | S3 | 1 | C003 | Renders "prioritizes candidates with 0-2 years of post-degree industry experience… no industry engineering" as a RISK for a May 2026 grad. The JD floor is 0 years; no engine risk code backs the bullet | Renderer should not surface an experience risk when `yearsRequired` is 0 and no engine experience risk exists | OPEN |
 | DEF-004 | `client_commercial_work` requiredness | mis-typed | S3 | 1 | C001 | Sourced from "Maintain accurate time records and participate in… client-facing meetings" — a duty line — but typed `requiredness: core`, severity high. Directionally right, severity inflated from a weak line | Weight requiredness by line strength; admin/logistics duty lines should not reach `core` | OPEN |
 | DEF-008 | job `strength` vs snippet length (`extract.ts` `jobRuleStrength` / `scoreJobLine`) | — | — | 1 | C002 follow-on | Hypothesised that `strength` is contaminated by snippet length — raw char bonuses (`+1` at ≥20, `+2` at ≥30, `−2` at <16) plus segmentation-sensitive `hits` accumulation — so that fixing DEF-005 made requirements look weaker and pushed prod-7adf78ff Review→Pass | **CLOSED — NOT A DEFECT.** Probed the two units directly. The length term *cancels* (both pre- and post-split snippets clear 30 chars, so `+3` applies in both runs); the delta was `hits`-driven. More importantly the drop was the engine getting **more honest, not less**: pre-fix, `analysis_reporting` (strength 6) was anchored to a recruiting blurb — *"Growing together We are seeking a highly skilled Reporting Analyst…"* — and `operations_execution` (strength 10, `core`) to a logistics line with leaked CSS — *"…Minnetonka, MN location. a { text-decoration: none; color: #464feb"*. Post-fix they anchor to real requirement text (*"Analyze operational data to identify areas for process improvement…"*). Lower strength on junk lines is correct behaviour. The real cause of the 7adf78ff flip is DEF-003 + DEF-009 | **CLOSED** |
-| DEF-009 | `software_engineering` CAPABILITY_RULE (`extract.ts:1366`) | false-fire | S2 | 1 | C002 follow-on | Fires `core` at strength 9 on a **Data Analyst** JD (prod-7adf78ff, UnitedHealth). `jobPhrases` contains bare `"api"` and `"cloud"` with no word boundaries, no `requiresNearby`, no negative context — the canonical instance of architectural debt #1. A quantitative-analytics qualifications block ("3+ years… statistics, business analytics or computer science…") is enough to trip it, and once `core` it drives a high-severity `RISK_MISSING_PROOF` **and** an uncovered-capability penalty. Amplified by DEF-003, which counts it twice | Pre-compile `jobPhrases` to word-boundary regexes and gate the generic tokens (`api`, `cloud`, `backend`, `frontend`) on software-context co-occurrence (engineer/developer/codebase/deploy/repository). Do **not** widen to `computer science`, which is a degree-field phrase, not a job duty. Blocked on the broader bare-word refactor (debt #1) unless fixed narrowly for this rule first | OPEN |
+| DEF-009 | `software_engineering` CAPABILITY_RULE (`extract.ts:1366`) | false-fire | S2 | 1 | C002 follow-on | Fires `core` at strength 9 on a **Data Analyst** JD (prod-7adf78ff, UnitedHealth). `jobPhrases` contains bare `"api"` and `"cloud"` with no word boundaries, no `requiresNearby`, no negative context — the canonical instance of architectural debt #1. A quantitative-analytics qualifications block ("3+ years… statistics, business analytics or computer science…") is enough to trip it, and once `core` it drives a high-severity `RISK_MISSING_PROOF` **and** an uncovered-capability penalty. Amplified by DEF-003, which counts it twice | Pre-compile `jobPhrases` to word-boundary regexes and gate the generic tokens (`api`, `cloud`, `backend`, `frontend`) on software-context co-occurrence (engineer/developer/codebase/deploy/repository). Do **not** widen to `computer science`, which is a degree-field phrase, not a job duty. Blocked on the broader bare-word refactor (debt #1) unless fixed narrowly for this rule first | **FIXED** (narrowly, as anticipated) @ the C004 commit: `api` / `cloud` / `backend` / `frontend` now carry `requiresNearby: SOFTWARE_ENGINEERING_ANCHORS`; the unambiguous phrases (`software engineer`, `microservices`, `devops`, …) stay ungated. First anchor list was too narrow and cost 3 legitimate technical matches, so it also carries data-platform vocabulary (database/databases, data pipeline(s), data platform(s), snowflake, databricks, data warehouse, etl) in singular AND plural, since anchors match on word boundaries. Second hit: C004 | **FIXED** |
 
 ---
 
@@ -415,6 +415,67 @@ NET: Should be Apply (arguably Priority Apply: SolidWorks CSWA, thermal design o
   electro-mechanical system, prototype build, drawings and machining map 1:1 to the JD).
   Shipped Pass with "Do not apply." Even counterfactual C under-credits: only 1 WHY
   (solidworks), because DEF-012 leaves the ME function unmatched.
+```
+
+### CASE C004 — A.N. → KPMG, Advisory Intern, Customer & Operations
+
+```
+CASE ID:        C004
+DATE:           2026-09-22
+RUN ID:         9738a05d-fda3-421a-b2ea-4c72a176f7f5  (prod, coach-added)
+RÉSUMÉ:         A.N. — in-school, ~1 yr; business development at an athlete agency,
+                economic modelling / statistics in R, editorial data work
+JD:             KPMG — Advisory Intern, Customer & Operations, Summer 2027 (7.6k chars)
+SHIPPED RESULT: Pass / 52  (raw 52, penalty -3.92)
+gate_triggered: GATE_FIELD_MISMATCH (force_pass) — "This is a IT/Software role… your
+                profile targets Consulting, Marketing, Analytics, ProductManagement"
+detector fires: RISK_MISSING_PROOF operations_execution (high, -3.92),
+                RISK_FAMILY_MISMATCH (high, -30), RISK_MISSING_PROOF Software Engineering (high)
+case files:     evals/jobfit/cases/C004/ (gitignored, contains PII)
+repro:          tests/jobfit-regression/_alex-repro.local.ts
+
+REPORTED AS:    "he got Pass because of lack of experience, but this is an internship and
+                none of the experience mentioned is required"
+
+VERDICT CHECK:  bug — wrong-verdict (S1). NOT an experience defect.
+
+  The engine never applied an experience rule: yearsRequired is null, isSeniorRole false,
+  internship.isInternship true, no experience gate. What fired is GATE_FIELD_MISMATCH —
+  the JD was classified jobFamily IT_Software. The coach read it as an experience problem
+  because the V5 renderer explains the -30 family mismatch in terms of missing systems
+  experience ("no cloud platform, ERP, or systems implementation experience"), which is
+  the renderer describing a family gap in the only vocabulary the JD gave it.
+
+ROOT CAUSE: DEF-009, second sighting. The ENTIRE IT_Software classification rests on the
+  bare token "cloud" matching twice (extract.ts software_engineering jobPhrases):
+    "Utilize cutting-edge technology trends, including cloud, machine learning and AI"
+    "…vendor technologies including cloud-based technology platforms (Oracle, Workday, SAP)"
+  That emits software_engineering core, adds functionTag software_it, and the JD
+  family-distance override (Fix C) lets the body tag beat the "Advisory Intern" title —
+  Consulting and IT_Software are distance 2, so the override is eligible. Hence force_pass
+  on a candidate whose stated targets include Consulting.
+  No other jobPhrase in that rule matched: verified by probing all 10 against the JD text.
+
+FIX: gate api / cloud / backend / frontend on SOFTWARE_ENGINEERING_ANCHORS.
+  After: Pass/52 -> Apply/92, gate none, jobFamily Marketing (matches his targets, so the
+  -30 becomes a +10), 4 WHY codes, one remaining risk (operations_execution proof).
+
+REGRESSION: core 1 (40926e QC Analyst I drops a phantom Software Engineering gap, +8, no
+  decision change); prod 14 cases, 4 decision changes, ALL Pass->Apply and all the same
+  defect — Social Media Content Creator, Social Media Coordinator, Assistant Director of
+  Communications and Video Design Intern were each classified IT_Software and force-passed.
+  One case loses a software WHY without changing decision (Product Manager, Enterprise
+  Digital Product Office, 70->61: its only software signal is the blurb line "leveraging
+  modern technologies-including cloud platforms, data, and AI").
+  Salesforce Life Sciences Functional Architect reclassifies IT_Software -> Sales, decision
+  unchanged — arguably under-classified now; noted, not fixed.
+
+NOT BUGS: no experience gate fired at any point; internship correctly detected
+  (isInternship true, isSummer true).
+
+NET: the reported symptom (experience) and the actual defect (family classification off one
+  bare word) are different layers. Worth remembering when triaging coach reports: the
+  renderer's prose names whatever the JD talks about, not the code that capped the verdict.
 ```
 
 ---
