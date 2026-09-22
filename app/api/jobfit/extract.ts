@@ -2041,6 +2041,32 @@ function canonicalTool(rawTool: string): string {
   return n
 }
 
+// Office apps nobody should be flagged for. A posting asking for Word or
+// PowerPoint tells you nothing about fit, so they never produce a RISK (see
+// scoring.ts). They stay in the requirement units, so a candidate who DOES
+// list them still gets the positive WHY_TOOL_PROOF credit — suppressing the
+// units instead cost 99 WHY codes and pushed 25 corpus decisions DOWN.
+// Excel stays flaggable, but only when the posting names it (see the
+// suite-expansion and verb notes below).
+export const NON_DIFFERENTIATING_JOB_TOOLS = new Set(["word", "powerpoint"])
+
+// "Able to excel in a fast-paced environment" is not a spreadsheet requirement.
+// Bare "excel" counts as the tool only when at least one occurrence is not the
+// verb — 18 prod JDs use the verb, 4 of those ALSO name the tool, so this has
+// to be judged per occurrence rather than per posting.
+function bareExcelIsTool(t: string): boolean {
+  const re = /\bexcel\b/gi
+  let m: RegExpExecArray | null
+  while ((m = re.exec(t))) {
+    const before = t.slice(Math.max(0, m.index - 40), m.index)
+    const after = t.slice(m.index + "excel".length, m.index + "excel".length + 24)
+    const verbBefore = /\bto\s+$/i.test(before)
+    const verbAfter = /^\s*(?:in|at|as|within|here|professionally|under|during)\b/i.test(after)
+    if (!verbBefore && !verbAfter) return true
+  }
+  return false
+}
+
 function extractToolMentions(text: string): string[] {
   const t = norm(text)
   const out = new Set<string>()
@@ -2061,6 +2087,10 @@ function extractToolMentions(text: string): string[] {
   // jobs that list "Excel" as a required tool will incorrectly penalize
   // them with RISK_MISSING_TOOLS. Same logic for Google Workspace / G Suite
   // and Adobe Creative Cloud / Creative Suite.
+  //
+  // This runs on the JD side too, deliberately: these units are what a
+  // candidate MATCHES against for WHY_TOOL_PROOF credit. Whether a tool may be
+  // FLAGGED as missing is a separate question — see flaggableToolsFromLine.
   if (/\b(microsoft office suite|ms office suite|ms office|microsoft office|office 365|o365|office suite)\b/i.test(t)) {
     out.add("excel")
     out.add("powerpoint")
@@ -2782,14 +2812,33 @@ function detectAnalytics(jobText: string, tags: FunctionTag[], jobUnits: JobRequ
   return { isHeavy, isLight }
 }
 
-function extractToolRequirements(jobTextRaw: string): { required: string[]; preferred: string[] } {
+// Which tools on a JD line may be FLAGGED as missing. Separate from which
+// tools the line yields for matching: a posting that says "MS Office" should
+// still let a candidate earn Excel credit, but must not charge them for it.
+//   - word / powerpoint: never flaggable, asking for them says nothing about fit
+//   - excel: flaggable only when the line names it ("Microsoft Excel", or bare
+//     "excel" used as a noun) — not via an office-suite expansion, and not when
+//     the line is "able to excel in a fast-paced environment"
+function flaggableToolsFromLine(line: string, tools: string[]): string[] {
+  const t = norm(line)
+  const excelNamed = /\b(?:microsoft|ms)\s+excel\b/i.test(t) || bareExcelIsTool(t)
+  return tools.filter((tool) => {
+    if (NON_DIFFERENTIATING_JOB_TOOLS.has(tool)) return false
+    if (tool === "excel") return excelNamed
+    return true
+  })
+}
+
+function extractToolRequirements(jobTextRaw: string): { required: string[]; preferred: string[]; flaggable: string[] } {
   const lines = splitEvidenceLines(jobTextRaw)
   const required = new Set<string>()
   const preferred = new Set<string>()
+  const flaggable = new Set<string>()
 
   for (const line of lines) {
     const tools = extractToolMentions(line)
     if (!tools.length) continue
+    for (const tool of flaggableToolsFromLine(line, tools)) flaggable.add(tool)
     const requiredLine = /\b(required|must have|proficient|experience with|required qualifications)\b/i.test(line)
 
     // Template / boilerplate guard: when a SINGLE line mentions 4+ tools
@@ -2817,6 +2866,7 @@ function extractToolRequirements(jobTextRaw: string): { required: string[]; pref
   return {
     required: Array.from(required),
     preferred: Array.from(preferred),
+    flaggable: Array.from(flaggable),
   }
 }
 
@@ -4479,7 +4529,7 @@ export function extractJobSignals(
   const isContract = includesAny(normalized, contractKeywords)
   const isHourly = includesAny(normalized, hourlyKeywords) || /\$\s*\d+(\.\d+)?\s*\/\s*(hr|hour)\b/i.test(jobTextRaw)
 
-  const { required, preferred } = extractToolRequirements(jobTextRaw)
+  const { required, preferred, flaggable: flaggableTools } = extractToolRequirements(jobTextRaw)
 
   // Training program detection — if the job describes skills the candidate WILL LEARN
   // rather than skills they must already have, flag it so scoring can apply a softer posture.
@@ -4815,6 +4865,7 @@ return {
     credentialSponsored,
     gradYearHint,
     requiredTools: required,
+    flaggableTools,
     preferredTools: preferred,
     isSeniorRole: isSeniorRole,
     isTrainingProgram: isTrainingProgram,

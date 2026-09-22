@@ -228,6 +228,15 @@ credentialRequired: boolean
   credentialSponsored: boolean
   gradYearHint: number | null
   requiredTools: string[]
+  /**
+   * Tools that may be surfaced as a MISSING-tool risk. Subset of
+   * requiredTools + preferredTools: excludes Word/PowerPoint entirely, and
+   * excludes Excel unless the posting names it (not an office-suite
+   * expansion, not the verb "excel"). The full lists stay intact so a
+   * candidate still earns WHY_TOOL_PROOF credit for them.
+   * Optional: absent on payloads written before this field existed.
+   */
+  flaggableTools?: string[]
   preferredTools: string[]
   reportingSignals: { strong: boolean }
   requirement_units?: JobRequirementUnit[]

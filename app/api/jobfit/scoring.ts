@@ -15,7 +15,7 @@ import type {
   WhyCode,
 } from "./signals"
 import { hasRequiredDegree } from "./signals"
-import { getFinanceSubFamilyDistance } from "./extract"
+import { getFinanceSubFamilyDistance, NON_DIFFERENTIATING_JOB_TOOLS } from "./extract"
 import { familyDisplayName } from "./deterministicBulletRendererV4"
 
 export const SCORING_V5_STAMP =
@@ -580,12 +580,25 @@ function buildCoverage(job: StructuredJobSignals, allMatches: WhyEvidenceMatch[]
     })
 }
 
+// A tool may be surfaced as missing only if extraction put it on
+// job.flaggableTools. Older payloads have no such field; there, fall back to
+// the old behaviour minus the two office apps that are never a fit signal.
+function isFlaggableTool(job: StructuredJobSignals, tool: string): boolean {
+  const t = String(tool || "").toLowerCase()
+  if (NON_DIFFERENTIATING_JOB_TOOLS.has(t)) return false
+  const flaggable = job.flaggableTools
+  return flaggable ? flaggable.includes(t) : true
+}
+
 function buildMajorGapRisks(job: StructuredJobSignals, coverage: RequirementCoverage[]): RiskCode[] {
   const majorKinds = new Set(["function", "execution", "deliverable", "stakeholder", "tool"])
 
   const gapUnits = coverage
     .filter((c) => {
       if (!majorKinds.has(c.jobUnit.kind)) return false
+      // Don't show a tool gap the posting never really asked for (Word /
+      // PowerPoint ever, Excel unless named). Same rule as RISK_MISSING_TOOLS.
+      if (c.jobUnit.kind === "tool" && !isFlaggableTool(job, c.jobUnit.key)) return false
       if (!(c.jobUnit.requiredness === "core" || c.jobUnit.strength >= 8)) return false
       return !c.adequate
     })
@@ -1461,8 +1474,13 @@ export function scoreJobFit(
 
   if (hasExplicitTools) {
     const profileTools = profile.tools || []
-    const requiredMissing = (job.requiredTools || []).filter((t) => toolMissing(profileTools, t))
-    const preferredMissing = (job.preferredTools || []).filter((t) => toolMissing(profileTools, t))
+    // Only tools the posting genuinely asks for produce a missing-tool risk.
+    // Word / PowerPoint never do, and Excel only when the posting names it
+    // (see flaggableToolsFromLine). They stay in job.requiredTools /
+    // preferredTools so a candidate who lists them still earns tool proof.
+    const flaggable = (t: string) => isFlaggableTool(job, t)
+    const requiredMissing = (job.requiredTools || []).filter((t) => flaggable(t) && toolMissing(profileTools, t))
+    const preferredMissing = (job.preferredTools || []).filter((t) => flaggable(t) && toolMissing(profileTools, t))
 
     for (const tool of requiredMissing) {
       let sev: Severity = "high"

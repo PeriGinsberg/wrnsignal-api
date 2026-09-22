@@ -238,6 +238,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "communications_pr",
           "operations_general"
@@ -741,6 +742,9 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "r"
+        ],
         "function_tags": [
           "communications_pr",
           "consumer_insights_research",
@@ -1116,6 +1120,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "communications_pr",
           "data_analytics_bi"
@@ -1476,6 +1481,9 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "r"
+        ],
         "function_tags": [
           "communications_pr",
           "operations_general"
@@ -1859,6 +1867,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "communications_pr",
           "data_analytics_bi",
@@ -2632,6 +2641,9 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "figma"
+        ],
         "function_tags": [
           "brand_marketing",
           "content_social",
@@ -3500,6 +3512,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "brand_marketing",
           "communications_pr",
@@ -4541,6 +4554,11 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "google docs",
+          "google sheets",
+          "google slides"
+        ],
         "function_tags": [
           "brand_marketing",
           "communications_pr",
@@ -5291,6 +5309,9 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "excel"
+        ],
         "function_tags": [
           "communications_pr",
           "sales_bd"
@@ -6050,6 +6071,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "communications_pr",
           "content_social",
@@ -6527,6 +6549,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "communications_pr",
           "operations_general"
@@ -6881,6 +6904,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "operations_general"
         ],
@@ -7370,6 +7394,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "brand_marketing",
           "consulting_strategy",
@@ -7767,6 +7792,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "accounting_finops",
           "brand_marketing",
@@ -8268,6 +8294,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "communications_pr",
           "data_analytics_bi",
@@ -8832,6 +8859,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "communications_pr",
           "consumer_insights_research",
@@ -9586,6 +9614,16 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "c++",
+          "git",
+          "java",
+          "jenkins",
+          "node",
+          "python",
+          "react",
+          "swift"
+        ],
         "function_tags": [
           "software_it"
         ],
@@ -10026,6 +10064,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "software_it"
         ],
@@ -10697,6 +10736,12 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "figma",
+          "node",
+          "react",
+          "typescript"
+        ],
         "function_tags": [
           "operations_general",
           "software_it"
@@ -10834,8 +10879,8 @@
     "schema_version": 2,
     "id": "batch-40926t",
     "label": "40926t — Dimitri / Cyber Security Associate",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Apply",
+    "score": 85,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -11195,16 +11240,6 @@
         "weight": 0
       },
       {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "high",
         "weight": -8
@@ -11221,6 +11256,9 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "excel"
+        ],
         "function_tags": [
           "communications_pr",
           "data_analytics_bi",
@@ -11341,7 +11379,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -11350,7 +11388,7 @@
         }
       ],
       "raw_score": 85,
-      "clamped_score": 55
+      "clamped_score": 85
     }
   },
   "batch-40926u": {
@@ -11697,6 +11735,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "data_analytics_bi",
           "software_it"
@@ -12279,6 +12318,10 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": "asset_management",
+        "flaggableTools": [
+          "crm",
+          "excel"
+        ],
         "function_tags": [
           "communications_pr",
           "data_analytics_bi",
@@ -12794,6 +12837,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": "asset_management",
+        "flaggableTools": [],
         "function_tags": [
           "finance_corp",
           "operations_general"
@@ -13246,6 +13290,9 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "excel"
+        ],
         "function_tags": [
           "data_analytics_bi",
           "finance_corp",
@@ -13630,6 +13677,12 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "crm",
+          "illustrator",
+          "indesign",
+          "photoshop"
+        ],
         "function_tags": [
           "communications_pr",
           "legal_regulatory"
@@ -14184,6 +14237,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "sales_bd"
         ],
@@ -14863,6 +14917,10 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "excel",
+          "salesforce"
+        ],
         "function_tags": [
           "communications_pr",
           "data_analytics_bi",
@@ -15140,6 +15198,9 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "excel"
+        ],
         "function_tags": [
           "data_analytics_bi",
           "operations_general"
@@ -15870,6 +15931,9 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": "ib",
+        "flaggableTools": [
+          "excel"
+        ],
         "function_tags": [
           "accounting_finops",
           "data_analytics_bi",
@@ -16274,6 +16338,9 @@
         "credentialSponsored": false,
         "detectedDomain": "clinical",
         "financeSubFamily": null,
+        "flaggableTools": [
+          "gcp"
+        ],
         "function_tags": [
           "communications_pr",
           "data_analytics_bi",
@@ -16849,6 +16916,9 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": "asset_management",
+        "flaggableTools": [
+          "excel"
+        ],
         "function_tags": [
           "accounting_finops",
           "consumer_insights_research",
@@ -17192,6 +17262,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "data_analytics_bi",
           "finance_corp",
@@ -17665,6 +17736,11 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "amplitude",
+          "mixpanel",
+          "sql"
+        ],
         "function_tags": [
           "accounting_finops",
           "brand_marketing",
@@ -18390,6 +18466,9 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": "ib",
+        "flaggableTools": [
+          "excel"
+        ],
         "function_tags": [
           "accounting_finops",
           "communications_pr",
@@ -19185,6 +19264,16 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "aws",
+          "c++",
+          "docker",
+          "gcp",
+          "git",
+          "java",
+          "kubernetes",
+          "python"
+        ],
         "function_tags": [
           "communications_pr",
           "content_social",
@@ -20076,6 +20165,13 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "excel",
+          "google analytics",
+          "illustrator",
+          "indesign",
+          "photoshop"
+        ],
         "function_tags": [
           "brand_marketing",
           "communications_pr",
@@ -20616,6 +20712,13 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "ansys",
+          "catia",
+          "matlab",
+          "python",
+          "solidworks"
+        ],
         "function_tags": [
           "communications_pr",
           "engineering_technical",
@@ -21482,6 +21585,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "communications_pr",
           "finance_corp",
@@ -22388,6 +22492,9 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "excel"
+        ],
         "function_tags": [
           "consumer_insights_research",
           "data_analytics_bi",
@@ -22864,6 +22971,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "data_analytics_bi",
           "finance_corp",
@@ -23344,6 +23452,14 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "aws",
+          "azure",
+          "gcp",
+          "java",
+          "kubernetes",
+          "python"
+        ],
         "function_tags": [
           "finance_corp",
           "growth_performance",
@@ -24475,6 +24591,11 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": "asset_management",
+        "flaggableTools": [
+          "excel",
+          "sql",
+          "tableau"
+        ],
         "function_tags": [
           "accounting_finops",
           "communications_pr",
@@ -25005,6 +25126,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "data_analytics_bi",
           "finance_corp",
@@ -25911,6 +26033,18 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": "fpa",
+        "flaggableTools": [
+          "aws",
+          "azure",
+          "c++",
+          "docker",
+          "gcp",
+          "git",
+          "java",
+          "kubernetes",
+          "python",
+          "react"
+        ],
         "function_tags": [
           "content_social",
           "finance_corp",
@@ -26788,6 +26922,13 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "excel",
+          "google analytics",
+          "illustrator",
+          "indesign",
+          "photoshop"
+        ],
         "function_tags": [
           "brand_marketing",
           "communications_pr",
@@ -27384,6 +27525,12 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "abaqus",
+          "ansys",
+          "catia",
+          "solidworks"
+        ],
         "function_tags": [
           "communications_pr",
           "data_analytics_bi",
@@ -28126,6 +28273,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "finance_corp",
           "healthcare_clinical",
@@ -28243,8 +28391,8 @@
     "schema_version": 2,
     "id": "synthetic-0410f",
     "label": "[synthetic] 0410f — Tyler Brooks / (no title)",
-    "decision": "Apply",
-    "score": 93,
+    "decision": "Priority Apply",
+    "score": 97,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -29157,13 +29305,7 @@
         "match_key": "r"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_MISSING_TOOLS",
-        "severity": "medium",
-        "weight": -4
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -29175,6 +29317,12 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "excel",
+          "python",
+          "r",
+          "sql"
+        ],
         "function_tags": [
           "consulting_strategy",
           "data_analytics_bi",
@@ -29283,26 +29431,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -4,
-          "note": "4"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 93,
-      "clamped_score": 93
+      "raw_score": 97,
+      "clamped_score": 97
     }
   },
   "synthetic-0410g": {
@@ -29524,6 +29672,10 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "excel",
+          "tableau"
+        ],
         "function_tags": [
           "data_analytics_bi",
           "finance_corp",
@@ -30068,6 +30220,13 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "aws",
+          "gcp",
+          "kubernetes",
+          "python",
+          "r"
+        ],
         "function_tags": [
           "communications_pr",
           "data_analytics_bi",
@@ -30399,6 +30558,12 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": "asset_management",
+        "flaggableTools": [
+          "aws",
+          "azure",
+          "react",
+          "sql"
+        ],
         "function_tags": [
           "consumer_insights_research",
           "data_analytics_bi",
@@ -30737,6 +30902,13 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "aws",
+          "azure",
+          "gcp",
+          "java",
+          "python"
+        ],
         "function_tags": [
           "communications_pr",
           "data_analytics_bi",
@@ -31443,6 +31615,10 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": "asset_management",
+        "flaggableTools": [
+          "crm",
+          "salesforce"
+        ],
         "function_tags": [
           "finance_corp",
           "sales_bd"
@@ -32357,6 +32533,11 @@
         "credentialSponsored": false,
         "detectedDomain": "clinical",
         "financeSubFamily": null,
+        "flaggableTools": [
+          "gcp",
+          "python",
+          "r"
+        ],
         "function_tags": [
           "communications_pr",
           "data_analytics_bi",
@@ -32492,8 +32673,8 @@
     "schema_version": 2,
     "id": "synthetic-0410m",
     "label": "[synthetic] 0410m — Jordan Williams / (no title)",
-    "decision": "Apply",
-    "score": 92,
+    "decision": "Priority Apply",
+    "score": 96,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -33004,11 +33185,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_MISSING_TOOLS",
-        "severity": "medium",
-        "weight": -4
-      },
-      {
         "code": "RISK_SUBFAMILY_MISMATCH",
         "severity": "low",
         "weight": 0
@@ -33025,6 +33201,9 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": "ib",
+        "flaggableTools": [
+          "excel"
+        ],
         "function_tags": [
           "accounting_finops",
           "communications_pr",
@@ -33127,26 +33306,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -4,
-          "note": "4"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 92,
-      "clamped_score": 92
+      "raw_score": 96,
+      "clamped_score": 96
     }
   },
   "synthetic-0410n": {
@@ -33523,6 +33702,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "finance_corp",
           "operations_general"
@@ -34071,6 +34251,9 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "jira"
+        ],
         "function_tags": [
           "brand_marketing",
           "consumer_insights_research",
@@ -34193,7 +34376,7 @@
     "id": "synthetic-0410p",
     "label": "[synthetic] 0410p — Tyler Brooks / (no title)",
     "decision": "Apply",
-    "score": 80,
+    "score": 88,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -34829,13 +35012,7 @@
         "match_key": "financial_analysis"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_MISSING_TOOLS",
-        "severity": "high",
-        "weight": -8
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -34847,6 +35024,9 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": "ib",
+        "flaggableTools": [
+          "excel"
+        ],
         "function_tags": [
           "accounting_finops",
           "data_analytics_bi",
@@ -34958,12 +35138,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -8,
-          "note": "8"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 80,
-      "clamped_score": 80
+      "raw_score": 88,
+      "clamped_score": 88
     }
   },
   "synthetic-0410q": {
@@ -35228,6 +35408,16 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "aws",
+          "azure",
+          "c++",
+          "docker",
+          "gcp",
+          "java",
+          "kubernetes",
+          "python"
+        ],
         "function_tags": [
           "communications_pr",
           "finance_corp",
@@ -36181,6 +36371,9 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "crm"
+        ],
         "function_tags": [
           "brand_marketing",
           "consumer_insights_research",
@@ -36525,6 +36718,12 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "abaqus",
+          "ansys",
+          "catia",
+          "solidworks"
+        ],
         "function_tags": [
           "communications_pr",
           "engineering_technical",
@@ -36815,6 +37014,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "data_analytics_bi",
           "finance_corp",
@@ -36935,8 +37135,8 @@
     "schema_version": 2,
     "id": "synthetic-0410u",
     "label": "[synthetic] 0410u — Marcus Thompson / (no title)",
-    "decision": "Apply",
-    "score": 93,
+    "decision": "Priority Apply",
+    "score": 97,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -37721,13 +37921,7 @@
         "match_key": "sql"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_MISSING_TOOLS",
-        "severity": "medium",
-        "weight": -4
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -37739,6 +37933,11 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "excel",
+          "python",
+          "sql"
+        ],
         "function_tags": [
           "communications_pr",
           "consulting_strategy",
@@ -37843,26 +38042,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -4,
-          "note": "4"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 93,
-      "clamped_score": 93
+      "raw_score": 97,
+      "clamped_score": 97
     }
   },
   "synthetic-0410v": {
@@ -38099,6 +38298,7 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [],
         "function_tags": [
           "data_analytics_bi",
           "finance_corp",
@@ -39227,6 +39427,17 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": null,
+        "flaggableTools": [
+          "aws",
+          "azure",
+          "gcp",
+          "git",
+          "looker",
+          "python",
+          "r",
+          "sql",
+          "tableau"
+        ],
         "function_tags": [
           "content_social",
           "data_analytics_bi",
@@ -39779,6 +39990,12 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": "asset_management",
+        "flaggableTools": [
+          "figma",
+          "illustrator",
+          "indesign",
+          "photoshop"
+        ],
         "function_tags": [
           "consumer_insights_research",
           "data_analytics_bi",
@@ -40421,6 +40638,12 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": "asset_management",
+        "flaggableTools": [
+          "excel",
+          "power bi",
+          "sql",
+          "tableau"
+        ],
         "function_tags": [
           "data_analytics_bi",
           "finance_corp"
@@ -41134,6 +41357,10 @@
         "credentialSponsored": false,
         "detectedDomain": null,
         "financeSubFamily": "asset_management",
+        "flaggableTools": [
+          "crm",
+          "salesforce"
+        ],
         "function_tags": [
           "finance_corp",
           "operations_general",
