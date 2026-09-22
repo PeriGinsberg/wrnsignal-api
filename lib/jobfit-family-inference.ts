@@ -373,7 +373,18 @@ export function inferTargetFamilies(
     roles.includes("manufacturing engineer") ||
     roles.includes("environmental engineer") ||
     roles.includes("aerospace engineer") ||
-    roles.includes("medical device")
+    roles.includes("medical device") ||
+    // Bare or generic "Engineer" ("Engineer", "Design Engineer", "Analyst,
+    // Engineer") matched none of the above and fell through to ["Other"],
+    // which GATE_FIELD_MISMATCH force-passed on Engineering JDs. Software /
+    // data / sales-type engineer items are owned by other families.
+    roles
+      .split(/[,;/\n]|\band\b|\bor\b/)
+      .some(
+        (r) =>
+          /\bengineer(s|ing)?\b/.test(r) &&
+          !/\b(software|data|machine learning|ml|ai|devops|cloud|platform|site reliability|security|network|full ?stack|front ?end|back ?end|web|mobile|sales|solutions|prompt|qa|test automation)\b/.test(r)
+      )
   ) {
     out.push("Engineering")
   }
