@@ -37,5 +37,10 @@ expect("Data Science, Data Engineer, Data Analyst, Machine Learning Engineer", [
 // still catches e.g. a psychology grad on a SWE role (core case 0410q).
 expect("psychology research assistant, mental health counselor, clinical psychology trainee", ["Other"])
 
+// Nothing stated at all → [] (unknown), not ["Other"]. 69 of 175 prod profiles
+// had empty target_roles and were taking a family-mismatch penalty for it.
+expect("", [])
+expect("   ", [])
+
 console.log(`\n${pass} passed, ${fail} failed`)
 if (fail) process.exit(1)

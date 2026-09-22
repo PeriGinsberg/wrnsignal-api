@@ -42,8 +42,10 @@ function lower(s: string | null | undefined): string {
  * @param profileText Optional full profile text (resume + intake fields)
  *   used as a fallback when targetRoles is empty.
  *
- * @returns Array of JobFamily values matched. Always returns at least
- *   one value — uses ["Other"] as a final fallback.
+ * @returns Array of JobFamily values matched. `["Other"]` when the candidate
+ *   stated roles that map to no family (a real field with no bucket), and `[]`
+ *   when nothing was stated at all (unknown — callers treat empty as "no
+ *   opinion" and skip the gate / mismatch penalty).
  */
 export function inferTargetFamilies(
   targetRoles: string | null | undefined,
@@ -432,5 +434,15 @@ export function inferTargetFamilies(
   // cross-functional candidates (e.g. "Strategy Consultant + Business Ops +
   // Chief of Staff + Product Marketing"). The cap was 2 historically which
   // silently dropped Engineering for biomedical candidates — that was a bug.
-  return unique.length ? unique.slice(0, 4) : ["Other"]
+  if (unique.length) return unique.slice(0, 4)
+
+  // No match. "Other" is only honest when the candidate stated something we
+  // could not map — it then means "a field with no bucket", and downstream
+  // GATE_FIELD_MISMATCH / the family-mismatch penalty are right to treat it as
+  // not-technical. When NOTHING was stated (and profileText produced nothing
+  // either) we know nothing, and [] is the engine's "unknown" (see
+  // extract.ts:4852, constraints.ts:45, scoring.ts:840, all of which key on
+  // length > 0). 69 of 175 prod profiles had empty target_roles and were
+  // taking a -12/-30 mismatch penalty on every job because of this.
+  return roles.trim() ? ["Other"] : []
 }
