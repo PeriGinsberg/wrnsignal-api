@@ -32,14 +32,14 @@ Update at the end of the session.
 
 | Metric | Count |
 |---|---|
-| Cases run | 2 |
+| Cases run | 3 |
 | Verdicts CORRECT | 0 |
-| Verdicts BUG | 2 |
-| False-fires | 4 |
+| Verdicts BUG | 3 |
+| False-fires | 10 |
 | False-clears | 1 (unverified — see DEF-002) |
-| Wrong-verdicts (top-line APPLY/REVIEW/PASS wrong) | 1 |
+| Wrong-verdicts (top-line APPLY/REVIEW/PASS wrong) | 2 |
 | Known-bug repeats (family-mismatch etc.) | 0 |
-| New defects opened | 9 (DEF-005…009; DEF-008 closed NOT-A-DEFECT) |
+| New defects opened | 13 (DEF-005…013; DEF-008 closed NOT-A-DEFECT) |
 
 **Detector fire tally** (how often each detector fired, and how often that fire was wrong):
 
@@ -47,9 +47,10 @@ Update at the end of the session.
 |---|---|---|---|
 | knockout gate ledger | 0 | 0 | — |
 | RISK_OWNERSHIP_VERB_MISMATCH | 0 | ? | **unmeasurable** — detectors were OFF on both runs |
-| RISK_MISSING_PROOF | 5 | 3 | 60% |
-| RISK_MISSING_TOOLS | 2 | 1 | 50% |
-| RISK_LIMITED_MATCH_EVIDENCE | 1 | 1 | 100% |
+| RISK_MISSING_PROOF | 8 | 6 | 75% |
+| RISK_MISSING_TOOLS | 3 | 2 | 67% |
+| RISK_LIMITED_MATCH_EVIDENCE | 2 | 2 | 100% |
+| GATE_FIELD_MISMATCH (force_pass) | 1 | 1 | 100% |
 | domain_gap | 0 | 0 | — |
 | scope_inversion | 1 | 1 | 100% |
 | unsupported_skill_claim | 0 | 0 | — |
@@ -73,10 +74,14 @@ Severity key: **S1** = wrong top-line verdict, user acts on bad advice. **S2** =
 |---|---|---|---|---|---|---|---|---|
 | DEF-001 | `prospecting_pipeline_management` requirement key | false-fire | S2 | **5** | C001, prod b3e99f67, prod fe2bfe0e, prod 8a834c62, prod cdae93c3 | JD's "Pipeline Management" = data intake/validation, keyword-matched to sales pipeline; tagged `sales_bd` + `requiredness: core`, set `salesSubFamily: other_sales` on a pure analytics JD; −7.8 penalty. **Hit count raised 1 → 5 by the DEF-003 audit:** once duplicates were collapsed, this key is the *surviving* high-severity gap in 4 of the 11 upgraded prod cases — i.e. it is now the single most load-bearing risk in that set | Gate the key on sales-context co-occurrence (leads/quota/accounts/outreach/CRM-as-sales). Route "data pipeline / intake / ingestion / validation" to a new `data_pipeline_ops` key. **Priority raised:** if this false-fires on those 4 JDs the way it did on C001, they are still under-scored after DEF-003 and should upgrade further — so this now gates the accuracy of a verdict band, not just a displayed risk | OPEN — **next up** |
 | DEF-002 | `RISK_OWNERSHIP_VERB_MISMATCH` | false-clear | S1 | 1 | C001 | JD demands "Lead the development…", "guides our data team", "technical authority"; résumé evidence on that object is contribution-only (Partnered/contributed/Supported/Assisted/Collaborated/Helped). Risk did not fire; renderer instead titled it "TABLEAU DASHBOARD LEADERSHIP" and called it "the exact proof point" | **Do not fix yet — cause not established.** Detector is wired (`verbMismatch.ts:106` ← `jobfitEvaluator.ts:294`) but runs only under `applyVerbMismatchRisk`, which `detectorFlagsForPath` leaves unset unless a `JOBFIT_DETECTORS*` flag is on. C001 ran with flags off, so "did not fire" is fully explained by "was never called." Re-run with PAID detectors on before touching detector logic | **UNVERIFIED** |
-| DEF-005 | `splitEvidenceLines` `actionSplit` (`extract.ts:1890`) + `badJobFact` ceiling (`scoring.ts:627`) | wrong-verdict | **S1** | 1 | C002 | Run-on JD (newlines stripped, bullets without terminal punctuation) survives as one ~1900-char evidence line → all function/execution `requirement_unit`s share that snippet → every `job_fact` trips `badJobFact`'s `length > 700` → `why_codes: []` → zero-WHY guardrail (`decision.ts:153`) forces **Pass**. Same JD + résumé scores Apply/89 with newlines, Pass/55 without | **FIXED** on branch `jobfit-runon-jd-split` @ `966c797f`. (a) `actionSplit` gains a second alternation of JD present-tense imperatives, constrained by a following lowercase word/digit; résumé past-tense list kept as its own unconstrained branch. (b) `jobFactFromUnit` truncates >700-char facts at a word boundary instead of discarding the match | **FIXED-UNVERIFIED** — regression suite not yet adjudicated |
-| DEF-006 | `extractToolRequirements` (`extract.ts:2742`) | false-fire | S2 | 1 | C002 | `requiredTools`/`preferredTools` **inverted**. `requiredLine` is a per-line keyword test (`required\|must have\|proficient\|experience with`) with no section awareness, so the Nice-to-Have line "Experience with creative tools such as Adobe Express, Canva…" pushes `canva` into `requiredTools`, while JIRA — an actual Key Responsibilities duty — falls to `preferredTools`. Emits `RISK_MISSING_TOOLS` high @ weight −8, the entire `penaltySum` on that run. Boilerplate guard at `extract.ts:2754` should have caught it but needs `tools.length >= 4` *after* alias resolution and only `canva` is in `TOOL_ALIASES` | Gate `requiredLine` on the enclosing section — `inRequiredSection` tracking already exists at `extract.ts:2408-2414` — or derive required/preferred from the unit-level `requiredness` that is already computed correctly. **Two code paths, one root cause:** the unit extractor tags the same `canva` unit `requiredness: "supporting"` (correct) while `extractToolRequirements` calls it required (wrong). Fix should collapse them onto one authority, not patch the regex twice | OPEN |
+| DEF-005 | `splitEvidenceLines` `actionSplit` (`extract.ts:1890`) + `badJobFact` ceiling (`scoring.ts:627`) | wrong-verdict | **S1** | 2 | C002, C003 | Run-on JD (newlines stripped, bullets without terminal punctuation) survives as one ~1900-char evidence line → all function/execution `requirement_unit`s share that snippet → every `job_fact` trips `badJobFact`'s `length > 700` → `why_codes: []` → zero-WHY guardrail (`decision.ts:153`) forces **Pass**. Same JD + résumé scores Apply/89 with newlines, Pass/55 without | **FIXED** on branch `jobfit-runon-jd-split` @ `966c797f`. (a) `actionSplit` gains a second alternation of JD present-tense imperatives, constrained by a following lowercase word/digit; résumé past-tense list kept as its own unconstrained branch. (b) `jobFactFromUnit` truncates >700-char facts at a word boundary instead of discarding the match | **REOPENED (partial)**: C003 reproduces on dev. A Workday JD in third-person present ("Designs structural components…", "Demonstrates competency…") with no bullets is split by neither `actionSplit` branch, so Responsibilities + Qualifications survive as one 1,790-char line; every unit is typed `core` and the whole block counts as one `requiredLine` (feeds DEF-006) |
+| DEF-006 | `extractToolRequirements` (`extract.ts:2742`) | false-fire | S2 | 2 | C002, C003 | `requiredTools`/`preferredTools` **inverted**. `requiredLine` is a per-line keyword test (`required\|must have\|proficient\|experience with`) with no section awareness, so the Nice-to-Have line "Experience with creative tools such as Adobe Express, Canva…" pushes `canva` into `requiredTools`, while JIRA — an actual Key Responsibilities duty — falls to `preferredTools`. Emits `RISK_MISSING_TOOLS` high @ weight −8, the entire `penaltySum` on that run. Boilerplate guard at `extract.ts:2754` should have caught it but needs `tools.length >= 4` *after* alias resolution and only `canva` is in `TOOL_ALIASES` | Gate `requiredLine` on the enclosing section — `inRequiredSection` tracking already exists at `extract.ts:2408-2414` — or derive required/preferred from the unit-level `requiredness` that is already computed correctly. **Two code paths, one root cause:** the unit extractor tags the same `canva` unit `requiredness: "supporting"` (correct) while `extractToolRequirements` calls it required (wrong). Fix should collapse them onto one authority, not patch the regex twice | OPEN |
 | DEF-007 | `scope_inversion` (`riskDetectors.ts:165`) | false-fire | S3 | 1 | C002 | The `inflated` branch fires on the **résumé alone** — a contribution verb near a size token ("Supported a 12-person growth marketing team") — without consulting the JD for any span demand, yet the emitted message asserts "Role's owned span exceeds the candidate's" (`riskDetectors.ts:168`). C002's JD contains no headcount or team-span requirement at all; it is an IC reporting to the CMO. Contradicts DIAGNOSIS §3, which specifies scope_inversion as JD-span-driven | Require a JD-side span signal for the `inflated` branch too, i.e. `(inflated && LARGE_SPAN_DEMAND.test(jobText)) \|\| spanBelow`, or re-word the risk so it does not assert a JD fact the detector never checked. Medium severity, weight 0 — did not move C002's verdict | OPEN |
 | DEF-003 | `RISK_MISSING_PROOF` cross-path duplication | dup | **S1** (was S3) | 2 | C001, C002 | Same `job_fact` emitted twice, once weighted and once at weight 0. **ROOT CAUSE FOUND:** two independent emitters that never reconcile — `scoring.ts:599` (`buildMajorGapRisks`, display-only, weight 0, sorted core-first then capped at 3) and `scoring.ts:1594` (uncovered-capability penalty loop, weight-bearing, **uncapped and undeduped**). One uncovered capability therefore produces two risk codes. Deduping *within* either path is a no-op — measured, corpus HARD unchanged at 114 | One capability = one risk = one penalty. Reconcile the two emitters into a single per-key gap set: penalise once, display once. **Severity raised to S1** — each duplicate counts separately toward the high-severity ceilings in `applyEvidenceGuardrails`, which is enough on its own to move a verdict a band (proved on prod-7adf78ff, Review→Pass). **FIXED** @ `883b5b9f`: `dedupeRiskCodes` keys `RISK_MISSING_PROOF` on (code, job_fact) only — the capability is the identity, the prose is presentation — and callers merge penalty-bearing risks first so first-wins keeps the weighted copy; penalty loop additionally deduped by requirement key. prod-7adf78ff returns to Review/74. Follow-up: duplicates now merge at **max severity**, because the two emitters disagree on severity and first-wins was silently downgrading gaps (caught in the audit; corrected 3 over-upgraded cases) | **FIXED — AUDITED, BASELINE RE-FROZEN** |
+| DEF-010 | Profile family inference (`lib/jobfit-family-inference.ts:361-378, :424`) + `GATE_FIELD_MISMATCH` (`constraints.ts:42-50`) | wrong-verdict | **S1** | 1 | C003 | Bare target role "Engineer" matches no Engineering phrase (list has only qualified forms: "mechanical engineer", "civil engineer"…). Because `roles` is non-empty the résumé fallback (`:402`) never runs, so inference returns the catch-all `["Other"]`. The gate then reads `Other` as an asserted non-technical family and force-passes a BSME new grad on a Mechanical Engineer I role. The trial path already guards against this by forcing `[]` (`jobfit-run-trial/route.ts:337-367`); the paid/coach path (`runJobFitForProfile.ts:257` → `mapClientProfileToOverrides`) does not | (a) Gate: treat `Other` as unknown, i.e. skip `GATE_FIELD_MISMATCH` when `targetFamilies` is `[]` or only `["Other"]`. (b) Inference: match bare `engineer`/`engineering` (word-boundary, after the software/data/sales-engineer forms) to Engineering, and run the résumé fallback when roles resolve to nothing. (a) alone removes the force-pass; (b) restores the family bonus. Shares the "Other catch-all" root with known `RISK_FAMILY_MISMATCH`, but a different emitter (hard gate, not a risk) | **FIXED** @ `19c06c41` (inference side, `lib/jobfit-family-inference.ts`): any target-role item containing `engineer(s|ing)` that is not software/data/sales-type now maps to Engineering. Gate and penalty logic deliberately untouched. Two broader fixes were tried and rejected: (A) treating `Other` as unknown in the gate + both family-mismatch sites moved 44 prod decisions and regressed 0410q (psychology grad vs Meta SWE 3+ yrs, Pass→Review): `Other` is sometimes a genuine non-technical target with no family bucket. (B) falling back to résumé-tag families when roles resolve to `Other` re-labelled Property Manager targets as Marketing and dropped a Leasing Coordinator Apply→Pass. Regression: core 1 intended diff (0410n gains Engineering from "process engineer", decision unchanged), prod 0 (corpus freezes `profileOverrides`, so it cannot exercise inference). Live check on all 175 prod `client_profiles.target_roles`: exactly 2 move Other→Engineering (C003's "Engineer" and one "Analyst, Engineer"); no software/data profile gains Engineering. C003 after fix: gate clears (raw 65→87), still Pass/55 on DEF-005/006/011/012 |
+| DEF-011 | `analysis_reporting` CAPABILITY_RULE `jobPhrases` (`extract.ts:264-275`) | false-fire | S2 | 1 | C003 | Bare `"analysis"` matches "thermal analysis" in an ME duty list; emits `analysis_reporting` (functionTag `data_analytics_bi`) as `core`, a high `RISK_MISSING_PROOF` ("analysis, reporting, and measurement work"), and adds `data_analytics_bi` to the JD's function_tags. The profile side already requires `QUANT_ANALYSIS_ANCHORS`; the JD side is unguarded. Same class as DEF-009 (debt #1) | Give JD-side `analysis`/`reporting`/`metrics` the same `requiresNearby: QUANT_ANALYSIS_ANCHORS` as the profile side, or negative context for engineering qualifiers (thermal/structural/stress/failure/finite element) | **FIXED** @ step-1 commit: `negativeContext` on bare `analysis` (thermal/structural/stress/failure/vibration/modal analysis, finite element, fea); `data analysis` still matches separately. Chose negativeContext over requiresNearby to avoid suppressing real analyst JDs that lack a quant anchor. Core diffs: 0410s and 0410ah lose the phantom unit; prod 0 |
+| DEF-012 | `mechanical_engineering` CAPABILITY_RULE `profilePhrases` (`extract.ts:1332`) | false-fire (missing proof) | S2 | 1 | C003 | A BSME résumé with CAD-led design, FEA, heat-exchanger design, ~100 pages of drawings, GD&T and a CSWA yields **no** `mechanical_engineering` profile unit. `profilePhrases` is six narrow bigrams ("mechanical design", "thermodynamics", "cad design"…); "Thermodynamics" appears only in coursework (−6 at `extract.ts:2373`). Result: high `RISK_MISSING_PROOF` "Mechanical Engineering". Meanwhile `trades_construction` fires on "machining" in the summary and labels the candidate "Skilled Trades" | Widen profilePhrases to evidenced ME work: solidworks, fea / finite element, engineering drawings, gd&t, heat exchanger, prototype, cad (word-boundary), "mechanical engineering" gated off degree lines. Consider suppressing `trades_construction` when an engineering function unit is present | **FIXED** @ step-1 commit: added engineering drawings, finite element, fea, gd&t, heat exchanger, safety factor, thermal simulation, design loads. `trades_construction` suppression NOT done (no verdict impact seen). Core diffs: 0410d gains direct ME match; 0410ah (ME vs ME JD) Pass→Apply/77; 0410x gains units, no match; prod 0. C003 now Apply/89 on dev, only remaining high risk is ansys (DEF-005/006) |
+| DEF-013 | V5 renderer (RISK bullets) | renderer | S3 | 1 | C003 | Renders "prioritizes candidates with 0-2 years of post-degree industry experience… no industry engineering" as a RISK for a May 2026 grad. The JD floor is 0 years; no engine risk code backs the bullet | Renderer should not surface an experience risk when `yearsRequired` is 0 and no engine experience risk exists | OPEN |
 | DEF-004 | `client_commercial_work` requiredness | mis-typed | S3 | 1 | C001 | Sourced from "Maintain accurate time records and participate in… client-facing meetings" — a duty line — but typed `requiredness: core`, severity high. Directionally right, severity inflated from a weak line | Weight requiredness by line strength; admin/logistics duty lines should not reach `core` | OPEN |
 | DEF-008 | job `strength` vs snippet length (`extract.ts` `jobRuleStrength` / `scoreJobLine`) | — | — | 1 | C002 follow-on | Hypothesised that `strength` is contaminated by snippet length — raw char bonuses (`+1` at ≥20, `+2` at ≥30, `−2` at <16) plus segmentation-sensitive `hits` accumulation — so that fixing DEF-005 made requirements look weaker and pushed prod-7adf78ff Review→Pass | **CLOSED — NOT A DEFECT.** Probed the two units directly. The length term *cancels* (both pre- and post-split snippets clear 30 chars, so `+3` applies in both runs); the delta was `hits`-driven. More importantly the drop was the engine getting **more honest, not less**: pre-fix, `analysis_reporting` (strength 6) was anchored to a recruiting blurb — *"Growing together We are seeking a highly skilled Reporting Analyst…"* — and `operations_execution` (strength 10, `core`) to a logistics line with leaked CSS — *"…Minnetonka, MN location. a { text-decoration: none; color: #464feb"*. Post-fix they anchor to real requirement text (*"Analyze operational data to identify areas for process improvement…"*). Lower strength on junk lines is correct behaviour. The real cause of the 7adf78ff flip is DEF-003 + DEF-009 | **CLOSED** |
 | DEF-009 | `software_engineering` CAPABILITY_RULE (`extract.ts:1366`) | false-fire | S2 | 1 | C002 follow-on | Fires `core` at strength 9 on a **Data Analyst** JD (prod-7adf78ff, UnitedHealth). `jobPhrases` contains bare `"api"` and `"cloud"` with no word boundaries, no `requiresNearby`, no negative context — the canonical instance of architectural debt #1. A quantitative-analytics qualifications block ("3+ years… statistics, business analytics or computer science…") is enough to trip it, and once `core` it drives a high-severity `RISK_MISSING_PROOF` **and** an uncovered-capability penalty. Amplified by DEF-003, which counts it twice | Pre-compile `jobPhrases` to word-boundary regexes and gate the generic tokens (`api`, `cloud`, `backend`, `frontend`) on software-context co-occurrence (engineer/developer/codebase/deploy/repository). Do **not** widen to `computer science`, which is a degree-field phrase, not a job duty. Blocked on the broader bare-word refactor (debt #1) unless fixed narrowly for this rule first | OPEN |
@@ -343,6 +348,75 @@ the pre-fix engine was over-penalising fleet-wide — DEF-003 was suppressing
 verdicts generally, not just on the one case that surfaced it. That is the larger
 finding here, bigger than any of the 11 individual verdicts.
 
+### CASE C003 — C.P. → AeroVironment, Mechanical Engineer I
+
+```
+CASE ID:        C003
+DATE:           2026-09-22
+RUN ID:         adcdb9fa-273c-44cd-900b-7c8be78b735d  (prod, coach-sourced)
+FINGERPRINT:    COACH-MUCPSW7K
+RÉSUMÉ:         C.P. — BSME CU Boulder May 2026 (GPA 3.79), FE passed, CSWA; lead CAD on
+                senior-design Peltier cooling system, FSAE suspension design, mechatronics robots
+JD:             AeroVironment — Mechanical Engineer I (UAV design, 0-2 yrs, SolidWorks; Workday
+                posting ingested as ONE run-on paragraph, no newlines)
+SHIPPED RESULT: Pass / 55  (raw 65, clamped 55, penalty −8)
+resume_source:  MISSING (same whitelist strip as C002)
+isSeniorRole:   false
+gate_triggered: GATE_FIELD_MISMATCH (force_pass) — "Your profile targets Other"
+detector fires: RISK_MISSING_TOOLS ansys (high, −8), RISK_LIMITED_MATCH_EVIDENCE (medium),
+                RISK_MISSING_PROOF ×3 high (Mechanical Engineering / ansys / analysis_reporting)
+case files:     evals/jobfit/cases/C003/ (resume.txt, jd.txt, result.json, run-row.json) — gitignored, contains PII
+repro:          tests/jobfit-regression/_cole-repro.local.ts (dev engine reproduces prod exactly)
+
+WHAT I'M PROBING WITH THIS CASE:
+  Coach report: "scoring / risks too severe" on a textbook new-grad ME fit.
+
+VERDICT CHECK:  bug — wrong-verdict (S1). Three independent layers, each sufficient to force Pass.
+
+BUG 1: GATE_FIELD_MISMATCH force-pass on an Engineering→Engineering pairing (DEF-010, new)
+  client_profiles.target_roles = "Engineer". inferTargetFamilies only knows qualified forms
+  ("mechanical engineer", "aerospace engineer"…, jobfit-family-inference.ts:361-378); bare
+  "Engineer" matches nothing, roles is non-empty so the résumé fallback (:402) is skipped,
+  and :424 returns ["Other"]. constraints.ts:42-50 treats any non-empty, non-technical
+  family list as a mismatch → force_pass. "Other" means "unknown", not "business".
+  LAYER: extraction-resume (profile intake) + detector (gate).
+
+BUG 2: run-on JD → every unit `core` + whole block counts as a "required" line (DEF-005 + DEF-006)
+  All function/tool units share one 1,790-char snippet spanning Responsibilities AND Basic
+  Qualifications. The DEF-005 actionSplit fix on dev does not split this JD (third-person
+  "Designs…", "Demonstrates…"). extractToolRequirements (extract.ts:2785) sees "required" /
+  "Proficient" anywhere in that mega-line and marks ansys REQUIRED, though the JD names it
+  only as an example ("simulation tools (SolidWorks Simulation, ANSYS)") and the candidate
+  has SolidWorks thermal simulation + FEA. → RISK_MISSING_TOOLS high −8.
+  LAYER: extraction-jd.
+
+BUG 3: two capability false-fires stack the high-risk count to 4 (DEF-011, DEF-012, new)
+  • analysis_reporting core on "thermal analysis" (bare "analysis" jobPhrase, extract.ts:264-275).
+  • mechanical_engineering "not proven" for a BSME: profilePhrases (extract.ts:1332) lack
+    CAD/FEA/drawings/SolidWorks vocabulary; the résumé instead earns trades_construction.
+  With 4 highs the ceiling at decision.ts:165 caps to Pass even with the gate removed.
+  LAYER: detector (CAPABILITY_RULES).
+
+COUNTERFACTUALS (dev engine, same résumé):
+  A. as prod (roles "Engineer")                     → Pass / 55, gate fired, raw 65
+  B. roles "Mechanical Engineer" (gate clears)      → Pass / 55, raw 87, 4 highs
+  C. B + JD section/bullet newlines restored        → Apply / 91, 0 highs, ansys → preferred (−4)
+  One intake word plus JD formatting decided the verdict, not fit.
+
+RENDERER (DEF-013, S3): RISK bullet frames "0-2 years… no industry engineering" as a gap for a
+  new grad against a 0-year floor. The composite-parts RISK bullet is fair (steel used in final build).
+
+NOT BUGS (confirmed correct behavior):
+  • No experience/seniority fire: yearsRequired 0, isSeniorRole false. Correct.
+  • No credential gate on "Public Trust" / "ability to obtain a security clearance". Correct.
+  • Excel/Word/PowerPoint typed supporting/preferred. Correct.
+
+NET: Should be Apply (arguably Priority Apply: SolidWorks CSWA, thermal design of an
+  electro-mechanical system, prototype build, drawings and machining map 1:1 to the JD).
+  Shipped Pass with "Do not apply." Even counterfactual C under-credits: only 1 WHY
+  (solidworks), because DEF-012 leaves the ME function unmatched.
+```
+
 ---
 
 ## 5. OPEN QUESTIONS / PAYLOAD GAPS
@@ -360,6 +434,8 @@ Things to resolve or capture better while testing:
 - [x] **Is ownership detection wired into this code path at all? — ANSWERED: yes, but gated.** `detectOwnershipVerbMismatch` is defined at `verbMismatch.ts:106`; its only production call site is `jobfitEvaluator.ts:294`, inside `if (args.applyVerbMismatchRisk)`. That flag is set only by `detectorFlagsForPath` (`:92`). If it fires, it does reach output (`riskCodes` → `baseOut.risk_codes` at `:397`) and caps Apply→Review at `decision.ts:35-40`. **So C001's "did not fire" is fully explained by "was never called" — see DEF-002, now UNVERIFIED.**
 - [ ] **Does the engine extract "events" as a requirement at all?** C002's JD is fundamentally an events role (~20-25 sponsorships, receptions, internal events) yet no `requirement_unit` covers events — the block was bucketed into brand_messaging / communications_writing / consumer_research / product_positioning / operations_execution. Only the V5 renderer noticed ("EVENT MARKETING EXPERIENCE ABSENT"), with no engine risk code behind it. **This is why the post-DEF-005 result (Apply / 89) may be too generous:** fixing segmentation restored the WHY set but the JD's core function is still invisible to CAPABILITY_RULES. Probe whether an `events_management` capability key exists; if not, that is a coverage gap, not a scoring bug.
 - [ ] **Renderer vs engine.** C001's inversion ("TABLEAU DASHBOARD LEADERSHIP") came from the Haiku renderer, not the deterministic engine. Track whether a wrong output is an *engine* defect or a *renderer* defect — they have different owners and different fixes.
+- [ ] **Which engine SHA is live in prod?** C003's payload has no `jobfit_logic_version`, and prod ships via `vercel promote` of a dev preview, so `origin/main` is not the answer. Needed to say whether the DEF-005/DEF-003 fixes were live for C003 (the dev repro matches prod exactly, so C003's conclusions hold either way). Add the logic-version stamp to `result_json`.
+- [ ] **82 of 175 prod profiles (47%) resolve to `targetFamilies: ["Other"]`** (measured 2026-09-22 after the DEF-010 fix). Examples: "Recruiter, Recruiting Coordinator…" (no HR mapping), "Property Manager, Lease Administrator, Real Estate", "Sports management roles, guest services, fan engagement". Every one is exposed to `GATE_FIELD_MISMATCH` on hard-tech JDs and to the −12/−30 family-mismatch penalty on every JD outside `Other`. In the prod corpus this suppresses 44 decisions (e.g. a Recruiter-targeting profile scored on a Recruiter JD takes −12). Needs vocabulary coverage in `inferTargetFamilies` (HR/recruiting, real estate/property, sports/guest services) rather than a blanket `Other`=unknown rule (see DEF-010 rejected approach A). Candidate for its own DEF once sized per family.
 - [ ] `profile_signals.resumeText` contains only the 5-line header, not the résumé body. Is the full text reaching the extractor, or is it assembled from `profile_evidence_units` only?
 
 ---

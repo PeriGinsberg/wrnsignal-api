@@ -64,3 +64,6 @@ screen shots/
 
 # One-off scaffold archive
 signal-jobfit-cc-scaffold.zip
+
+# JobFit diagnosis cases pulled from prod: real resumes + contact details.
+evals/jobfit/cases/
