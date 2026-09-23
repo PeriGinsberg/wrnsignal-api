@@ -157,7 +157,7 @@ if (!hParsed.ok) console.error(hParsed.errors)
 const h = (hParsed as { ok: true; content: WorkbookContent }).content
 const starters = h.sections.flatMap((s) => s.blocks)
   .filter((b): b is Extract<typeof b, { type: "field" }> => b.type === "field" && !!b.starter)
-ok("five fields carry starter text", starters.length === 5, starters.length)
+ok("five fields carry starter text", starters.length === 5)
 ok("the questions starter keeps its seven lines",
   (starters.find((b) => b.key === "q.top3")!.starter!.match(/\n/g) ?? []).length === 6)
 ok("an unanswered starter field shows the starter", displayValue(undefined, "seed") === "seed")
