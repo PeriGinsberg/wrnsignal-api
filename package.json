@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
+    "@sparticuz/chromium": "^133.0.0",
     "@supabase/supabase-js": "^2.90.1",
     "@types/he": "^1.2.3",
     "cheerio": "^1.2.0",
@@ -25,6 +26,7 @@
     "openai": "^6.16.0",
     "papaparse": "^5.5.4",
     "postmark": "^4.0.7",
+    "puppeteer-core": "^24.43.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "read-excel-file": "^9.3.4",

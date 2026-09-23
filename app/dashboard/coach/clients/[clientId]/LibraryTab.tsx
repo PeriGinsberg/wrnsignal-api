@@ -106,6 +106,49 @@ export function LibraryTab({
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const base = coachClientId ? `/api/coach/coach-clients/${coachClientId}/documents` : null
+  const folderBase = coachClientId ? `/api/coach/coach-clients/${coachClientId}/drive-folder` : null
+
+  // The client's Networking folder in Drive. It lives here rather than in
+  // settings because this is the tab where their documents already are, and it
+  // is what the Networking Plan writes into.
+  const [folderUrl, setFolderUrl] = useState("")
+  const [folderSaved, setFolderSaved] = useState<string | null>(null)
+  const [folderBusy, setFolderBusy] = useState(false)
+  const [folderErr, setFolderErr] = useState<string | null>(null)
+
+  const loadFolder = useCallback(async () => {
+    if (!folderBase) return
+    try {
+      const res = await authFetch(folderBase)
+      const j = await res.json().catch(() => ({}))
+      if (j?.ok) {
+        setFolderSaved(j.folder?.url ?? null)
+        setFolderUrl(j.folder?.url ?? "")
+      }
+    } catch {
+      // A folder we cannot read is not worth blocking the library over.
+    }
+  }, [folderBase])
+
+  async function saveFolder() {
+    if (!folderBase) return
+    setFolderBusy(true); setFolderErr(null)
+    try {
+      const res = await authFetch(folderBase, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: folderUrl }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) throw new Error(j?.error || `Could not save (${res.status})`)
+      setFolderSaved(j.folder?.url ?? null)
+      setFolderUrl(j.folder?.url ?? "")
+    } catch (e: any) {
+      setFolderErr(e?.message || String(e))
+    } finally {
+      setFolderBusy(false)
+    }
+  }
 
   const load = useCallback(async () => {
     if (!base) { setLoading(false); setDocs([]); setCats([]); return } // no relationship → benign empty
@@ -136,6 +179,7 @@ export function LibraryTab({
   }, [base])
 
   useEffect(() => { void load() }, [load])
+  useEffect(() => { void loadFolder() }, [loadFolder])
 
   // Silent re-fetch of the documents after a write error (categories rarely
   // change here; the load() retry covers them).
@@ -331,6 +375,38 @@ export function LibraryTab({
         Links to {clientName}’s documents — Drive files, resumes, guides. These are pointers
         you paste in, organized by your document categories.
       </p>
+
+      {/* The client's Networking folder in Drive. The Networking Plan writes
+          into this folder, so it is wired up here, next to the documents it
+          produces, rather than hidden in a settings screen. */}
+      <div style={{ border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 12, padding: 14, marginBottom: 16 }}>
+        <div style={{ fontSize: 12, fontWeight: 800, color: T.MUTED, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>
+          Networking folder
+        </div>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <input
+            value={folderUrl}
+            onChange={(e) => setFolderUrl(e.target.value)}
+            placeholder="Paste the Drive folder link"
+            aria-label="Networking folder link"
+            style={{ ...input, flex: "1 1 340px" }}
+          />
+          <button onClick={saveFolder} disabled={folderBusy} style={{ ...btnSecondary, opacity: folderBusy ? 0.6 : 1 }}>
+            {folderBusy ? "Checking…" : folderSaved ? "Update" : "Save"}
+          </button>
+          {folderSaved && (
+            <a href={folderSaved} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12.5, color: T.MUTED }}>
+              Open in Drive ↗
+            </a>
+          )}
+        </div>
+        <div style={{ fontSize: 12, color: T.DIM, marginTop: 8 }}>
+          {folderSaved
+            ? "The Networking Plan is saved here."
+            : "Not set. Without it, the first plan creates a folder under Clients."}
+        </div>
+        {folderErr && <div style={{ fontSize: 12.5, color: T.ERROR ?? "#b00", marginTop: 8 }}>{folderErr}</div>}
+      </div>
 
       {actionError && <div style={{ marginBottom: 16 }}><Banner kind="error">{actionError}</Banner></div>}
 

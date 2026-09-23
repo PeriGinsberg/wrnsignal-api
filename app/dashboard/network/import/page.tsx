@@ -10,9 +10,9 @@
 // name comes from the server, for the subject it authorised, never from the
 // URL: a page that displayed the id it was given would confirm nothing.
 
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { T, headline, eyebrow, card, select as selectStyle, selectOption } from "../../../../lib/dashboard-theme"
-import { getToken, subjectId, withSubject } from "../authFetch"
+import { authFetch, getToken, subjectId, withSubject } from "../authFetch"
 import { IMPORT_FIELDS, type ImportField } from "../../../../lib/network-tracker/import-fields"
 import { resolveImportedName, displayName } from "../../../../lib/network-tracker/parse-name"
 
@@ -43,6 +43,13 @@ type Preview = {
   guessedMapping: (ImportField | null)[]
   totalRows: number
   dryRun: DryRun | null
+}
+type PlanJob = {
+  id: string
+  status: string
+  step: string
+  drive_file_url: string | null
+  shared_at: string | null
 }
 type Result = {
   subject: Subject
@@ -80,11 +87,40 @@ export default function ImportPage() {
   const [err, setErr] = useState<string | null>(null)
   const [result, setResult] = useState<Result | null>(null)
   const [confirmed, setConfirmed] = useState(false)
+  // The Networking Plan is a second act on the SAME file, which the page still
+  // holds, so the coach does not have to find the workbook again.
+  const [plan, setPlan] = useState<PlanJob | null>(null)
+  const [planBusy, setPlanBusy] = useState(false)
+  const [planErr, setPlanErr] = useState<string | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
 
   const isCoachView = subjectId() !== null
   const subject = result?.subject ?? preview?.subject ?? null
-  const boardName = subject?.name ?? null
+  // The name from the server, for the board this page is pointed at. It arrives
+  // with the first preview, but the banner has to say whose board this is
+  // BEFORE a file is chosen, so it is also fetched on mount. Without that the
+  // header reads "Importing into ..." at exactly the moment a coach is deciding
+  // whether they are in the right place.
+  const [rosterName, setRosterName] = useState<string | null>(null)
+  const boardName = subject?.name ?? rosterName
+
+  useEffect(() => {
+    const id = subjectId()
+    if (!id) return
+    let alive = true
+    void (async () => {
+      try {
+        const res = await authFetch("/api/coach/clients")
+        const j = await res.json().catch(() => ({}))
+        const hit = (j?.clients ?? []).find((c: any) => c.client_profile_id === id)
+        if (alive && hit) setRosterName(hit.name ?? hit.email ?? null)
+      } catch {
+        // The preview will supply the name a moment later; a failed roster
+        // lookup should not block the page.
+      }
+    })()
+    return () => { alive = false }
+  }, [])
 
   const runPreview = useCallback(
     async (f: File, opts: { sheet?: string; headerRow?: number; mapping?: (ImportField | null)[] } = {}) => {
@@ -110,6 +146,7 @@ export default function ImportPage() {
 
   function onPick(f: File | null) {
     setResult(null); setPreview(null); setErr(null); setConfirmed(false)
+    setPlan(null); setPlanErr(null)
     setFile(f)
     if (f) void runPreview(f)
   }
@@ -131,6 +168,41 @@ export default function ImportPage() {
       setErr(e?.message || String(e))
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function createPlan() {
+    if (!file) return
+    setPlanBusy(true); setPlanErr(null)
+    try {
+      const form = new FormData()
+      form.append("file", file)
+      const { res, j } = await authForm("/api/network/plan/run", form)
+      if (!res.ok || !j?.ok) throw new Error(j?.error || `Plan failed (${res.status})`)
+      setPlan(j.job)
+    } catch (e: any) {
+      setPlanErr(e?.message || String(e))
+    } finally {
+      setPlanBusy(false)
+    }
+  }
+
+  async function sharePlan() {
+    if (!plan) return
+    setPlanBusy(true); setPlanErr(null)
+    try {
+      const token = await getToken()
+      const res = await fetch(withSubject(`/api/network/plan/${plan.id}/share`), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) throw new Error(j?.error || `Share failed (${res.status})`)
+      setPlan({ ...plan, shared_at: j.shared_at })
+    } catch (e: any) {
+      setPlanErr(e?.message || String(e))
+    } finally {
+      setPlanBusy(false)
     }
   }
 
@@ -186,6 +258,58 @@ export default function ImportPage() {
           <a href={withSubject("/dashboard/network/contacts")} style={{ ...primaryBtn, display: "inline-block", marginTop: 14, textDecoration: "none" }}>
             See imported contacts →
           </a>
+
+          {/* THE PLAN, offered only once the contacts are actually in. It reads
+              the workbook's Outreach Messages tab, so it is the same file and
+              the same act, one step later. */}
+          {isCoachView && (
+            <div style={{ marginTop: 20, paddingTop: 18, borderTop: `1px solid ${T.BORDER_SOFT}` }}>
+              <div style={{ ...eyebrow, color: T.MUTED, marginBottom: 8 }}>Networking plan</div>
+
+              {!plan && (
+                <>
+                  <p style={{ color: T.MUTED, fontSize: 13, margin: "0 0 12px" }}>
+                    Build the branded plan PDF from this workbook&apos;s Outreach Messages tab, save it to{" "}
+                    {boardName ?? "the client"}&apos;s Networking folder in Drive, and file it in their library.
+                    It stays hidden until you share it.
+                  </p>
+                  <button onClick={createPlan} disabled={planBusy} style={{ ...primaryBtn, opacity: planBusy ? 0.6 : 1 }}>
+                    {planBusy ? "Building the plan…" : "Create Networking Plan"}
+                  </button>
+                </>
+              )}
+
+              {plan && (
+                <div>
+                  <div style={{ color: T.TEXT, fontSize: 14, fontWeight: 800 }}>
+                    {plan.shared_at ? "Shared with the client." : "Saved to Drive and filed in the library, hidden."}
+                  </div>
+                  <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 12, flexWrap: "wrap" }}>
+                    {plan.drive_file_url && (
+                      <a href={plan.drive_file_url} target="_blank" rel="noreferrer" style={{ ...secondaryBtn, textDecoration: "none" }}>
+                        Open the PDF ↗
+                      </a>
+                    )}
+                    {!plan.shared_at ? (
+                      <button onClick={sharePlan} disabled={planBusy} style={{ ...primaryBtn, opacity: planBusy ? 0.6 : 1 }}>
+                        {planBusy ? "Sharing…" : "Share with client"}
+                      </button>
+                    ) : (
+                      <span style={{ color: T.MUTED, fontSize: 13 }}>
+                        {boardName ?? "The client"} can see it in their library now.
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {planErr && (
+                <div style={{ ...card, marginTop: 12, padding: 12, background: T.ERROR_BG, borderColor: "rgba(255,120,120,0.35)", color: T.ERROR, fontSize: 13 }}>
+                  {planErr}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -355,6 +479,10 @@ export default function ImportPage() {
 const primaryBtn: React.CSSProperties = {
   background: T.GRAD_PRIMARY, color: T.INK_ON_ACCENT, fontWeight: 900, fontSize: 13,
   border: "none", borderRadius: 12, padding: "11px 18px", cursor: "pointer",
+}
+const secondaryBtn: React.CSSProperties = {
+  background: "transparent", color: T.TEXT, fontWeight: 800, fontSize: 13,
+  border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 12, padding: "10px 16px", cursor: "pointer",
 }
 const th: React.CSSProperties = {
   textAlign: "left", padding: "9px 12px", fontSize: 10, fontWeight: 900, letterSpacing: 0.4,
