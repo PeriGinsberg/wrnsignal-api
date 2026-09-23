@@ -1,0 +1,574 @@
+{
+  "schema_version": 1,
+  "template": true,
+  "template_id": "session-1-foundations",
+  "slug": "session-1-foundations",
+  "title": "Session 1: Foundations",
+  "client": {
+    "first_name": "{first_name}",
+    "full_name": "{full_name}"
+  },
+  "interview": null,
+  "coach": {
+    "first_name": "{coach_first_name}"
+  },
+  "block_types_note": "Same block types as interview prep workbooks. coach_only blocks never render for the client. Section 'mode' is in_session or homework. {first_name} is substituted from the client record when the workbook is created.",
+  "sections": [
+    {
+      "id": "welcome",
+      "number": 1,
+      "title": "Welcome",
+      "mode": "in_session",
+      "blocks": [
+        {
+          "type": "text",
+          "size": "lead",
+          "body": "This is your Session 1 workbook. We'll work through the first five sections together today, and you'll type as we go. The homework at the end is yours to finish on your own."
+        },
+        {
+          "type": "callout",
+          "tone": "paleblue",
+          "title": "Today you'll leave with",
+          "body": "A hook that makes you memorable.\n\nA Tell Me About Yourself you can say in 60 to 90 seconds.\n\nA clear way to walk someone through your resume."
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach guide: Welcome",
+          "body": "TIME: 5 minutes.\nGOAL: They know what the full program looks like and what today will produce.\nBEFORE THE SESSION: Share this workbook from the Workbooks tab. Have their resume open on your screen. Have the Kaitlyn example ready.\nSAY THIS: \"We'll have up to 8 hours together: three teaching sessions, two practice mock interviews, an AI mock, and then prep for your real interviews. Today is the foundation.\"\nASK: \"Do you have any interviews scheduled right now?\" If yes, note the date. It may change how fast you move through the program.\nLISTEN FOR: nerves, past interview experiences (good or bad), and anything they already think they do badly.\nHOUSE RULE: In live sessions, the client always does the typing. You coach."
+        }
+      ]
+    },
+    {
+      "id": "wrn-three",
+      "number": 2,
+      "title": "The WRN Three",
+      "mode": "in_session",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Every answer you give in an interview should do at least one of three things."
+        },
+        {
+          "type": "list",
+          "style": "numbers",
+          "items": [
+            "RELEVANT: It connects back to why you fit this role.",
+            "LIKABLE: It shows you're someone they'd want to work with.",
+            "MEMORABLE: It gives them a reason to remember you after a long day of interviews."
+          ]
+        },
+        {
+          "type": "callout",
+          "tone": "peach",
+          "body": "Being qualified gets you in the room. These three get you the offer."
+        },
+        {
+          "type": "field",
+          "key": "three.remember",
+          "input": "short",
+          "label": "Think of someone you met once and still remember. What made them stick?"
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach guide: The WRN Three",
+          "body": "TIME: 7 minutes.\nGOAL: They understand the three standards every answer is measured against, for the whole program.\nSAY THIS: Read the three out loud. Then ask the field question and let them type.\nLISTEN FOR: whether they tie \"memorable\" to something personal, not an achievement.\nIF YOU HEAR an achievement (\"they were really smart\"), ASK: \"Is that why you remember them, or is it something about who they are?\"\nWHY IT MATTERS: Relevance, likability, and memorable are also three of the scorecard dimensions in the practice mocks. Planting them now means the scorecard feels familiar later.\nMOVE ON WHEN: they've typed an answer and you've connected it to \"memorable.\" This is the bridge to the hook."
+        }
+      ]
+    },
+    {
+      "id": "hook",
+      "number": 3,
+      "title": "Your Hook",
+      "mode": "in_session",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Imagine you're the 7th interview of the day. Everyone they've met looks qualified on paper. So why will they remember you?"
+        },
+        {
+          "type": "text",
+          "body": "That's your hook. It's not a resume line and it's not a strength. It's something uniquely you, so that later the interviewer says, \"Oh yeah, the one who...\""
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "title": "Hooks other clients have used",
+          "items": [
+            "I'm an identical triplet.",
+            "My family runs a huge dog rescue.",
+            "I've been to Antarctica."
+          ]
+        },
+        {
+          "type": "field",
+          "key": "hook.final",
+          "input": "short",
+          "style": "hook",
+          "label": "My hook",
+          "prefix": "Oh yeah, {first_name}. The one who",
+          "placeholder": "Finish the sentence"
+        },
+        {
+          "type": "callout",
+          "tone": "paleblue",
+          "body": "Your hook goes in the first part of your Tell Me About Yourself. It can come back once later in the interview, but no more than that."
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach guide: Your Hook",
+          "body": "TIME: 10 minutes.\nGOAL: One hook they're excited to use, or a short list to test in homework.\nSAY THIS: Read the 7th-interview framing out loud, then the three examples.\nDO NOT offer ideas for their hook. It has to come from them so it feels like theirs.\nIF THEY'RE STUCK: Go back to the triplet, Antarctica, and dog rescue examples, then ask: \"What's something interesting about you?\"\nLISTEN FOR: resume lines (\"I interned at...\"), strengths (\"I'm a hard worker\"), achievements (\"I made Dean's List\").\nIF YOU HEAR ONE, ASK: \"Would the interviewer say 'Oh yeah, the one who...'?\"\nMOVE ON WHEN: they have one, or after 10 minutes. Homework question 4 gives them another chance."
+        }
+      ]
+    },
+    {
+      "id": "tmay",
+      "number": 4,
+      "title": "Tell Me About Yourself",
+      "mode": "in_session",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "This is often the first question, and it sets the tone. Use three parts: Present, Past, Future."
+        },
+        {
+          "type": "list",
+          "style": "numbers",
+          "items": [
+            "PRESENT: Who you are now, plus a personal touch or your hook.",
+            "PAST: One or two experiences that led you here. Not your whole resume.",
+            "FUTURE: What you're looking for now and where it leads. This answers \"why this role\" before they ask."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "Here's how Kaitlyn did it"
+        },
+        {
+          "type": "text",
+          "label": "PRESENT",
+          "body": "Who she is now, plus a personal touch."
+        },
+        {
+          "type": "big_quote",
+          "body": "Hi, as you already know, my name is Kaitlyn Yardly, and I'm a junior at Cornell University studying psychology with a minor in economics. When I'm not in class (or studying), you can usually find me playing volleyball in Cornell's club league or relaxing with a great book."
+        },
+        {
+          "type": "text",
+          "label": "PAST",
+          "body": "One experience, and what she actually did there."
+        },
+        {
+          "type": "big_quote",
+          "body": "Beyond my coursework, my internship last summer at Company XYZ is what really got me interested in human capital strategy and consulting. It's one thing to learn about it in a textbook. At Company XYZ, I sat in client meetings, heard about the people and organizational challenges threatening their growth goals, and contributed to strategy sessions on reorganizations that could get the company back on track."
+        },
+        {
+          "type": "text",
+          "label": "FUTURE",
+          "body": "Where she's headed, which answers why this role."
+        },
+        {
+          "type": "big_quote",
+          "body": "With that experience under my belt, I'm more determined than ever to keep building the skills and experience that will open doors for me as a human capital strategy consultant."
+        },
+        {
+          "type": "callout",
+          "tone": "peach",
+          "title": "What Kaitlyn left out",
+          "body": "Her GPA, her class list, her other jobs. She shared one experience and what she actually did there, not a job title."
+        },
+        {
+          "type": "field",
+          "key": "tmay.present",
+          "input": "long",
+          "label": "My Present"
+        },
+        {
+          "type": "field",
+          "key": "tmay.past",
+          "input": "long",
+          "label": "My Past"
+        },
+        {
+          "type": "field",
+          "key": "tmay.future",
+          "input": "long",
+          "label": "My Future"
+        },
+        {
+          "type": "word_track",
+          "label": "Then close with",
+          "body": "\"That was a really quick summary. If there's anything in particular on my resume you'd like me to dive into, please let me know.\""
+        },
+        {
+          "type": "field",
+          "key": "tmay.time",
+          "input": "short",
+          "label": "My time out loud (seconds)",
+          "placeholder": "Aim for 60 to 90"
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach guide: Tell Me About Yourself",
+          "body": "TIME: 23 minutes. This is the core of the session.\nGOAL: A full draft said out loud once, timed.\nSAY THIS: Teach the three parts, then read Kaitlyn aloud. Ask, \"What didn't she say?\" before they read the callout.\nBUILD IT ONE PART AT A TIME. Client types. You coach.\nLISTEN FOR: a resume recitation; more than two experiences in Past; a job title instead of what they did; a vague Future (\"I want to grow\"); no hook in Present.\nIF YOU HEAR IT, ASK: \"What did you actually do there?\" \"Which one experience made you want this?\" \"Where does this lead in a few years?\"\nTIMING: If it runs over 90 seconds, cut from Past first. For a short panel interview, aim for 45 to 60 seconds.\nMOVE ON WHEN: they've said it out loud once. It doesn't need to be polished. The VideoAsk and practice rounds refine it."
+        }
+      ]
+    },
+    {
+      "id": "resume",
+      "number": 5,
+      "title": "Walk Me Through Your Resume",
+      "mode": "in_session",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Don't walk through it top to bottom. Lead with what matters most for this role, and say so."
+        },
+        {
+          "type": "word_track",
+          "label": "Start with",
+          "body": "\"The experience most relevant to this role is ___, so let me start there.\""
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "Pick your anchor: the experience most relevant to the role.",
+            "Add sub-anchors: one or two things per role, each showing something different.",
+            "Job titles carry little weight. What you did carries a lot.",
+            "Light on work experience? Your anchor can be a project, class, club, sport, or volunteer role."
+          ]
+        },
+        {
+          "type": "field",
+          "key": "resume.anchor",
+          "input": "short",
+          "label": "My anchor"
+        },
+        {
+          "type": "field",
+          "key": "resume.anchor_shows",
+          "input": "short",
+          "label": "What it shows"
+        },
+        {
+          "type": "field",
+          "key": "resume.sub1",
+          "input": "short",
+          "label": "Sub-anchor 1"
+        },
+        {
+          "type": "field",
+          "key": "resume.sub1_shows",
+          "input": "short",
+          "label": "What it shows"
+        },
+        {
+          "type": "field",
+          "key": "resume.sub2",
+          "input": "short",
+          "label": "Sub-anchor 2"
+        },
+        {
+          "type": "field",
+          "key": "resume.sub2_shows",
+          "input": "short",
+          "label": "What it shows"
+        },
+        {
+          "type": "field",
+          "key": "resume.sub3",
+          "input": "short",
+          "label": "Sub-anchor 3 (optional)"
+        },
+        {
+          "type": "field",
+          "key": "resume.sub3_shows",
+          "input": "short",
+          "label": "What it shows"
+        },
+        {
+          "type": "word_track",
+          "label": "Then close with",
+          "body": "\"I'm happy to go deeper on any of those if you'd like.\""
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach guide: Walk Me Through Your Resume",
+          "body": "TIME: 10 minutes.\nGOAL: Anchor and sub-anchors chosen, each showing something different.\nSAY THIS: Teach the anchor line first, then have them pick.\nLISTEN FOR: a chronological walk-through; the same skill shown in every role; leaning on titles.\nIF YOU HEAR IT, ASK: \"If they only remember one thing, which one should it be?\" \"What does this one show that the others don't?\"\nNO TARGET ROLE YET? Anchor to the type of role they're pursuing.\nMOVE ON WHEN: the fields are filled. Leave 5 minutes for Finish Up."
+        }
+      ]
+    },
+    {
+      "id": "homework",
+      "number": 6,
+      "title": "Homework: Five Questions",
+      "mode": "homework",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Answer each one in writing first. Then you'll say them out loud on video, with no notes."
+        },
+        {
+          "type": "heading",
+          "text": "1. What are your greatest strengths?"
+        },
+        {
+          "type": "coach_note",
+          "body": "Pick two or three that matter for the roles you want. Back each one with a quick example."
+        },
+        {
+          "type": "field",
+          "key": "hw.strength1",
+          "input": "short",
+          "number": 1,
+          "label": "Strength"
+        },
+        {
+          "type": "field",
+          "key": "hw.strength1_proof",
+          "input": "long",
+          "label": "My proof"
+        },
+        {
+          "type": "field",
+          "key": "hw.strength2",
+          "input": "short",
+          "number": 2,
+          "label": "Strength"
+        },
+        {
+          "type": "field",
+          "key": "hw.strength2_proof",
+          "input": "long",
+          "label": "My proof"
+        },
+        {
+          "type": "field",
+          "key": "hw.strength3",
+          "input": "short",
+          "number": 3,
+          "label": "Strength (optional)"
+        },
+        {
+          "type": "field",
+          "key": "hw.strength3_proof",
+          "input": "long",
+          "label": "My proof"
+        },
+        {
+          "type": "heading",
+          "text": "2. What is your greatest weakness?"
+        },
+        {
+          "type": "coach_note",
+          "body": "Pick a real one, not a strength in disguise like \"I work too hard.\" Share what you're doing about it. Avoid one that's central to the job."
+        },
+        {
+          "type": "field",
+          "key": "hw.weakness",
+          "input": "short",
+          "label": "My weakness"
+        },
+        {
+          "type": "field",
+          "key": "hw.weakness_shown",
+          "input": "long",
+          "label": "How it's shown up"
+        },
+        {
+          "type": "field",
+          "key": "hw.weakness_action",
+          "input": "long",
+          "label": "What I'm doing about it"
+        },
+        {
+          "type": "field",
+          "key": "hw.weakness_progress",
+          "input": "long",
+          "label": "Progress so far"
+        },
+        {
+          "type": "heading",
+          "text": "3. Where do you see yourself in five years?"
+        },
+        {
+          "type": "coach_note",
+          "body": "You don't need a job title. Talk about the skills you want to have built and how this role starts that path."
+        },
+        {
+          "type": "field",
+          "key": "hw.five_years",
+          "input": "long",
+          "label": "My answer"
+        },
+        {
+          "type": "heading",
+          "text": "4. Tell me something interesting about you that isn't on your resume."
+        },
+        {
+          "type": "coach_note",
+          "body": "This is hook territory. Keep it short and let them ask for more."
+        },
+        {
+          "type": "field",
+          "key": "hw.interesting",
+          "input": "long",
+          "label": "My answer"
+        },
+        {
+          "type": "callout",
+          "tone": "paleblue",
+          "body": "Is this a better hook than the one you picked today? If so, update it in Section 3."
+        },
+        {
+          "type": "heading",
+          "text": "5. What three words would your friends use to describe you?"
+        },
+        {
+          "type": "coach_note",
+          "body": "Pick three different traits and give a quick example for each."
+        },
+        {
+          "type": "field",
+          "key": "hw.word1",
+          "input": "short",
+          "number": 1,
+          "label": "Word"
+        },
+        {
+          "type": "field",
+          "key": "hw.word1_example",
+          "input": "long",
+          "label": "Example"
+        },
+        {
+          "type": "field",
+          "key": "hw.word2",
+          "input": "short",
+          "number": 2,
+          "label": "Word"
+        },
+        {
+          "type": "field",
+          "key": "hw.word2_example",
+          "input": "long",
+          "label": "Example"
+        },
+        {
+          "type": "field",
+          "key": "hw.word3",
+          "input": "short",
+          "number": 3,
+          "label": "Word"
+        },
+        {
+          "type": "field",
+          "key": "hw.word3_example",
+          "input": "long",
+          "label": "Example"
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach guide: Reviewing the homework",
+          "body": "WHEN IT ARRIVES: Review it in SIGNAL before you watch the VideoAsk, so you can see where the written answer and the spoken one differ.\nSTRENGTHS, LISTEN FOR: traits with no proof; strengths unrelated to the roles they want.\nWEAKNESS, LISTEN FOR: a disguised strength; no action plan; a weakness central to the role.\nFIVE YEARS, LISTEN FOR: a specific title they can't explain; nothing tying back to this kind of role.\nINTERESTING, LISTEN FOR: a resume item; a long story. If it's stronger than their hook, say so.\nTHREE WORDS, LISTEN FOR: three versions of the same trait; no examples.\nYOUR VIDEO REPLY: One thing that works, one or two to fix. Keep it under 3 minutes.\nTRACK IT: Homework review and your video reply are private coach time. Log them in SIGNAL. They don't count toward the 8 live hours."
+        }
+      ]
+    },
+    {
+      "id": "finish",
+      "number": 7,
+      "title": "Finish Up",
+      "mode": "homework",
+      "blocks": [
+        {
+          "type": "list",
+          "style": "numbers",
+          "items": [
+            "Answer all five questions above.",
+            "Click Mark homework complete.",
+            "Watch for an email with your video practice round. Five questions, no notes, 60 to 90 seconds each.",
+            "Your coach will watch and send you a video reply with feedback."
+          ]
+        },
+        {
+          "type": "field",
+          "key": "finish.due",
+          "input": "short",
+          "label": "My homework is due by",
+          "placeholder": "We'll set this together"
+        },
+        {
+          "type": "callout",
+          "tone": "peach",
+          "body": "Questions along the way? Use \"Ask your coach\" on any section."
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach guide: Finish Up",
+          "body": "TIME: The last 5 minutes. Protect them. Don't let Section 5 run over.\nGOAL: They leave knowing exactly what to do, by when, and what happens next.\nSAY THIS, STEP BY STEP:\n1. \"Your homework is the five questions in Section 6. Answer them in writing, in this workbook. It saves as you type.\"\n2. \"When all five are done, click Mark homework complete at the bottom. That's how I know you're finished.\"\n3. \"Right after, you'll get an email from Workforce Ready Now with a link to a video practice round. Check your spam folder if you don't see it.\"\n4. \"You'll answer the same five questions on video. No notes. Find a quiet spot, and aim for 60 to 90 seconds each. It takes about 10 minutes.\"\n5. \"I'll watch your answers and send you a video reply with feedback before our next session.\"\n6. \"If you get stuck on anything, click Ask your coach on that section. You don't need to wait until you're done.\"\nSET THE DUE DATE TOGETHER and have them type it in the field. Leave enough time for your video reply before Session 2.\nCONFIRM SESSION 2 IS BOOKED before you hang up.\nCHECK UNDERSTANDING: Ask, \"What are you doing first when we hang up?\" If they can't say it, walk through the steps again."
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "title": "{first_name}, here's your Session 1 work.",
+    "eyebrow": "SESSION 1",
+    "blocks": [
+      {
+        "type": "hook",
+        "field": "hook.final",
+        "prefix": "Oh yeah, {first_name}. The one who",
+        "note": "Plant it in Present. Bring it back once if it fits."
+      },
+      {
+        "type": "tmay",
+        "present": "tmay.present",
+        "past": "tmay.past",
+        "future": "tmay.future",
+        "close": "\"That was a really quick summary. If there's anything in particular on my resume you'd like me to dive into, please let me know.\"",
+        "note": "60 to 90 seconds."
+      },
+      {
+        "type": "quick_answers",
+        "items": [
+          {
+            "label": "MY RESUME ANCHOR",
+            "field": "resume.anchor"
+          },
+          {
+            "label": "STRENGTH 1",
+            "field": "hw.strength1"
+          },
+          {
+            "label": "STRENGTH 2",
+            "field": "hw.strength2"
+          },
+          {
+            "label": "MY WEAKNESS",
+            "field": "hw.weakness"
+          },
+          {
+            "label": "FIVE YEARS",
+            "field": "hw.five_years"
+          },
+          {
+            "label": "SOMETHING INTERESTING",
+            "field": "hw.interesting"
+          },
+          {
+            "label": "WORD 1",
+            "field": "hw.word1"
+          },
+          {
+            "label": "WORD 2",
+            "field": "hw.word2"
+          },
+          {
+            "label": "WORD 3",
+            "field": "hw.word3"
+          }
+        ]
+      }
+    ]
+  }
+}

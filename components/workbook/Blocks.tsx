@@ -10,9 +10,16 @@
 
 import React, { useEffect, useRef, type ReactNode } from "react"
 import {
-  SCENARIO_PARTS, STAR_PARTS, blockFieldKeys,
+  SCENARIO_PARTS, STAR_PARTS, blockFieldKeys, quoteText,
   type AnswerValue, type Block, type PickValue, type Section,
 } from "../../lib/workbook/content"
+
+const MODE_LABEL: Record<string, string> = { in_session: "In session", homework: "Homework" }
+
+export function ModeTag({ mode }: { mode?: string }) {
+  if (!mode || !MODE_LABEL[mode]) return null
+  return <span className={`wb-tag ${mode === "homework" ? "review" : "sent"}`}>{MODE_LABEL[mode]}</span>
+}
 
 export type SaveState =
   | { kind: "saving" }
@@ -239,7 +246,7 @@ function Main({ api, b }: { api: FieldApi; b: Block }): ReactNode {
         </div>
       )
     case "big_quote":
-      return <p className="wb-bigquote">{b.text}</p>
+      return <p className="wb-bigquote">{quoteText(b)}</p>
     case "word_track":
       return (
         <div className="wb-wordtrack">
@@ -260,8 +267,8 @@ function Main({ api, b }: { api: FieldApi; b: Block }): ReactNode {
     case "coach_only":
       return api.showCoachOnly ? (
         <div className="wb-coachonly">
-          <span className="wb-eyebrow-ink">Coach only. The client never sees this.</span>
-          <span>{b.body}</span>
+          <span className="wb-eyebrow-ink">{b.title || "Coach only"}. The client never sees this.</span>
+          <span style={{ whiteSpace: "pre-wrap" }}>{b.body}</span>
         </div>
       ) : null
     case "coach_note":
@@ -306,6 +313,7 @@ export function SectionHeader({ section, total }: { section: Section; total: num
         <div style={{ display: "flex", alignItems: "baseline", gap: 20, flexWrap: "wrap" }}>
           <span className="wb-secnum" aria-hidden="true">{n}</span>
           <span className="wb-eyebrow">Section {n} of {String(total).padStart(2, "0")}</span>
+          <ModeTag mode={section.mode} />
         </div>
         <h1 className="wb-h1">{section.title}</h1>
       </div>

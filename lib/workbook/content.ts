@@ -13,7 +13,8 @@ export type Block =
   | { type: "list"; style: "bullets" | "numbers" | "quotes"; items: string[]; title?: string }
   | { type: "callout"; tone: Tone; body: string; title?: string }
   | { type: "coach_note"; body: string }
-  | { type: "big_quote"; text: string }
+  // Templates write `body`; the interview-prep files write `text`. Both render.
+  | { type: "big_quote"; text?: string; body?: string }
   | {
       type: "field"
       key: string
@@ -28,9 +29,12 @@ export type Block =
   | { type: "pick"; key: string; label: string; options: string[]; help?: string; allow_other?: boolean }
   | { type: "star"; key: string; title: string; question: string; number?: number; skill?: string }
   | { type: "scenario"; key: string; prompt: string; number?: number }
-  | { type: "coach_only"; body: string }
+  | { type: "coach_only"; body: string; title?: string }
 
-export type Section = { id: string; number: number; title: string; blocks: Block[] }
+/** in_session: worked through with the coach. homework: done alone afterwards. */
+export type SectionMode = "in_session" | "homework"
+
+export type Section = { id: string; number: number; title: string; mode?: SectionMode; blocks: Block[] }
 
 export type SummaryBlock =
   | { type: "interview_details" }
@@ -55,8 +59,13 @@ export type Interview = {
 export type WorkbookContent = {
   schema_version: 1
   slug: string
+  /** Session templates: the same content for every client, with placeholders. */
+  template?: boolean
+  template_id?: string
+  title?: string
   client: { first_name: string; full_name: string }
-  interview: Interview
+  /** null on a session workbook: it is not about one interview. */
+  interview: Interview | null
   coach: { first_name: string }
   sections: Section[]
   summary: { title: string; eyebrow: string; blocks: SummaryBlock[] }
@@ -86,6 +95,9 @@ export const SCENARIO_PARTS = [
 
 /** Answers the summary checklist writes. Reserved: never counted as progress. */
 export const CHECKLIST_PREFIX = "summary.check."
+/** Placeholders a template carries, filled from the client and coach records. */
+export const TEMPLATE_KEYS = ["first_name", "full_name", "coach_first_name"] as const
+export type TemplateValues = Record<(typeof TEMPLATE_KEYS)[number], string>
 export const GENERAL_SECTION_ID = "_general"
 
 /** The field keys one block owns, in render order. */
@@ -123,6 +135,45 @@ export function stripCoachOnly<T extends Pick<WorkbookContent, "sections">>(c: T
     ...c,
     sections: c.sections.map((s) => ({ ...s, blocks: s.blocks.filter((b) => b.type !== "coach_only") })),
   }
+}
+
+/** The text of a big_quote, whichever field the file uses. */
+export function quoteText(b: Extract<Block, { type: "big_quote" }>): string {
+  return (b.text ?? b.body ?? "").trim()
+}
+
+/** The last section the client finishes alone: where "Mark homework complete" goes. */
+export function lastHomeworkSectionId(c: Pick<WorkbookContent, "sections">): string | null {
+  const homework = c.sections.filter((s) => s.mode === "homework")
+  return homework.length ? homework[homework.length - 1].id : null
+}
+
+/**
+ * Fill a template's placeholders from the records. Every string is substituted,
+ * so labels, prefixes and the summary title are all covered.
+ */
+export function applyTemplate<T>(content: T, values: TemplateValues): T {
+  const swap = (text: string) =>
+    text.replace(/\{(first_name|full_name|coach_first_name)\}/g, (_, k: keyof TemplateValues) => values[k])
+  const walk = (v: unknown): unknown => {
+    if (typeof v === "string") return swap(v)
+    if (Array.isArray(v)) return v.map(walk)
+    if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]))
+    return v
+  }
+  return walk(content) as T
+}
+
+/** Placeholders left behind after substitution, e.g. a typo like {frist_name}. */
+export function unresolvedPlaceholders(content: unknown): string[] {
+  const found = new Set<string>()
+  const walk = (v: unknown) => {
+    if (typeof v === "string") for (const m of v.matchAll(/\{[a-z_]+\}/g)) found.add(m[0])
+    else if (Array.isArray(v)) v.forEach(walk)
+    else if (v && typeof v === "object") Object.values(v).forEach(walk)
+  }
+  walk(content)
+  return [...found]
 }
 
 export function isFilled(v: unknown): boolean {
@@ -226,7 +277,10 @@ export function validateContent(raw: unknown): { ok: true; content: WorkbookCont
   if (!str(c.slug) || !/^[a-z0-9-]+$/.test(c.slug)) errors.push("slug must be lowercase letters, digits and hyphens")
   if (!str(c.client?.first_name)) errors.push("client.first_name is required")
   if (!str(c.coach?.first_name)) errors.push("coach.first_name is required")
+  if (c.interview != null && typeof c.interview !== "object") errors.push("interview must be an object or null")
   if (c.interview?.date != null && !/^\d{4}-\d{2}-\d{2}$/.test(c.interview.date)) errors.push("interview.date must be YYYY-MM-DD or null")
+  if (c.template != null && typeof c.template !== "boolean") errors.push("template must be true or absent")
+  if (c.template && !str(c.template_id)) errors.push("a template needs template_id")
   if (!Array.isArray(c.sections) || c.sections.length === 0) errors.push("sections must be a non-empty array")
 
   const keys = new Set<string>()
@@ -237,6 +291,7 @@ export function validateContent(raw: unknown): { ok: true; content: WorkbookCont
     else if (s.id === GENERAL_SECTION_ID || sectionIds.has(s.id)) errors.push(`${at}.id "${s.id}" is reserved or duplicated`)
     else sectionIds.add(s.id)
     if (!str(s?.title)) errors.push(`${at}.title is required`)
+    if (s?.mode != null && !["in_session", "homework"].includes(s.mode)) errors.push(`${at}.mode must be in_session or homework`)
     if (!Array.isArray(s?.blocks)) { errors.push(`${at}.blocks must be an array`); continue }
     for (const [j, b] of s.blocks.entries()) {
       const bt = `${at}.blocks[${j}]`
@@ -245,6 +300,7 @@ export function validateContent(raw: unknown): { ok: true; content: WorkbookCont
       if (b.type === "pick" && (!Array.isArray(b.options) || b.options.length === 0)) errors.push(`${bt}: pick needs options`)
       if (b.type === "list" && (!["bullets", "numbers", "quotes"].includes(b.style) || !Array.isArray(b.items))) errors.push(`${bt}: list needs style and items`)
       if (b.type === "callout" && !["peach", "paleblue"].includes(b.tone)) errors.push(`${bt}: callout tone must be peach or paleblue`)
+      if (b.type === "big_quote" && !str(b.text) && !str(b.body)) errors.push(`${bt}: big_quote needs text or body`)
       if (["field", "pick", "star", "scenario"].includes(b.type)) {
         if (!str(b.key) || b.key.startsWith(CHECKLIST_PREFIX)) { errors.push(`${bt}: key is required and must not be reserved`); continue }
         for (const k of blockFieldKeys(b)) {

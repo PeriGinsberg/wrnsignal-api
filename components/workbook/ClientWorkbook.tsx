@@ -10,16 +10,17 @@
 import React, { useCallback, useEffect, useId, useState, type ReactNode } from "react"
 import Link from "next/link"
 import {
-  GENERAL_SECTION_ID, answerText, progress,
+  GENERAL_SECTION_ID, answerText, lastHomeworkSectionId, progress,
   type AnswerValue, type WorkbookContent,
 } from "../../lib/workbook/content"
-import { SectionBlocks, SectionHeader, type FieldApi } from "./Blocks"
+import { ModeTag, SectionBlocks, SectionHeader, type FieldApi } from "./Blocks"
+import { HomeworkComplete } from "./HomeworkComplete"
 import { useAutosave } from "./useAutosave"
 import { wbFetch, fmtWhen, type Comment, type Send } from "./api"
 import { WorkbookFrame } from "./WorkbookFrame"
 
 type Loaded = {
-  workbook: { id: string; status: string; content: WorkbookContent; interview: any }
+  workbook: { id: string; status: string; content: WorkbookContent; interview: any; homework_completed_at: string | null }
   answers: Record<string, { value: unknown; updated_at: string }>
   comments: Comment[]
   sends: Send[]
@@ -84,6 +85,9 @@ function Loaded({ data }: { data: Loaded }) {
   const [composing, setComposing] = useState<string | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const [sendOpen, setSendOpen] = useState(false)
+  const [homeworkAt, setHomeworkAt] = useState<string | null>(wb.homework_completed_at ?? null)
+  // Session workbooks (templates) end with homework the client finishes alone.
+  const homeworkSection = lastHomeworkSectionId(c)
 
   const section = c.sections[idx]
   const prog = progress(c, auto.values)
@@ -243,15 +247,19 @@ function Loaded({ data }: { data: Loaded }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <span className="wb-eyebrow">Interview workbook</span>
         <span className="wb-serif" style={{ fontSize: 30, fontWeight: 600, lineHeight: 1.1 }}>{c.client.full_name}</span>
-        {c.interview.role && <span style={{ fontSize: 15, lineHeight: 1.45 }}>{c.interview.role}</span>}
-        {c.interview.company && <span style={{ fontSize: 15, fontWeight: 600 }}>{c.interview.company}</span>}
+        {c.title && <span style={{ fontSize: 15, fontWeight: 600 }}>{c.title}</span>}
+        {c.interview?.role && <span style={{ fontSize: 15, lineHeight: 1.45 }}>{c.interview.role}</span>}
+        {c.interview?.company && <span style={{ fontSize: 15, fontWeight: 600 }}>{c.interview.company}</span>}
       </div>
       <ol className="wb-nav-list">
         {c.sections.map((s, i) => (
           <li key={s.id}>
             <button type="button" className="wb-nav-item" aria-current={i === idx ? "true" : undefined} onClick={() => go(i)}>
               <span className={`wb-nav-num${prog.sectionsDone.has(s.id) ? " done" : ""}`}>{String(s.number).padStart(2, "0")}</span>
-              <span>{s.title}</span>
+              <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <span>{s.title}</span>
+                {s.mode === "homework" && <ModeTag mode={s.mode} />}
+              </span>
             </button>
           </li>
         ))}
@@ -286,7 +294,7 @@ function Loaded({ data }: { data: Loaded }) {
       )}
       <div className="wb-show-phone" style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", background: "#fff", display: "flex", flexDirection: "column", gap: 4 }}>
         <span className="wb-serif" style={{ fontSize: 22, fontWeight: 600 }}>{c.client.full_name}</span>
-        <span style={{ fontSize: 14 }}>{[c.interview.company, c.interview.role].filter(Boolean).join(" · ")}</span>
+        <span style={{ fontSize: 14 }}>{[c.title, c.interview?.company, c.interview?.role].filter(Boolean).join(" · ")}</span>
         <span>{saveLabel}</span>
         <Link href={`/dashboard/workbooks/${wb.id}/summary`} className="wb-link" style={{ alignSelf: "flex-start" }}>Read This 1 Hour Before</Link>
       </div>
@@ -296,6 +304,20 @@ function Loaded({ data }: { data: Loaded }) {
         <main className="wb-main">
           <SectionHeader section={section} total={c.sections.length} />
           <SectionBlocks api={api} section={section} />
+
+          {homeworkSection === section.id && (
+            <div className="wb-row">
+              <div className="wb-col">
+                <HomeworkComplete
+                  workbookId={wb.id}
+                  completedAt={homeworkAt}
+                  coachName={coach}
+                  onDone={(at) => setHomeworkAt(at)}
+                />
+              </div>
+              <div />
+            </div>
+          )}
 
           <div className="wb-row">
             <div className="wb-col" style={{ gap: 12 }}>

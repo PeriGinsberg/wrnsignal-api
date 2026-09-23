@@ -8,8 +8,9 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import {
-  CHECKLIST_PREFIX, allFieldKeys, anchorError, answerText, isFilled, isWritableKey,
-  progress, sectionOfField, stripCoachOnly, validateAnswerValue, validateContent,
+  CHECKLIST_PREFIX, allFieldKeys, anchorError, answerText, applyTemplate, isFilled, isWritableKey,
+  lastHomeworkSectionId, progress, quoteText, sectionOfField, stripCoachOnly, unresolvedPlaceholders,
+  validateAnswerValue, validateContent,
   type WorkbookContent,
 } from "./content"
 
@@ -98,6 +99,51 @@ ok("field in its section", anchorError(c, "hook", "hook.q1") === null)
 ok("field in the wrong section", anchorError(c, "tmay", "hook.q1") !== null)
 ok("general box has no field", anchorError(c, "_general", null) === null && anchorError(c, "_general", "hook.q1") !== null)
 ok("unknown section", anchorError(c, "nope", null) !== null)
+
+// ---------------------------------------------------------------------------
+// Session templates (docs/workbook-templates/session-1-foundations.json)
+// ---------------------------------------------------------------------------
+
+console.log("templates")
+const tRaw = JSON.parse(readFileSync(join(__dirname, "../../docs/workbook-templates/session-1-foundations.json"), "utf8"))
+const VALUES = { first_name: "Alex", full_name: "Alex Rivera", coach_first_name: "Peri" }
+ok("the template still carries placeholders", unresolvedPlaceholders(tRaw).length > 0)
+const filled = applyTemplate(tRaw, VALUES)
+ok("nothing is left unfilled", unresolvedPlaceholders(filled).length === 0)
+ok("the source file is not mutated", unresolvedPlaceholders(tRaw).length > 0)
+ok("client names are filled", filled.client.first_name === "Alex" && filled.client.full_name === "Alex Rivera")
+ok("the coach name is filled", filled.coach.first_name === "Peri")
+ok("a field prefix is filled", JSON.stringify(filled).includes("Oh yeah, Alex. The one who"))
+ok("the summary title is filled", filled.summary.title === "Alex, here's your Session 1 work.")
+
+const tParsed = validateContent(filled)
+ok("a filled template validates", tParsed.ok)
+if (!tParsed.ok) console.error(tParsed.errors)
+const t = (tParsed as { ok: true; content: WorkbookContent }).content
+ok("a session workbook has no interview", t.interview === null)
+ok("template keys survive validation", t.template === true && t.template_id === "session-1-foundations")
+ok("section modes are read", t.sections.filter((s) => s.mode === "in_session").length === 5 && t.sections.filter((s) => s.mode === "homework").length === 2)
+ok("the homework button belongs to the last homework section", lastHomeworkSectionId(t) === "finish")
+ok("an interview workbook has no homework section", lastHomeworkSectionId(c) === null)
+ok("coach_only blocks carry titles", t.sections.every((s) => s.blocks.filter((b) => b.type === "coach_only").every((b) => !!(b as { title?: string }).title)))
+ok("coach guides never reach the client", !JSON.stringify(stripCoachOnly(t)).includes("Coach guide"))
+const quote = t.sections.flatMap((s) => s.blocks).find((b) => b.type === "big_quote")!
+ok("a big_quote written as body still has text", quoteText(quote as Extract<typeof quote, { type: "big_quote" }>).startsWith("Hi, as you already know"))
+ok("the template has 33 fields", allFieldKeys(t).length === 33)
+
+{
+  const bad = JSON.parse(JSON.stringify(tRaw)); bad.sections[0].mode = "in session"
+  ok("an unknown section mode is refused", !validateContent(applyTemplate(bad, VALUES)).ok)
+}
+{
+  const bad = JSON.parse(JSON.stringify(tRaw)); bad.summary.title = "{frist_name}, here's your work."
+  ok("a misspelled placeholder is detected", unresolvedPlaceholders(applyTemplate(bad, VALUES)).includes("{frist_name}"))
+}
+{
+  const bad = JSON.parse(JSON.stringify(tRaw))
+  bad.sections[3].blocks = bad.sections[3].blocks.map((b: { type: string }) => (b.type === "big_quote" ? { type: "big_quote" } : b))
+  ok("a big_quote with neither text nor body is refused", !validateContent(applyTemplate(bad, VALUES)).ok)
+}
 
 if (failures) { console.error(`\n${failures} failure(s)`); process.exit(1) }
 console.log("\nall passed")

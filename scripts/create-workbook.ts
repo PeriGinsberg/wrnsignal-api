@@ -1,11 +1,18 @@
 // scripts/create-workbook.ts
 //
-// Creates an interview workbook from a content file, as a DRAFT the coach then
-// shares from the Workbooks tab. v1 has no upload UI (spec: out of scope), so
-// this is how a workbook comes into being.
+// Creates a workbook from a content file, as a DRAFT the coach then shares from
+// the Workbooks tab. There is no upload UI (spec: out of scope), so this is how
+// a workbook comes into being.
+//
+// Two kinds of content file:
+//   - a per-client file, written for one person and one interview
+//   - a TEMPLATE ("template": true), the same for every client, carrying
+//     {first_name}, {full_name} and {coach_first_name}. Those are filled from the
+//     client and coach records here, once, and the result is frozen on the
+//     workbook like any other content.
 //
 //   npx tsx scripts/create-workbook.ts --find "Ryan Hecht"
-//   npx tsx scripts/create-workbook.ts <client_profile_id> <content.json> [--interview <signal_interview_id>] [--coach <coach_profile_id>] [--yes]
+//   npx tsx scripts/create-workbook.ts <client_profile_id> <content.json> [--interview <signal_interview_id>] [--coach <coach_profile_id>] [--slug <slug>] [--yes]
 //
 // Credentials come from process.env only (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 // this file never reads a .env file. Without --yes it validates and prints what
@@ -14,7 +21,7 @@
 
 import { readFileSync } from "node:fs"
 import { createClient } from "@supabase/supabase-js"
-import { allFieldKeys, validateContent } from "../lib/workbook/content"
+import { allFieldKeys, applyTemplate, unresolvedPlaceholders, validateContent } from "../lib/workbook/content"
 
 function arg(name: string): string | null {
   const i = process.argv.indexOf(name)
@@ -44,25 +51,16 @@ async function main() {
     return
   }
 
-  const VALUE_FLAGS = new Set(["--interview", "--coach", "--find"])
+  const VALUE_FLAGS = new Set(["--interview", "--coach", "--find", "--slug"])
   const positional = process.argv.slice(2).filter((a, i, all) => !a.startsWith("--") && !VALUE_FLAGS.has(all[i - 1]))
   const [clientId, file] = positional
   if (!clientId || !file) throw new Error("Usage: create-workbook.ts <client_profile_id> <content.json> [--interview id] [--coach id] [--yes]")
 
-  const parsed = validateContent(JSON.parse(readFileSync(file, "utf8")))
-  if (!parsed.ok) {
-    console.error("Content file is not valid:")
-    for (const e of parsed.errors) console.error(`  - ${e}`)
-    process.exit(1)
-  }
-  const content = parsed.content
+  const raw = JSON.parse(readFileSync(file, "utf8"))
 
   const { data: client, error: cErr } = await db.from("client_profiles").select("id, name").eq("id", clientId).maybeSingle()
   if (cErr) throw new Error(cErr.message)
   if (!client) throw new Error(`No client_profiles row ${clientId}`)
-  if (client.name && !client.name.toLowerCase().includes(content.client.first_name.toLowerCase())) {
-    console.warn(`WARNING: content is for "${content.client.full_name}" but the profile is "${client.name}"`)
-  }
 
   const coachArg = arg("--coach")
   let q = db.from("coach_clients").select("id, coach_profile_id").eq("client_profile_id", clientId)
@@ -75,6 +73,37 @@ async function main() {
     throw new Error(`Several full-access coaches; pass --coach with one of: ${links.map((l) => l.coach_profile_id).join(", ")}`)
   }
   const link = links[0]
+
+  // A template is filled in from the records before anything is validated, so the
+  // checks below run against exactly what the client will see.
+  let source = raw
+  if (raw?.template) {
+    const { data: coach } = await db.from("client_profiles").select("name").eq("id", link.coach_profile_id).maybeSingle()
+    const fullName = (client.name ?? "").trim()
+    const firstName = fullName.split(/\s+/)[0] || ""
+    const coachFirst = ((coach?.name ?? "").trim().split(/\s+/)[0]) || ""
+    if (!firstName) throw new Error(`Client ${clientId} has no name to fill {first_name} from`)
+    if (!coachFirst) throw new Error(`Coach ${link.coach_profile_id} has no name to fill {coach_first_name} from`)
+    source = applyTemplate(raw, { first_name: firstName, full_name: fullName, coach_first_name: coachFirst })
+    const left = unresolvedPlaceholders(source)
+    if (left.length) throw new Error(`Template still has unfilled placeholders: ${left.join(", ")}`)
+    console.log(`Template ${raw.template_id}: filled for ${fullName} with coach ${coachFirst}`)
+  }
+
+  const slugArg = arg("--slug")
+  if (slugArg) source = { ...source, slug: slugArg }
+
+  const parsed = validateContent(source)
+  if (!parsed.ok) {
+    console.error("Content file is not valid:")
+    for (const e of parsed.errors) console.error(`  - ${e}`)
+    process.exit(1)
+  }
+  const content = parsed.content
+
+  if (!raw?.template && client.name && !client.name.toLowerCase().includes(content.client.first_name.toLowerCase())) {
+    console.warn(`WARNING: content is for "${content.client.full_name}" but the profile is "${client.name}"`)
+  }
 
   const interviewId = arg("--interview")
   if (interviewId) {

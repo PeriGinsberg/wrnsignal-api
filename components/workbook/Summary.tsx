@@ -43,9 +43,10 @@ function fmtDate(d: string) {
   return new Date(y, m - 1, day).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })
 }
 
-/** Interview row first, the content file second (decision 5). */
+/** Interview row first, the content file second (decision 5). A session workbook
+ *  has no interview at all, in which case there is nothing to show. */
 export function interviewDetails(content: WorkbookContent, row: InterviewRow) {
-  const c = content.interview
+  const c = content.interview ?? { company: null, role: null, date: null, time: null, interviewer_name: null, interviewer_title: null, location: null }
   let when: string | null = null
   if (row?.interview_at) {
     const d = new Date(row.interview_at)

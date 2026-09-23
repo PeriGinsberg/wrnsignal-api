@@ -20,6 +20,7 @@ import { wbFetch, fmtWhen, type Comment, type Send } from "@/components/workbook
 
 type ListRow = {
   id: string; slug: string; status: "draft" | "with_client" | "with_coach"; updated_at: string
+  title: string | null
   interview: { company: string | null; role: string | null } | null
   last_to_coach: { sent_at: string; item_count: number } | null
   last_to_client: { sent_at: string } | null
@@ -74,7 +75,7 @@ export function WorkbooksTab({ clientId, clientName }: { clientId: string; clien
             style={{ textAlign: "left", cursor: "pointer", font: "inherit", color: "inherit" }}>
             <div className="wb-card-head">
               <span className="wb-serif" style={{ fontSize: 22, fontWeight: 600 }}>
-                {[w.interview?.company, w.interview?.role].filter(Boolean).join(", ") || w.slug}
+                {[w.title, w.interview?.company, w.interview?.role].filter(Boolean).join(", ") || w.slug}
               </span>
               <span className={`wb-tag ${w.status === "with_coach" ? "review" : w.status === "draft" ? "draft" : "sent"}`}>{STATUS_LABEL[w.status]}</span>
             </div>
@@ -187,7 +188,7 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <button type="button" className="wb-btn" style={{ borderColor: "#fff", color: "#fff" }} onClick={onBack}>&larr; Workbooks</button>
         <span style={{ fontSize: 14, fontWeight: 600 }}>{c.client.full_name}</span>
-        <span style={{ fontSize: 14, opacity: 0.8 }}>{[c.interview.company, c.interview.role].filter(Boolean).join(", ")}</span>
+        <span style={{ fontSize: 14, opacity: 0.8 }}>{[c.title, c.interview?.company, c.interview?.role].filter(Boolean).join(", ")}</span>
       </div>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         {(["review", "as_client", "summary"] as const).map((m) => (
@@ -359,6 +360,7 @@ function SectionNav(props: {
                 <span style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
                   <span className="wb-serif" style={{ fontWeight: 700, color: "var(--orange)", width: 22 }}>{String(s.number).padStart(2, "0")}</span>
                   <span style={{ fontSize: 15 }}>{s.title}</span>
+                  {s.mode === "homework" && <span className="wb-tag review">Homework</span>}
                 </span>
                 <span className={`wb-tag ${st.cls}`} style={{ alignSelf: "flex-start" }}>{st.label}</span>
               </button>

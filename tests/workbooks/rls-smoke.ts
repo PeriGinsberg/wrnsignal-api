@@ -72,6 +72,7 @@ async function main() {
   if (wbErr) throw new Error(`create workbook: ${wbErr.message}`)
   const W = wb.id as string
   let noteId: string | null = null
+  let hwNoteId: string | null = null
 
   try {
     const [A, B, C] = await Promise.all([signIn(CLIENT_A), signIn(CLIENT_B), signIn(coachEmail)])
@@ -166,6 +167,31 @@ async function main() {
     ok("the latest send-back is stamped",
       !!((await A.rpc("workbook_client_list")).data ?? []).find((r: any) => r.id === W)?.last_to_client_opened_at)
 
+    console.log("homework")
+    ok("another client cannot mark my homework complete",
+      (await B.rpc("workbook_mark_homework_complete", { p_workbook: W })).error?.code === "42501")
+    const hw1 = await A.rpc("workbook_mark_homework_complete", { p_workbook: W })
+    ok("client marks homework complete", !hw1.error && (hw1.data as any)?.fired === true, hw1.error ?? hw1.data)
+    ok("it carries the details the webhook needs",
+      !!(hw1.data as any)?.email && !!(hw1.data as any)?.first_name && !!(hw1.data as any)?.completed_at, hw1.data)
+    const hw2 = await A.rpc("workbook_mark_homework_complete", { p_workbook: W })
+    ok("a second press does not fire again", !hw2.error && (hw2.data as any)?.fired === false, hw2.error ?? hw2.data)
+    ok("the completion time does not move",
+      (hw2.data as any)?.completed_at === (hw1.data as any)?.completed_at)
+    {
+      const { data: notes } = await admin.from("coach_client_notes")
+        .select("id, body, link_tab, type, completed_at")
+        .eq("coach_client_id", link.id).ilike("body", "%marked homework complete%")
+      ok("exactly one Required Actions row for the coach", (notes ?? []).length === 1, notes)
+      hwNoteId = notes?.[0]?.id ?? null
+      ok("it opens the Workbooks tab", notes?.[0]?.link_tab === "workbooks" && notes?.[0]?.type === "action_item")
+    }
+    ok("the webhook stamp is owner-only",
+      (await B.rpc("workbook_record_homework_webhook", { p_workbook: W })).error?.code === "42501")
+    ok("the owner can stamp the webhook", !(await A.rpc("workbook_record_homework_webhook", { p_workbook: W })).error)
+    ok("the client read reports the completion",
+      !!((await A.rpc("workbook_for_client", { p_workbook: W })).data as any)?.homework_completed_at)
+
     console.log("access levels")
     for (const level of ["annotate", "view"]) {
       await admin.from("coach_clients").update({ access_level: level }).eq("id", link.id)
@@ -176,7 +202,7 @@ async function main() {
   } finally {
     await admin.from("coach_clients").update({ access_level: originalLevel }).eq("id", link.id)
     await admin.from("workbooks").delete().eq("id", W)
-    if (noteId) await admin.from("coach_client_notes").delete().eq("id", noteId)
+    for (const id of [noteId, hwNoteId]) if (id) await admin.from("coach_client_notes").delete().eq("id", id)
   }
 
   if (failures) { console.error(`\n${failures} failure(s)`); process.exit(1) }
