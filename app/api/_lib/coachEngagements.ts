@@ -21,6 +21,7 @@ import { type SupabaseClient } from "@supabase/supabase-js"
 // implementation the client page does. A second copy here is how the coach's
 // warning and the client's card end up disagreeing about what is unlocked.
 import { byOrder, wouldRelock, type ProofActivity } from "../../../lib/proofProject"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 // Reuse the generic coach-route auth/scoping helpers (the recent worked example).
 export { getSupabaseAdmin, resolveCoach, errStatus, UUID_RE } from "./coachAuth"
@@ -35,7 +36,7 @@ export async function isCoachClientOwnedByCoach(
     .from("coach_clients")
     .select("id")
     .eq("id", coachClientId)
-    .eq("coach_profile_id", coachProfileId)
+    .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     .maybeSingle()
   if (error) throw new Error(`Ownership check failed: ${error.message}`)
   return !!data
@@ -132,7 +133,7 @@ export async function resolveOwnedEngagementActivity(
     .from("coach_clients")
     .select("id, client_profile_id")
     .eq("id", coachClientId)
-    .eq("coach_profile_id", coachProfileId)
+    .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     .maybeSingle()
   if (relErr) throw new Error(`Ownership check failed: ${relErr.message}`)
   if (!rel) return null
@@ -185,7 +186,7 @@ export async function resolveOwnedEngagementDeliverable(
     .from("coach_clients")
     .select("id")
     .eq("id", coachClientId)
-    .eq("coach_profile_id", coachProfileId)
+    .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     .maybeSingle()
   if (relErr) throw new Error(`Ownership check failed: ${relErr.message}`)
   if (!rel) return null
@@ -281,7 +282,7 @@ export async function resolveCoachClientId(
   const { data, error } = await supabase
     .from("coach_clients")
     .select("id")
-    .eq("coach_profile_id", coachProfileId)
+    .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     .eq("client_profile_id", clientProfileId)
     .maybeSingle()
   if (error) throw new Error(`Relationship lookup failed: ${error.message}`)

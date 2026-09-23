@@ -22,6 +22,7 @@
  */
 
 import type { ControlResult, FetchResult, FetchedPosting, IngestPair, SourceAdapter } from "./types"
+import { httpJson } from "./http"
 
 const API = "https://api.smartrecruiters.com/v1/companies"
 
@@ -43,15 +44,8 @@ function url(org: string, params: Record<string, string>) {
   return u.toString()
 }
 
-async function get(target: string) {
-  const res = await fetch(target, { headers: { "user-agent": UA, accept: "application/json" } })
-  const text = await res.text()
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} for ${target} -- ${text.slice(0, 200)}`)
-  try {
-    return JSON.parse(text)
-  } catch {
-    throw new Error(`non-JSON response (${res.headers.get("content-type")}) for ${target}`)
-  }
+async function get(target: string): Promise<{ json: any; attempts: number }> {
+  return httpJson(target, { headers: { "user-agent": UA, accept: "application/json" } }, { label: target })
 }
 
 /** location "New York, NY" -> the city SmartRecruiters wants. */
@@ -98,7 +92,7 @@ export const smartRecruitersAdapter: SourceAdapter = {
     if (city) params.city = city
 
     const target = url(org, params)
-    const j = await get(target)
+    const { json: j, attempts } = await get(target)
     const total = typeof j?.totalFound === "number" ? j.totalFound : null
     const returned = Array.isArray(j?.content) ? j.content.length : 0
 
@@ -110,6 +104,7 @@ export const smartRecruitersAdapter: SourceAdapter = {
     return {
       passed,
       requests: 1,
+      attempts,
       detail: { term: NONSENSE, city, url: target, totalFound: total, returned },
     }
   },
@@ -119,8 +114,20 @@ export const smartRecruitersAdapter: SourceAdapter = {
     const params: Record<string, string> = { q: pair.title, limit: String(PAGE_LIMIT) }
     if (city) params.city = city
 
-    const j = await get(url(org, params))
+    const { json: j, attempts } = await get(url(org, params))
     const content: any[] = Array.isArray(j?.content) ? j.content : []
-    return { postings: content.map((p) => mapPosting(p, org)), requests: 1 }
+    return {
+      postings: content.map((p) => mapPosting(p, org)),
+      requests: 1,
+      attempts,
+      // totalFound against what one page returned: the same truncation signal
+      // Workday needed, on a source that also pages and also does not here.
+      detail: {
+        totalFound: typeof j?.totalFound === "number" ? j.totalFound : null,
+        returned: content.length,
+        page_limit: PAGE_LIMIT,
+        paginated: false,
+      },
+    }
   },
 }

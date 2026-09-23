@@ -22,6 +22,7 @@ import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
 import { canonicalizeLegacyJobType, normalizeJobType } from "@/lib/jobType"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -264,7 +265,7 @@ async function verifyProspectOwnership(
     .from("coach_clients")
     .select(PROSPECT_SELECT_COLS)
     .eq("id", coachClientId)
-    .eq("coach_profile_id", coachProfileId)
+    .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     .eq("status", "active")
     .maybeSingle()
   return (data as CoachClientRow | null) ?? null

@@ -16,6 +16,7 @@
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
 import { getSupabaseAdmin, resolveCoach, errStatus } from "../../../_lib/coachAuth"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -99,7 +100,7 @@ export async function PATCH(
       .from("coach_document_categories")
       .update(updates)
       .eq("id", id)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .select(CATEGORY_SELECT)
       .maybeSingle()
     if (upErr) {
@@ -136,7 +137,7 @@ export async function DELETE(
       .from("coach_document_categories")
       .update({ active: false })
       .eq("id", id)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .select("id")
       .maybeSingle()
     if (upErr) {

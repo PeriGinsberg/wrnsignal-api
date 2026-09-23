@@ -31,6 +31,7 @@ import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 // through the one canonical implementation.
 import { PATCH as convertProspectLifecycle } from "../route"
 import { logCoachClientEvent } from "../../../../_lib/coachClientEvents"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -113,7 +114,7 @@ async function verifyProspectOwnership(coachClientId: string, coachProfileId: st
     .from("coach_clients")
     .select("id, coach_profile_id, name, lifecycle_status, client_profile_id")
     .eq("id", coachClientId)
-    .eq("coach_profile_id", coachProfileId)
+    .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     .eq("status", "active")
     .maybeSingle()
   return data ?? null
@@ -160,7 +161,7 @@ export async function PATCH(
     const { data: pipelineData, error: pipeErr } = await supabase
       .from("coach_pipeline_stages")
       .select("stage_key, sort_order, is_terminal, active")
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     if (pipeErr) return withCorsJson(req, { ok: false, error: `Failed to read pipeline: ${pipeErr.message}` }, 500)
     const pipeline = (pipelineData || []) as StageDef[]
     if (pipeline.length === 0) {
@@ -212,7 +213,7 @@ export async function PATCH(
         .from("coach_clients")
         .update({ prospect_status: "won" })
         .eq("id", id)
-        .eq("coach_profile_id", coachProfileId)
+        .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       if (wonErr) return withCorsJson(req, { ok: false, error: `Converted, but failed to set won: ${wonErr.message}` }, 500)
 
       // 3. Record reaching the terminal stage (audit / timestamp spine).
@@ -317,7 +318,7 @@ export async function PATCH(
       .from("coach_clients")
       .update({ current_stage_key: currentStageKey })
       .eq("id", id)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     if (updErr) return withCorsJson(req, { ok: false, error: `Failed to update current stage: ${updErr.message}` }, 500)
 
     // Best-effort event log — NON-TERMINAL stage change only (terminal converts

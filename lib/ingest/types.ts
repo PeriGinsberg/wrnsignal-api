@@ -65,8 +65,15 @@ export type ControlResult = {
   passed: boolean | null
   /** What was asked and what came back, for the ingest_runs record. */
   detail: Record<string, unknown>
-  /** HTTP requests this control spent. */
+  /** HTTP requests this control spent, counted as LOGICAL requests. */
   requests: number
+
+  /**
+   * HTTP calls actually issued, including retries. Omit when equal to
+   * `requests`. The difference is the transient-failure cost, which is
+   * invisible if only logical requests are recorded.
+   */
+  attempts?: number
   /**
    * Whatever control() already fetched, handed straight back to this same
    * adapter's fetch() for the same (pair, org). Opaque to the runner, which
@@ -84,7 +91,24 @@ export type ControlResult = {
 
 export type FetchResult = {
   postings: FetchedPosting[]
+  /** Logical requests: one per page fetched. */
   requests: number
+
+  /** HTTP calls actually issued, including retries. Omit when equal to `requests`. */
+  attempts?: number
+
+  /**
+   * Whatever this source knows about the fetch that the runner cannot infer
+   * from the postings it got back, stored verbatim in ingest_runs.fetch_detail.
+   *
+   * WHAT THIS IS FOR. `found` is what the adapter handed over, and on a paged
+   * source that is not the same as what the board holds. Workday's first page
+   * reports total: 304 while returning 20 rows, so without somewhere to put
+   * that number a truncated board and an exhausted one look identical in the
+   * run row. Anything a reader would need in order to tell "we got everything"
+   * from "we got the first page" belongs here.
+   */
+  detail?: Record<string, unknown>
 }
 
 export interface SourceAdapter {

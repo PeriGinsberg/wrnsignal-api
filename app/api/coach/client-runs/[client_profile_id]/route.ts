@@ -8,6 +8,7 @@ import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { verifyCoachAccess } from "@/lib/collab/access"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -160,7 +161,7 @@ export async function GET(
       const { data: notes, error } = await supabase
         .from("coach_notes")
         .select("id, function_type, run_id, body, visibility, created_at, updated_at")
-        .eq("coach_profile_id", coachProfileId)
+        .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
         .eq("client_profile_id", clientProfileId)
         .eq("visibility", "coach_private")
       if (error) {

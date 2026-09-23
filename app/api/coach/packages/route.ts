@@ -27,6 +27,7 @@ import {
   findUnownedMilestones,
   getApiPackageById,
 } from "../../_lib/coachPackages"
+import { owningCoachId as owningCoachIdFor, resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
     const { data, error: readErr } = await supabase
       .from("coach_packages")
       .select(PACKAGE_SELECT)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true })
     if (readErr) {
@@ -109,7 +110,7 @@ export async function POST(req: NextRequest) {
     const { data: maxRow, error: maxErr } = await supabase
       .from("coach_packages")
       .select("sort_order")
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .order("sort_order", { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -121,7 +122,8 @@ export async function POST(req: NextRequest) {
     const { data: inserted, error: insErr } = await supabase
       .from("coach_packages")
       .insert({
-        coach_profile_id: coachProfileId,
+        // The package library is the practice's, not the individual coach's.
+        coach_profile_id: owningCoachIdFor(await resolveDelegation(supabase, coachProfileId)),
         name,
         description,
         discount_cents: discountParsed.cents,

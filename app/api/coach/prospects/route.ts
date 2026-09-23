@@ -17,6 +17,7 @@ import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { logCoachClientEvent } from "../../_lib/coachClientEvents"
+import { owningCoachId as owningCoachIdFor, resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -293,7 +294,7 @@ export async function GET(req: NextRequest) {
     const { data: rowsData, error: listErr } = await supabase
       .from("coach_clients")
       .select(PROSPECT_SELECT_COLS)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .eq("status", "active")
       .eq("lifecycle_status", "Prospect")
     if (listErr) throw new Error(`Prospects list failed: ${listErr.message}`)
@@ -456,10 +457,15 @@ export async function POST(req: NextRequest) {
 
     // 1. INSERT coach_clients. lifecycle_status explicit (schema
     //    default is 'Active' — Prospects v0.1 Commit 1 / FRD §12 Q3).
+    // A DELEGATE creates into the PRINCIPAL'S practice: the row belongs to the
+    // practice so it lands on their roster and library, while the note feed and
+    // every other authored row still carries the delegate's own id.
+    const owningCoach = owningCoachIdFor(await resolveDelegation(supabase, coachProfileId))
     const { data: createdData, error: insertErr } = await supabase
       .from("coach_clients")
       .insert({
-        coach_profile_id: coachProfileId,
+        coach_profile_id: owningCoach,
+        created_by: coachProfileId,
         client_profile_id: null,
         status: "active",
         access_level: "full",

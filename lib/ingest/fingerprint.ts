@@ -82,9 +82,30 @@ const COUNTRIES = new Set([
   "us", "u s", "u.s.", "america",
 ])
 
+/**
+ * A location that is a COUNT is not a location.
+ *
+ * Workday's locationsText returns "2 Locations" / "20 Locations" for a
+ * multi-site posting: how many places, not which. Treated exactly like a
+ * missing location, because that is how much we actually know. Without this,
+ * "capitalone|2 locations" is a location key shared by every multi-site Capital
+ * One posting, and two of them with the same title would fingerprint
+ * identically and silently become one row.
+ *
+ * Lives in the shared normalizer, not in the Workday adapter, because the
+ * fingerprint is a generated column over title/company/location and cannot know
+ * which adapter produced the row. Safe for every source: no real place is named
+ * "3 Locations".
+ *
+ * Mirrors the same branch in ingest_norm_location
+ * (20260920_fingerprint_location_count.sql).
+ */
+const LOCATION_IS_A_COUNT = /^[0-9]+\s+locations?$/i
+
 /** "New York, NY" and "New York, New York, United States" both -> "new york|ny" */
 export function normLocation(v: string | null | undefined): string {
   if (v == null || String(v).trim() === "") return ""
+  if (LOCATION_IS_A_COUNT.test(String(v).trim())) return ""
 
   // "(+3 others)" is a multi-site marker, not a place.
   const cleaned = String(v).trim().toLowerCase()

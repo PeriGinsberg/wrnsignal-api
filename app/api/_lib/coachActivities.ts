@@ -13,6 +13,7 @@
 // another coach's activity by pairing it with a deliverable they do own.
 
 import { type SupabaseClient } from "@supabase/supabase-js"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 // Reuse the generic coach-route auth/scoping helpers (the recent worked example).
 export { getSupabaseAdmin, resolveCoach, errStatus } from "./coachAuth"
@@ -53,7 +54,7 @@ export async function isMilestoneOwnedByCoach(
     .from("coach_milestones")
     .select("id")
     .eq("id", milestoneId)
-    .eq("coach_profile_id", coachProfileId)
+    .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     .maybeSingle()
   if (error) throw new Error(`Ownership check failed: ${error.message}`)
   return !!data

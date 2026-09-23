@@ -18,6 +18,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -164,7 +165,7 @@ export async function GET(
       .from("coach_milestones")
       .select(MILESTONE_SELECT)
       .eq("id", id)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .maybeSingle()
     if (mErr) {
       return withCorsJson(req, { ok: false, error: `Failed to read milestone: ${mErr.message}` }, 500)
@@ -286,7 +287,7 @@ export async function PATCH(
       .from("coach_milestones")
       .update(updates)
       .eq("id", id)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .select(MILESTONE_SELECT)
       .maybeSingle()
     if (upErr) {
@@ -327,7 +328,7 @@ export async function DELETE(
       .from("coach_milestones")
       .select("id")
       .eq("id", id)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .maybeSingle()
     if (ownErr) {
       return withCorsJson(req, { ok: false, error: `Failed to read milestone: ${ownErr.message}` }, 500)
@@ -350,7 +351,7 @@ export async function DELETE(
         .from("coach_packages")
         .select("name")
         .in("id", pkgIds)
-        .eq("coach_profile_id", coachProfileId)
+        .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       const names = (pkgs ?? []).map((p: any) => p.name as string)
       const first = names[0] ?? "a package"
       const others = Math.max(0, names.length - 1)
@@ -367,7 +368,7 @@ export async function DELETE(
       .from("coach_milestones")
       .delete()
       .eq("id", id)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .select("id")
       .maybeSingle()
     if (delErr) {

@@ -17,6 +17,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { owningCoachId as owningCoachIdFor, resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -149,7 +150,7 @@ export async function GET(req: NextRequest) {
     const { data, error } = await supabase
       .from("coach_milestones")
       .select(MILESTONE_SELECT)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true })
     if (error) {
@@ -233,7 +234,7 @@ export async function POST(req: NextRequest) {
     const { data: maxRow, error: maxErr } = await supabase
       .from("coach_milestones")
       .select("sort_order")
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .order("sort_order", { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -245,7 +246,7 @@ export async function POST(req: NextRequest) {
     const { data: inserted, error: insErr } = await supabase
       .from("coach_milestones")
       .insert({
-        coach_profile_id: coachProfileId,
+        coach_profile_id: owningCoachIdFor(await resolveDelegation(supabase, coachProfileId)),
         name,
         description,
         category,

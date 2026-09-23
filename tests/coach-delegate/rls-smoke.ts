@@ -163,6 +163,36 @@ async function main() {
         principal_coach_profile_id: principalId, delegate_coach_profile_id: delegateId,
       })).error)
 
+    console.log("\nthe practice's shared library (Stage 2)")
+    // The routes read these with the service role, so what matters here is the
+    // DATA shape those widened reads depend on: anything the delegate creates
+    // must belong to the principal, or the principal never sees it. Route
+    // behaviour itself is covered by the staging pass.
+    {
+      const { data: pkgs } = await admin.from("coach_packages").select("coach_profile_id")
+        .in("coach_profile_id", [principalId, delegateId])
+      const { data: cats } = await admin.from("coach_document_categories").select("coach_profile_id")
+        .in("coach_profile_id", [principalId, delegateId])
+      const { data: stages } = await admin.from("coach_pipeline_stages").select("coach_profile_id")
+        .in("coach_profile_id", [principalId, delegateId])
+      const all = [...(pkgs ?? []), ...(cats ?? []), ...(stages ?? [])]
+      const ownedByDelegate = all.filter((r: any) => r.coach_profile_id === delegateId).length
+      console.log(`  (packages ${pkgs?.length ?? 0}, categories ${cats?.length ?? 0}, stages ${stages?.length ?? 0}; ${ownedByDelegate} owned by the delegate)`)
+      ok("the delegate owns no library rows of her own", ownedByDelegate === 0, ownedByDelegate)
+    }
+    {
+      // A calendar is personal: it is the one thing deliberately NOT widened, so
+      // the delegate must not reach the principal's connection.
+      const { data: principalCal } = await admin.from("coach_calendar_connections")
+        .select("id").eq("coach_profile_id", principalId)
+      if (!(principalCal ?? []).length) {
+        console.log("  (skipped: the principal has no calendar connection to test against)")
+      } else {
+        const seen = await D2.from("coach_calendar_connections").select("id").eq("coach_profile_id", principalId)
+        ok("the delegate cannot read the principal's calendar", (seen.data ?? []).length === 0, seen.data)
+      }
+    }
+
     console.log("\nrevoking the delegation")
     await admin.from("coach_delegates").update({ status: "revoked" })
       .eq("principal_coach_profile_id", principalId).eq("delegate_coach_profile_id", delegateId)

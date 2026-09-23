@@ -215,6 +215,8 @@ export async function runPair(
     refound: number
     dup: number
     controlDetail: Record<string, unknown> | null
+    fetchDetail: Record<string, unknown> | null
+    attempts: number | null
     error: string | null
   }): Promise<string | null> => {
     const { data, error } = await sb
@@ -235,6 +237,9 @@ export async function runPair(
         intra_run_duplicate_count: o.dup,
         control_passed: o.controlPassed,
         control_detail: o.controlDetail,
+        // Requires 20260920_ingest_runs_fetch_detail.sql.
+        fetch_detail: o.fetchDetail,
+        request_attempts: o.attempts,
         error: o.error,
         finished_at: new Date().toISOString(),
         duration_ms: Date.now() - startedAt,
@@ -253,6 +258,7 @@ export async function runPair(
     {
       passed: boolean | null
       requests: number
+      attempts: number
       detail: Record<string, unknown> | null
       error: string | null
       carry?: unknown
@@ -283,6 +289,8 @@ export async function runPair(
       controls.set(org, {
         passed: c.passed,
         requests: spent,
+        // A reused verdict cost no HTTP calls on this pair either.
+        attempts: reused ? 0 : (c.attempts ?? c.requests),
         // Stamped by the runner rather than trusted from the adapter, so every
         // row says which claim its control_passed is making even if an adapter
         // forgets to put it in its own detail. control_reused says whether this
@@ -303,6 +311,8 @@ export async function runPair(
       controls.set(org, {
         passed: null,
         requests: 1,
+        // HttpFailed carries how many calls it actually burned before giving up.
+        attempts: (err as any)?.attempts ?? 1,
         detail: { filtering: adapter.filtering },
         error: err?.message || String(err),
       })
@@ -333,6 +343,8 @@ export async function runPair(
         refound: 0,
         dup: 0,
         controlDetail: c.detail,
+        fetchDetail: null,
+        attempts: c.attempts,
         error: c.error,
       })
       out.push({
@@ -363,7 +375,8 @@ export async function runPair(
     if (c.error) {
       const runId = await writeRun({
         org, status: "error", controlPassed: c.passed, requests: c.requests,
-        found: 0, added: 0, refound: 0, dup: 0, controlDetail: c.detail, error: c.error,
+        found: 0, added: 0, refound: 0, dup: 0, controlDetail: c.detail,
+        fetchDetail: null, attempts: c.attempts, error: c.error,
       })
       out.push({
         runId, org, status: "error", controlPassed: c.passed, requestsMade: c.requests,
@@ -373,6 +386,8 @@ export async function runPair(
     }
 
     let requests = c.requests
+    let attempts = c.attempts
+    let fetchDetail: Record<string, unknown> | null = null
     let madeRequest = false
     let found = 0
     let added = 0
@@ -387,6 +402,8 @@ export async function runPair(
       // already downloaded, instead of fetching the identical payload twice.
       const r = await adapter.fetch(pair, org, c.carry)
       requests += r.requests
+      attempts += r.attempts ?? r.requests
+      fetchDetail = r.detail ?? null
       found = r.postings.length
       const counts = await upsertBatch(sb, adapter.source, org, r.postings, seen)
       added = counts.added
@@ -394,7 +411,7 @@ export async function runPair(
       dup = counts.dup
       const runId = await writeRun({
         org, status: "ok", controlPassed: c.passed, requests, found, added, refound, dup,
-        controlDetail: c.detail, error: null,
+        controlDetail: c.detail, fetchDetail, attempts, error: null,
       })
       out.push({
         runId, org, status: "ok", controlPassed: c.passed, requestsMade: requests,
@@ -409,7 +426,8 @@ export async function runPair(
       // reconciliation constraint only binds status = 'ok'.
       const runId = await writeRun({
         org, status: "error", controlPassed: c.passed, requests, found, added, refound, dup,
-        controlDetail: c.detail, error: message.slice(0, 1000),
+        controlDetail: c.detail, fetchDetail,
+        attempts: attempts + ((err as any)?.attempts ?? 0), error: message.slice(0, 1000),
       })
       out.push({
         runId, org, status: "error", controlPassed: c.passed, requestsMade: requests,

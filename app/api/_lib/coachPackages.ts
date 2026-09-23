@@ -14,6 +14,7 @@
 // coach can't link another coach's deliverable by guessing a UUID.
 
 import { type SupabaseClient } from "@supabase/supabase-js"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 // Generic coach-route auth/scoping moved to ./coachAuth (a neutral home). Re-
 // exported here so the packages route files that import auth from this module
@@ -87,7 +88,7 @@ export async function findUnownedMilestones(
   const { data, error } = await supabase
     .from("coach_milestones")
     .select("id")
-    .eq("coach_profile_id", coachProfileId)
+    .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     .in("id", ids)
   if (error) throw new Error(`Ownership check failed: ${error.message}`)
   const owned = new Set((data as { id: string }[]).map((r) => r.id))
@@ -123,7 +124,7 @@ export async function toApiPackages(
     const { data: msData, error: msErr } = await supabase
       .from("coach_milestones")
       .select(LINKED_MILESTONE_SELECT)
-      .eq("coach_profile_id", coachProfileId) // scope: only this coach's deliverables
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds) // scope: only this coach's deliverables
       .in("id", milestoneIds)
     if (msErr) throw new Error(`Failed to read deliverables: ${msErr.message}`)
     for (const m of (msData ?? []) as LinkedMilestoneRow[]) milestoneById.set(m.id, m)
@@ -183,7 +184,7 @@ export async function getApiPackageById(
     .from("coach_packages")
     .select(PACKAGE_SELECT)
     .eq("id", packageId)
-    .eq("coach_profile_id", coachProfileId)
+    .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     .maybeSingle()
   if (error) throw new Error(`Failed to read package: ${error.message}`)
   if (!data) return null

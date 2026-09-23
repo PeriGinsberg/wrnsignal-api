@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { getAppUrl } from "@/lib/urls"
 import { logCoachClientEvent } from "../../_lib/coachClientEvents"
+import { owningCoachId as owningCoachIdFor, resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -107,7 +108,7 @@ export async function POST(req: NextRequest) {
     const { data: existingInvite } = await supabase
       .from("coach_clients")
       .select("id, status")
-      .eq("coach_profile_id", profileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, profileId)).actingIds)
       .eq("invited_email", clientEmail)
       .maybeSingle()
 
@@ -136,7 +137,10 @@ export async function POST(req: NextRequest) {
       const { data: insertedRow, error: insertErr } = await supabase
         .from("coach_clients")
         .insert({
-          coach_profile_id: profileId,
+          // Into the principal's practice when a delegate sends the invite;
+          // created_by keeps who actually did it.
+          coach_profile_id: owningCoachIdFor(await resolveDelegation(supabase, profileId)),
+          created_by: profileId,
           client_profile_id: clientProfileId,
           invited_email: clientEmail,
           access_level: accessLevel,

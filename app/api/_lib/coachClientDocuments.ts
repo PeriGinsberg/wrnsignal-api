@@ -22,6 +22,7 @@ export {
   UUID_RE,
   isCoachClientOwnedByCoach,
 } from "./coachEngagements"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const TITLE_MAX = 200
 export const URL_MAX = 2048
@@ -118,7 +119,7 @@ export async function getOwnedRelationship(
     .from("coach_clients")
     .select("coach_profile_id, client_profile_id, status, access_level")
     .eq("id", coachClientId)
-    .eq("coach_profile_id", coachProfileId)
+    .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     .maybeSingle()
   if (error) throw new Error(`Ownership check failed: ${error.message}`)
   return (data as {
@@ -164,7 +165,7 @@ export async function isCategoryOwnedActive(
     .from("coach_document_categories")
     .select("id")
     .eq("id", categoryId)
-    .eq("coach_profile_id", coachProfileId)
+    .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     .eq("active", true)
     .maybeSingle()
   if (error) throw new Error(`Category check failed: ${error.message}`)
@@ -190,7 +191,7 @@ export async function listApiDocuments(
   const { data: catData, error: catErr } = await supabase
     .from("coach_document_categories")
     .select("id, sort_order")
-    .eq("coach_profile_id", coachProfileId)
+    .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
   if (catErr) throw new Error(`Failed to read categories: ${catErr.message}`)
   const catSort = new Map<string, number>()
   for (const c of (catData ?? []) as { id: string; sort_order: number }[]) {

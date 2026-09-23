@@ -27,6 +27,7 @@
 // for stability.
 
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export type EngagementSignalKind =
   | "no_login"
@@ -115,7 +116,7 @@ export async function runHeuristics(
     const { data: dismissed } = await supabase
       .from("coach_engagement_signal_dismissals")
       .select("signal_key")
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     for (const r of dismissed || []) {
       if (typeof r.signal_key === "string") dismissedKeys.add(r.signal_key)
     }
@@ -196,7 +197,7 @@ export async function runHeuristics(
     const { data: stale } = await supabase
       .from("coach_job_recommendations")
       .select("id, client_profile_id, created_at")
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .in("client_profile_id", clientProfileIds)
       .is("client_responded_at", null)
       .lt("created_at", daysAgoIso(3))
@@ -320,7 +321,7 @@ export async function runHeuristics(
     const { data: coachRecs } = await supabase
       .from("coach_job_recommendations")
       .select("client_profile_id, company_name, job_title")
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .in("client_profile_id", clientProfileIds)
     const recKey = (cpid: string, co: string, ti: string) =>
       `${cpid}|${(co || "").toLowerCase().trim()}|${(ti || "").toLowerCase().trim()}`

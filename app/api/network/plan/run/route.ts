@@ -17,6 +17,7 @@ import { createdBy, resolveRequestScope } from "@/lib/collab/scope"
 import { parseFile, detectHeaderRow, dataRows } from "@/lib/network-tracker/import-parse"
 import { loadSubjectName } from "@/lib/network-tracker/import-load"
 import { findOrCreateJob, runPlanJob, sourceHash } from "@/lib/networking-plan/job"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
     // is a coaching artifact, so that is refused rather than half-supported.
     const { data: rel } = await supabase
       .from("coach_clients").select("id")
-      .eq("coach_profile_id", scope.actorId).eq("client_profile_id", scope.subjectId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, scope.actorId)).actingIds).eq("client_profile_id", scope.subjectId)
       .eq("status", "active").maybeSingle()
     if (!rel) {
       return withCorsJson(req, { ok: false, error: "A Networking Plan is created by a coach for a client." }, 403)

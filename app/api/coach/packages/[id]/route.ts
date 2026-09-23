@@ -21,6 +21,7 @@ import {
   parseDiscountToCents,
   getApiPackageById,
 } from "../../../_lib/coachPackages"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -115,7 +116,7 @@ export async function PATCH(
       .from("coach_packages")
       .update(updates)
       .eq("id", id)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .select("id")
       .maybeSingle()
     if (upErr) {
@@ -147,7 +148,7 @@ export async function DELETE(
       .from("coach_packages")
       .delete()
       .eq("id", id)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .select("id")
       .maybeSingle()
     if (delErr) {

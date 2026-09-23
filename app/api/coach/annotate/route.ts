@@ -2,6 +2,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -71,7 +72,7 @@ async function verifyCoachAccess(coachProfileId: string, clientProfileId: string
   const { data } = await supabase
     .from("coach_clients")
     .select("id, access_level, status")
-    .eq("coach_profile_id", coachProfileId)
+    .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     .eq("client_profile_id", clientProfileId)
     .eq("status", "active")
     .maybeSingle()

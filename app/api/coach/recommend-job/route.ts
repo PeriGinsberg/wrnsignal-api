@@ -7,6 +7,7 @@ import {
   assembleProfileForScoring,
   runJobFitForProfile,
 } from "../../_lib/runJobFitForProfile"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -85,7 +86,7 @@ async function verifyCoachAccess(coachProfileId: string, clientProfileId: string
   const { data } = await supabase
     .from("coach_clients")
     .select("id, access_level, status")
-    .eq("coach_profile_id", coachProfileId)
+    .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     .eq("client_profile_id", clientProfileId)
     .eq("status", "active")
     .maybeSingle()
@@ -198,7 +199,7 @@ export async function POST(req: NextRequest) {
     const { data: coachClientRow, error: ccErr } = await supabase
       .from("coach_clients")
       .select("id")
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .eq("client_profile_id", clientProfileId)
       .eq("status", "active")
       .maybeSingle()

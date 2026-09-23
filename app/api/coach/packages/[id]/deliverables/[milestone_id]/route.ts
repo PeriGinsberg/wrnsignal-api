@@ -16,6 +16,7 @@ import {
   errStatus,
   getApiPackageById,
 } from "../../../../../_lib/coachPackages"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -40,7 +41,7 @@ export async function DELETE(
       .from("coach_packages")
       .select("id")
       .eq("id", id)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .maybeSingle()
     if (pkgErr) return withCorsJson(req, { ok: false, error: `Failed to read package: ${pkgErr.message}` }, 500)
     if (!pkg) return withCorsJson(req, { ok: false, error: "Package not found" }, 404)

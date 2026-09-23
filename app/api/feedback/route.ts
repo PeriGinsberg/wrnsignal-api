@@ -18,6 +18,7 @@ import {
   type FeedbackType,
   type FeedbackSeverity,
 } from "@/lib/email/sendFeedbackNotification"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -270,7 +271,7 @@ export async function POST(req: NextRequest) {
       const { count } = await supabase
         .from("coach_clients")
         .select("id", { count: "exact", head: true })
-        .eq("coach_profile_id", coachProfileId)
+        .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
         .eq("status", "active")
         .eq("lifecycle_status", "Active")
       activeClientCount = count ?? 0

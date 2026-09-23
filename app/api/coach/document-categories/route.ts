@@ -20,6 +20,7 @@
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { getSupabaseAdmin, resolveCoach, errStatus } from "../../_lib/coachAuth"
+import { owningCoachId as owningCoachIdFor, resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -87,7 +88,7 @@ export async function GET(req: NextRequest) {
     const { data: allData, error: readErr } = await supabase
       .from("coach_document_categories")
       .select(CATEGORY_SELECT)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     if (readErr) {
       return withCorsJson(req, { ok: false, error: `Failed to read categories: ${readErr.message}` }, 500)
     }
@@ -97,8 +98,9 @@ export async function GET(req: NextRequest) {
 
     if (rows.length === 0) {
       // No rows ever → seed the 8 defaults in one multi-row insert.
+      const owningCoach = owningCoachIdFor(await resolveDelegation(supabase, coachProfileId))
       const seedRows = DEFAULT_CATEGORIES.map((name, i) => ({
-        coach_profile_id: coachProfileId,
+        coach_profile_id: owningCoach,
         name,
         sort_order: i,
         is_custom: false,
@@ -116,7 +118,7 @@ export async function GET(req: NextRequest) {
         const { data: reread, error: rrErr } = await supabase
           .from("coach_document_categories")
           .select(CATEGORY_SELECT)
-          .eq("coach_profile_id", coachProfileId)
+          .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
         if (rrErr || !reread || reread.length === 0) {
           return withCorsJson(req, { ok: false, error: `Failed to seed categories: ${seedErr.message}` }, 500)
         }
@@ -162,7 +164,7 @@ export async function POST(req: NextRequest) {
     const { data: maxRow, error: maxErr } = await supabase
       .from("coach_document_categories")
       .select("sort_order")
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .order("sort_order", { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -174,7 +176,7 @@ export async function POST(req: NextRequest) {
     const { data: inserted, error: insErr } = await supabase
       .from("coach_document_categories")
       .insert({
-        coach_profile_id: coachProfileId,
+        coach_profile_id: owningCoachIdFor(await resolveDelegation(supabase, coachProfileId)),
         name,
         sort_order: nextSortOrder,
         is_custom: true,

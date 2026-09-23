@@ -25,6 +25,7 @@ import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { logCoachClientEvent } from "../../../../_lib/coachClientEvents"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -142,7 +143,7 @@ export async function POST(
       .from("coach_clients")
       .select("id, lifecycle_status, client_profile_id, invited_email, name, is_returning, access_level, job_type, target_roles, target_locations, preferred_locations, timeline, phone, linkedin_url, education_status, university, grad_date")
       .eq("id", coachClientId)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .eq("status", "active")
       .maybeSingle()
     if (!ccRow) {

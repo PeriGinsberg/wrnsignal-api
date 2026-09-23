@@ -36,6 +36,11 @@
  */
 
 import type { ControlResult, FetchResult, FetchedPosting, IngestPair, SourceAdapter } from "./types"
+import { httpRequest } from "./http"
+import { norm, containsPhrase, containsPhraseInTitle } from "./text"
+
+// Re-exported so existing importers (and the test scripts) keep working.
+export { norm, containsPhrase, containsPhraseInTitle }
 
 const API = "https://boards-api.greenhouse.io/v1/boards"
 
@@ -56,22 +61,32 @@ export type GhJob = {
   [k: string]: unknown
 }
 
-export async function board(org: string, withContent = false): Promise<GhJob[]> {
+/**
+ * The whole board in one call, with the attempt count it cost.
+ *
+ * Returns attempts alongside the jobs rather than just the jobs, so a board
+ * that answered only on its third try is distinguishable from one that answered
+ * immediately. Greenhouse is the least likely of the three sources to need it
+ * (one request per board per sweep, then cached), but a shared retry policy
+ * that reports differently per adapter is the kind of inconsistency that makes
+ * the numbers untrustworthy later.
+ */
+export async function board(
+  org: string,
+  withContent = false,
+): Promise<{ jobs: GhJob[]; attempts: number }> {
   const target = `${API}/${encodeURIComponent(org)}/jobs` + (withContent ? "?content=true" : "")
-  const res = await fetch(target, { headers: { "user-agent": UA, accept: "application/json" } })
-  const text = await res.text()
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} for ${target} -- ${text.slice(0, 200)}`)
+  const r = await httpRequest(target, { headers: { "user-agent": UA, accept: "application/json" } }, { label: target })
   let j: any
   try {
-    j = JSON.parse(text)
+    j = JSON.parse(r.text)
   } catch {
-    throw new Error(`non-JSON response (${res.headers.get("content-type")}) for ${target}`)
+    throw new Error(`non-JSON response for ${target} -- ${r.text.slice(0, 200)}`)
   }
-  return Array.isArray(j?.jobs) ? j.jobs : []
+  return { jobs: Array.isArray(j?.jobs) ? j.jobs : [], attempts: r.attempts }
 }
 
-export const norm = (s: unknown) =>
-  String(s ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim()
+
 
 /** Greenhouse returns `content` as HTML-escaped markup. */
 export function plainText(content: unknown): string {
@@ -162,47 +177,6 @@ function fullHaystack(job: GhJob): string {
   return built
 }
 
-/**
- * Whole-word containment on already-normalized text.
- *
- * `needle` may be several words; it then has to appear contiguously and in
- * order. Both sides are padded so the first and last words are bounded too,
- * which is what stops "ip" matching inside "ownership".
- *
- * EXACT. No plural tolerance. See containsPhraseInTitle for where that lives.
- */
-export function containsPhrase(hay: string, needle: string): boolean {
-  if (needle === "") return false
-  return (" " + hay + " ").includes(" " + needle + " ")
-}
-
-/**
- * The same test, plus a trailing "s" on the LAST word, FOR TITLES ONLY.
- *
- * WHY IT IS RESTRICTED TO THE TITLE. A pluralised title is a real posting
- * shape: "Staff Attorneys" is an attorney role and should not be invisible to
- * the pair "attorney". A pluralised DESCRIPTION is not the same thing at all --
- * "work with our attorneys" is a sentence about colleagues, not a statement of
- * what the job is.
- *
- * Applying the tolerance to the whole haystack was measured on the 6,026 stored
- * prod postings and recovered 196 postings, of which ZERO had the plural in the
- * title. Every one was a description mention: exactly the scattered-mention
- * noise the phrase fix had just removed. So the tolerance now applies only
- * where it earns its keep.
- *
- * Last word only, because that is where English puts the plural in a job title:
- * "project managers", not "projects manager".
- *
- * One-directional: the TITLE may carry the extra s, never the needle. A pair
- * written as "attorneys" still has to find "attorneys".
- */
-export function containsPhraseInTitle(titleHay: string, needle: string): boolean {
-  if (needle === "") return false
-  const padded = " " + titleHay + " "
-  return padded.includes(" " + needle + " ") || padded.includes(" " + needle + "s ")
-}
-
 export function matches(job: GhJob, title: string, city: string | null): boolean {
   const phrase = norm(title)
   if (phrase === "") return false
@@ -259,7 +233,8 @@ export const greenhouseAdapter: SourceAdapter = {
     // per-pair and run against the same payload, so nothing is lost by reusing
     // it and a 7.6 MB download per pair is saved.
     const reuse = Array.isArray(cached) ? (cached as GhJob[]) : null
-    const jobs = reuse ?? (await board(org, true))
+    const fetched = reuse ? null : await board(org, true)
+    const jobs = reuse ?? fetched!.jobs
 
     const unfiltered = jobs.length
     const filtered = jobs.filter((j) => matches(j, pair.title, city)).length
@@ -303,6 +278,7 @@ export const greenhouseAdapter: SourceAdapter = {
     return {
       passed,
       requests: reuse ? 0 : 1,
+      attempts: reuse ? 0 : fetched!.attempts,
       carry: jobs,
       detail: {
         filtering: "local",
@@ -324,11 +300,22 @@ export const greenhouseAdapter: SourceAdapter = {
     // control() already downloaded this board. Re-fetching would double every
     // board's traffic to get a byte-identical payload.
     const cached = Array.isArray(carry) ? (carry as GhJob[]) : null
-    const jobs = cached ?? (await board(org, true))
+    const fetched = cached ? null : await board(org, true)
+    const jobs = cached ?? fetched!.jobs
+    const kept = jobs.filter((j) => matches(j, pair.title, city))
 
     return {
-      postings: jobs.filter((j) => matches(j, pair.title, city)).map((j) => mapJob(j, org)),
+      postings: kept.map((j) => mapJob(j, org)),
       requests: cached ? 0 : 1,
+      attempts: cached ? 0 : fetched!.attempts,
+      // The whole board arrives in one call, so there is no truncation to
+      // report: `complete` is unconditionally true here, unlike Workday.
+      detail: {
+        board_size: jobs.length,
+        returned: kept.length,
+        paginated: false,
+        complete: true,
+      },
     }
   },
 }

@@ -17,6 +17,7 @@ import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { randomUUID } from "node:crypto"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { owningCoachId as owningCoachIdFor, resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -143,7 +144,7 @@ export async function GET(req: NextRequest) {
     const { data: existing, error: readErr } = await supabase
       .from("coach_pipeline_stages")
       .select(STAGE_SELECT)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .order("sort_order", { ascending: true })
     if (readErr) {
       return withCorsJson(req, { ok: false, error: `Failed to read pipeline: ${readErr.message}` }, 500)
@@ -154,8 +155,9 @@ export async function GET(req: NextRequest) {
     }
 
     // Lazy seed: no rows yet → insert the curated default for this coach.
+    const owningCoach = owningCoachIdFor(await resolveDelegation(supabase, coachProfileId))
     const seedRows = DEFAULT_STAGES.map((s) => ({
-      coach_profile_id: coachProfileId,
+      coach_profile_id: owningCoach,
       stage_key: s.stage_key,
       label: s.label,
       sort_order: s.sort_order,
@@ -173,7 +175,7 @@ export async function GET(req: NextRequest) {
       const { data: reread, error: rereadErr } = await supabase
         .from("coach_pipeline_stages")
         .select(STAGE_SELECT)
-        .eq("coach_profile_id", coachProfileId)
+        .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
         .order("sort_order", { ascending: true })
       if (rereadErr || !reread || reread.length === 0) {
         return withCorsJson(req, { ok: false, error: `Failed to seed pipeline: ${seedErr.message}` }, 500)
@@ -232,7 +234,7 @@ export async function PUT(req: NextRequest) {
     const { data: currentData, error: curErr } = await supabase
       .from("coach_pipeline_stages")
       .select(STAGE_SELECT)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     if (curErr) return withCorsJson(req, { ok: false, error: `Failed to read pipeline: ${curErr.message}` }, 500)
     const current = (currentData || []) as StageRow[]
     if (current.length === 0) {
@@ -339,7 +341,7 @@ export async function PUT(req: NextRequest) {
           .from("coach_pipeline_stages")
           .update({ sort_order: r.sort_order, active: r.active, label: r.label })
           .eq("id", r.row.id)
-          .eq("coach_profile_id", coachProfileId)
+          .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
         if (upErr) {
           return withCorsJson(req, { ok: false, error: `Failed to update stage ${r.row.stage_key}: ${upErr.message}` }, 500)
         }
@@ -347,7 +349,7 @@ export async function PUT(req: NextRequest) {
         const { error: insErr } = await supabase
           .from("coach_pipeline_stages")
           .insert({
-            coach_profile_id: coachProfileId,
+            coach_profile_id: owningCoachIdFor(await resolveDelegation(supabase, coachProfileId)),
             stage_key: r.stage_key,
             label: r.label,
             sort_order: r.sort_order,
@@ -365,7 +367,7 @@ export async function PUT(req: NextRequest) {
     const { data: after, error: afterErr } = await supabase
       .from("coach_pipeline_stages")
       .select(STAGE_SELECT)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .order("sort_order", { ascending: true })
     if (afterErr) return withCorsJson(req, { ok: false, error: `Saved, but re-read failed: ${afterErr.message}` }, 500)
     return withCorsJson(req, { ok: true, stages: (after as StageRow[]).map(toApiStage) })
@@ -402,7 +404,7 @@ export async function DELETE(req: NextRequest) {
     const { data: stage, error: stageErr } = await supabase
       .from("coach_pipeline_stages")
       .select(STAGE_SELECT)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .eq("stage_key", stageKey)
       .maybeSingle()
     if (stageErr) return withCorsJson(req, { ok: false, error: `Failed to read stage: ${stageErr.message}` }, 500)
@@ -421,7 +423,7 @@ export async function DELETE(req: NextRequest) {
     const { data: clientRows } = await supabase
       .from("coach_clients")
       .select("id")
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     const clientIds = (clientRows || []).map((r: any) => r.id)
     let used = false
     if (clientIds.length > 0) {
@@ -439,7 +441,7 @@ export async function DELETE(req: NextRequest) {
         .from("coach_pipeline_stages")
         .update({ active: false })
         .eq("id", row.id)
-        .eq("coach_profile_id", coachProfileId)
+        .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       if (softErr) return withCorsJson(req, { ok: false, error: `Failed to deactivate stage: ${softErr.message}` }, 500)
     } else {
       // HARD delete — never used, safe to remove entirely.
@@ -447,14 +449,14 @@ export async function DELETE(req: NextRequest) {
         .from("coach_pipeline_stages")
         .delete()
         .eq("id", row.id)
-        .eq("coach_profile_id", coachProfileId)
+        .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       if (hardErr) return withCorsJson(req, { ok: false, error: `Failed to delete stage: ${hardErr.message}` }, 500)
     }
 
     const { data: after, error: afterErr } = await supabase
       .from("coach_pipeline_stages")
       .select(STAGE_SELECT)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .order("sort_order", { ascending: true })
     if (afterErr) return withCorsJson(req, { ok: false, error: `Deleted, but re-read failed: ${afterErr.message}` }, 500)
     return withCorsJson(req, {

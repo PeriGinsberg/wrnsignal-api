@@ -45,6 +45,16 @@ const HEADERS = {
   "accept-language": "en-US,en;q=0.9",
 }
 
+// The homepage is the one request Cloudflare serves as a document, so it gets
+// document-shaped headers: a current Chrome UA and an HTML Accept. The SSR data
+// endpoint is an XHR and keeps HEADERS above — do not merge the two.
+const HOMEPAGE_HEADERS = {
+  "user-agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+  accept: "text/html",
+  "accept-language": "en-US",
+}
+
 // Place payloads, verbatim. See note 3 above — do not trim these.
 //
 // SOURCING. Everything below `nyc` came from hiring.cafe's own location index:
@@ -1199,8 +1209,18 @@ export function buildSearchState(opts: SearchOpts): Record<string, any> {
 }
 
 export async function resolveBuildId(): Promise<string> {
-  const res = await fetch(`${ORIGIN}/`, { headers: HEADERS })
-  if (!res.ok) throw new Error(`homepage fetch failed: HTTP ${res.status}`)
+  const url = `${ORIGIN}/`
+  const res = await fetch(url, { headers: HOMEPAGE_HEADERS })
+  if (!res.ok) {
+    // cf-mitigated names the Cloudflare product that blocked us ("challenge" for
+    // a bot check); cf-ray identifies the request in their logs. Without them a
+    // bare 403 cannot be told apart from a rate limit.
+    const h = (name: string) => res.headers.get(name) ?? "(absent)"
+    throw new Error(
+      `homepage fetch failed: HTTP ${res.status} for ${res.url || url} ` +
+        `(cf-ray=${h("cf-ray")}, cf-mitigated=${h("cf-mitigated")}, server=${h("server")})`
+    )
+  }
   const html = await res.text()
   const m = html.match(/"buildId":"([^"]+)"/)
   if (!m) throw new Error("could not find buildId in homepage HTML")

@@ -16,6 +16,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -87,7 +88,7 @@ async function verifyProspectOwnership(coachClientId: string, coachProfileId: st
     .from("coach_clients")
     .select("id")
     .eq("id", coachClientId)
-    .eq("coach_profile_id", coachProfileId)
+    .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     .eq("status", "active")
     .maybeSingle()
   return data ?? null
@@ -142,7 +143,7 @@ export async function PATCH(
       .from("coach_clients")
       .update({ prospect_status: status })
       .eq("id", id)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     if (updErr) return withCorsJson(req, { ok: false, error: `Failed to update status: ${updErr.message}` }, 500)
 
     return withCorsJson(req, { ok: true, prospect_status: status })
