@@ -101,11 +101,11 @@ ok("general box has no field", anchorError(c, "_general", null) === null && anch
 ok("unknown section", anchorError(c, "nope", null) !== null)
 
 // ---------------------------------------------------------------------------
-// Session templates (docs/workbook-templates/session-1-foundations.json)
+// Session templates (lib/workbook/templates/session-1-foundations.json)
 // ---------------------------------------------------------------------------
 
 console.log("templates")
-const tRaw = JSON.parse(readFileSync(join(__dirname, "../../docs/workbook-templates/session-1-foundations.json"), "utf8"))
+const tRaw = JSON.parse(readFileSync(join(__dirname, "templates/session-1-foundations.json"), "utf8"))
 const VALUES = { first_name: "Alex", full_name: "Alex Rivera", coach_first_name: "Peri" }
 ok("the template still carries placeholders", unresolvedPlaceholders(tRaw).length > 0)
 const filled = applyTemplate(tRaw, VALUES)

@@ -17,6 +17,7 @@ import { WorkbookFrame } from "@/components/workbook/WorkbookFrame"
 import { SectionBlocks, SectionHeader, type FieldApi } from "@/components/workbook/Blocks"
 import { Summary, type InterviewRow } from "@/components/workbook/Summary"
 import { wbFetch, fmtWhen, type Comment, type Send } from "@/components/workbook/api"
+import { AddWorkbookModal } from "./AddWorkbookModal"
 
 type ListRow = {
   id: string; slug: string; status: "draft" | "with_client" | "with_coach"; updated_at: string
@@ -45,6 +46,7 @@ export function WorkbooksTab({ clientId, clientName }: { clientId: string; clien
   const [list, setList] = useState<ListRow[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [adding, setAdding] = useState(false)
 
   const load = useCallback(async () => {
     const { status, body } = await wbFetch<{ workbooks: ListRow[] }>(`/api/coach/clients/${clientId}/workbooks`)
@@ -61,14 +63,17 @@ export function WorkbooksTab({ clientId, clientName }: { clientId: string; clien
   return (
     <WorkbookFrame page={false}>
       <div style={{ padding: "36px 40px 48px", display: "flex", flexDirection: "column", gap: 24 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <span className="wb-eyebrow">Interview workbooks</span>
-          <h2 className="wb-h2">{clientName}</h2>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <span className="wb-eyebrow">Interview workbooks</span>
+            <h2 className="wb-h2">{clientName}</h2>
+          </div>
+          <button type="button" className="wb-btn-solid" onClick={() => setAdding(true)}>Add workbook</button>
         </div>
         {error && <p className="wb-warn" role="alert">{error}</p>}
         {!list && !error && <p className="wb-p wb-muted">Loading</p>}
         {list && list.length === 0 && (
-          <p className="wb-p wb-muted">No workbooks for {clientName} yet. A workbook is created from its content file, then appears here as a draft for you to share.</p>
+          <p className="wb-p wb-muted">No workbooks for {clientName} yet. Add one from a session template, and it appears here as a draft for you to share.</p>
         )}
         {list && list.map((w) => (
           <button key={w.id} type="button" onClick={() => setOpenId(w.id)} className="wb-card-soft"
@@ -87,6 +92,14 @@ export function WorkbooksTab({ clientId, clientName }: { clientId: string; clien
           </button>
         ))}
       </div>
+      {adding && (
+        <AddWorkbookModal
+          clientId={clientId}
+          clientName={clientName}
+          onClose={() => setAdding(false)}
+          onCreated={(id) => { setAdding(false); setOpenId(id); void load() }}
+        />
+      )}
     </WorkbookFrame>
   )
 }

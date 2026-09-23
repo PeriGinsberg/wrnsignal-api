@@ -154,6 +154,37 @@ async function main() {
         author_role: "coach", author_id: principalId,
       })).error)
 
+    console.log("\ncreating a workbook in the principal's practice")
+    {
+      // Her new workbook must hang off the PRINCIPAL's link (his roster) while
+      // carrying HER id as its author. That split is the delegate model in one row.
+      const slug2 = `delegate-create-${Date.now()}`
+      const made = await D2.from("workbooks").insert({
+        coach_client_id: ccId, client_profile_id: target, slug: slug2,
+        content: { ...content, slug: slug2 }, status: "draft", created_by: delegateId,
+      }).select("id, coach_client_id, created_by").single()
+      ok("she can create one on the principal's client", !made.error && !!made.data, made.error?.message)
+      if (made.data) {
+        ok("...on the principal's link", made.data.coach_client_id === ccId)
+        ok("...authored by her, not him", made.data.created_by === delegateId)
+        await admin.from("workbooks").delete().eq("id", made.data.id)
+      }
+
+      const spoofed = await D2.from("workbooks").insert({
+        coach_client_id: ccId, client_profile_id: target, slug: `${slug2}-spoof`,
+        content: { ...content, slug: `${slug2}-spoof` }, status: "draft", created_by: principalId,
+      }).select("id").single()
+      ok("she cannot file one under the principal's name", !!spoofed.error, spoofed.data)
+      if (spoofed.data?.id) await admin.from("workbooks").delete().eq("id", spoofed.data.id)
+
+      const outside = await D2.from("workbooks").insert({
+        coach_client_id: ccId, client_profile_id: outsiderClientId, slug: `${slug2}-outside`,
+        content: { ...content, slug: `${slug2}-outside` }, status: "draft", created_by: delegateId,
+      }).select("id").single()
+      ok("she cannot create one for another coach's client", !!outside.error, outside.data)
+      if (outside.data?.id) await admin.from("workbooks").delete().eq("id", outside.data.id)
+    }
+
     console.log("\ncoach_clients stays read-only for her")
     ok("she cannot revoke the principal's row",
       ((await D2.from("coach_clients").update({ status: "revoked" })

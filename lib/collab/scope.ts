@@ -72,6 +72,13 @@ export type Scope = {
   viaCoachId?: string
   /** True when the grant came through a delegation rather than the actor's own row. */
   actingAsDelegate?: boolean
+  /**
+   * The coach_clients row that granted this, by id. A record hung off the
+   * relationship rather than off the client (a workbook, a document, an
+   * engagement) belongs to THIS row, so it follows the same coach as the grant:
+   * the principal's, when a delegate is acting.
+   */
+  linkId?: string
 }
 
 /** Thrown on deny. Carries the status the routes already return. */
@@ -143,6 +150,7 @@ export async function resolveScope(
     accessLevel: granted.access_level as AccessLevel,
     viaCoachId: granted.coach_profile_id as string,
     actingAsDelegate: granted.coach_profile_id !== actor.actorId,
+    linkId: granted.id as string,
   }
 }
 

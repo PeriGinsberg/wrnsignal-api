@@ -192,12 +192,64 @@ async function main() {
     ok("the client read reports the completion",
       !!((await A.rpc("workbook_for_client", { p_workbook: W })).data as any)?.homework_completed_at)
 
+    console.log("creating a workbook (the INSERT policy)")
+    {
+      // 20260924_workbooks_coach_insert.sql reversed "creation is the operator
+      // script". The policy is now the only thing standing between a coach's
+      // JWT and a workbook row, so each clause of it is asked a question here.
+      const made: string[] = []
+      const mk = async (over: Record<string, unknown>) =>
+        await C.from("workbooks").insert({
+          coach_client_id: link.id, client_profile_id: aId, slug: `rls-insert-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          content: { ...content, slug: "rls-insert" }, status: "draft", created_by: coachId, ...over,
+        }).select("id").single()
+
+      const mine = await mk({})
+      ok("a full coach can create one", !mine.error && !!mine.data?.id, mine.error?.message)
+      if (mine.data?.id) made.push(mine.data.id)
+
+      const spoofed = await mk({ created_by: aId })
+      ok("...but not under someone else's name", !!spoofed.error, spoofed.data)
+      if (spoofed.data?.id) made.push(spoofed.data.id)
+
+      const otherClient = await mk({ client_profile_id: bId })
+      ok("...nor for a client they do not coach", !!otherClient.error, otherClient.data)
+      if (otherClient.data?.id) made.push(otherClient.data.id)
+
+      // The link must be THIS client's. Without that clause a workbook could
+      // hang off an unrelated relationship and follow the wrong practice.
+      const { data: otherLink } = await admin.from("coach_clients")
+        .select("id").eq("client_profile_id", bId).eq("status", "active").limit(1).maybeSingle()
+      if (otherLink) {
+        const mismatched = await mk({ coach_client_id: otherLink.id })
+        ok("...nor hung off another client's link", !!mismatched.error, mismatched.data)
+        if (mismatched.data?.id) made.push(mismatched.data.id)
+      } else {
+        console.log("  (skipped: no second link to test a mismatched coach_client_id against)")
+      }
+
+      const asClient = await A.from("workbooks").insert({
+        coach_client_id: link.id, client_profile_id: aId, slug: `rls-insert-client-${Date.now()}`,
+        content: { ...content, slug: "rls-insert-client" }, status: "draft", created_by: aId,
+      }).select("id").single()
+      ok("a client cannot create one at all", !!asClient.error, asClient.data)
+      if (asClient.data?.id) made.push(asClient.data.id)
+
+      for (const id of made) await admin.from("workbooks").delete().eq("id", id)
+    }
+
     console.log("access levels")
     for (const level of ["annotate", "view"]) {
       await admin.from("coach_clients").update({ access_level: level }).eq("id", link.id)
       ok(`${level} coach cannot read the workbook`, ((await C.from("workbooks").select("id").eq("id", W)).data ?? []).length === 0)
       ok(`${level} coach cannot read answers`, ((await C.from("workbook_answers").select("id").eq("workbook_id", W)).data ?? []).length === 0)
       ok(`${level} coach cannot send`, (await C.rpc("workbook_send_to_client", { p_workbook: W })).error?.code === "42501")
+      const denied = await C.from("workbooks").insert({
+        coach_client_id: link.id, client_profile_id: aId, slug: `rls-insert-${level}-${Date.now()}`,
+        content: { ...content, slug: "rls-insert" }, status: "draft", created_by: coachId,
+      }).select("id").single()
+      ok(`${level} coach cannot create one`, !!denied.error, denied.data)
+      if (denied.data?.id) await admin.from("workbooks").delete().eq("id", denied.data.id)
     }
   } finally {
     await admin.from("coach_clients").update({ access_level: originalLevel }).eq("id", link.id)

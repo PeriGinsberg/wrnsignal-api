@@ -128,6 +128,7 @@ async function main() {
     ok("an active link reaches the subject", s.subjectId === CLIENT)
     ok("...as role coach", s.actorRole === "coach")
     ok("...with the actor unchanged", s.actorId === COACH)
+    ok("...carrying the link row that granted it", s.linkId === "cc-1")
     ok("...and the status filter was actually applied",
       fake.calls.some((c) => c.filters.status === "active"))
   }
@@ -206,6 +207,16 @@ async function main() {
       const fake = makeFake([own, principalView], active)
       const s = await resolveScope(fake.client, actor(DELEGATE), { subject: CLIENT, require: "write" })
       ok("the strongest row wins when both exist", s.accessLevel === "full" && s.viaCoachId === DELEGATE)
+      ok("...and linkId is that same row", s.linkId === "cc-own")
+    }
+    {
+      // A workbook hangs off the coach_clients row, so a delegate's new workbook
+      // must carry the PRINCIPAL's link id. Get this wrong and her work lands on
+      // a relationship the principal cannot see.
+      const fake = makeFake([link({ id: "cc-principal", coach_profile_id: PRINCIPAL, access_level: "full" })], active)
+      const s = await resolveScope(fake.client, actor(DELEGATE), { subject: CLIENT, require: "write" })
+      ok("a delegate's linkId is the principal's row", s.linkId === "cc-principal")
+      ok("...while the actor is still the delegate", s.actorId === DELEGATE)
     }
     {
       const otherLink = link({ id: "cc-other", coach_profile_id: "profile-other-coach" })

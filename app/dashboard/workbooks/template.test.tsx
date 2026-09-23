@@ -13,6 +13,7 @@ import { SectionBlocks, SectionHeader, type FieldApi } from "../../../components
 import { HomeworkComplete } from "../../../components/workbook/HomeworkComplete"
 import { Summary } from "../../../components/workbook/Summary"
 import { applyTemplate, lastHomeworkSectionId, validateContent, type WorkbookContent } from "../../../lib/workbook/content"
+import { getTemplate } from "../../../lib/workbook/templates"
 import { wbFetch } from "../../../components/workbook/api"
 
 // The page's authenticated fetch needs a Supabase session; the button's contract
@@ -22,8 +23,9 @@ const mockFetch = vi.mocked(wbFetch)
 
 afterEach(cleanup)
 
-const raw = JSON.parse(readFileSync(
-  join(__dirname, "../../../docs/workbook-templates/session-1-foundations.json"), "utf8"))
+// The registry, not the file: templates are code now, and this is the copy the
+// create route fills in.
+const raw = getTemplate("session-1-foundations")!.content
 const parsed = validateContent(applyTemplate(raw, { first_name: "Alex", full_name: "Alex Rivera", coach_first_name: "Peri" }))
 if (!parsed.ok) throw new Error(parsed.errors.join("; "))
 const t: WorkbookContent = parsed.content
