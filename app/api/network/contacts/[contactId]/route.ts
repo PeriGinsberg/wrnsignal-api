@@ -14,7 +14,18 @@ import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
 import { routeError } from "../../../_lib/routeError"
 import { must } from "../../../_lib/must"
 import { getSupabaseAdmin } from "@/lib/collab/identity"
-import { editedBy, resolveActor, resolveOwnerScope, resolveRequestScope, resolveScope } from "@/lib/collab/scope"
+import { createdBy, editedBy, resolveActor, resolveOwnerScope, resolveRequestScope, resolveScope } from "@/lib/collab/scope"
+import { matchOrCreateCompany } from "@/lib/network-tracker/company"
+import {
+  NAME_MAX,
+  TITLE_MAX,
+  cleanOptional,
+  normalizeEmail,
+  normalizeLinkedInUrl,
+  normalizePhone,
+  validateLength,
+  validateName,
+} from "@/lib/network-tracker/contactFields"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -77,7 +88,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ co
     // resolved to, so this still refuses a coach reaching for a contact on some
     // OTHER client's board with a guessed id.
     const { data: c } = await supabase
-      .from("network_contacts").select("id, client_profile_id").eq("id", contactId).maybeSingle()
+      .from("network_contacts")
+      .select("id, client_profile_id, first_name, last_name, company_id")
+      .eq("id", contactId).maybeSingle()
     if (!c) return withCorsJson(req, { ok: false, error: "Contact not found" }, 404)
     if (c.client_profile_id !== scope.subjectId)
       return withCorsJson(req, { ok: false, error: "Forbidden: that contact is not on this board" }, 403)
@@ -104,8 +117,85 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ co
       if (pri && !PRIORITIES.has(pri)) return withCorsJson(req, { ok: false, error: "invalid priority" }, 400)
       patch.priority = pri
     }
+
+    // ── identity: who this person is and how to reach them ──
+    //
+    // These were missing from this allowlist, which is half of why a wrong email
+    // could not be corrected by anyone, coach or client: the UI offered no field
+    // AND the route would have dropped it. Same rule as the rest of the patch —
+    // only keys PRESENT in the body are touched, "" clears.
+    if ("first_name" in body) patch.first_name = cleanOptional(body.first_name)
+    if ("last_name" in body) patch.last_name = cleanOptional(body.last_name)
+    if ("title" in body) patch.title = cleanOptional(body.title)
+
+    for (const [key, fn] of [
+      ["email", normalizeEmail],
+      ["linkedin_url", normalizeLinkedInUrl],
+      ["phone", normalizePhone],
+    ] as const) {
+      if (!(key in body)) continue
+      const r = fn(body[key])
+      if ("error" in r) return withCorsJson(req, { ok: false, error: r.error, field: key }, 400)
+      patch[key] = r.value
+    }
+
+    // The name columns are NOT NULL, so "clear both" is not a thing that can be
+    // stored. Checked against the MERGED name, so clearing one while the other
+    // is already set stays legal.
+    if ("first_name" in patch || "last_name" in patch) {
+      const nextFirst = "first_name" in patch ? patch.first_name : c.first_name
+      const nextLast = "last_name" in patch ? patch.last_name : c.last_name
+      const nameErr = validateName(nextFirst, nextLast)
+      if (nameErr) return withCorsJson(req, { ok: false, error: nameErr, field: "first_name" }, 400)
+      // The columns are NOT NULL; an empty half is stored as "".
+      patch.first_name = nextFirst ?? ""
+      patch.last_name = nextLast ?? ""
+    }
+    for (const [key, max, label] of [
+      ["first_name", NAME_MAX, "That first name"],
+      ["last_name", NAME_MAX, "That last name"],
+      ["title", TITLE_MAX, "That title"],
+    ] as const) {
+      const err = validateLength(patch[key] ?? null, max, label)
+      if (err) return withCorsJson(req, { ok: false, error: err, field: key }, 400)
+    }
+
+    // Company by NAME, matching how the add form and the import work: an
+    // existing company on this board is reused case-insensitively, a new name
+    // creates one, and "" detaches the contact without deleting anything.
+    if ("company" in body) {
+      const name = cleanOptional(body.company)
+      patch.company_id = name
+        ? await matchOrCreateCompany(supabase, scope.subjectId, name, createdBy(scope))
+        : null
+    }
+
     if (Object.keys(patch).length === 0)
       return withCorsJson(req, { ok: false, error: "nothing to update" }, 400)
+
+    // ── one email, one person, per board ──
+    //
+    // The import dedupes on email, so two contacts sharing one address make
+    // every later import ambiguous. There is no unique index to lean on (email
+    // has never had one), so this is an explicit check, and it names the
+    // contact that already holds the address rather than just refusing.
+    if (patch.email) {
+      const { data: clash } = await supabase
+        .from("network_contacts")
+        .select("id, first_name, last_name")
+        .eq("client_profile_id", scope.subjectId)
+        .ilike("email", patch.email)
+        .neq("id", contactId)
+        .maybeSingle()
+      if (clash) {
+        const who = [clash.first_name, clash.last_name].filter(Boolean).join(" ").trim() || "another contact"
+        return withCorsJson(req, {
+          ok: false,
+          error: `${patch.email} is already on this board for ${who}. Two contacts cannot share an email address.`,
+          field: "email",
+        }, 409)
+      }
+    }
 
     // Stamped only PAST the guard above: a request that changes nothing cannot
     // put a fresh editor on the row. Otherwise a form that saves on blur would
@@ -114,8 +204,20 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ co
 
     const { data: updated, error: updErr } = await supabase
       .from("network_contacts").update(patch).eq("id", contactId)
-      .select("id, notes, relationship, priority, segment, additional_info").single()
-    if (updErr) throw new Error(`Update failed: ${updErr.message}`)
+      .select("id, first_name, last_name, title, email, linkedin_url, phone, company_id, notes, relationship, priority, segment, additional_info")
+      .single()
+    if (updErr) {
+      // The board's partial unique indexes are on (first, last, company); a
+      // rename can collide with someone already there. Say which wall was hit.
+      if ((updErr as any).code === "23505") {
+        return withCorsJson(req, {
+          ok: false,
+          error: "Someone with that name is already on this board at that company.",
+          field: "first_name",
+        }, 409)
+      }
+      throw new Error(`Update failed: ${updErr.message}`)
+    }
 
     return withCorsJson(req, { ok: true, contact: updated }, 200)
   } catch (err: any) {

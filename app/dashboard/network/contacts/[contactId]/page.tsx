@@ -47,6 +47,7 @@ type Contact = {
   title: string | null
   email: string | null
   linkedin_url: string | null
+  phone: string | null
   stage: string
   outcome_type: string | null
   relationship: string | null
@@ -201,6 +202,12 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
                 </a>
               </>
             )}
+            {contact.phone && (
+              <>
+                <span style={{ color: S.text.dim }}>·</span>
+                <a href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`} style={identityLink}>{contact.phone}</a>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -254,6 +261,8 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
         defaultOpen={!contact.relationship}
         summary={detailsSummary}
       >
+        <IdentityEditor contact={contact} company={company ?? null} onSaved={load} />
+        <div style={{ height: 22 }} />
         <DetailsEditor contact={contact} onSaved={load} />
         <div style={{ marginTop: 22 }}>
           <div style={{ ...factLabel, marginBottom: 8 }}>Additional info</div>
@@ -396,6 +405,123 @@ function DeleteContactControl({ contact }: { contact: Contact }) {
         </button>
       </div>
       {err && <div style={{ color: S.meaning.error.ink, fontSize: 13, marginTop: 10 }}>{err}</div>}
+    </div>
+  )
+}
+
+// WHO THIS PERSON IS, and how to reach them.
+//
+// None of this was editable before: the record rendered email and LinkedIn as
+// links and offered no field to change them, and the PATCH route would have
+// dropped the keys anyway. So a typo'd address, a new job title, or a phone
+// number learned on a call had nowhere to go, for the client AND for a coach.
+//
+// One save for the whole block rather than a save per field, because these are
+// usually corrected together, and because each save stamps an editor on the row.
+function IdentityEditor({
+  contact,
+  company,
+  onSaved,
+}: {
+  contact: Contact
+  company: string | null
+  onSaved: () => void
+}) {
+  const [first, setFirst] = useState(contact.first_name ?? "")
+  const [last, setLast] = useState(contact.last_name ?? "")
+  const [title, setTitle] = useState(contact.title ?? "")
+  const [companyName, setCompanyName] = useState(company ?? "")
+  const [email, setEmail] = useState(contact.email ?? "")
+  const [linkedin, setLinkedin] = useState(contact.linkedin_url ?? "")
+  const [phone, setPhone] = useState(contact.phone ?? "")
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const [savedTick, setSavedTick] = useState(false)
+
+  const dirty =
+    first !== (contact.first_name ?? "") ||
+    last !== (contact.last_name ?? "") ||
+    title !== (contact.title ?? "") ||
+    companyName !== (company ?? "") ||
+    email !== (contact.email ?? "") ||
+    linkedin !== (contact.linkedin_url ?? "") ||
+    phone !== (contact.phone ?? "")
+
+  async function save() {
+    setBusy(true)
+    setErr(null)
+    try {
+      const res = await authFetch(`/api/network/contacts/${contact.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first_name: first,
+          last_name: last,
+          title,
+          company: companyName,
+          email,
+          linkedin_url: linkedin,
+          phone,
+        }),
+      })
+      const j = await res.json().catch(() => ({}))
+      // The duplicate-email refusal (409) names the contact that already holds
+      // the address, so show the server's sentence rather than a generic one.
+      if (!res.ok || !j?.ok) throw new Error(j?.error || `Save failed (${res.status})`)
+      setSavedTick(true)
+      setTimeout(() => setSavedTick(false), 1500)
+      onSaved()
+    } catch (e: any) {
+      setErr(e?.message || String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const field = (label: string, value: string, set: (v: string) => void, opts: { placeholder?: string; width?: string; type?: string } = {}) => (
+    <label style={{ display: "flex", flexDirection: "column", gap: 6, flex: opts.width ?? "1 1 180px" }}>
+      <span style={factLabel}>{label}</span>
+      <input
+        value={value}
+        onChange={(e) => set(e.target.value)}
+        placeholder={opts.placeholder}
+        type={opts.type ?? "text"}
+        aria-label={label}
+        style={control}
+      />
+    </label>
+  )
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        {field("First name", first, setFirst)}
+        {field("Last name", last, setLast)}
+      </div>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 12 }}>
+        {field("Title", title, setTitle, { placeholder: "e.g. Creative Director" })}
+        {field("Company", companyName, setCompanyName, { placeholder: "e.g. Highdive" })}
+      </div>
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 12 }}>
+        {field("Email", email, setEmail, { placeholder: "name@company.com", type: "email" })}
+        {field("LinkedIn URL", linkedin, setLinkedin, { placeholder: "linkedin.com/in/…" })}
+        {field("Phone", phone, setPhone, { placeholder: "+1 312 555 0148" })}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14, flexWrap: "wrap" }}>
+        <button
+          onClick={save}
+          disabled={busy || !dirty}
+          style={
+            dirty
+              ? { ...actionStyle(S, "primary"), ...saveSize, opacity: busy ? 0.6 : 1 }
+              : { ...saveSize, background: S.card, color: S.text.dim, border: `1px solid ${S.border}`, cursor: "default" }
+          }
+        >
+          {busy ? "Saving…" : "Save contact details"}
+        </button>
+        {savedTick && <span style={{ color: S.text.muted, fontSize: 13.5 }}>Saved</span>}
+        {err && <span style={{ color: S.meaning.error.ink, fontSize: 13.5 }}>{err}</span>}
+      </div>
     </div>
   )
 }
