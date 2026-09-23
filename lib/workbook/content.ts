@@ -24,6 +24,13 @@ export type Block =
       prefix?: string
       placeholder?: string
       style?: "hook"
+      /**
+       * Pre-seeded text the client edits into their own words. Shown in the box
+       * until they save anything, and never stored as an answer on their behalf:
+       * an untouched starter is not something they wrote, so it does not count
+       * as progress and does not reach the summary.
+       */
+      starter?: string
     }
   | { type: "word_track"; body: string; label?: string }
   | { type: "pick"; key: string; label: string; options: string[]; help?: string; allow_other?: boolean }
@@ -176,6 +183,12 @@ export function unresolvedPlaceholders(content: unknown): string[] {
   return [...found]
 }
 
+/** What the box shows: their answer once saved, otherwise the starter text. */
+export function displayValue(v: unknown, starter?: string): string {
+  if (v === undefined && starter) return starter
+  return typeof v === "string" ? v : ""
+}
+
 export function isFilled(v: unknown): boolean {
   if (typeof v === "string") return v.trim().length > 0
   if (v && typeof v === "object") {
@@ -297,6 +310,7 @@ export function validateContent(raw: unknown): { ok: true; content: WorkbookCont
       const bt = `${at}.blocks[${j}]`
       if (!BLOCK_TYPES.has(b?.type)) { errors.push(`${bt}: unknown block type "${b?.type}"`); continue }
       if (b.type === "field" && (!["short", "long"].includes(b.input) || !str(b.label))) errors.push(`${bt}: field needs input short|long and a label`)
+      if (b.starter != null && (b.type !== "field" || typeof b.starter !== "string")) errors.push(`${bt}: starter text belongs on a field`)
       if (b.type === "pick" && (!Array.isArray(b.options) || b.options.length === 0)) errors.push(`${bt}: pick needs options`)
       if (b.type === "list" && (!["bullets", "numbers", "quotes"].includes(b.style) || !Array.isArray(b.items))) errors.push(`${bt}: list needs style and items`)
       if (b.type === "callout" && !["peach", "paleblue"].includes(b.tone)) errors.push(`${bt}: callout tone must be peach or paleblue`)

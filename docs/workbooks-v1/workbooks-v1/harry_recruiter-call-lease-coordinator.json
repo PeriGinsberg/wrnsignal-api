@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "slug": "recruiter-call-lease-coordinator",
+  "title": "Recruiter Call Prep: Lease Coordinator",
+  "source_doc": "Harry_Recruiter_Call_Lease_Coordinator_Workbook.md",
+  "client": { "first_name": "Harry", "full_name": "Harry" },
+  "interview": {
+    "company": null,
+    "role": "Lease Coordinator",
+    "date": null,
+    "time": null,
+    "interviewer_name": null,
+    "interviewer_title": "Recruiter",
+    "location": null
+  },
+  "coach": { "first_name": "Peri" },
+  "block_types_note": "Built from the Markdown source. COACH NOTE -> coach_only (the guidance is written about Harry, in the third person). STARTER -> field.starter, pre-seeded text he edits. FIELD -> field. SUMMARY -> the summary blocks.",
+  "sections": [
+    {
+      "id": "the-call",
+      "number": 1,
+      "title": "What This Call Is",
+      "blocks": [
+        { "type": "text", "size": "lead", "body": "A recruiter found you on LinkedIn and reached out. You didn't apply, so something on your profile caught their eye." },
+        { "type": "text", "body": "This call has two goals." },
+        { "type": "list", "style": "numbers", "items": [
+          "LEARN enough about the role and company to decide if you want it.",
+          "MAKE IT EASY for the recruiter to put you in front of the hiring manager."
+        ] },
+        { "type": "callout", "tone": "paleblue", "body": "You don't need to be an expert on leasing. You need to be curious, clear, and easy to talk to." },
+        { "type": "field", "key": "rec.name", "input": "short", "label": "Recruiter name" },
+        { "type": "field", "key": "rec.agency", "input": "short", "label": "Are they at an agency or at the company itself?" },
+        { "type": "field", "key": "rec.company", "input": "short", "label": "Company name (if they told you)" },
+        { "type": "field", "key": "rec.message", "input": "long", "label": "What their LinkedIn message said" },
+        { "type": "field", "key": "rec.profile", "input": "long", "label": "Anything from their LinkedIn profile worth mentioning" },
+        { "type": "callout", "tone": "peach", "title": "Before the call", "body": "Reread your own LinkedIn profile. That's what they saw, so your intro should match it." }
+      ]
+    },
+    {
+      "id": "hook",
+      "number": 2,
+      "title": "What Will They Remember You For",
+      "blocks": [
+        { "type": "text", "body": "Recruiters talk to a lot of people. When they describe you to the hiring manager, what's the one thing they'll say? Not a resume line. Something uniquely you." },
+        { "type": "field", "key": "hook.final", "input": "long", "label": "My hook" },
+        { "type": "coach_only", "title": "Coach note: the hook", "body": "No starter ideas. Let him find it." }
+      ]
+    },
+    {
+      "id": "intro",
+      "number": 3,
+      "title": "Your 60-Second Intro",
+      "blocks": [
+        { "type": "text", "body": "The recruiter will probably open with \"tell me a little about yourself.\" Keep it to about a minute. Present, Past, Future." },
+        { "type": "field", "key": "intro.present", "input": "long", "label": "My Present",
+          "starter": "I'm [where you are right now: school, grad, current job], and [one line on what you're interested in]." },
+        { "type": "field", "key": "intro.past", "input": "long", "label": "My Past",
+          "starter": "[One or two things that got you here. Not job by job.]" },
+        { "type": "field", "key": "intro.future", "input": "long", "label": "My Future",
+          "starter": "I'm looking for a role where I can [what you want to learn or do], so when you reached out about this, I wanted to hear more." },
+        { "type": "field", "key": "intro.time", "input": "short", "label": "Timed it out loud (seconds)", "placeholder": "Aim for about 60" }
+      ]
+    },
+    {
+      "id": "stories",
+      "number": 4,
+      "title": "Two Stories Ready",
+      "blocks": [
+        { "type": "text", "body": "Have two short stories ready in case they ask. Situation, what you did, how it turned out." },
+        { "type": "field", "key": "story.details", "input": "long", "label": "A time you kept track of a lot of details and didn't let anything slip" },
+        { "type": "field", "key": "story.deadline", "input": "long", "label": "A time you had a tight deadline and got it done" }
+      ]
+    },
+    {
+      "id": "questions",
+      "number": 5,
+      "title": "Questions to Ask",
+      "blocks": [
+        { "type": "text", "body": "This is where you learn if you want the job. React to each answer before asking the next one." },
+        { "type": "field", "key": "q.top3", "input": "long", "label": "My questions, and the three I care about most",
+          "starter": "1. What specifically about my background caught your attention?\n2. Can you tell me a little more about the team, and why this role is open right now?\n3. Is there a formal job description you could send me?\n4. What systems does the team use day to day, like a lease management system?\n5. What do the hours look like? Is it pretty much 9 to 5, or does it change depending on what's going on?\n6. What's the pay range for the role?\n7. What are the next steps in the process?" },
+        { "type": "coach_only", "title": "Coach note: the questions", "body": "Q1 tells him what the recruiter already likes about him; reuse it in later rounds.\nQ4: if he hasn't used their system, the answer is \"I haven't used that one yet, but I pick up new systems fast\" plus a quick example.\nQ7 replaces the next-steps line in the close." }
+      ]
+    },
+    {
+      "id": "pay",
+      "number": 6,
+      "title": "Pay",
+      "blocks": [
+        { "type": "text", "body": "Pay is fair game on a recruiter call. Ask it yourself (Question 6): \"What's the pay range for the role?\"" },
+        { "type": "callout", "tone": "paleblue", "title": "If the range works", "body": "\"That works for me.\"" },
+        { "type": "callout", "tone": "peach", "title": "If they turn it back to you", "body": "\"I'd want to be paid fairly for the market, but getting the right experience matters just as much to me right now.\"" },
+        { "type": "field", "key": "pay.range", "input": "short", "label": "Range they shared" }
+      ]
+    },
+    {
+      "id": "close",
+      "number": 7,
+      "title": "Close the Call",
+      "blocks": [
+        { "type": "text", "body": "Before you hang up, ask these two." },
+        { "type": "list", "style": "quotes", "items": [
+          "Is there anything about my background you'd want me to clear up?",
+          "When should I expect to hear from you?"
+        ] },
+        { "type": "text", "body": "After the call, send a short thank-you the same day." },
+        { "type": "field", "key": "thanks.note", "input": "long", "label": "My thank-you note",
+          "starter": "Hi [Name], thanks for taking the time today. I enjoyed learning about the Lease Coordinator role, and I'm excited about next steps. Best, Harry" }
+      ]
+    }
+  ],
+  "summary": {
+    "title": "Harry, here's your call plan.",
+    "eyebrow": "READ THIS 1 HOUR BEFORE",
+    "blocks": [
+      { "type": "interview_details" },
+      { "type": "quick_answers", "items": [
+        { "label": "MY HOOK", "field": "hook.final" },
+        { "label": "RECRUITER", "field": "rec.name" }
+      ] },
+      { "type": "tmay", "present": "intro.present", "past": "intro.past", "future": "intro.future",
+        "note": "About a minute in total. Say it out loud once before the call." },
+      { "type": "quick_answers", "items": [
+        { "label": "MY TOP QUESTIONS", "field": "q.top3" }
+      ] },
+      { "type": "checklist", "items": [
+        "About a minute per answer",
+        "React to each answer before your next question",
+        "Ask about next steps",
+        "Send the thank-you note today"
+      ] },
+      { "type": "signoff", "text": "You've got this.", "from": "Peri" }
+    ]
+  }
+}

@@ -10,7 +10,7 @@
 
 import React, { useEffect, useRef, type ReactNode } from "react"
 import {
-  SCENARIO_PARTS, STAR_PARTS, blockFieldKeys, quoteText,
+  SCENARIO_PARTS, STAR_PARTS, blockFieldKeys, displayValue, quoteText,
   type AnswerValue, type Block, type PickValue, type Section,
 } from "../../lib/workbook/content"
 
@@ -98,11 +98,15 @@ function ConflictBox({ api, k }: { api: FieldApi; k: string }) {
 }
 
 function TextField(props: {
-  api: FieldApi; k: string; label: string; long: boolean; number?: number; placeholder?: string
+  api: FieldApi; k: string; label: string; long: boolean; number?: number; placeholder?: string; starter?: string
 }) {
   const { api, k } = props
   const v = api.get(k)
-  const value = typeof v === "string" ? v : ""
+  // Starter text fills the box until the client saves something of their own.
+  // `undefined` means no answer has ever been saved; an empty string means they
+  // cleared it, and the starter does not come back to overwrite that.
+  const value = displayValue(v, props.starter)
+  const untouched = v === undefined && !!props.starter
   const id = `f-${k}`
   return (
     <div className="wb-field">
@@ -119,7 +123,12 @@ function TextField(props: {
           onChange={(e) => api.set(k, e.target.value)} />
       )}
       <ConflictBox api={api} k={k} />
-      <div className="wb-field-foot"><SaveLine api={api} k={k} />{api.fieldFoot?.(k)}</div>
+      <div className="wb-field-foot">
+        {untouched && api.editable && (
+          <span className="wb-muted" style={{ fontSize: 13 }}>A starting point. Edit it into your own words.</span>
+        )}
+        <SaveLine api={api} k={k} />{api.fieldFoot?.(k)}
+      </div>
     </div>
   )
 }
@@ -257,7 +266,8 @@ function Main({ api, b }: { api: FieldApi; b: Block }): ReactNode {
     case "field":
       return b.style === "hook"
         ? <HookField api={api} b={b} />
-        : <TextField api={api} k={b.key} label={b.label} long={b.input === "long"} number={b.number} placeholder={b.placeholder} />
+        : <TextField api={api} k={b.key} label={b.label} long={b.input === "long"} number={b.number}
+            placeholder={b.placeholder} starter={b.starter} />
     case "pick":
       return <PickField api={api} b={b} />
     case "star":
