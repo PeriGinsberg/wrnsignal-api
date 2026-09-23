@@ -111,36 +111,81 @@ export async function POST(req: NextRequest) {
       client_profile_id: scope.subjectId,
       ...attribution,
       company_id: r.companyRef ? (refToId.get(r.companyRef) ?? r.companyRef) : null,
+      // relationship / priority / segment / additional_info come from the mapped
+      // columns when the file has them and fall back to the locked defaults when
+      // it does not — resolveImport decides which. `stage` is deliberately
+      // absent so the column default ('identified') applies.
       ...r.insert!,
-      // Locked defaults for this importer. `stage` is deliberately absent so the
-      // column default ('identified') applies.
-      relationship: "cold",
-      priority: null,
-      segment: null,
       source: "import",
     }))
 
     let imported = 0
     const insertFailures: { display: string; reason: string }[] = []
+    // key -> id, so the contact-method notes below can find the row they belong
+    // to. Same key shape the resolver dedupes on.
+    const insertedIds = new Map<string, string>()
+    const keyOf = (r: { first_name: string; last_name: string; company_id: string | null }) =>
+      `${r.first_name.trim().toLowerCase()}|${r.last_name.trim().toLowerCase()}|${r.company_id ?? ""}`
+    const remember = (rows: any[] | null) => {
+      for (const row of rows ?? []) insertedIds.set(keyOf(row), row.id)
+    }
+
+    const RETURNING = "id, first_name, last_name, company_id"
     for (let i = 0; i < payload.length; i += CHUNK) {
       const slice = payload.slice(i, i + CHUNK)
-      const { data, error } = await supabase.from("network_contacts").insert(slice).select("id")
+      const { data, error } = await supabase.from("network_contacts").insert(slice).select(RETURNING)
       if (!error) {
         imported += data?.length ?? 0
+        remember(data)
         continue
       }
       // A chunk can fail on one bad row (a unique-index race, say). Retry the
       // slice one row at a time so a single collision cannot discard 199 good
       // contacts, and report what actually failed.
       for (const one of slice) {
-        const { error: rowErr } = await supabase.from("network_contacts").insert(one)
+        const { data: oneRow, error: rowErr } = await supabase
+          .from("network_contacts").insert(one).select(RETURNING).maybeSingle()
         if (rowErr) {
           insertFailures.push({
             display: `${one.first_name} ${one.last_name}`.trim(),
             reason: rowErr.code === "23505" ? "Already on the board." : rowErr.message,
           })
-        } else imported++
+        } else {
+          imported++
+          remember(oneRow ? [oneRow] : [])
+        }
       }
+    }
+
+    // ── 4. a non-email "contact method" is kept, not thrown away ──
+    // "call her", a phone number, an assistant's name: the cell is not an
+    // address so it cannot be the email, and deleting what someone typed is
+    // worse than filing it. Logged as a system note against the contact, which
+    // is where the client-run importer has always put it.
+    const notes = creates
+      .filter((r) => r.contactMethod)
+      .map((r) => ({
+        id: insertedIds.get(
+          `${r.insert!.first_name.trim().toLowerCase()}|${r.insert!.last_name.trim().toLowerCase()}|${
+            r.companyRef ? (refToId.get(r.companyRef) ?? r.companyRef) : ""
+          }`,
+        ),
+        text: r.contactMethod as string,
+      }))
+      .filter((n) => n.id)
+      .map((n) => ({
+        contact_id: n.id,
+        type: "note_logged",
+        action_date: new Date().toISOString(),
+        note: `Imported contact method: ${n.text}`,
+        author_role: "system",
+        author_id: null,
+      }))
+    let notesLogged = 0
+    if (notes.length) {
+      const { data, error } = await supabase.from("network_actions").insert(notes).select("id")
+      if (error) console.warn("[import/commit] contact-method notes failed:", error.message)
+      else notesLogged = data?.length ?? 0
     }
 
     return withCorsJson(req, {
@@ -154,7 +199,12 @@ export async function POST(req: NextRequest) {
         .filter((r) => r.disposition !== "create")
         .map((r) => ({ rowNum: r.rowNum, display: r.display, disposition: r.disposition, detail: r.detail })),
       insertFailures,
-      defaultsApplied: ["relationship = cold", "stage = identified", "priority blank", "segment blank"],
+      notesLogged,
+      defaultsApplied: [
+        "relationship = cold when the file does not map one",
+        "stage = identified",
+        "priority / segment / additional info blank unless mapped",
+      ],
     }, 200)
   } catch (err: any) {
     const msg = err?.message || String(err)

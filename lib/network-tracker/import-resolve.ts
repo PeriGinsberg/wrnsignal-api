@@ -34,7 +34,20 @@ export type SourceRow = {
   email: string
   linkedin: string
   domain: string
+  // Optional columns. A client importing their own spreadsheet may map these;
+  // the coach workbook has none of them, which is why the defaults below exist.
+  segment: string
+  priority: string
+  relationship: string
+  additionalInfo: string
 }
+
+// Only these reach the column; anything else is left blank rather than guessed.
+const RELATIONSHIPS = new Set(["personal", "affinity", "referred", "cold", "recruiter"])
+const PRIORITIES = new Set(["A", "B", "C"])
+
+/** The locked default when a file does not say. */
+export const DEFAULT_RELATIONSHIP = "cold"
 
 /** How a row's company was resolved. `ref` is an existing id, or `new:<key>`
  *  for a company this import will create — commit swaps it for the real id. */
@@ -58,6 +71,9 @@ export type ResolvedRow = {
   companyRef: string | null // existing id, or `new:<key>`
   emailDropped: boolean // created, but the Email cell was not an address
   detail: string | null // why it was skipped, in a sentence
+  // Text that was in the Email cell but is not an address ("call her", a phone
+  // number). Kept so commit can log it against the contact instead of losing it.
+  contactMethod: string | null
   // Only present on `create`, and only consumed by commit.
   insert?: {
     first_name: string
@@ -66,6 +82,10 @@ export type ResolvedRow = {
     email: string | null
     linkedin_url: string | null
     company_domain: string | null
+    segment: string | null
+    priority: string | null
+    relationship: string
+    additional_info: string | null
   }
 }
 
@@ -179,6 +199,7 @@ export function resolveImport(args: {
       companyAction: "none" as CompanyAction,
       companyRef: null as string | null,
       emailDropped: false,
+      contactMethod: null as string | null,
       detail: null as string | null,
     }
 
@@ -318,6 +339,7 @@ export function resolveImport(args: {
       companyRef,
       disposition: "create",
       emailDropped: Boolean(emailRaw) && !emailValid,
+      contactMethod: emailRaw && !emailValid ? emailRaw : null,
       detail: emailRaw && !emailValid ? `"${emailRaw}" is not an email address; left blank.` : null,
       insert: {
         first_name: first,
@@ -326,6 +348,11 @@ export function resolveImport(args: {
         email,
         linkedin_url: row.linkedin.trim() || null,
         company_domain: row.domain.trim() || null,
+        // Mapped when the file says so, locked default when it does not.
+        segment: row.segment.trim() || null,
+        priority: PRIORITIES.has(row.priority.trim().toUpperCase()) ? row.priority.trim().toUpperCase() : null,
+        relationship: RELATIONSHIPS.has(lc(row.relationship)) ? lc(row.relationship) : DEFAULT_RELATIONSHIP,
+        additional_info: row.additionalInfo.trim() || null,
       },
     })
   }

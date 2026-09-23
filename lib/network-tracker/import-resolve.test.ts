@@ -20,7 +20,11 @@ function check(label: string, got: unknown, want: unknown) {
 }
 
 function row(rowNum: number, p: Partial<SourceRow>): SourceRow {
-  return { rowNum, company: "", first: "", last: "", title: "", email: "", linkedin: "", domain: "", ...p }
+  return {
+    rowNum, company: "", first: "", last: "", title: "", email: "", linkedin: "", domain: "",
+    segment: "", priority: "", relationship: "", additionalInfo: "",
+    ...p,
+  }
 }
 const run = (rows: SourceRow[], companies: ExistingCompany[] = [], contacts: ExistingContact[] = []) =>
   resolveImport({ rows, companies, contacts })
@@ -126,6 +130,41 @@ check(
   const r = run([row(2, { company: "Acme", first: "Ann", last: "Lee", email: "call her" })])
   check("email: junk is dropped, contact still created", [r.rows[0].disposition, r.rows[0].emailDropped, r.rows[0].insert?.email], ["create", true, null])
   check("email: junk counted", r.summary.emailDropped, 1)
+}
+
+// ── the optional columns: mapped wins, unmapped gets the locked default ─────
+// These shipped broken for one deploy: the columns were still offered in the
+// mapping UI while the commit ignored them, so a client mapping "Priority"
+// watched it vanish. Both halves are pinned here.
+{
+  const r = run([row(2, { company: "Acme", first: "Ann", last: "Lee" })])
+  check("unmapped: relationship falls back to cold", r.rows[0].insert?.relationship, "cold")
+  check("unmapped: priority blank", r.rows[0].insert?.priority, null)
+  check("unmapped: segment blank", r.rows[0].insert?.segment, null)
+  check("unmapped: additional info blank", r.rows[0].insert?.additional_info, null)
+}
+{
+  const r = run([row(2, { company: "Acme", first: "Ann", last: "Lee", relationship: "Referred", priority: "b", segment: "Alumni", additionalInfo: "Met at the conference" })])
+  check("mapped: relationship honoured, lowercased", r.rows[0].insert?.relationship, "referred")
+  check("mapped: priority honoured, uppercased", r.rows[0].insert?.priority, "B")
+  check("mapped: segment honoured", r.rows[0].insert?.segment, "Alumni")
+  check("mapped: additional info honoured", r.rows[0].insert?.additional_info, "Met at the conference")
+}
+{
+  const r = run([row(2, { company: "Acme", first: "Ann", last: "Lee", relationship: "warm-ish", priority: "P1" })])
+  check("mapped but invalid: relationship falls back rather than writing junk", r.rows[0].insert?.relationship, "cold")
+  check("mapped but invalid: priority left blank", r.rows[0].insert?.priority, null)
+}
+
+// ── a non-email contact method is kept for the commit to log ────────────────
+{
+  const r = run([row(2, { company: "Acme", first: "Ann", last: "Lee", email: "call her assistant" })])
+  check("contact method preserved", r.rows[0].contactMethod, "call her assistant")
+  check("...and not written to the email column", r.rows[0].insert?.email, null)
+}
+{
+  const r = run([row(2, { company: "Acme", first: "Ann", last: "Lee", email: "ann@acme.com" })])
+  check("a real address is not a contact method", r.rows[0].contactMethod, null)
 }
 
 // ── summary ─────────────────────────────────────────────────────────────────

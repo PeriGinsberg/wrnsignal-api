@@ -86,20 +86,32 @@ Notes:
 - An email matching a contact **at a different company** is still a duplicate
   (the person changed jobs); the preview labels it distinctly.
 - A non-address in the Email cell (`"call her"`, a phone number) leaves `email`
-  null, still creates the contact, and is reported. Unlike the client-run
-  importer, it does **not** write a `note_logged` action: this path creates no
-  action rows at all.
+  null, still creates the contact, is reported, and is logged as a
+  `note_logged` system action so the typed text is not lost.
 
 ## Defaults on create
 
 | Field | Value |
 |---|---|
-| `relationship` | `cold` |
+| `relationship` | the mapped column when the file has one and it is a valid value, else `cold` |
 | `stage` | not set, so the column default `identified` applies |
-| `priority` | null |
-| `segment` | null |
+| `priority` | the mapped column when it is A/B/C, else null |
+| `segment` / `additional_info` | the mapped column, else null |
 | `source` | `import` |
 | `created_by_role` / `created_by_id` | from the scope, so a coach-run import records `coach` |
+
+**These routes are shared with the client-run importer**, which has always let
+someone map Segment, Priority, Relationship and Additional info. The defaults
+are what a file that does not mention them gets, not a policy that overrides
+one that does. A first version of this change applied the defaults
+unconditionally, and for one deploy a client could map Priority and watch it
+vanish while the mapping UI still offered the column. Mapped wins; unmapped
+gets the default; an invalid value falls back rather than being written.
+
+A non-email "contact method" in the Email cell ("call her", a phone number) is
+kept as a `note_logged` system action against the contact, which is where the
+client-run importer has always put it. It is the one action row this path
+writes.
 
 **Existing contacts are never updated.** Every match is a skip.
 

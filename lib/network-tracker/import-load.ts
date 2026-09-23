@@ -40,6 +40,13 @@ export function buildSourceRows(
       email: cell(row, col("email")),
       linkedin: cell(row, col("linkedin_url")),
       domain: cell(row, col("company_domain")),
+      // Optional columns a client's own spreadsheet may carry. Unmapped reads
+      // as "" here and becomes the locked default in resolveImport; mapping one
+      // and having it silently dropped is the bug this restores.
+      segment: cell(row, col("segment")),
+      priority: cell(row, col("priority")),
+      relationship: cell(row, col("relationship")),
+      additionalInfo: cell(row, col("additional_info")),
     }
   })
 }
