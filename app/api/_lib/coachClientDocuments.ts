@@ -108,15 +108,50 @@ export async function getOwnedRelationship(
   supabase: SupabaseClient,
   coachProfileId: string,
   coachClientId: string,
-): Promise<{ coach_profile_id: string; client_profile_id: string | null } | null> {
+): Promise<{
+  coach_profile_id: string
+  client_profile_id: string | null
+  status: string
+  access_level: string
+} | null> {
   const { data, error } = await supabase
     .from("coach_clients")
-    .select("coach_profile_id, client_profile_id")
+    .select("coach_profile_id, client_profile_id, status, access_level")
     .eq("id", coachClientId)
     .eq("coach_profile_id", coachProfileId)
     .maybeSingle()
   if (error) throw new Error(`Ownership check failed: ${error.message}`)
-  return (data as { coach_profile_id: string; client_profile_id: string | null } | null) ?? null
+  return (data as {
+    coach_profile_id: string
+    client_profile_id: string | null
+    status: string
+    access_level: string
+  } | null) ?? null
+}
+
+// ── Access guard: owning the row is not the same as being allowed to use it ──
+//
+// The library routes shipped checking ownership only, so a coach at 'view' could
+// write, and a coach whose relationship was paused or revoked kept full use of
+// the library. Every other coach surface keys on status='active' plus the
+// access ladder; this brings the library onto the same rule, with the same
+// vocabulary as lib/collab/scope.ts: read needs view, write needs full.
+const LADDER: Record<"read" | "write", string[]> = {
+  read: ["view", "annotate", "full"],
+  write: ["full"],
+}
+
+export function libraryAccessDenied(
+  rel: { status: string; access_level: string },
+  need: "read" | "write",
+): string | null {
+  if (rel.status !== "active") return "This coaching relationship is not active."
+  if (!LADDER[need].includes(rel.access_level)) {
+    return need === "write"
+      ? "Full access is required to change this client's library."
+      : "You do not have access to this client's library."
+  }
+  return null
 }
 
 // ── Category guard: is this one of the coach's OWN active categories? ──

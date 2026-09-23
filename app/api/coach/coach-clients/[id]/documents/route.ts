@@ -26,6 +26,7 @@ import {
   validateTitle,
   normalizeUrl,
   getOwnedRelationship,
+  libraryAccessDenied,
   isCategoryOwnedActive,
   listApiDocuments,
   type DocumentRow,
@@ -53,6 +54,8 @@ export async function GET(
     if (!rel) {
       return withCorsJson(req, { ok: false, error: "Client relationship not found" }, 404)
     }
+    const denied = libraryAccessDenied(rel, "read")
+    if (denied) return withCorsJson(req, { ok: false, error: denied }, 403)
 
     // Shape-1 collaboration: list docs across ALL coach_client_id rows for this
     // client so both coaches share the library. Byte-identical for a solo client
@@ -123,6 +126,8 @@ export async function POST(
     if (!rel) {
       return withCorsJson(req, { ok: false, error: "Client relationship not found" }, 404)
     }
+    const denied = libraryAccessDenied(rel, "write")
+    if (denied) return withCorsJson(req, { ok: false, error: denied }, 403)
     if (!rel.client_profile_id) {
       // Documents denormalize a non-null client_profile_id; a prospect with no
       // linked profile can't hold library docs yet.

@@ -90,11 +90,39 @@ export async function GET(req: NextRequest) {
     const profileId = await getProfileId(userId, email)
     const supabase = getSupabaseAdmin()
 
+    // THE RELATIONSHIP HAS TO STILL BE ACTIVE.
+    //
+    // visible_to_client records that a coach once shared a link; it does not
+    // record that they are still this client's coach. Without this filter a
+    // paused or revoked coach's links stayed on the client's Coaching Hub
+    // indefinitely, because nothing in the read path ever looked at
+    // coach_clients.status. Sharing is per relationship, so it ends with the
+    // relationship.
+    //
+    // Filtering on the LINK rather than on "is this client coached at all"
+    // keeps a two-coach client correct: an active coach's links stay, a revoked
+    // coach's links go, in the same response.
+    const { data: activeLinks, error: linkErr } = await supabase
+      .from("coach_clients")
+      .select("id")
+      .eq("client_profile_id", profileId)
+      .eq("status", "active")
+    if (linkErr) throw new Error(`Coach relationship lookup failed: ${linkErr.message}`)
+    const activeCoachClientIds = (activeLinks ?? []).map((r: { id: string }) => r.id)
+
+    // No active coach means no shared library. Return the empty shape rather
+    // than a 403: the Coaching Hub renders this section unconditionally, and
+    // "your coach hasn't shared anything yet" is the honest reading.
+    if (activeCoachClientIds.length === 0) {
+      return withCorsJson(req, { ok: true, groups: [] })
+    }
+
     // The privacy wall: my docs, shared, not deleted. Nothing else can match.
     const { data: docData, error: docErr } = await supabase
       .from("coach_client_documents")
       .select("id, title, url, category_id, sort_order")
       .eq("client_profile_id", profileId)
+      .in("coach_client_id", activeCoachClientIds)
       .eq("visible_to_client", true)
       .is("deleted_at", null)
       .order("sort_order", { ascending: true })

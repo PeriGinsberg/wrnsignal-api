@@ -1,6 +1,42 @@
-import { NextResponse } from "next/server"
+// Internal analytics page. ADMIN ONLY.
+//
+// This shipped with no auth of any kind: `GET()` took no request and checked
+// nothing, so the page was reachable by anyone who knew the path. What it could
+// expose was limited (the page's data loader is paused, and the anon role has no
+// table grants in production, verified 2026-09-22), but "limited" is not a gate.
+//
+// The gate is a shared secret, matching how the separate revenue dashboard is
+// protected, because this page is plain HTML opened directly in a browser: it
+// carries no Supabase session and cannot send a Bearer header.
+//
+//   ?key=<ANALYTICS_DASHBOARD_TOKEN>   or   Authorization: Bearer <token>
+//
+// FAILS CLOSED. With the env var unset the page 404s rather than serving, so a
+// deploy that forgets the secret is a missing page, not an open one.
+import { NextResponse, type NextRequest } from "next/server"
 
-export async function GET() {
+function authorized(req: NextRequest): boolean {
+  const expected = process.env.ANALYTICS_DASHBOARD_TOKEN
+  if (!expected) return false
+  const supplied =
+    new URL(req.url).searchParams.get("key") ??
+    (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "")
+  if (!supplied || supplied.length !== expected.length) return false
+  // Constant-time-ish compare: same length checked above, no early exit here.
+  let diff = 0
+  for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ supplied.charCodeAt(i)
+  return diff === 0
+}
+
+export async function GET(req: NextRequest) {
+  // 404, not 401: an internal page should not advertise that it exists.
+  if (!authorized(req)) {
+    return new NextResponse("Not found", { status: 404, headers: { "Content-Type": "text/plain" } })
+  }
+  return renderDashboard()
+}
+
+function renderDashboard() {
   const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -606,6 +642,13 @@ setInterval(loadAll, 60000)
 </html>
 `
   return new NextResponse(html, {
-    headers: { "Content-Type": "text/html; charset=utf-8" },
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      // The URL can carry the secret, so it must not be cached or indexed.
+      "Cache-Control": "no-store",
+      "X-Robots-Tag": "noindex, nofollow",
+      "X-Frame-Options": "DENY",
+      "X-Content-Type-Options": "nosniff",
+    },
   })
 }

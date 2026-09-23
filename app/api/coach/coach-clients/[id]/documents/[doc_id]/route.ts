@@ -18,7 +18,8 @@ import {
   resolveCoach,
   errStatus,
   UUID_RE,
-  isCoachClientOwnedByCoach,
+  getOwnedRelationship,
+  libraryAccessDenied,
   DOCUMENT_SELECT,
   toApiDocument,
   validateTitle,
@@ -95,9 +96,12 @@ export async function PATCH(
     }
 
     const supabase = getSupabaseAdmin()
-    if (!(await isCoachClientOwnedByCoach(supabase, coachProfileId, id))) {
+    const rel = await getOwnedRelationship(supabase, coachProfileId, id)
+    if (!rel) {
       return withCorsJson(req, { ok: false, error: "Client relationship not found" }, 404)
     }
+    const denied = libraryAccessDenied(rel, "write")
+    if (denied) return withCorsJson(req, { ok: false, error: denied }, 403)
     if (categoryToCheck && !(await isCategoryOwnedActive(supabase, coachProfileId, categoryToCheck))) {
       return withCorsJson(req, { ok: false, error: "Category not found" }, 404)
     }
@@ -136,9 +140,12 @@ export async function DELETE(
     if (error) return error
 
     const supabase = getSupabaseAdmin()
-    if (!(await isCoachClientOwnedByCoach(supabase, coachProfileId, id))) {
+    const rel = await getOwnedRelationship(supabase, coachProfileId, id)
+    if (!rel) {
       return withCorsJson(req, { ok: false, error: "Client relationship not found" }, 404)
     }
+    const denied = libraryAccessDenied(rel, "write")
+    if (denied) return withCorsJson(req, { ok: false, error: denied }, 403)
 
     // Match on BOTH doc_id and coach_client_id = [id]; only soft-delete a doc
     // that's still active (deleted_at IS NULL) so a repeat call → 404.

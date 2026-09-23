@@ -1,0 +1,3 @@
+# Local-only scratch/harness scripts for the coach-library probes.
+# Same convention as tests/jobfit-regression and tests/network-tracker.
+*.local.ts
