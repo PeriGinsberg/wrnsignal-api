@@ -15,6 +15,7 @@
 // rather than passing on a stub that answers yes to everything.
 
 import { resolveScope, ForbiddenError, type ActorContext } from "./scope"
+import { verifyCoachAccess } from "./access"
 
 let failures = 0
 function ok(label: string, cond: boolean) {
@@ -211,6 +212,41 @@ async function main() {
       const fake = makeFake([otherLink], active)
       await throws("a delegate reaches no other coach's client",
         () => resolveScope(fake.client, actor(DELEGATE), { subject: CLIENT, require: "read" }))
+    }
+
+    // verifyCoachAccess is the OTHER door into the same rules: the routes that
+    // predate resolveScope still call it, and it was left behind when the
+    // inline copies were widened, which is how the Job Tracker's detail panel
+    // came to refuse a delegate on staging. Same four cases, same answers.
+    console.log("\nthe older verifyCoachAccess door")
+    {
+      const fake = makeFake([principalLink], active)
+      const got = await verifyCoachAccess(DELEGATE, CLIENT, "view", fake.client)
+      ok("a delegate passes on the principal's row", got?.coach_profile_id === PRINCIPAL)
+    }
+    {
+      const fake = makeFake([principalLink], [{ ...active[0], status: "revoked" }])
+      ok("a revoked delegation does not",
+        (await verifyCoachAccess(DELEGATE, CLIENT, "view", fake.client)) === null)
+    }
+    {
+      const own = link({ id: "cc-own", coach_profile_id: DELEGATE, access_level: "full" })
+      const principalView = link({ id: "cc-p", coach_profile_id: PRINCIPAL, access_level: "view" })
+      const fake = makeFake([own, principalView], active)
+      const got = await verifyCoachAccess(DELEGATE, CLIENT, "full", fake.client)
+      ok("the strongest row still wins", got?.id === "cc-own" && got?.access_level === "full")
+    }
+    {
+      const otherLink = link({ id: "cc-other", coach_profile_id: "profile-other-coach" })
+      const fake = makeFake([otherLink], active)
+      ok("and no other coach's client is reachable",
+        (await verifyCoachAccess(DELEGATE, CLIENT, "view", fake.client)) === null)
+    }
+    {
+      // A 'view' row must not answer a 'full' question, delegation or not.
+      const fake = makeFake([link({ coach_profile_id: PRINCIPAL, access_level: "view" })], active)
+      ok("the level ladder is unchanged",
+        (await verifyCoachAccess(DELEGATE, CLIENT, "full", fake.client)) === null)
     }
   }
 }
