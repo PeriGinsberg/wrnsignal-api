@@ -1,0 +1,1040 @@
+{
+  "schema_version": 1,
+  "slug": "jpmc-mldp-superday",
+  "title": "JPMorganChase MLDP Superday",
+  "source_doc": "Alex_Nachman_JPMC_MLDP_Superday_Workbook.md",
+  "client": {
+    "first_name": "Alex",
+    "full_name": "Alex Nachman"
+  },
+  "interview": {
+    "company": "JPMorganChase",
+    "role": "Marketing Leadership Development Program, Summer Analyst",
+    "date": null,
+    "time": null,
+    "interviewer_name": null,
+    "interviewer_title": null,
+    "location": "Zoom, two back-to-back 30-minute interviews"
+  },
+  "coach": {
+    "first_name": "Peri"
+  },
+  "block_types_note": "Built from the Markdown source. COACH NOTE -> coach_only (written about Alex, in the third person). STARTER -> field.starter. FIELD -> field. SUMMARY -> the summary blocks.",
+  "sections": [
+    {
+      "id": "program",
+      "number": 1,
+      "title": "The Program Decoded",
+      "blocks": [
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "A cross line of business marketing program. You are not joining one brand team; you are joining the pipeline for the firm's future marketing leaders.",
+            "Three skill areas over 9 weeks: Marketing Analytics, Strategy and Execution, and Brand/Creative.",
+            "Real work named on the program page: measuring the impact of marketing campaigns, producing marketing materials with partners, and customer and market research.",
+            "What they screen for: project management, problem-solving, interpersonal and communication skills, and the ability to digest a lot of information and turn it into ideas, with attention to detail.",
+            "Strong interns may receive offers for the full-time MLDP, a two-year program with three 8-month rotations: Marketing Analytics, Strategy and Execution, and Brand/Creative."
+          ],
+          "title": "What the program says it is"
+        },
+        {
+          "type": "callout",
+          "tone": "peach",
+          "body": "They want someone who can take a pile of data, figure out who the customer is, and turn it into a marketing decision. That is exactly what your resume says you already do.",
+          "title": "In plain English"
+        },
+        {
+          "type": "field",
+          "key": "program.lane",
+          "input": "long",
+          "label": "Which of the three skill areas do you want most, and why? One or two sentences."
+        },
+        {
+          "type": "field",
+          "key": "program.proof",
+          "input": "long",
+          "label": "The qualities list, with the experience that proves each one",
+          "starter": "Project management:\nProblem-solving:\nCommunication:\nDigesting large amounts of information:\nAttention to detail:"
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach note: the program",
+          "body": "His lane is Analytics plus Strategy. Brand/Creative is fine to express interest in, but he should not pitch himself as a creative."
+        }
+      ]
+    },
+    {
+      "id": "gameplan",
+      "number": 2,
+      "title": "Superday Game Plan",
+      "blocks": [
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "Two 30-minute Zoom interviews, back to back, with different interviewers.",
+            "One MLDP candidate on Glassdoor reported a virtual Superday of two 25-minute interviews with members of the marketing team, said the questions were wordy and some were complicated, and said interviewers left a good amount of time for candidate questions."
+          ],
+          "title": "What we know about this Superday"
+        },
+        {
+          "type": "list",
+          "style": "numbers",
+          "items": [
+            "SAME ALEX, BOTH ROOMS. Your TMAY and your why JPMorganChase stay the same in both interviews. Assume the two interviewers compare notes.",
+            "DIFFERENT STORIES, BOTH ROOMS. Use different behavioral stories with each interviewer so the combined picture is bigger. Map this in Section 6.",
+            "WORDY QUESTION? RESTATE IT. \"Just to make sure I answer the right thing, you're asking about...\" Then answer.",
+            "SAY LESS, LET THEM ASK. 30 minutes goes fast. Target 60 to 90 seconds per answer. If they want more, they will ask.",
+            "SAVE 8 TO 10 MINUTES FOR YOUR QUESTIONS. Plan for it.",
+            "EACH CALL IS A FRESH START. Interviewer 2 does not know how Interviewer 1 went. Do not carry it in."
+          ],
+          "title": "Rules for Monday"
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "Stand up. Water.",
+            "Jot one line: what did Interviewer 1 care about most?",
+            "Re-read your hook and your two stories for Interviewer 2.",
+            "Smile before you click in."
+          ],
+          "title": "The gap between calls, even if it is 2 minutes"
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "If you have the interviewers' names, look them up on LinkedIn and send a connection request: \"Hi [Name], looking forward to speaking with you on Monday regarding the Marketing Leadership Development Program. Best, Alex\"",
+            "Test Zoom, camera at eye level, light in front of you, clean background."
+          ],
+          "title": "Day before"
+        },
+        {
+          "type": "field",
+          "key": "day.int1",
+          "input": "short",
+          "label": "Interviewer 1 name and title (if known)"
+        },
+        {
+          "type": "field",
+          "key": "day.int2",
+          "input": "short",
+          "label": "Interviewer 2 name and title (if known)"
+        },
+        {
+          "type": "field",
+          "key": "day.linkedin",
+          "input": "long",
+          "label": "Something from each interviewer's LinkedIn you could reference naturally"
+        }
+      ]
+    },
+    {
+      "id": "hook",
+      "number": 3,
+      "title": "What Will They Remember You For",
+      "blocks": [
+        {
+          "type": "text",
+          "size": "lead",
+          "body": "Picture yourself as the 7th interview of the day. Every candidate looks qualified on paper. Every candidate goes to a great school and has an internship."
+        },
+        {
+          "type": "text",
+          "body": "When your interviewers debrief, what is the one thing that makes them say \"oh yeah, the one who...\"? It is not a resume line. It is not a strength. It is something uniquely you."
+        },
+        {
+          "type": "field",
+          "key": "hook.final",
+          "input": "long",
+          "label": "My hook"
+        },
+        {
+          "type": "field",
+          "key": "hook.where",
+          "input": "long",
+          "label": "Where it fits naturally (TMAY? an answer? a question?)"
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach note: the hook",
+          "body": "No starter ideas. Let him find it. Pressure-test in session."
+        }
+      ]
+    },
+    {
+      "id": "tmay",
+      "number": 4,
+      "title": "Tell Me About Yourself",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Present, Past, Future. 60 to 90 seconds. Same version in both interviews."
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "PRESENT: who you are today.",
+            "PAST: the two or three things that got you here. Not job by job.",
+            "FUTURE: what you are looking for now and how it connects to where you want to go. This quietly answers \"why this program\" before they ask."
+          ]
+        },
+        {
+          "type": "field",
+          "key": "tmay.present",
+          "input": "long",
+          "label": "My Present",
+          "starter": "I'm a junior at Cornell studying Industrial and Labor Relations with a concentration in economics. Lately I've found myself really curious about how the best brands talk to their customers: why some messages stick, others don't, and what's behind those decisions."
+        },
+        {
+          "type": "field",
+          "key": "tmay.past",
+          "input": "long",
+          "label": "My Past",
+          "starter": "That's really what got me into marketing. This past summer I interned at Premier Athlete Agency, working with the CEO to find brands that were a real fit for our athletes. Before that, I spent a summer at City & State, a media company in New York, working with their VP of Digital Growth on the data behind who they were reaching out to and why. Both jobs came down to the same thing: figuring out the right audience for the right message."
+        },
+        {
+          "type": "field",
+          "key": "tmay.future",
+          "input": "long",
+          "label": "My Future",
+          "starter": "What I'm looking for now is a place where I can see how marketing works at a much bigger scale, and learn the analytics, strategy, and brand side all at once. That's what drew me to the MLDP. Long term, I want to be the one making the marketing decisions, not just carrying them out."
+        },
+        {
+          "type": "field",
+          "key": "tmay.time",
+          "input": "short",
+          "label": "Timed it out loud (seconds)",
+          "placeholder": "Aim for 60 to 90"
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach note: Tell Me About Yourself",
+          "body": "Watch that Past stays two beats, not three jobs. \"Owns vs. executes\" is Peri's Future language; he can make it his own."
+        }
+      ]
+    },
+    {
+      "id": "why",
+      "number": 5,
+      "title": "Why JPMorganChase / Why Marketing / Why This Program",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "These are three different questions. Have a clean answer for each."
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "In April 2026, JPMorganChase became the first global banking partner in Olympic history, joining the IOC's top-tier TOP program for LA 2028 and the French Alps 2030 Games. It also became a Founding Partner of LA28 and the Official Bank of Team USA. (Sportcal, April 28, 2026)",
+            "In March 2026, the firm launched the JPMorganChase Athlete Council, chaired by Dwyane Wade, with members including Tom Brady, Sue Bird, A'ja Wilson, and Jalen Brunson, to shape financial programs for athletes from college through retirement. (JPMorganChase press release, March 18, 2026)",
+            "Chase is the designated financial education partner for League One Volleyball and Hudl. (same release)"
+          ],
+          "title": "Facts you can use, sourced and current"
+        },
+        {
+          "type": "field",
+          "key": "why.jpmc",
+          "input": "long",
+          "label": "My why JPMorganChase",
+          "starter": "Honestly, the reputation is a big part of it. With a name like JPMorganChase, I have to believe I'd be learning from some of the best people in the industry, and that's what I want this early in my career. Then, when I was researching the firm to get ready for today, I read about JPMorganChase becoming the first bank in the Olympic TOP program and launching the Athlete Council. What stood out to me is that it's not just a logo on a jersey. The firm is actually building something for athletes, helping them manage their money from college through retirement, and after my summer working with athletes, that really clicked for me. And the last piece is reach. At JPMorganChase, one marketing decision can reach millions of customers across completely different businesses, and I want to learn how you make that work."
+        },
+        {
+          "type": "field",
+          "key": "why.marketing",
+          "input": "long",
+          "label": "My why marketing",
+          "starter": "It's the part of every job I've had that I liked the most. Whether it was figuring out which audience to go after at City & State or deciding if a campaign was worth the money for a brand like Dutch Bros, I always wanted to know why something worked. Marketing is where you get to answer that with real data."
+        },
+        {
+          "type": "field",
+          "key": "why.mldp",
+          "input": "long",
+          "label": "My why MLDP",
+          "starter": "I like that the program is built around rotations, so I don't have to pick a lane yet. I'm still figuring out whether I'm more of an analytics person or a strategy person, and this lets me try all three sides and see where I'm best."
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach note: how sport is used",
+          "body": "Sports shows up once, on purpose, in Why JPMorganChase. Everywhere else, lead with City & State, Cornell, Sigma Nu, and the Dutch Bros analysis framed as a brand decision. If they ask about sports, answer, then pivot to reach and breadth."
+        }
+      ]
+    },
+    {
+      "id": "stories",
+      "number": 6,
+      "title": "Story Bank (STAR + E)",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "STAR + E: Situation, Task, Action, Result, plus Emotion. When you can, tell a story the listener relates to (the group project where one person did nothing). For each story, name the trait it proves."
+        },
+        {
+          "type": "callout",
+          "tone": "peach",
+          "body": "Eight stories from different parts of your life, not all from one internship. No more than two sports stories across both interviews. Your Why JPMorganChase already brings up sports, so your stories should show range. One great story can be reshaped to fit many questions.",
+          "title": "The goal"
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "Premier Athlete Agency: sponsor prospect list for the international client (pick one agency story, max)",
+            "City & State: prospect data and outreach strategy with the VP of Digital Growth",
+            "City & State: maintaining multi-year datasets",
+            "Dutch Bros campaign analysis and memo (frame as a brand decision)",
+            "Statistics & Data Science: regression project in R",
+            "Sigma Nu: Social Chairman, Executive Board",
+            "Something outside all of these (your choice)"
+          ],
+          "title": "Story sources on your resume"
+        },
+        {
+          "type": "heading",
+          "text": "Story 1"
+        },
+        {
+          "type": "field",
+          "key": "story1.name",
+          "input": "short",
+          "label": "Story name"
+        },
+        {
+          "type": "field",
+          "key": "story1.trait",
+          "input": "short",
+          "label": "Trait it proves"
+        },
+        {
+          "type": "field",
+          "key": "story1.situation",
+          "input": "long",
+          "label": "Situation / Task"
+        },
+        {
+          "type": "field",
+          "key": "story1.action",
+          "input": "long",
+          "label": "Action (what YOU did)"
+        },
+        {
+          "type": "field",
+          "key": "story1.result",
+          "input": "long",
+          "label": "Result (a number if you have one)"
+        },
+        {
+          "type": "field",
+          "key": "story1.emotion",
+          "input": "long",
+          "label": "The emotion / relatable moment"
+        },
+        {
+          "type": "heading",
+          "text": "Story 2"
+        },
+        {
+          "type": "field",
+          "key": "story2.name",
+          "input": "short",
+          "label": "Story name"
+        },
+        {
+          "type": "field",
+          "key": "story2.trait",
+          "input": "short",
+          "label": "Trait it proves"
+        },
+        {
+          "type": "field",
+          "key": "story2.situation",
+          "input": "long",
+          "label": "Situation / Task"
+        },
+        {
+          "type": "field",
+          "key": "story2.action",
+          "input": "long",
+          "label": "Action (what YOU did)"
+        },
+        {
+          "type": "field",
+          "key": "story2.result",
+          "input": "long",
+          "label": "Result (a number if you have one)"
+        },
+        {
+          "type": "field",
+          "key": "story2.emotion",
+          "input": "long",
+          "label": "The emotion / relatable moment"
+        },
+        {
+          "type": "heading",
+          "text": "Story 3"
+        },
+        {
+          "type": "field",
+          "key": "story3.name",
+          "input": "short",
+          "label": "Story name"
+        },
+        {
+          "type": "field",
+          "key": "story3.trait",
+          "input": "short",
+          "label": "Trait it proves"
+        },
+        {
+          "type": "field",
+          "key": "story3.situation",
+          "input": "long",
+          "label": "Situation / Task"
+        },
+        {
+          "type": "field",
+          "key": "story3.action",
+          "input": "long",
+          "label": "Action (what YOU did)"
+        },
+        {
+          "type": "field",
+          "key": "story3.result",
+          "input": "long",
+          "label": "Result (a number if you have one)"
+        },
+        {
+          "type": "field",
+          "key": "story3.emotion",
+          "input": "long",
+          "label": "The emotion / relatable moment"
+        },
+        {
+          "type": "heading",
+          "text": "Story 4"
+        },
+        {
+          "type": "field",
+          "key": "story4.name",
+          "input": "short",
+          "label": "Story name"
+        },
+        {
+          "type": "field",
+          "key": "story4.trait",
+          "input": "short",
+          "label": "Trait it proves"
+        },
+        {
+          "type": "field",
+          "key": "story4.situation",
+          "input": "long",
+          "label": "Situation / Task"
+        },
+        {
+          "type": "field",
+          "key": "story4.action",
+          "input": "long",
+          "label": "Action (what YOU did)"
+        },
+        {
+          "type": "field",
+          "key": "story4.result",
+          "input": "long",
+          "label": "Result (a number if you have one)"
+        },
+        {
+          "type": "field",
+          "key": "story4.emotion",
+          "input": "long",
+          "label": "The emotion / relatable moment"
+        },
+        {
+          "type": "heading",
+          "text": "Story 5"
+        },
+        {
+          "type": "field",
+          "key": "story5.name",
+          "input": "short",
+          "label": "Story name"
+        },
+        {
+          "type": "field",
+          "key": "story5.trait",
+          "input": "short",
+          "label": "Trait it proves"
+        },
+        {
+          "type": "field",
+          "key": "story5.situation",
+          "input": "long",
+          "label": "Situation / Task"
+        },
+        {
+          "type": "field",
+          "key": "story5.action",
+          "input": "long",
+          "label": "Action (what YOU did)"
+        },
+        {
+          "type": "field",
+          "key": "story5.result",
+          "input": "long",
+          "label": "Result (a number if you have one)"
+        },
+        {
+          "type": "field",
+          "key": "story5.emotion",
+          "input": "long",
+          "label": "The emotion / relatable moment"
+        },
+        {
+          "type": "heading",
+          "text": "Story 6"
+        },
+        {
+          "type": "field",
+          "key": "story6.name",
+          "input": "short",
+          "label": "Story name"
+        },
+        {
+          "type": "field",
+          "key": "story6.trait",
+          "input": "short",
+          "label": "Trait it proves"
+        },
+        {
+          "type": "field",
+          "key": "story6.situation",
+          "input": "long",
+          "label": "Situation / Task"
+        },
+        {
+          "type": "field",
+          "key": "story6.action",
+          "input": "long",
+          "label": "Action (what YOU did)"
+        },
+        {
+          "type": "field",
+          "key": "story6.result",
+          "input": "long",
+          "label": "Result (a number if you have one)"
+        },
+        {
+          "type": "field",
+          "key": "story6.emotion",
+          "input": "long",
+          "label": "The emotion / relatable moment"
+        },
+        {
+          "type": "heading",
+          "text": "Story 7"
+        },
+        {
+          "type": "field",
+          "key": "story7.name",
+          "input": "short",
+          "label": "Story name"
+        },
+        {
+          "type": "field",
+          "key": "story7.trait",
+          "input": "short",
+          "label": "Trait it proves"
+        },
+        {
+          "type": "field",
+          "key": "story7.situation",
+          "input": "long",
+          "label": "Situation / Task"
+        },
+        {
+          "type": "field",
+          "key": "story7.action",
+          "input": "long",
+          "label": "Action (what YOU did)"
+        },
+        {
+          "type": "field",
+          "key": "story7.result",
+          "input": "long",
+          "label": "Result (a number if you have one)"
+        },
+        {
+          "type": "field",
+          "key": "story7.emotion",
+          "input": "long",
+          "label": "The emotion / relatable moment"
+        },
+        {
+          "type": "heading",
+          "text": "Story 8"
+        },
+        {
+          "type": "field",
+          "key": "story8.name",
+          "input": "short",
+          "label": "Story name"
+        },
+        {
+          "type": "field",
+          "key": "story8.trait",
+          "input": "short",
+          "label": "Trait it proves"
+        },
+        {
+          "type": "field",
+          "key": "story8.situation",
+          "input": "long",
+          "label": "Situation / Task"
+        },
+        {
+          "type": "field",
+          "key": "story8.action",
+          "input": "long",
+          "label": "Action (what YOU did)"
+        },
+        {
+          "type": "field",
+          "key": "story8.result",
+          "input": "long",
+          "label": "Result (a number if you have one)"
+        },
+        {
+          "type": "field",
+          "key": "story8.emotion",
+          "input": "long",
+          "label": "The emotion / relatable moment"
+        },
+        {
+          "type": "heading",
+          "text": "Question-to-story map"
+        },
+        {
+          "type": "text",
+          "body": "Assign a story to each question, and plan which interviewer hears it."
+        },
+        {
+          "type": "field",
+          "key": "map.data_decision.story",
+          "input": "short",
+          "label": "Tell me about a time you used data to make a decision"
+        },
+        {
+          "type": "field",
+          "key": "map.data_decision.who",
+          "input": "short",
+          "label": "Interviewer 1 or 2",
+          "placeholder": "1 or 2"
+        },
+        {
+          "type": "field",
+          "key": "map.stand_up.story",
+          "input": "short",
+          "label": "Tell me about a time you had to stand up for something you believed in"
+        },
+        {
+          "type": "field",
+          "key": "map.stand_up.who",
+          "input": "short",
+          "label": "Interviewer 1 or 2",
+          "placeholder": "1 or 2"
+        },
+        {
+          "type": "field",
+          "key": "map.organized.story",
+          "input": "short",
+          "label": "How do you stay organized?"
+        },
+        {
+          "type": "field",
+          "key": "map.organized.who",
+          "input": "short",
+          "label": "Interviewer 1 or 2",
+          "placeholder": "1 or 2"
+        },
+        {
+          "type": "field",
+          "key": "map.team_broken.story",
+          "input": "short",
+          "label": "Tell me about a time you worked on a team that wasn't working"
+        },
+        {
+          "type": "field",
+          "key": "map.team_broken.who",
+          "input": "short",
+          "label": "Interviewer 1 or 2",
+          "placeholder": "1 or 2"
+        },
+        {
+          "type": "field",
+          "key": "map.competing.story",
+          "input": "short",
+          "label": "Tell me about a time you managed competing priorities"
+        },
+        {
+          "type": "field",
+          "key": "map.competing.who",
+          "input": "short",
+          "label": "Interviewer 1 or 2",
+          "placeholder": "1 or 2"
+        },
+        {
+          "type": "field",
+          "key": "map.challenge.story",
+          "input": "short",
+          "label": "Tell me about a time you faced a challenge"
+        },
+        {
+          "type": "field",
+          "key": "map.challenge.who",
+          "input": "short",
+          "label": "Interviewer 1 or 2",
+          "placeholder": "1 or 2"
+        },
+        {
+          "type": "field",
+          "key": "map.communication.story",
+          "input": "short",
+          "label": "Tell me about a time you demonstrated good communication"
+        },
+        {
+          "type": "field",
+          "key": "map.communication.who",
+          "input": "short",
+          "label": "Interviewer 1 or 2",
+          "placeholder": "1 or 2"
+        },
+        {
+          "type": "field",
+          "key": "map.led_without.story",
+          "input": "short",
+          "label": "Tell me about a time you led without formal authority"
+        },
+        {
+          "type": "field",
+          "key": "map.led_without.who",
+          "input": "short",
+          "label": "Interviewer 1 or 2",
+          "placeholder": "1 or 2"
+        },
+        {
+          "type": "field",
+          "key": "map.mistake.story",
+          "input": "short",
+          "label": "Tell me about a mistake you made"
+        },
+        {
+          "type": "field",
+          "key": "map.mistake.who",
+          "input": "short",
+          "label": "Interviewer 1 or 2",
+          "placeholder": "1 or 2"
+        },
+        {
+          "type": "field",
+          "key": "map.learn_fast.story",
+          "input": "short",
+          "label": "Tell me about a time you had to learn something fast"
+        },
+        {
+          "type": "field",
+          "key": "map.learn_fast.who",
+          "input": "short",
+          "label": "Interviewer 1 or 2",
+          "placeholder": "1 or 2"
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach note: the story bank",
+          "body": "Sigma Nu Social Chair is likely his best leadership and competing-priorities source. Push for the story he hasn't thought of."
+        }
+      ]
+    },
+    {
+      "id": "thinking",
+      "number": 7,
+      "title": "Marketing Thinking Questions",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "These test how you think, not whether you know the \"right\" answer. Structure beats speed: say your framework out loud, then walk it."
+        },
+        {
+          "type": "list",
+          "style": "numbers",
+          "items": [
+            "Who is the customer? (segment)",
+            "What do they need, and what stops them today?",
+            "What is the message?",
+            "Where do you reach them? (channel)",
+            "How do you know it worked? (the metric)"
+          ],
+          "title": "A simple frame for any \"how would you market X\" question"
+        },
+        {
+          "type": "field",
+          "key": "think.chase_card",
+          "input": "long",
+          "label": "How would you market a Chase credit card to college students?",
+          "number": 1
+        },
+        {
+          "type": "field",
+          "key": "think.measure",
+          "input": "long",
+          "label": "How would you measure whether a campaign worked?",
+          "number": 2
+        },
+        {
+          "type": "field",
+          "key": "think.admire",
+          "input": "long",
+          "label": "Tell me about a brand or campaign you admire. What makes it work?",
+          "number": 3
+        },
+        {
+          "type": "field",
+          "key": "think.jpmc_campaign",
+          "input": "long",
+          "label": "Tell me about a JPMorganChase or Chase campaign you've noticed. What would you change?",
+          "number": 4
+        },
+        {
+          "type": "field",
+          "key": "think.dutch_bros",
+          "input": "long",
+          "label": "Walk me through your Dutch Bros analysis. How did you size the opportunity and compare scenarios?",
+          "number": 5
+        },
+        {
+          "type": "field",
+          "key": "think.cpm",
+          "input": "long",
+          "label": "What is CPM, and why did you use it?",
+          "number": 6
+        },
+        {
+          "type": "field",
+          "key": "think.segments",
+          "input": "long",
+          "label": "Chase's customers range from college students to small business owners to wealthy families. How would you market differently to each?",
+          "number": 7
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach note: his own numbers",
+          "body": "Q5 and Q6 are on his resume, so they are fair game at any depth. He must own every number and assumption in that model. Drill it live."
+        }
+      ]
+    },
+    {
+      "id": "hard",
+      "number": 8,
+      "title": "The Hard Questions",
+      "blocks": [
+        {
+          "type": "field",
+          "key": "hard.why_ilr",
+          "input": "long",
+          "label": "\"Why marketing if you're studying Industrial and Labor Relations?\"",
+          "starter": "Fair question. ILR is basically the study of why people and organizations do what they do, and I added the economics concentration and stats because I wanted the data side too. Marketing is where both of those come together for me."
+        },
+        {
+          "type": "field",
+          "key": "hard.why_bank",
+          "input": "long",
+          "label": "\"Why a bank and not a sports brand or agency?\"",
+          "starter": "I love sports, but what I actually enjoyed this summer was the marketing problem: figuring out the right match between a brand and an audience. I'd rather learn that somewhere with huge reach and a lot of different businesses than stay in one niche this early."
+        },
+        {
+          "type": "field",
+          "key": "hard.remote_role",
+          "input": "long",
+          "label": "\"Your agency internship was remote. What did you personally do versus the CEO?\""
+        },
+        {
+          "type": "field",
+          "key": "hard.weakness",
+          "input": "long",
+          "label": "\"What's your greatest weakness?\""
+        },
+        {
+          "type": "field",
+          "key": "hard.interesting",
+          "input": "long",
+          "label": "\"What's something interesting about you that's not on your resume?\""
+        },
+        {
+          "type": "field",
+          "key": "hard.three_qualities",
+          "input": "long",
+          "label": "\"What would your friends say are your three best qualities?\""
+        },
+        {
+          "type": "field",
+          "key": "hard.five_years",
+          "input": "long",
+          "label": "\"Where do you see yourself in five years?\""
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach note: the agency role",
+          "body": "Resume says \"support the negotiation\" of endorsement deals. Make sure he can describe his real role in plain terms without overclaiming."
+        }
+      ]
+    },
+    {
+      "id": "questions",
+      "number": 9,
+      "title": "Questions for Them",
+      "blocks": [
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "Your first question is always about the interviewer.",
+            "Every question should help you decide if this is the right place for you, not make you sound smart.",
+            "React to their answer before you ask the next one.",
+            "Build at least one question on the fly from something they said."
+          ],
+          "title": "Rules"
+        },
+        {
+          "type": "callout",
+          "tone": "peach",
+          "body": "What makes you most proud to be part of JPMorganChase? And what do you think your team does better than anyone else?",
+          "title": "Ask both interviewers"
+        },
+        {
+          "type": "field",
+          "key": "q.int1",
+          "input": "long",
+          "label": "My questions for Interviewer 1",
+          "starter": "1. What's made some of your top interns really stand out? I'm sure they're all smart and come from great schools, but what made someone stand out over the summer?\n2. I know the full-time program rotates through analytics, strategy, and brand. How does that work for summer analysts? Do we get to see more than one side?"
+        },
+        {
+          "type": "field",
+          "key": "q.int2",
+          "input": "long",
+          "label": "My questions for Interviewer 2",
+          "starter": "1. Do interns work on real campaigns, or are the projects built specifically for the summer?\n2. Built on the fly from something they said."
+        },
+        {
+          "type": "field",
+          "key": "q.onthefly",
+          "input": "long",
+          "label": "The on-the-fly question I'll listen for"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "title": "Alex, here's your Superday plan.",
+    "eyebrow": "READ THIS 1 HOUR BEFORE",
+    "blocks": [
+      {
+        "type": "interview_details"
+      },
+      {
+        "type": "quick_answers",
+        "items": [
+          {
+            "label": "MY HOOK",
+            "field": "hook.final"
+          },
+          {
+            "label": "WHY JPMORGANCHASE",
+            "field": "why.jpmc"
+          }
+        ]
+      },
+      {
+        "type": "tmay",
+        "present": "tmay.present",
+        "past": "tmay.past",
+        "future": "tmay.future",
+        "note": "60 to 90 seconds. Same version in both rooms."
+      },
+      {
+        "type": "quick_answers",
+        "items": [
+          {
+            "label": "TELL ME ABOUT A TIME YOU USED DATA TO MAKE A DECISION",
+            "field": "map.data_decision.story"
+          },
+          {
+            "label": "TELL ME ABOUT A TIME YOU HAD TO STAND UP FOR SOMETHING YOU BELIEVED IN",
+            "field": "map.stand_up.story"
+          },
+          {
+            "label": "HOW DO YOU STAY ORGANIZED?",
+            "field": "map.organized.story"
+          },
+          {
+            "label": "TELL ME ABOUT A TIME YOU WORKED ON A TEAM THAT WASN'T WORKING",
+            "field": "map.team_broken.story"
+          },
+          {
+            "label": "TELL ME ABOUT A TIME YOU MANAGED COMPETING PRIORITIES",
+            "field": "map.competing.story"
+          },
+          {
+            "label": "TELL ME ABOUT A TIME YOU FACED A CHALLENGE",
+            "field": "map.challenge.story"
+          },
+          {
+            "label": "TELL ME ABOUT A TIME YOU DEMONSTRATED GOOD COMMUNICATION",
+            "field": "map.communication.story"
+          },
+          {
+            "label": "TELL ME ABOUT A TIME YOU LED WITHOUT FORMAL AUTHORITY",
+            "field": "map.led_without.story"
+          },
+          {
+            "label": "TELL ME ABOUT A MISTAKE YOU MADE",
+            "field": "map.mistake.story"
+          },
+          {
+            "label": "TELL ME ABOUT A TIME YOU HAD TO LEARN SOMETHING FAST",
+            "field": "map.learn_fast.story"
+          }
+        ]
+      },
+      {
+        "type": "quick_answers",
+        "items": [
+          {
+            "label": "MY QUESTIONS, INTERVIEWER 1",
+            "field": "q.int1"
+          },
+          {
+            "label": "MY QUESTIONS, INTERVIEWER 2",
+            "field": "q.int2"
+          }
+        ]
+      },
+      {
+        "type": "checklist",
+        "items": [
+          "Restate a wordy question before answering",
+          "60 to 90 seconds per answer",
+          "Save 8 to 10 minutes for my questions",
+          "Each call is a fresh start"
+        ]
+      },
+      {
+        "type": "signoff",
+        "text": "Same Alex, both rooms.",
+        "from": "Peri"
+      }
+    ]
+  }
+}
