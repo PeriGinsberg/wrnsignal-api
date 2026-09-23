@@ -55,6 +55,11 @@ const COACH_WRITABLE: Array<[string, string, string]> = [
   ["contacts/[contactId]/messages/route.ts", "POST", "write a message"],
   ["contacts/[contactId]/messages/route.ts", "PATCH", "edit a draft"],
   ["contacts/[contactId]/messages/route.ts", "DELETE", "discard a draft"],
+  // Import joined this list when the coach-run contacts importer shipped. It
+  // was owner-only on purpose before that; the reversal is deliberate and
+  // documented in docs/network-tracker/coach-contacts-import.md.
+  ["import/preview/route.ts", "POST", "dry-run an import"],
+  ["import/commit/route.ts", "POST", "run an import"],
 ]
 
 console.log("a coach holding 'full' can act on the client's board")
@@ -70,15 +75,12 @@ for (const [file, verb, what] of COACH_WRITABLE) {
 //
 // Read this list as the answer to "what can a coach NOT do". Deleting is the
 // theme: a coach may build and advance a board, and may not destroy parts of
-// it. Import is here for a different reason (see the note in NetworkLanding):
-// its route ignores the subject, so widening it needs its own change.
+// it.
 const OWNER_ONLY: Array<[string, string, string]> = [
   ["contacts/[contactId]/route.ts", "DELETE", "deleting a contact is destructive and has no undo"],
   ["companies/[companyId]/route.ts", "DELETE", "deleting a company loses which firm people belonged to"],
   ["contacts/delete/route.ts", "POST", "bulk delete, same reason at scale"],
   ["contacts/[contactId]/reminder/route.ts", "POST", "a snooze is the client's decision about their own week"],
-  ["import/preview/route.ts", "POST", "import does not read the subject"],
-  ["import/commit/route.ts", "POST", "import does not read the subject"],
   ["companies/link-application/route.ts", "POST", "writes to signal_applications, out of scope here"],
 ]
 

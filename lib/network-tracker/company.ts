@@ -27,6 +27,12 @@ export async function matchOrCreateCompany(
   // ('client'), which is the right answer for every caller that predates
   // coach write access.
   createdBy?: { created_by_role: "client" | "coach"; created_by_id: string },
+  // Set on CREATE only. The contacts import knows the company's domain from the
+  // spreadsheet, and a company created without it would have to be matched by
+  // name forever after. Never written on the match path: filling a domain on a
+  // row that already exists is an edit to someone else's data, and the import
+  // does that in its own reported step rather than as a side effect here.
+  domain?: string | null,
 ): Promise<string> {
   const findMatch = async () => {
     const { data } = await supabase
@@ -42,7 +48,7 @@ export async function matchOrCreateCompany(
 
   const { data: created, error } = await supabase
     .from("network_companies")
-    .insert({ client_profile_id: ownerId, name, ...(createdBy ?? {}) })
+    .insert({ client_profile_id: ownerId, name, ...(domain ? { domain } : {}), ...(createdBy ?? {}) })
     .select("id")
     .single()
   if (error) {

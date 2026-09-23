@@ -35,7 +35,7 @@ import { inActivityWindow, ACTIVITY_LABELS, type ActivityWindow } from "./contac
 import { EmptyCompanyStrip, type EmptyCompany } from "./EmptyCompanyStrip"
 import { CompanyPanel } from "./CompanyPanel"
 import { SearchIcon, ImportIcon } from "../../../components/icons"
-import { subjectId } from "./authFetch"
+import { subjectId, withSubject } from "./authFetch"
 import { STAGE_PHASE, PHASE_LABELS, RELATIONSHIP_LABELS } from "./vocab"
 import { isStalled, STALLED_DAYS } from "./dashboardMetrics"
 import type { PhaseKey } from "../../../lib/dashboard-theme"
@@ -399,16 +399,19 @@ function ContactsInner() {
 
   // WHAT A COACH DOES NOT GET, and why it is hidden rather than disabled.
   //
-  // Import and bulk delete are the two controls whose routes are still
-  // owner-only, and resolveOwnerScope IGNORES the subject parameter by design.
-  // So for a coach these do not fail, which would be fine; they succeed against
-  // the COACH'S OWN board. An import run from a client's screen would quietly
-  // deposit that client's contacts in the coach's own roster, and the coach
-  // would have no reason to look for them there.
+  // Bulk delete is still owner-only, and resolveOwnerScope IGNORES the subject
+  // parameter by design. So for a coach it would not fail, which would be fine;
+  // it would succeed against the COACH'S OWN board, and the coach would have no
+  // reason to look there for what went wrong.
   //
   // Hidden rather than greyed out because there is nothing the coach could do
-  // to earn them. A disabled control is a promise that the right permission
-  // would unlock it, and no permission level unlocks these.
+  // to earn it. A disabled control is a promise that the right permission would
+  // unlock it, and no permission level unlocks this one.
+  //
+  // IMPORT IS NO LONGER IN THAT LIST. Both import routes now take the subject
+  // and authorise it against coach_clients at `full`, so the link carries the
+  // client through and the import lands on the client's board. See
+  // docs/network-tracker/coach-contacts-import.md.
   const viewingClientBoard = subjectId() !== null
 
   const companyCount = companies.length
@@ -427,9 +430,7 @@ function ContactsInner() {
           <p style={{ color: S.text.muted, fontSize: 14.5, marginTop: 6 }}>{countLine}</p>
         </div>
         <div style={{ display: "flex", gap: 10, flex: "0 0 auto", alignItems: "center" }}>
-          {!viewingClientBoard && (
-            <a href="/dashboard/network/import" style={{ ...secondaryBtn, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 9 }}><ImportIcon size={19} />Import</a>
-          )}
+          <a href={withSubject("/dashboard/network/import")} style={{ ...secondaryBtn, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 9 }}><ImportIcon size={19} />Import</a>
           <button onClick={() => setAddOpen(true)} style={{ ...actionStyle(S, "primary"), ...primarySize }}>
             + Add contact
           </button>

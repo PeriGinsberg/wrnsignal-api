@@ -1,0 +1,8 @@
+# Local-only scratch/harness scripts: dev sign-ins, one-off dry runs against a
+# dev board, authz probes that flip a coach_clients row and put it back. They
+# talk to a live dev project and print real contact data, so they stay on the
+# machine that ran them. Same convention as tests/jobfit-regression/.gitignore.
+#
+# The committed tests in this directory are the *.test.ts files, which read
+# source code rather than a database.
+*.local.ts

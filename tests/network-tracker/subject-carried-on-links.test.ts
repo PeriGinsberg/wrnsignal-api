@@ -48,10 +48,6 @@ const EXEMPT: Array<{ file: string; contains: string; why: string }> = [
     why: "the post-delete bounce; deleting is owner-only and hidden from a coach, so this is unreachable for one" },
   { file: "DashboardPanels.tsx", contains: "const CONTACTS =",
     why: "the base constant; every link built from it is wrapped at the point of use" },
-  { file: "import/page.tsx", contains: "<a href=",
-    why: "returns from the import page, which is owner-only and hidden from a coach" },
-  { file: "NetworkLanding.tsx", contains: "network/import",
-    why: "the Import control itself, hidden from a coach for the same reason" },
 ]
 
 function walk(dir: string, out: string[] = []): string[] {
