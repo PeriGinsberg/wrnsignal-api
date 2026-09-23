@@ -4,7 +4,6 @@ import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { isCoached } from "../_lib/coachedClient"
 import { canonicalizeLegacyJobType, normalizeJobType } from "@/lib/jobType"
-import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -191,24 +190,11 @@ async function profileResponse(req: NextRequest, supabase: any, profile: any) {
   } catch {
     coached = false
   }
-  // acting_in: the practice a DELEGATE coach is working inside. Null for
-  // everyone else. The coach shell shows it so there is never any doubt whose
-  // clients are on screen; access itself is decided server-side, never here.
-  let acting_in: { coach_profile_id: string; name: string | null } | null = null
-  try {
-    if (profile.is_coach) {
-      const { principalIds } = await resolveDelegation(supabase, profile.id as string)
-      if (principalIds.length) {
-        const { data } = await supabase.from("client_profiles").select("id, name").eq("id", principalIds[0]).maybeSingle()
-        acting_in = { coach_profile_id: principalIds[0], name: (data?.name as string) ?? null }
-      }
-    }
-  } catch {
-    // A failed lookup must not cost the caller their profile: the banner is
-    // display only, and access is decided per request on the server.
-    acting_in = null
-  }
-  return withCorsJson(req, { ok: true, profile: { ...profile, coached, acting_in } })
+  // No acting_in: a delegate coach sees the Coaches Center exactly as the
+  // principal does, with no marker of whose practice it is. Access is decided
+  // per request on the server (lib/collab/delegation.ts), never here, so there
+  // is nothing the client needs to be told about it.
+  return withCorsJson(req, { ok: true, profile: { ...profile, coached } })
 }
 
 export async function GET(req: NextRequest) {
