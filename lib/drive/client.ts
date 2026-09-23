@@ -42,10 +42,40 @@ function env() {
     !driveId && "GOOGLE_DRIVE_SHARED_DRIVE_ID",
   ].filter(Boolean)
   if (missing.length) throw new DriveError(`Drive is not configured: ${missing.join(", ")} missing.`, 500, "unconfigured")
-  // Vercel env vars cannot hold real newlines, so the key is stored with \n
-  // escaped and unescaped here. A key that still has literal backslash-n will
-  // fail signing with an unhelpful OpenSSL error, so normalise both forms.
-  return { email: email!, key: key!.replace(/\\n/g, "\n"), driveId: driveId! }
+  return { email: email!, key: normalizePrivateKey(key!), driveId: driveId! }
+}
+
+/**
+ * A PEM private key, however the environment mangled it on the way in.
+ *
+ * This exists because the failure it prevents is unreadable: OpenSSL answers a
+ * key it cannot parse with "error:1E08010C:DECODER routines::unsupported",
+ * which says nothing about quotes or newlines, and the key itself cannot be
+ * printed to inspect it. Three things go wrong in practice, all silently:
+ *
+ *   1. the value arrives wrapped in the quotes it had in a .env file
+ *   2. the newlines arrive as the two characters backslash-n, because most env
+ *      stores cannot hold a real newline
+ *   3. the value picks up CRLF, or loses the trailing newline OpenSSL wants
+ *
+ * Accepting all of those is strictly better than being strict about a format
+ * nobody can see.
+ */
+export function normalizePrivateKey(raw: string): string {
+  let k = String(raw ?? "").trim()
+
+  // 1. surrounding quotes, single or double
+  const q = k[0]
+  if ((q === '"' || q === "'") && k.endsWith(q)) k = k.slice(1, -1)
+
+  // 2. escaped newlines, including the double-escaped form a value picks up
+  //    when it passes through two layers of env parsing
+  k = k.replace(/\\\\n/g, "\n").replace(/\\n/g, "\n")
+
+  // 3. CRLF, and the final newline OpenSSL is fussy about
+  k = k.replace(/\r\n/g, "\n").trim()
+  if (!k.endsWith("\n")) k += "\n"
+  return k
 }
 
 const b64url = (b: Buffer | string) =>
