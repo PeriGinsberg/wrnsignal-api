@@ -10,7 +10,7 @@ import { join } from "node:path"
 import {
   CHECKLIST_PREFIX, allFieldKeys, anchorError, answerText, applyTemplate, isFilled, isWritableKey,
   lastHomeworkSectionId, progress, quoteText, sectionOfField, stripCoachOnly, unresolvedPlaceholders,
-  validateAnswerValue, validateContent,
+  displayValue, validateAnswerValue, validateContent,
   type WorkbookContent,
 } from "./content"
 
@@ -143,6 +143,33 @@ ok("the template has 33 fields", allFieldKeys(t).length === 33)
   const bad = JSON.parse(JSON.stringify(tRaw))
   bad.sections[3].blocks = bad.sections[3].blocks.map((b: { type: string }) => (b.type === "big_quote" ? { type: "big_quote" } : b))
   ok("a big_quote with neither text nor body is refused", !validateContent(applyTemplate(bad, VALUES)).ok)
+}
+
+// ---------------------------------------------------------------------------
+// Starter text (Harry's recruiter-call workbook)
+// ---------------------------------------------------------------------------
+
+console.log("starter text")
+const hRaw = JSON.parse(readFileSync(join(__dirname, "../../docs/workbooks-v1/workbooks-v1/harry_recruiter-call-lease-coordinator.json"), "utf8"))
+const hParsed = validateContent(hRaw)
+ok("Harry's workbook is valid", hParsed.ok)
+if (!hParsed.ok) console.error(hParsed.errors)
+const h = (hParsed as { ok: true; content: WorkbookContent }).content
+const starters = h.sections.flatMap((s) => s.blocks)
+  .filter((b): b is Extract<typeof b, { type: "field" }> => b.type === "field" && !!b.starter)
+ok("five fields carry starter text", starters.length === 5, starters.length)
+ok("the questions starter keeps its seven lines",
+  (starters.find((b) => b.key === "q.top3")!.starter!.match(/\n/g) ?? []).length === 6)
+ok("an unanswered starter field shows the starter", displayValue(undefined, "seed") === "seed")
+ok("a saved answer wins over the starter", displayValue("mine", "seed") === "mine")
+ok("clearing the box does not bring the starter back", displayValue("", "seed") === "")
+ok("a field with no starter is still empty", displayValue(undefined, undefined) === "")
+ok("an untouched starter is never counted as progress", progress(h, {}).filled === 0)
+ok("...and never reaches the summary as an answer", answerText(undefined) === "")
+{
+  const bad = JSON.parse(JSON.stringify(hRaw))
+  bad.sections[0].blocks.push({ type: "callout", tone: "peach", body: "x", starter: "nope" })
+  ok("starter on a non-field block is refused", !validateContent(bad).ok)
 }
 
 if (failures) { console.error(`\n${failures} failure(s)`); process.exit(1) }

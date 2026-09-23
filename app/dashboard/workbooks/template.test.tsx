@@ -32,7 +32,9 @@ const section = (id: string) => t.sections.find((s) => s.id === id)!
 function api(over: Partial<FieldApi> = {}): FieldApi {
   return {
     editable: true,
-    get: () => "",
+    // undefined = never answered, which is what lets starter text show. An
+    // empty string means the client cleared the box, and is not the same thing.
+    get: () => undefined,
     set: vi.fn(),
     state: () => undefined,
     coachName: "Peri",
@@ -113,5 +115,48 @@ describe("HomeworkComplete", () => {
     await waitFor(() => expect(screen.getByRole("alert")).toBeTruthy())
     expect(onDone).not.toHaveBeenCalled()
     expect(screen.getByRole("button", { name: "Mark homework complete" })).toBeTruthy()
+  })
+})
+
+describe("starter text (Harry's recruiter-call workbook)", () => {
+  const hRaw = JSON.parse(readFileSync(
+    join(__dirname, "../../../docs/workbooks-v1/workbooks-v1/harry_recruiter-call-lease-coordinator.json"), "utf8"))
+  const hParsed = validateContent(hRaw)
+  if (!hParsed.ok) throw new Error(hParsed.errors.join("; "))
+  const h: WorkbookContent = hParsed.content
+  const hSection = (id: string) => h.sections.find((s) => s.id === id)!
+
+  it("pre-seeds the box and says it is a starting point", () => {
+    render(<SectionBlocks api={api()} section={hSection("intro")} />)
+    expect((screen.getByLabelText("My Present") as HTMLTextAreaElement).value).toMatch(/I'm \[where you are right now/)
+    expect(screen.getAllByText("A starting point. Edit it into your own words.").length).toBe(3)
+  })
+
+  it("shows the client's own answer instead, once saved", () => {
+    render(<SectionBlocks api={api({ get: (k) => (k === "intro.present" ? "I'm a senior at UF" : undefined) })}
+      section={hSection("intro")} />)
+    expect((screen.getByLabelText("My Present") as HTMLTextAreaElement).value).toBe("I'm a senior at UF")
+  })
+
+  it("does not restore the starter after the client clears it", () => {
+    render(<SectionBlocks api={api({ get: (k) => (k === "intro.past" ? "" : undefined) })} section={hSection("intro")} />)
+    expect((screen.getByLabelText("My Past") as HTMLTextAreaElement).value).toBe("")
+  })
+
+  it("keeps the coach notes away from the client", () => {
+    render(<SectionBlocks api={api()} section={hSection("questions")} />)
+    expect(screen.queryByText(/Let him find it|reuse it in later rounds/)).toBeNull()
+    expect((screen.getByLabelText(/My questions/) as HTMLTextAreaElement).value).toMatch(/What specifically about my background/)
+  })
+
+  it("shows the coach notes to the coach", () => {
+    render(<SectionBlocks api={api({ showCoachOnly: true })} section={hSection("questions")} />)
+    expect(screen.getByText(/reuse it in later rounds/)).toBeTruthy()
+  })
+
+  it("leaves an untouched starter out of the summary", () => {
+    render(<Summary content={h} answers={{}} interview={null} />)
+    expect(screen.getAllByText("Not filled in yet").length).toBeGreaterThan(0)
+    expect(screen.queryByText(/What specifically about my background/)).toBeNull()
   })
 })
