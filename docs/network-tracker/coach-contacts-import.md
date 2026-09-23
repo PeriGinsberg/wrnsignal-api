@@ -154,8 +154,29 @@ state. An owner importing their own board does not see this step.
 (including `www.`, paths, and free-mail rejection), email case-insensitivity,
 the conflict case, and within-batch duplicates.
 
-Authz, in the style of `tests/network-authz-ab.ts`: `full` succeeds, `annotate`
-and `view` get 403, and a non-linked coach gets 403.
+Authz has two layers, because they answer different questions.
+
+`lib/collab/scope.test.ts` proves the **ladder** with a fake PostgREST client:
+no row, a stranger's row, and `pending` / `paused` / `revoked` all throw, and
+`annotate` does not satisfy a write.
+
+`tests/network-tracker/import-authz.live.ts` proves the **import routes stand on
+it**, by making real requests to a running API. A route that resolved the
+subject but forgot `require: "write"` would pass the first test and fail this
+one. It covers an unlinked coach, `pending`, `revoked`, `paused`, `annotate`,
+`view`, and both confirmation failures, with a `full` preview as the control so
+a broken setup cannot masquerade as a refusal. It carries its own one-row CSV
+rather than a fixture, so it holds no real contact data; it rewrites the
+coach_clients row to drive the states and restores it in a `finally`; and it
+asserts the board's contact count is identical afterwards. Dev only, and it
+refuses to run against the production project. Env-driven:
+
+```
+SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... NEXT_PUBLIC_SUPABASE_ANON_KEY=... \
+API_BASE=http://localhost:3000 \
+COACH_LINKED=coach@x.com COACH_UNLINKED=other-coach@x.com CLIENT_EMAIL=client@x.com \
+npx tsx tests/network-tracker/import-authz.live.ts
+```
 
 Fixture: `network-import-fixtures/Noah_Sperling_Contact_List.xlsx` (27 rows,
 tabs `Contacts` and `Outreach Messages`). The fixtures directory is gitignored
