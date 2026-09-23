@@ -12,7 +12,13 @@
 //     workbook like any other content.
 //
 //   npx tsx scripts/create-workbook.ts --find "Ryan Hecht"
-//   npx tsx scripts/create-workbook.ts <client_profile_id> <content.json> [--interview <signal_interview_id>] [--coach <coach_profile_id>] [--slug <slug>] [--yes]
+//   npx tsx scripts/create-workbook.ts <client_profile_id> <content.json> [--interview <signal_interview_id>] [--coach <coach_profile_id>] [--slug <slug>] [--client-first-name <name>] [--coach-first-name <name>] [--yes]
+//
+// The first names come from the profile records: the first word of each name.
+// That is wrong whenever a profile stores something else ("Coach: Peri Ginsberg"
+// gives "Coach:", and "Dupuy, Alex" gives "Dupuy,"), and the filled content is
+// frozen on the workbook, so the overrides exist to fix it BEFORE writing. A dry
+// run prints every line either name lands in.
 //
 // Credentials come from process.env only (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 // this file never reads a .env file. Without --yes it validates and prints what
@@ -51,7 +57,7 @@ async function main() {
     return
   }
 
-  const VALUE_FLAGS = new Set(["--interview", "--coach", "--find", "--slug"])
+  const VALUE_FLAGS = new Set(["--interview", "--coach", "--find", "--slug", "--client-first-name", "--coach-first-name"])
   const positional = process.argv.slice(2).filter((a, i, all) => !a.startsWith("--") && !VALUE_FLAGS.has(all[i - 1]))
   const [clientId, file] = positional
   if (!clientId || !file) throw new Error("Usage: create-workbook.ts <client_profile_id> <content.json> [--interview id] [--coach id] [--yes]")
@@ -80,14 +86,32 @@ async function main() {
   if (raw?.template) {
     const { data: coach } = await db.from("client_profiles").select("name").eq("id", link.coach_profile_id).maybeSingle()
     const fullName = (client.name ?? "").trim()
-    const firstName = fullName.split(/\s+/)[0] || ""
-    const coachFirst = ((coach?.name ?? "").trim().split(/\s+/)[0]) || ""
-    if (!firstName) throw new Error(`Client ${clientId} has no name to fill {first_name} from`)
-    if (!coachFirst) throw new Error(`Coach ${link.coach_profile_id} has no name to fill {coach_first_name} from`)
-    source = applyTemplate(raw, { first_name: firstName, full_name: fullName, coach_first_name: coachFirst })
+    const firstName = arg("--client-first-name")?.trim() || fullName.split(/\s+/)[0] || ""
+    const coachFirst = arg("--coach-first-name")?.trim() || (coach?.name ?? "").trim().split(/\s+/)[0] || ""
+    if (!firstName) throw new Error(`Client ${clientId} has no name to fill {first_name} from; pass --client-first-name`)
+    if (!coachFirst) throw new Error(`Coach ${link.coach_profile_id} has no name to fill {coach_first_name} from; pass --coach-first-name`)
+    const values = { first_name: firstName, full_name: fullName, coach_first_name: coachFirst }
+    source = applyTemplate(raw, values)
     const left = unresolvedPlaceholders(source)
     if (left.length) throw new Error(`Template still has unfilled placeholders: ${left.join(", ")}`)
-    console.log(`Template ${raw.template_id}: filled for ${fullName} with coach ${coachFirst}`)
+    console.log(`Template ${raw.template_id}: client "${firstName}" / "${fullName}", coach "${coachFirst}"`)
+    if (!process.argv.includes("--yes")) {
+      // Every line the client will read with a name in it, before it is frozen.
+      const hits: string[] = []
+      const walk = (v: unknown, path: string) => {
+        if (typeof v === "string") {
+          if ([firstName, coachFirst, fullName].some((n) => n && v.includes(n))) {
+            hits.push(`  ${path}: ${v.length > 160 ? v.slice(0, 160) + "..." : v}`)
+          }
+        } else if (Array.isArray(v)) v.forEach((x, i) => walk(x, `${path}[${i}]`))
+        else if (v && typeof v === "object") for (const [k, x] of Object.entries(v)) walk(x, path ? `${path}.${k}` : k)
+      }
+      walk(source, "")
+      console.log(`
+Every line carrying a name (${hits.length}):`)
+      for (const h of hits) console.log(h)
+      console.log("")
+    }
   }
 
   const slugArg = arg("--slug")
