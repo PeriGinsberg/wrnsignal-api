@@ -3,6 +3,7 @@ import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { canonicalizeLegacyJobType, normalizeJobType } from "@/lib/jobType"
+import { owningCoachId as owningCoachIdFor, resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -76,6 +77,22 @@ export async function POST(req: NextRequest) {
       return withCorsJson(req, { ok: false, error: "Coach access required" }, 403)
     }
 
+    // ── STEP 1.4: Whose practice does this client join ──
+    //
+    // A DELEGATE creates clients INTO THE PRINCIPAL'S PRACTICE: the coach_clients
+    // row belongs to the principal (so it lands on their roster, and the delegate
+    // reaches it the same way she reaches every other client of theirs), while
+    // created_by records who actually did it. The seat cap below is the
+    // principal's too, for the same reason: it is their roster that grew.
+    const delegation = await resolveDelegation(supabase, coach.id as string)
+    const owningCoachId = owningCoachIdFor(delegation)
+    const owningCoach = owningCoachId === coach.id
+      ? coach
+      : (await supabase.from("client_profiles").select("id, name, is_coach, client_seat_cap").eq("id", owningCoachId).maybeSingle()).data
+    if (!owningCoach?.is_coach) {
+      return withCorsJson(req, { ok: false, error: "The practice owner is not a coach" }, 403)
+    }
+
     // ── STEP 1.5: Seat-cap enforcement ──
     // Block creation when the coach is at/over their client_seat_cap. Runs
     // before any auth user / profile rows are created (STEP 4+), so a rejection
@@ -83,12 +100,12 @@ export async function POST(req: NextRequest) {
     // error — transient infra shouldn't block a legitimate create. Counts
     // active + pending rows (prospects are active; a sent invite reserves a
     // seat); revoked rows are excluded so removing a client frees the seat.
-    const seatCap = (coach as any).client_seat_cap ?? null
+    const seatCap = (owningCoach as any).client_seat_cap ?? null
     if (seatCap !== null) {
       const { count, error: countErr } = await supabase
         .from("coach_clients")
         .select("id", { count: "exact", head: true })
-        .eq("coach_profile_id", coach.id)
+        .eq("coach_profile_id", owningCoachId)
         .neq("status", "revoked")
       if (countErr) {
         console.warn("[create-client] seat-cap count failed, allowing creation:", countErr.message)
@@ -270,7 +287,10 @@ export async function POST(req: NextRequest) {
     const { error: linkErr } = await supabase
       .from("coach_clients")
       .insert({
-        coach_profile_id: coach.id,
+        coach_profile_id: owningCoachId,
+        // Who actually created it. Equal to coach_profile_id for an ordinary
+        // coach; the delegate's id when she created it inside the practice.
+        created_by: coach.id,
         client_profile_id: createdProfileId,
         invited_email: email,
         access_level: "full",

@@ -11,6 +11,7 @@
 
 import { createClient } from "@supabase/supabase-js"
 import { withCorsJson } from "./cors"
+import { resolveDelegation, type Delegation } from "@/lib/collab/delegation"
 
 export function getSupabaseAdmin() {
   const url = process.env.SUPABASE_URL
@@ -68,18 +69,25 @@ async function getCoachProfile(userId: string, email: string | null) {
   return null
 }
 
-// Resolve { coachProfileId } or return an error Response (401/403/404).
+// Resolve { coachProfileId, delegation } or return an error Response (401/403/404).
+//
+// `delegation.actingIds` is coachProfileId plus every principal this coach is an
+// active delegate of: what an access check should match against. A route that
+// still compares against coachProfileId alone keeps its old behaviour, which is
+// the safe direction — a delegate is refused until the route is converted.
+// coachProfileId remains WHO IS ACTING, and is what every write must stamp.
 export async function resolveCoach(
   req: Request,
 ): Promise<
-  | { coachProfileId: string; error?: undefined }
-  | { coachProfileId?: undefined; error: Response }
+  | { coachProfileId: string; delegation: Delegation; error?: undefined }
+  | { coachProfileId?: undefined; delegation?: undefined; error: Response }
 > {
   const { userId, email } = await getAuthedUser(req)
   const coach = await getCoachProfile(userId, email)
   if (!coach) return { error: withCorsJson(req, { ok: false, error: "Profile not found" }, 404) }
   if (!coach.is_coach) return { error: withCorsJson(req, { ok: false, error: "Forbidden: coach access required" }, 403) }
-  return { coachProfileId: coach.id as string }
+  const delegation = await resolveDelegation(getSupabaseAdmin(), coach.id as string)
+  return { coachProfileId: coach.id as string, delegation }
 }
 
 // 401 for auth failures (thrown by the helpers above), 500 otherwise.

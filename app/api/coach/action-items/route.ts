@@ -20,6 +20,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -126,7 +127,7 @@ export async function GET(req: NextRequest) {
     const { data: myRows, error: myErr } = await supabase
       .from("coach_clients")
       .select("id, client_profile_id, status")
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
     if (myErr) throw new Error(`coach_clients (self) lookup failed: ${myErr.message}`)
     const myCoachClientIds = (myRows ?? []).map((r) => r.id as string)
     const myActiveLinkedClientIds = Array.from(

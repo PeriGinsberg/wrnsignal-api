@@ -40,18 +40,37 @@ const STRANGER = "profile-stranger"
 
 type Row = Record<string, any>
 
-/** A fake PostgREST builder over one scripted coach_clients table. */
-function makeFake(rows: Row[]) {
+/**
+ * A fake PostgREST builder over two scripted tables: coach_clients and
+ * coach_delegates. Filters are applied for real, so a query that forgets
+ * .eq("status", "active") genuinely returns a revoked row and fails a test.
+ *
+ * `.in()` matters as much as `.eq()` now: resolveScope matches the coach column
+ * against every coach the caller may act as, and a delegate is exactly the case
+ * where that set holds more than one id.
+ */
+function makeFake(rows: Row[], delegates: Row[] = []) {
   const calls: Array<{ table: string; filters: Row }> = []
   function builder(table: string) {
     const filters: Row = {}
+    const ins: Row = {}
+    const source = () => (table === "coach_delegates" ? delegates : rows)
+    const matches = (r: Row) =>
+      Object.entries(filters).every(([k, v]) => r[k] === v) &&
+      Object.entries(ins).every(([k, v]) => (v as unknown[]).includes(r[k]))
     const api: any = {
       select() { return api },
       eq(col: string, val: unknown) { filters[col] = val; return api },
+      in(col: string, vals: unknown[]) { ins[col] = vals; return api },
       maybeSingle() {
-        calls.push({ table, filters: { ...filters } })
-        const found = rows.find((r) => Object.entries(filters).every(([k, v]) => r[k] === v))
-        return Promise.resolve({ data: found ?? null, error: null })
+        calls.push({ table, filters: { ...filters, ...ins } })
+        return Promise.resolve({ data: source().find(matches) ?? null, error: null })
+      },
+      // The delegation lookup and the widened coach_clients read await the
+      // builder itself rather than calling maybeSingle().
+      then(resolve: (v: { data: Row[]; error: null }) => unknown) {
+        calls.push({ table, filters: { ...filters, ...ins } })
+        return Promise.resolve(resolve({ data: source().filter(matches), error: null }))
       },
     }
     return api
@@ -143,8 +162,56 @@ async function main() {
     // The branded type is a compile-time guarantee; at runtime the value is the
     // plain uuid, so this asserts the thing that IS observable: the only way to
     // obtain it was through a call that queried the relationship.
+    //
+    // Two queries now, not one: "which coaches may I act as" (coach_delegates)
+    // and then the relationship itself. The guarantee is unchanged, and the
+    // self path above still short-circuits both.
     ok("a coach subject is only ever produced after a coach_clients lookup",
-      String(s.subjectId) === CLIENT && fake.calls.length === 1)
+      String(s.subjectId) === CLIENT && fake.calls.some((c) => c.table === "coach_clients"))
+    ok("...and the delegation set is resolved first",
+      fake.calls[0]?.table === "coach_delegates")
+  }
+
+  console.log("\ndelegation")
+  {
+    const PRINCIPAL = "profile-principal"
+    const DELEGATE = "profile-delegate"
+    const principalLink = link({ coach_profile_id: PRINCIPAL, access_level: "full" })
+    const active = [{ delegate_coach_profile_id: DELEGATE, principal_coach_profile_id: PRINCIPAL, status: "active" }]
+
+    {
+      const fake = makeFake([principalLink], [])
+      await throws("without a delegation the principal's client is out of reach",
+        () => resolveScope(fake.client, actor(DELEGATE), { subject: CLIENT, require: "read" }))
+    }
+    {
+      const fake = makeFake([principalLink], active)
+      const s = await resolveScope(fake.client, actor(DELEGATE), { subject: CLIENT, require: "write" })
+      ok("a delegate reaches the principal's client", String(s.subjectId) === CLIENT)
+      ok("...at the level the PRINCIPAL holds", s.accessLevel === "full")
+      ok("...recorded as acting through the principal", s.viaCoachId === PRINCIPAL && s.actingAsDelegate === true)
+      ok("...while the actor is still the delegate", s.actorId === DELEGATE)
+    }
+    {
+      const fake = makeFake([principalLink], [{ ...active[0], status: "revoked" }])
+      await throws("a revoked delegation grants nothing",
+        () => resolveScope(fake.client, actor(DELEGATE), { subject: CLIENT, require: "read" }))
+    }
+    {
+      // The principal holds 'view'; the delegate holds 'full' in her own right.
+      // A delegation must never LOWER access the caller already had.
+      const own = link({ id: "cc-own", coach_profile_id: DELEGATE, access_level: "full" })
+      const principalView = link({ id: "cc-p", coach_profile_id: PRINCIPAL, access_level: "view" })
+      const fake = makeFake([own, principalView], active)
+      const s = await resolveScope(fake.client, actor(DELEGATE), { subject: CLIENT, require: "write" })
+      ok("the strongest row wins when both exist", s.accessLevel === "full" && s.viaCoachId === DELEGATE)
+    }
+    {
+      const otherLink = link({ id: "cc-other", coach_profile_id: "profile-other-coach" })
+      const fake = makeFake([otherLink], active)
+      await throws("a delegate reaches no other coach's client",
+        () => resolveScope(fake.client, actor(DELEGATE), { subject: CLIENT, require: "read" }))
+    }
   }
 }
 

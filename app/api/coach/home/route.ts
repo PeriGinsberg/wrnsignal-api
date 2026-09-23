@@ -30,6 +30,7 @@ import {
   type HeuristicClient,
   type EngagementSignal,
 } from "../../_lib/coachEngagementHeuristics"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -293,6 +294,9 @@ export async function GET(req: NextRequest) {
 
     const supabase = getSupabaseAdmin()
     const coachProfileId = coach.id as string
+    // Which coaches this caller may act as: themselves, plus any principal
+    // whose practice they are a delegate in. One lookup per request.
+    const { actingIds } = await resolveDelegation(supabase, coachProfileId)
 
     // Phase timings, emitted as one line per request at the end.
     //
@@ -315,7 +319,7 @@ export async function GET(req: NextRequest) {
     const { data: relRows, error: relErr } = await supabase
       .from("coach_clients")
       .select("id, client_profile_id, invited_email, access_level, status, lifecycle_status, accepted_at, last_viewed_at, private_notes, name")
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", actingIds)
       .eq("status", "active")
     if (relErr) throw new Error(`Failed to fetch coach relationships: ${relErr.message}`)
     const relationships = relRows || []
@@ -394,7 +398,7 @@ export async function GET(req: NextRequest) {
             supabase
               .from("coach_job_recommendations")
               .select("id, client_profile_id")
-              .eq("coach_profile_id", coachProfileId)
+              .in("coach_profile_id", actingIds)
               .in("client_profile_id", chunk)
               .eq("client_status", "new")
               .order("id", { ascending: true })
@@ -438,7 +442,7 @@ export async function GET(req: NextRequest) {
               supabase
                 .from("coach_job_recommendations")
                 .select("id, client_profile_id, client_responded_at")
-                .eq("coach_profile_id", coachProfileId)
+                .in("coach_profile_id", actingIds)
                 .in("client_profile_id", chunk)
                 .gt("client_responded_at", earliestBaseline)
                 .order("id", { ascending: true })
@@ -556,7 +560,7 @@ export async function GET(req: NextRequest) {
     const { data: prospectRows, error: prospectErr } = await supabase
       .from("coach_clients")
       .select(PROSPECT_SELECT_COLS)
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", actingIds)
       .eq("status", "active")
       .eq("lifecycle_status", "Prospect")
     if (prospectErr) {

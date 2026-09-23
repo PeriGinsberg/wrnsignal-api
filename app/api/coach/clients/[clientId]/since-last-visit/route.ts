@@ -19,6 +19,7 @@ import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { describeClientStatus } from "@/lib/coachRecommendations"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -96,7 +97,7 @@ export async function GET(
     const { data: link } = await supabase
       .from("coach_clients")
       .select("id, status, access_level, last_viewed_at, accepted_at")
-      .eq("coach_profile_id", profileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, profileId)).actingIds)
       .eq("client_profile_id", clientProfileId)
       .eq("status", "active")
       .maybeSingle()
@@ -137,7 +138,7 @@ export async function GET(
     const { data: recResponses } = await supabase
       .from("coach_job_recommendations")
       .select("id, company_name, job_title, client_status, client_responded_at")
-      .eq("coach_profile_id", profileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, profileId)).actingIds)
       .eq("client_profile_id", clientProfileId)
       .gt("client_responded_at", baseline)
       .order("client_responded_at", { ascending: false })

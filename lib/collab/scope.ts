@@ -42,6 +42,7 @@
 
 import { type SupabaseClient } from "@supabase/supabase-js"
 import { resolveCaller } from "./identity"
+import { resolveDelegation } from "./delegation"
 
 declare const SUBJECT_BRAND: unique symbol
 
@@ -63,6 +64,14 @@ export type Scope = {
   /** Whose data this is. The only value that may be used as a query scope. */
   subjectId: SubjectId
   accessLevel: AccessLevel
+  /**
+   * The coach whose coach_clients row granted this. The actor's own id for an
+   * ordinary coach; the PRINCIPAL's id when a delegate is acting inside their
+   * practice. New records belong to this coach; the actor still authors them.
+   */
+  viaCoachId?: string
+  /** True when the grant came through a delegation rather than the actor's own row. */
+  actingAsDelegate?: boolean
 }
 
 /** Thrown on deny. Carries the status the routes already return. */
@@ -84,6 +93,8 @@ const LADDER: Record<string, string[]> = {
   view: ["view", "annotate", "full"],
   full: ["full"],
 }
+/** Strongest first, when a caller holds rows through more than one coach. */
+const LEVEL_RANK: Record<string, number> = { view: 1, annotate: 2, full: 3 }
 
 /**
  * The ladder, without a Request. Exported for the tests and for any caller that
@@ -108,24 +119,30 @@ export async function resolveScope(
     }
   }
 
-  const { data } = await supabase
+  // A delegate reaches the principal's clients: match any coach this caller may
+  // act as, then keep the strongest row, so a delegation never LOWERS access the
+  // caller already had in their own right.
+  const delegation = await resolveDelegation(supabase, actor.actorId)
+  const { data: rows, error } = await supabase
     .from("coach_clients")
-    .select("id, access_level, status")
-    .eq("coach_profile_id", actor.actorId)
+    .select("id, access_level, status, coach_profile_id")
+    .in("coach_profile_id", delegation.actingIds)
     .eq("client_profile_id", wanted)
     .eq("status", "active")
-    .maybeSingle()
+  if (error) throw new Error(`coach_clients lookup failed: ${error.message}`)
 
-  if (!data) throw new ForbiddenError("Forbidden")
-  if (!LADDER[REQUIRED[opts.require]]?.includes(data.access_level)) {
-    throw new ForbiddenError("Forbidden")
-  }
+  const granted = (rows ?? [])
+    .filter((r) => LADDER[REQUIRED[opts.require]]?.includes(r.access_level))
+    .sort((a, b) => LEVEL_RANK[b.access_level] - LEVEL_RANK[a.access_level])[0]
+  if (!granted) throw new ForbiddenError("Forbidden")
 
   return {
     actorId: actor.actorId,
     actorRole: "coach",
     subjectId: wanted as SubjectId,
-    accessLevel: data.access_level as AccessLevel,
+    accessLevel: granted.access_level as AccessLevel,
+    viaCoachId: granted.coach_profile_id as string,
+    actingAsDelegate: granted.coach_profile_id !== actor.actorId,
   }
 }
 

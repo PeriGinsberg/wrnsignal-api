@@ -4,6 +4,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -88,7 +89,7 @@ export async function PATCH(
     const { data: rel, error: relErr } = await supabase
       .from("coach_clients")
       .select("id")
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .eq("client_profile_id", clientId)
       .maybeSingle()
 
@@ -121,11 +122,18 @@ export async function DELETE(
     const coachProfileId = await getProfileId(userId, email)
     const supabase = getSupabaseAdmin()
 
+    // A DELEGATE works inside someone else's practice and must not be able to
+    // dismantle it: the row this would revoke belongs to the principal.
+    const delegation = await resolveDelegation(supabase, coachProfileId)
+    if (delegation.isDelegate) {
+      return withCorsJson(req, { error: "A delegate cannot remove a client from the practice" }, 403)
+    }
+
     // Verify this coach-client relationship exists and belongs to this coach
     const { data: rel, error: relErr } = await supabase
       .from("coach_clients")
       .select("id, status")
-      .eq("coach_profile_id", coachProfileId)
+      .in("coach_profile_id", delegation.actingIds)
       .eq("client_profile_id", clientId)
       .maybeSingle()
 

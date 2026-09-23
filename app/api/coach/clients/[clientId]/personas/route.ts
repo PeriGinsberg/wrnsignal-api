@@ -11,6 +11,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -77,22 +78,25 @@ async function getProfileId(userId: string, email: string | null) {
   throw new Error("Profile not found")
 }
 
-async function verifyCoachAccess(coachProfileId: string, clientProfileId: string, requiredLevel: "view" | "annotate" | "full", supabase: any) {
-  const levels: Record<string, string[]> = {
-    view: ["view", "annotate", "full"],
-    annotate: ["annotate", "full"],
-    full: ["full"],
-  }
-  const { data } = await supabase
+async function verifyCoachAccess(coachProfileId: string, clientProfileId: string, requiredLevel: string, supabase: any) {
+  const levels: Record<string, string[]> = { view: ["view", "annotate", "full"], annotate: ["annotate", "full"], full: ["full"] }
+  // A DELEGATE coach acts inside a principal's practice, so the row that grants
+  // access may belong to the principal rather than the caller. Match any coach
+  // this caller may act as and keep the strongest row; a delegation can only add
+  // access, never lower what the caller already held in their own right.
+  const { actingIds } = await resolveDelegation(supabase, coachProfileId)
+  const { data, error } = await supabase
     .from("coach_clients")
-    .select("id, access_level, status")
-    .eq("coach_profile_id", coachProfileId)
+    .select("id, access_level, status, coach_profile_id")
+    .in("coach_profile_id", actingIds)
     .eq("client_profile_id", clientProfileId)
     .eq("status", "active")
-    .maybeSingle()
-  if (!data) return null
-  if (!levels[requiredLevel]?.includes(data.access_level)) return null
-  return data
+  if (error) throw new Error(`coach_clients lookup failed: ${error.message}`)
+  const rank: Record<string, number> = { view: 1, annotate: 2, full: 3 }
+  const granted = (data ?? [])
+    .filter((r: any) => levels[requiredLevel]?.includes(r.access_level))
+    .sort((a: any, b: any) => rank[b.access_level] - rank[a.access_level])[0]
+  return granted ?? null
 }
 
 export async function OPTIONS(req: NextRequest) {

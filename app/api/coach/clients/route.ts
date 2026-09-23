@@ -2,6 +2,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -127,6 +128,9 @@ export async function GET(req: NextRequest) {
     const { userId, email } = await getAuthedUser(req)
     const profileId = await getProfileId(userId, email)
     const supabase = getSupabaseAdmin()
+    // Which coaches this caller may act as: themselves, plus any principal
+    // whose practice they are a delegate in. One lookup per request.
+    const { actingIds } = await resolveDelegation(supabase, profileId)
 
     const isCoach = await verifyCoach(profileId, supabase)
     if (!isCoach) {
@@ -137,7 +141,7 @@ export async function GET(req: NextRequest) {
     const { data: relationships, error: relErr } = await supabase
       .from("coach_clients")
       .select("id, client_profile_id, invited_email, access_level, status, accepted_at, private_notes")
-      .eq("coach_profile_id", profileId)
+      .in("coach_profile_id", actingIds)
       .eq("status", "active")
 
     if (relErr) throw new Error(`Failed to fetch clients: ${relErr.message}`)
@@ -188,7 +192,7 @@ export async function GET(req: NextRequest) {
               .from("coach_job_recommendations")
               .select("id, client_profile_id, created_at")
               .in("client_profile_id", chunk)
-              .eq("coach_profile_id", profileId)
+              .in("coach_profile_id", actingIds)
               .eq("client_status", "new")
               .order("id", { ascending: true })
           )

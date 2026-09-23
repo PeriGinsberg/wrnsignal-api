@@ -23,10 +23,12 @@
 // See TC-617 for the contrast assertion.
 
 import type { ReactNode } from "react"
+import { ActingInPracticeBanner } from "./ActingInPracticeBanner"
 
 export default function CoachLayout({ children }: { children: ReactNode }) {
   return (
     <div>
+      <ActingInPracticeBanner />
       <div
         style={{
           color: "#51ADE5",
