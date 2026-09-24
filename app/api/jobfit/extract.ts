@@ -1246,7 +1246,25 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     label: "drafting, documentation, and written deliverables",
     kind: "deliverable",
     functionTag: "communications_pr",
+    // THE PROFILE SIDE NOW REQUIRES A WRITTEN OBJECT, like the job side below.
+    //
+    // Bare "prepared", "report" and "brief" used to live here. They matched
+    // anything: "prepared venues, managed signage and equipment setup" scored
+    // as written deliverables at weight 102, and on one Marlins run that single
+    // false positive was the quality-direct WHY that cleared the Review cap.
+    // Measured across 2,062 production runs, 43 of 322 drafting_documentation
+    // matches were direct hits carrying no writing evidence at all, and
+    // "prepared" alone accounted for 33 of them.
+    //
+    // The jobPhrases list below had already been tightened for exactly this
+    // reason ("bare draft/prepare/write removed"). Only the profile side was
+    // left loose, so a generic résumé verb could satisfy a specific JD
+    // requirement. This closes that asymmetry.
+    //
+    // Verbs are now paired with the thing written, and the surviving bare
+    // entries are nouns that are written deliverables on their own terms.
     profilePhrases: [
+      // draft/write, already specific
       "drafted",
       "drafting",
       "draft written",
@@ -1254,13 +1272,42 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "draft press",
       "draft policies",
       "drafts of",
-      "prepared",
       "wrote",
+      // prepared + a written object. "prepared" alone is not evidence of
+      // writing; "prepared case summaries" is.
+      "prepared summaries",
+      "prepared case summaries",
+      "prepared reports",
+      "prepared a report",
+      "prepared memo",
+      "prepared memos",
+      "prepared briefs",
+      "prepared briefing",
+      "prepared documentation",
+      "prepared written",
+      "prepared correspondence",
+      "prepared talking points",
+      "prepared meeting minutes",
+      // "written <deliverable>". Kept as explicit pairs rather than bare
+      // "written" because "written communication skills" is résumé
+      // boilerplate that appears on people who have never written anything.
       "written summaries",
+      "written report",
+      "written materials",
+      "written communications",
+      // Added from an observed case only: "synthesized multiple sources into
+      // structured written arguments supported by citation" is a written
+      // deliverable and was being dropped. Deliberately NOT adding "written
+      // analysis", "written content" or "written deliverables" on top -- when
+      // tried, they pulled five cases from Review up to Apply, which is the
+      // over-generosity this whole change exists to remove. Speculative
+      // additions widen the rule; only observed ones earn a line.
+      "written arguments",
       "documentation",
       "memo",
-      "brief",
-      "report",
+      "briefing document",
+      "talking points",
+      "meeting minutes",
       "presentation deck",
     ],
     // Bare "draft", "prepare", "write" removed — they matched pharma
@@ -1891,6 +1938,107 @@ const REQUIREMENT_SKIP_KINDS: Set<SectionKind> = new Set([
 // splitEvidenceLines + buildUnitsFromLines. The full raw JD is still
 // used by ambient detectors (title family, training program, hourly,
 // location, advisory background, etc.).
+/**
+ * Legal boilerplate that is not a job requirement.
+ *
+ * EEO statements, accommodation notices and background-check language sit in
+ * almost every JD, usually as a trailing paragraph with no header, so the
+ * section filter above cannot see them: it drops whole sections by heading and
+ * these lines have none.
+ *
+ * Left in the stream they get matched as requirements. Across 2,062 production
+ * runs, 13 WHY codes were built on lines like "Royal Caribbean Group and each
+ * of its subsidiaries prohibit and will not tolerate discrimination" and "We do
+ * not discriminate on the basis of race, color, religion" -- credited as
+ * hospital_or_environment and clinical_patient_work evidence. Rare, but every
+ * one is a WHY built on nothing a candidate could ever match.
+ *
+ * Matched per LINE, not per section, and deliberately narrow: each pattern
+ * names language that only appears in legal boilerplate. "equal opportunity"
+ * on its own would catch "equal opportunity to contribute", so it is anchored
+ * to employer/affirmative-action phrasing.
+ */
+const EEO_BOILERPLATE: RegExp[] = [
+  /\bequal opportunity (employer|workplace)\b/i,
+  /\bequal employment opportunity\b/i,
+  /\baffirmative action\b/i,
+  /\b(do|does) not discriminate\b/i,
+  /\bprohibits? (and will not tolerate )?discriminat/i,
+  // "In accordance with antidiscrimination law..." -- no \b before the stem,
+  // because the prefixed form is written solid. The suffix alternation
+  // deliberately excludes "discriminant", which is a real statistics term a
+  // data JD may ask for.
+  /anti-?discriminat/i,
+  // The closing sentence of an EEO paragraph, which carries no
+  // discrimination vocabulary of its own: "IMEG conforms to the spirit as
+  // well as to the letter of all applicable laws and regulations." Left
+  // standing it reads as a legal/regulatory requirement and classified a
+  // sustainability internship into the Legal job family. Deliberately
+  // narrow -- bare "applicable laws and regulations" is NOT matched, because
+  // a compliance role really does require exactly that.
+  /\b(spirit|letter) of (all )?applicable laws?\b/i,
+  /discriminat(ion|ory)\b/i,
+  // "without regard to X" is EEO phrasing in a JD whatever X is, and the
+  // protected classes cannot be enumerated: the line that prompted this read
+  // "without regard to mental or physical disability", which no alternation
+  // anchored on the next word would catch.
+  /\bwithout regard to\b/i,
+  /\bregardless of race, ?(color|sex|gender)/i,
+  /\bprotected (veteran|class|characteristic)/i,
+  /\bveteran status\b/i,
+  /\breasonable accommodation/i,
+  /\be-verify\b/i,
+  /\bbackground check\b/i,
+  /\bdrug (screen|test)/i,
+  /\bat-will employ/i,
+]
+
+export function isLegalBoilerplate(line: string): boolean {
+  const t = String(line || "")
+  if (!t.trim()) return false
+  return EEO_BOILERPLATE.some((re) => re.test(t))
+}
+
+/**
+ * Remove legal boilerplate from a line, SEGMENT BY SEGMENT.
+ *
+ * WHY NOT WHOLE LINES. The first cut of this dropped any line that matched,
+ * which is correct only when a JD actually has lines. prod-973a9a86 (Social
+ * Media Intern, Chickasaw Nation) arrives as ONE 3,713-character line -- the
+ * newlines are stripped in transport -- and near its end it says "Pass
+ * general background check". A line-scoped filter matched that phrase and
+ * threw away the entire job description: the core analysis_reporting
+ * requirement went with it, the RISK_MISSING_PROOF that requirement had
+ * earned went too, and the case scored HIGHER than before (89 -> 95). A fix
+ * written to make scoring stricter made it more generous, because deleting
+ * a requirement also deletes the risk of not meeting it.
+ *
+ * So split the line on bullet markers and sentence ends, drop only the
+ * segments that are boilerplate, and keep the rest. A line that is entirely
+ * boilerplate returns "" and the caller drops it.
+ */
+function stripLegalBoilerplate(line: string): string {
+  const t = String(line || "")
+  if (!t.trim()) return t
+  // Most lines carry no boilerplate at all; do not pay for the split.
+  if (!isLegalBoilerplate(t)) return t
+
+  // Capturing group, so the delimiters survive and the kept text rejoins
+  // exactly as it was written.
+  const tokens = t.split(/(\s*(?:[*\u2022\u00b7]|-)\s+|(?<=[.!?;])\s+)/)
+
+  let out = tokens[0] && isLegalBoilerplate(tokens[0]) ? "" : (tokens[0] ?? "")
+  for (let i = 1; i < tokens.length; i += 2) {
+    const delim = tokens[i] ?? ""
+    const seg = tokens[i + 1] ?? ""
+    // Drop the delimiter with the segment it introduced, so a removed
+    // bullet does not leave a dangling "*" behind.
+    if (seg && isLegalBoilerplate(seg)) continue
+    out += delim + seg
+  }
+  return out.trim()
+}
+
 export function filterJobTextToRequirements(raw: string): {
   filteredText: string
   sections: JobSection[]
@@ -1900,10 +2048,17 @@ export function filterJobTextToRequirements(raw: string): {
   const droppedKinds = new Set<SectionKind>()
   const kept: string[] = []
 
-  for (const s of sections) {
-    if (REQUIREMENT_SKIP_KINDS.has(s.kind)) {
-      droppedKinds.add(s.kind)
+  for (const raw of sections) {
+    if (REQUIREMENT_SKIP_KINDS.has(raw.kind)) {
+      droppedKinds.add(raw.kind)
       continue
+    }
+    // Drop legal boilerplate wherever it sits. It is headerless in most JDs,
+    // so it survives the section filter and then gets matched as a
+    // requirement. See EEO_BOILERPLATE above.
+    const s: JobSection = {
+      ...raw,
+      lines: raw.lines.map(stripLegalBoilerplate).filter((l) => l.trim()),
     }
     // Keep the header itself as an anchor line (some detectors may key
     // off header-adjacent text when searching for context).

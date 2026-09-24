@@ -13526,6 +13526,13 @@
         "label": "legal, policy, and regulatory research"
       },
       {
+        "id": "e265d5533f56272d",
+        "key": "drafting_documentation",
+        "kind": "deliverable",
+        "strength": 7,
+        "label": "drafting, documentation, and written deliverables"
+      },
+      {
         "id": "ef0aa0d2169445c8",
         "key": "operations_execution",
         "kind": "execution",
@@ -13571,6 +13578,15 @@
         "profile_unit_id": "d657dbfa9e85aa1f"
       },
       {
+        "match_strength": "direct",
+        "weight": 101,
+        "coverageScore": 83,
+        "match_kind": "deliverable",
+        "match_key": "drafting_documentation",
+        "job_unit_key": "drafting_documentation",
+        "profile_unit_id": "e265d5533f56272d"
+      },
+      {
         "match_strength": "adjacent",
         "weight": 81,
         "coverageScore": 59,
@@ -13614,6 +13630,15 @@
         "match_key": "policy_regulatory_research",
         "job_unit_key": "policy_regulatory_research",
         "profile_unit_id": "d657dbfa9e85aa1f"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 84,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "policy_regulatory_research",
+        "job_unit_key": "policy_regulatory_research",
+        "profile_unit_id": "e265d5533f56272d"
       }
     ],
     "why_codes": [
@@ -14449,13 +14474,6 @@
         "label": "powerpoint tool usage"
       },
       {
-        "id": "551a2ad5775aa0bd",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 8,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
         "id": "5b05a84c07d3035f",
         "key": "prospecting_pipeline_management",
         "kind": "execution",
@@ -14468,13 +14486,6 @@
         "kind": "function",
         "strength": 7,
         "label": "legal, policy, and regulatory research"
-      },
-      {
-        "id": "6a938100870513ae",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
       },
       {
         "id": "88f87c894d968638",
@@ -14533,13 +14544,6 @@
         "label": "drafting, documentation, and written deliverables"
       },
       {
-        "id": "f2757541aeddabcf",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 9,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
         "id": "fa7233002efd6be0",
         "key": "drafting_documentation",
         "kind": "deliverable",
@@ -14594,15 +14598,6 @@
         "profile_unit_id": "eb9a743b3f2cd299"
       },
       {
-        "match_strength": "direct",
-        "weight": 102,
-        "coverageScore": 84,
-        "match_kind": "deliverable",
-        "match_key": "drafting_documentation",
-        "job_unit_key": "drafting_documentation",
-        "profile_unit_id": "551a2ad5775aa0bd"
-      },
-      {
         "match_strength": "adjacent",
         "weight": 81,
         "coverageScore": 59,
@@ -14610,15 +14605,6 @@
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
         "profile_unit_id": "60a2a9585a391e91"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 103,
-        "coverageScore": 85,
-        "match_kind": "deliverable",
-        "match_key": "drafting_documentation",
-        "job_unit_key": "drafting_documentation",
-        "profile_unit_id": "6a938100870513ae"
       },
       {
         "match_strength": "adjacent",
@@ -14694,15 +14680,6 @@
       },
       {
         "match_strength": "direct",
-        "weight": 102,
-        "coverageScore": 84,
-        "match_kind": "deliverable",
-        "match_key": "drafting_documentation",
-        "job_unit_key": "drafting_documentation",
-        "profile_unit_id": "f2757541aeddabcf"
-      },
-      {
-        "match_strength": "direct",
         "weight": 103,
         "coverageScore": 85,
         "match_kind": "deliverable",
@@ -14720,15 +14697,6 @@
         "profile_unit_id": "3ece675927bfff11"
       },
       {
-        "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 56,
-        "match_kind": "function",
-        "match_key": "policy_regulatory_research",
-        "job_unit_key": "policy_regulatory_research",
-        "profile_unit_id": "551a2ad5775aa0bd"
-      },
-      {
         "match_strength": "direct",
         "weight": 98,
         "coverageScore": 79,
@@ -14736,15 +14704,6 @@
         "match_key": "policy_regulatory_research",
         "job_unit_key": "policy_regulatory_research",
         "profile_unit_id": "60a2a9585a391e91"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 79,
-        "coverageScore": 57,
-        "match_kind": "function",
-        "match_key": "policy_regulatory_research",
-        "job_unit_key": "policy_regulatory_research",
-        "profile_unit_id": "6a938100870513ae"
       },
       {
         "match_strength": "direct",
@@ -14817,15 +14776,6 @@
         "match_key": "policy_regulatory_research",
         "job_unit_key": "policy_regulatory_research",
         "profile_unit_id": "f1cff924378655fe"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 79,
-        "coverageScore": 56,
-        "match_kind": "function",
-        "match_key": "policy_regulatory_research",
-        "job_unit_key": "policy_regulatory_research",
-        "profile_unit_id": "f2757541aeddabcf"
       },
       {
         "match_strength": "adjacent",
@@ -15357,27 +15307,6 @@
         "label": "excel tool usage"
       },
       {
-        "id": "0327209a84b3958b",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
-        "id": "27946b0ac3f20a9c",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 8,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
-        "id": "3119a2113988329b",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 8,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
         "id": "3251c3c12535428a",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -15411,13 +15340,6 @@
         "kind": "function",
         "strength": 7,
         "label": "accounting and financial operations work"
-      },
-      {
-        "id": "63bcfb5ef4ebd643",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
       },
       {
         "id": "71bef4f63702f5d4",
@@ -15973,7 +15895,6 @@
         "financeSubFamily": "ib",
         "function_tags": [
           "accounting_finops",
-          "communications_pr",
           "data_analytics_bi",
           "finance_corp"
         ],
@@ -16091,13 +16012,6 @@
     ],
     "profile_evidence_units": [
       {
-        "id": "48c8d3b326fc4972",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 9,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
         "id": "4ef76e13463b835e",
         "key": "drafting_documentation",
         "kind": "deliverable",
@@ -16106,13 +16020,6 @@
       },
       {
         "id": "6879780712795386",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 7,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
-        "id": "6d4787b855b1fdfa",
         "key": "drafting_documentation",
         "kind": "deliverable",
         "strength": 7,
@@ -16237,15 +16144,6 @@
       },
       {
         "match_strength": "direct",
-        "weight": 102,
-        "coverageScore": 84,
-        "match_kind": "deliverable",
-        "match_key": "drafting_documentation",
-        "job_unit_key": "drafting_documentation",
-        "profile_unit_id": "48c8d3b326fc4972"
-      },
-      {
-        "match_strength": "direct",
         "weight": 99,
         "coverageScore": 81,
         "match_kind": "deliverable",
@@ -16261,15 +16159,6 @@
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
         "profile_unit_id": "6879780712795386"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 101,
-        "coverageScore": 83,
-        "match_kind": "deliverable",
-        "match_key": "drafting_documentation",
-        "job_unit_key": "drafting_documentation",
-        "profile_unit_id": "6d4787b855b1fdfa"
       },
       {
         "match_strength": "direct",
@@ -17853,7 +17742,7 @@
     "id": "synthetic-0410ae",
     "label": "[synthetic] 0410ae — Marcus Thompson / (no title)",
     "decision": "Apply",
-    "score": 85,
+    "score": 84,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -17907,13 +17796,6 @@
       }
     ],
     "profile_evidence_units": [
-      {
-        "id": "212e39a2c747c447",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 8,
-        "label": "drafting, documentation, and written deliverables"
-      },
       {
         "id": "33d5949e6ea49a0c",
         "key": "analysis_reporting",
@@ -18025,13 +17907,6 @@
         "kind": "function",
         "strength": 1,
         "label": "financial analysis and investment work"
-      },
-      {
-        "id": "c91f6e7633ab258b",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
       },
       {
         "id": "e818e83c1c845599",
@@ -18265,24 +18140,6 @@
       },
       {
         "match_strength": "direct",
-        "weight": 96,
-        "coverageScore": 80,
-        "match_kind": "deliverable",
-        "match_key": "drafting_documentation",
-        "job_unit_key": "drafting_documentation",
-        "profile_unit_id": "212e39a2c747c447"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 97,
-        "coverageScore": 81,
-        "match_kind": "deliverable",
-        "match_key": "drafting_documentation",
-        "job_unit_key": "drafting_documentation",
-        "profile_unit_id": "c91f6e7633ab258b"
-      },
-      {
-        "match_strength": "direct",
         "weight": 94,
         "coverageScore": 79,
         "match_kind": "tool",
@@ -18508,7 +18365,6 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": "ib",
         "function_tags": [
-          "communications_pr",
           "consulting_strategy",
           "consumer_insights_research",
           "data_analytics_bi",
@@ -18574,8 +18430,8 @@
           "note": "0"
         }
       ],
-      "raw_score": 85,
-      "clamped_score": 85
+      "raw_score": 84,
+      "clamped_score": 84
     }
   },
   "synthetic-0410af": {
@@ -19558,13 +19414,6 @@
         "label": "analysis, reporting, and measurement work"
       },
       {
-        "id": "4cd7411ea484636b",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 9,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
         "id": "51ae0fad94e6a95c",
         "key": "excel",
         "kind": "tool",
@@ -19841,15 +19690,6 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 81,
-        "coverageScore": 56,
-        "match_kind": "function",
-        "match_key": "communications_writing",
-        "job_unit_key": "communications_writing",
-        "profile_unit_id": "4cd7411ea484636b"
-      },
-      {
-        "match_strength": "adjacent",
         "weight": 77,
         "coverageScore": 52,
         "match_kind": "function",
@@ -20066,15 +19906,6 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 56,
-        "match_kind": "execution",
-        "match_key": "operations_execution",
-        "job_unit_key": "operations_execution",
-        "profile_unit_id": "4cd7411ea484636b"
-      },
-      {
-        "match_strength": "adjacent",
         "weight": 79,
         "coverageScore": 57,
         "match_kind": "execution",
@@ -20110,12 +19941,6 @@
       },
       {
         "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
-        "weight": 81,
-        "match_strength": "adjacent",
-        "match_key": "communications_writing"
-      },
-      {
-        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
         "weight": 87,
         "match_strength": "adjacent",
         "match_key": "financial_analysis"
@@ -20137,6 +19962,12 @@
         "weight": 99,
         "match_strength": "direct",
         "match_key": "content_execution"
+      },
+      {
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 79,
+        "match_strength": "adjacent",
+        "match_key": "operations_execution"
       }
     ],
     "risk_codes": [],
@@ -20219,7 +20050,6 @@
         "financeSubFamily": null,
         "function_tags": [
           "brand_marketing",
-          "communications_pr",
           "consulting_strategy",
           "consumer_insights_research",
           "content_social",
@@ -21892,13 +21722,6 @@
         "label": "financial analysis and investment work"
       },
       {
-        "id": "ce633b88c1d10708",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
         "id": "d02b9ed5a7f82bf0",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -21946,13 +21769,6 @@
         "kind": "execution",
         "strength": 10,
         "label": "analysis, reporting, and measurement work"
-      },
-      {
-        "id": "f46b4b1ade887954",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
       }
     ],
     "matches": [
@@ -22533,7 +22349,6 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
-          "communications_pr",
           "consulting_strategy",
           "consumer_insights_research",
           "data_analytics_bi",
@@ -22609,7 +22424,7 @@
     "id": "synthetic-0410ak",
     "label": "[synthetic] 0410ak — Amara Johnson / (no title)",
     "decision": "Pass",
-    "score": 39,
+    "score": 42,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -22656,13 +22471,6 @@
     ],
     "profile_evidence_units": [
       {
-        "id": "20b7120ae15207ef",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 9,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
         "id": "36f921fcfb72c4ad",
         "key": "product_training_enablement",
         "kind": "deliverable",
@@ -22703,13 +22511,6 @@
         "kind": "tool",
         "strength": 7,
         "label": "word tool usage"
-      },
-      {
-        "id": "74326ea65006d1ed",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
       },
       {
         "id": "7b19d4bbe84c6dc6",
@@ -22888,24 +22689,6 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 84,
-        "coverageScore": 60,
-        "match_kind": "execution",
-        "match_key": "operations_execution",
-        "job_unit_key": "operations_execution",
-        "profile_unit_id": "20b7120ae15207ef"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 84,
-        "coverageScore": 61,
-        "match_kind": "execution",
-        "match_key": "operations_execution",
-        "job_unit_key": "operations_execution",
-        "profile_unit_id": "74326ea65006d1ed"
-      },
-      {
-        "match_strength": "adjacent",
         "weight": 83,
         "coverageScore": 59,
         "match_kind": "execution",
@@ -22938,7 +22721,12 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": -8.399999999999999
+        "weight": -3.9199999999999995
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": 0
       },
       {
         "code": "RISK_SENIORITY_MISMATCH",
@@ -23008,7 +22796,6 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
-          "communications_pr",
           "data_analytics_bi",
           "operations_general",
           "premed_clinical",
@@ -23070,12 +22857,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -22,
-          "note": "22.4"
+          "points": -18,
+          "note": "17.919999999999998"
         }
       ],
-      "raw_score": 39,
-      "clamped_score": 39
+      "raw_score": 42,
+      "clamped_score": 42
     }
   },
   "synthetic-0410al": {
@@ -23575,8 +23362,8 @@
     "schema_version": 2,
     "id": "synthetic-0410am",
     "label": "[synthetic] 0410am — Jordan Williams / (no title)",
-    "decision": "Priority Apply",
-    "score": 97,
+    "decision": "Apply",
+    "score": 89,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -23714,13 +23501,6 @@
         "kind": "tool",
         "strength": 4,
         "label": "tableau tool usage"
-      },
-      {
-        "id": "42b57699d57be4f4",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
       },
       {
         "id": "44fc98f1e3abf4d1",
@@ -23861,13 +23641,6 @@
         "kind": "function",
         "strength": 1,
         "label": "financial analysis and investment work"
-      },
-      {
-        "id": "b8a94092f7532a29",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
       },
       {
         "id": "c1b8ccfe133e3ac9",
@@ -24248,24 +24021,6 @@
         "profile_unit_id": "ff5087f7d2041d7f"
       },
       {
-        "match_strength": "adjacent",
-        "weight": 87,
-        "coverageScore": 61,
-        "match_kind": "function",
-        "match_key": "communications_writing",
-        "job_unit_key": "communications_writing",
-        "profile_unit_id": "42b57699d57be4f4"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 87,
-        "coverageScore": 61,
-        "match_kind": "function",
-        "match_key": "communications_writing",
-        "job_unit_key": "communications_writing",
-        "profile_unit_id": "b8a94092f7532a29"
-      },
-      {
         "match_strength": "direct",
         "weight": 94,
         "coverageScore": 80,
@@ -24535,12 +24290,6 @@
         "match_key": "accounting_operations"
       },
       {
-        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
-        "weight": 87,
-        "match_strength": "adjacent",
-        "match_key": "communications_writing"
-      },
-      {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 99,
         "match_strength": "direct",
@@ -24565,7 +24314,13 @@
         "match_key": "tableau"
       }
     ],
-    "risk_codes": [],
+    "risk_codes": [
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": -8.399999999999999
+      }
+    ],
     "scalars": {
       "job": {
         "analytics": {
@@ -24637,7 +24392,6 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": "other_finance",
         "function_tags": [
-          "communications_pr",
           "consulting_strategy",
           "consumer_insights_research",
           "data_analytics_bi",
@@ -24687,26 +24441,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": 0,
-          "note": "0"
+          "points": -8,
+          "note": "8.399999999999999"
         }
       ],
-      "raw_score": 97,
-      "clamped_score": 97
+      "raw_score": 89,
+      "clamped_score": 89
     }
   },
   "synthetic-0410an": {
@@ -24772,13 +24526,6 @@
         "kind": "tool",
         "strength": 10,
         "label": "solidworks tool usage"
-      },
-      {
-        "id": "13e275717a1dcfad",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
       },
       {
         "id": "1b08a61bb1e7520f",
@@ -24893,13 +24640,6 @@
         "label": "analysis, reporting, and measurement work"
       },
       {
-        "id": "adc782658974f7c1",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
         "id": "aff2fab13f61c339",
         "key": "operations_execution",
         "kind": "execution",
@@ -24951,15 +24691,6 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "001fcf073e63fa75"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 57,
-        "match_kind": "execution",
-        "match_key": "operations_execution",
-        "job_unit_key": "operations_execution",
-        "profile_unit_id": "13e275717a1dcfad"
       },
       {
         "match_strength": "adjacent",
@@ -25023,15 +24754,6 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "a6055a13e357e004"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 57,
-        "match_kind": "execution",
-        "match_key": "operations_execution",
-        "job_unit_key": "operations_execution",
-        "profile_unit_id": "adc782658974f7c1"
       },
       {
         "match_strength": "direct",
@@ -26285,13 +26007,6 @@
         "label": "brand messaging and campaign work"
       },
       {
-        "id": "1c25a86443e465f5",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
         "id": "2b454261ed7bbb39",
         "key": "consumer_research",
         "kind": "function",
@@ -26603,15 +26318,6 @@
         "match_kind": "function",
         "match_key": "communications_writing",
         "job_unit_key": "communications_writing",
-        "profile_unit_id": "1c25a86443e465f5"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 87,
-        "coverageScore": 61,
-        "match_kind": "function",
-        "match_key": "communications_writing",
-        "job_unit_key": "communications_writing",
         "profile_unit_id": "5817439821275f68"
       },
       {
@@ -26823,15 +26529,6 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 57,
-        "match_kind": "execution",
-        "match_key": "operations_execution",
-        "job_unit_key": "operations_execution",
-        "profile_unit_id": "1c25a86443e465f5"
-      },
-      {
-        "match_strength": "adjacent",
         "weight": 76,
         "coverageScore": 55,
         "match_kind": "execution",
@@ -26976,7 +26673,6 @@
         "financeSubFamily": null,
         "function_tags": [
           "brand_marketing",
-          "communications_pr",
           "consulting_strategy",
           "consumer_insights_research",
           "content_social",
@@ -28500,13 +28196,6 @@
         "label": "clinical and patient-facing work"
       },
       {
-        "id": "1fcec9b0d9f69f67",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
         "id": "24a17ce4175608b6",
         "key": "sql",
         "kind": "tool",
@@ -28559,7 +28248,7 @@
         "id": "69f982dd67b93a3f",
         "key": "drafting_documentation",
         "kind": "deliverable",
-        "strength": 8,
+        "strength": 7,
         "label": "drafting, documentation, and written deliverables"
       },
       {
@@ -28652,13 +28341,6 @@
         "kind": "execution",
         "strength": 5,
         "label": "operations, process, and workflow execution"
-      },
-      {
-        "id": "bff2cbad4f1d48a5",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
       },
       {
         "id": "c3aefb1dda218db9",
@@ -28963,15 +28645,6 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 79,
-        "coverageScore": 57,
-        "match_kind": "execution",
-        "match_key": "operations_execution",
-        "job_unit_key": "operations_execution",
-        "profile_unit_id": "1fcec9b0d9f69f67"
-      },
-      {
-        "match_strength": "adjacent",
         "weight": 77,
         "coverageScore": 55,
         "match_kind": "execution",
@@ -28990,8 +28663,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 56,
+        "weight": 77,
+        "coverageScore": 55,
         "match_kind": "execution",
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
@@ -29041,15 +28714,6 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "bda89e02f7470608"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 79,
-        "coverageScore": 57,
-        "match_kind": "execution",
-        "match_key": "operations_execution",
-        "job_unit_key": "operations_execution",
-        "profile_unit_id": "bff2cbad4f1d48a5"
       },
       {
         "match_strength": "adjacent",
@@ -29444,7 +29108,7 @@
     "id": "synthetic-0410g",
     "label": "[synthetic] 0410g — Amara Johnson / (no title)",
     "decision": "Pass",
-    "score": 36,
+    "score": 40,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -29506,13 +29170,6 @@
         "label": "excel tool usage"
       },
       {
-        "id": "2ac560a6c307acac",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
         "id": "2bcb7c90ef335985",
         "key": "clinical_patient_work",
         "kind": "function",
@@ -29534,6 +29191,13 @@
         "label": "customer service, guest experience, and issue resolution"
       },
       {
+        "id": "64fb95bd68e18590",
+        "key": "drafting_documentation",
+        "kind": "deliverable",
+        "strength": 7,
+        "label": "drafting, documentation, and written deliverables"
+      },
+      {
         "id": "7adbae16ae3cd880",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -29541,10 +29205,10 @@
         "label": "analysis, reporting, and measurement work"
       },
       {
-        "id": "ace461ab78e2a06c",
+        "id": "900d7bac16aac613",
         "key": "drafting_documentation",
         "kind": "deliverable",
-        "strength": 10,
+        "strength": 4,
         "label": "drafting, documentation, and written deliverables"
       },
       {
@@ -29576,12 +29240,12 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 57,
+        "weight": 76,
+        "coverageScore": 55,
         "match_kind": "execution",
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
-        "profile_unit_id": "2ac560a6c307acac"
+        "profile_unit_id": "64fb95bd68e18590"
       },
       {
         "match_strength": "adjacent",
@@ -29594,18 +29258,42 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 57,
+        "weight": 75,
+        "coverageScore": 54,
         "match_kind": "execution",
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
-        "profile_unit_id": "ace461ab78e2a06c"
+        "profile_unit_id": "900d7bac16aac613"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 80,
+        "coverageScore": 55,
+        "match_kind": "function",
+        "match_key": "policy_regulatory_research",
+        "job_unit_key": "policy_regulatory_research",
+        "profile_unit_id": "64fb95bd68e18590"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 79,
+        "coverageScore": 54,
+        "match_kind": "function",
+        "match_key": "policy_regulatory_research",
+        "job_unit_key": "policy_regulatory_research",
+        "profile_unit_id": "900d7bac16aac613"
       }
     ],
     "why_codes": [
       {
+        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+        "weight": 80,
+        "match_strength": "adjacent",
+        "match_key": "policy_regulatory_research"
+      },
+      {
         "code": "WHY_EXECUTION_PROOF",
-        "weight": 78,
+        "weight": 76,
         "match_strength": "adjacent",
         "match_key": "operations_execution"
       }
@@ -29620,16 +29308,6 @@
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
-      },
-      {
-        "code": "RISK_LIMITED_MATCH_EVIDENCE",
-        "severity": "medium",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -29779,8 +29457,8 @@
           "note": "15"
         }
       ],
-      "raw_score": 36,
-      "clamped_score": 36
+      "raw_score": 40,
+      "clamped_score": 40
     }
   },
   "synthetic-0410h": {
@@ -31851,13 +31529,6 @@
         "label": "clinical and patient-facing work"
       },
       {
-        "id": "3241bcc805c6f62d",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 4,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
         "id": "3321c7806646fa6c",
         "key": "python",
         "kind": "tool",
@@ -31919,13 +31590,6 @@
         "kind": "tool",
         "strength": 7,
         "label": "tableau tool usage"
-      },
-      {
-        "id": "5f95e1592970a3d7",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 4,
-        "label": "drafting, documentation, and written deliverables"
       },
       {
         "id": "5fd72ab8da64f076",
@@ -32315,24 +31979,6 @@
         "profile_unit_id": "0637ab99e72cd06b"
       },
       {
-        "match_strength": "direct",
-        "weight": 100,
-        "coverageScore": 82,
-        "match_kind": "deliverable",
-        "match_key": "drafting_documentation",
-        "job_unit_key": "drafting_documentation",
-        "profile_unit_id": "3241bcc805c6f62d"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 100,
-        "coverageScore": 82,
-        "match_kind": "deliverable",
-        "match_key": "drafting_documentation",
-        "job_unit_key": "drafting_documentation",
-        "profile_unit_id": "5f95e1592970a3d7"
-      },
-      {
         "match_strength": "adjacent",
         "weight": 83,
         "coverageScore": 61,
@@ -32580,7 +32226,6 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
-          "communications_pr",
           "data_analytics_bi",
           "legal_regulatory",
           "premed_clinical",
@@ -32651,7 +32296,7 @@
           "note": "0"
         }
       ],
-      "raw_score": 68,
+      "raw_score": 70,
       "clamped_score": 55
     }
   },
@@ -32659,8 +32304,8 @@
     "schema_version": 2,
     "id": "synthetic-0410m",
     "label": "[synthetic] 0410m — Jordan Williams / (no title)",
-    "decision": "Priority Apply",
-    "score": 96,
+    "decision": "Apply",
+    "score": 84,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -32714,13 +32359,6 @@
       }
     ],
     "profile_evidence_units": [
-      {
-        "id": "1295f0ff1b53e9f8",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
-      },
       {
         "id": "24e9b1fa32766608",
         "key": "consumer_research",
@@ -32839,13 +32477,6 @@
         "kind": "execution",
         "strength": 7,
         "label": "analysis, reporting, and measurement work"
-      },
-      {
-        "id": "c3d6e9a7d8c87694",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 9,
-        "label": "drafting, documentation, and written deliverables"
       },
       {
         "id": "d468ec02f917cd56",
@@ -33047,24 +32678,6 @@
         "profile_unit_id": "ef52ca47be7349bd"
       },
       {
-        "match_strength": "adjacent",
-        "weight": 88,
-        "coverageScore": 61,
-        "match_kind": "function",
-        "match_key": "communications_writing",
-        "job_unit_key": "communications_writing",
-        "profile_unit_id": "1295f0ff1b53e9f8"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 87,
-        "coverageScore": 60,
-        "match_kind": "function",
-        "match_key": "communications_writing",
-        "job_unit_key": "communications_writing",
-        "profile_unit_id": "c3d6e9a7d8c87694"
-      },
-      {
         "match_strength": "direct",
         "weight": 60,
         "coverageScore": 79,
@@ -33146,12 +32759,6 @@
       },
       {
         "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
-        "weight": 88,
-        "match_strength": "adjacent",
-        "match_key": "communications_writing"
-      },
-      {
-        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
         "weight": 80,
         "match_strength": "adjacent",
         "match_key": "financial_analysis"
@@ -33170,6 +32777,11 @@
       }
     ],
     "risk_codes": [
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": -8.399999999999999
+      },
       {
         "code": "RISK_SUBFAMILY_MISMATCH",
         "severity": "low",
@@ -33244,7 +32856,6 @@
         "financeSubFamily": "other_finance",
         "function_tags": [
           "accounting_finops",
-          "communications_pr",
           "consulting_strategy",
           "consumer_insights_research",
           "data_analytics_bi",
@@ -33292,26 +32903,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": 0,
-          "note": "0"
+          "points": -8,
+          "note": "8.399999999999999"
         }
       ],
-      "raw_score": 96,
-      "clamped_score": 96
+      "raw_score": 84,
+      "clamped_score": 84
     }
   },
   "synthetic-0410n": {
@@ -33410,13 +33021,6 @@
         "kind": "execution",
         "strength": 4,
         "label": "operations, process, and workflow execution"
-      },
-      {
-        "id": "81809878aefaabff",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 8,
-        "label": "drafting, documentation, and written deliverables"
       },
       {
         "id": "9b2c21a44f464a98",
@@ -33555,15 +33159,6 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "7fa766109c09575b"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 77,
-        "coverageScore": 56,
-        "match_kind": "execution",
-        "match_key": "operations_execution",
-        "job_unit_key": "operations_execution",
-        "profile_unit_id": "81809878aefaabff"
       },
       {
         "match_strength": "adjacent",
@@ -34423,13 +34018,6 @@
         "label": "analysis, reporting, and measurement work"
       },
       {
-        "id": "1108eb308c7afdb2",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
         "id": "11ad8f9a3995ae59",
         "key": "financial_analysis",
         "kind": "function",
@@ -34470,13 +34058,6 @@
         "kind": "function",
         "strength": 1,
         "label": "financial analysis and investment work"
-      },
-      {
-        "id": "2c8f57ca90d73b73",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
       },
       {
         "id": "37fbb7f60ace9f2b",
@@ -37121,8 +36702,8 @@
     "schema_version": 2,
     "id": "synthetic-0410u",
     "label": "[synthetic] 0410u — Marcus Thompson / (no title)",
-    "decision": "Priority Apply",
-    "score": 97,
+    "decision": "Apply",
+    "score": 93,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -37291,13 +36872,6 @@
         "kind": "tool",
         "strength": 7,
         "label": "python tool usage"
-      },
-      {
-        "id": "98c61b473238443b",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
       },
       {
         "id": "a7a3948197605ed6",
@@ -37627,15 +37201,6 @@
       },
       {
         "match_strength": "direct",
-        "weight": 105,
-        "coverageScore": 85,
-        "match_kind": "deliverable",
-        "match_key": "drafting_documentation",
-        "job_unit_key": "drafting_documentation",
-        "profile_unit_id": "98c61b473238443b"
-      },
-      {
-        "match_strength": "direct",
         "weight": 93,
         "coverageScore": 79,
         "match_kind": "tool",
@@ -37884,12 +37449,6 @@
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 105,
-        "match_strength": "direct",
-        "match_key": "drafting_documentation"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 108,
         "match_strength": "direct",
         "match_key": "financial_analysis"
@@ -37904,10 +37463,22 @@
         "code": "WHY_TOOL_PROOF",
         "weight": 94,
         "match_strength": "direct",
+        "match_key": "python"
+      },
+      {
+        "code": "WHY_TOOL_PROOF",
+        "weight": 94,
+        "match_strength": "direct",
         "match_key": "sql"
       }
     ],
-    "risk_codes": [],
+    "risk_codes": [
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": -3.9199999999999995
+      }
+    ],
     "scalars": {
       "job": {
         "analytics": {
@@ -37982,7 +37553,6 @@
         "financeSubFamily": null,
         "function_tags": [
           "accounting_finops",
-          "communications_pr",
           "consulting_strategy",
           "consumer_insights_research",
           "data_analytics_bi",
@@ -38028,26 +37598,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": 0,
-          "note": "0"
+          "points": -4,
+          "note": "3.9199999999999995"
         }
       ],
-      "raw_score": 97,
-      "clamped_score": 97
+      "raw_score": 93,
+      "clamped_score": 93
     }
   },
   "synthetic-0410v": {
@@ -40490,13 +40060,6 @@
         "label": "Nursing / Clinical"
       },
       {
-        "id": "de788848da2b672f",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 8,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
         "id": "e7a29e9cd2232a42",
         "key": "powerpoint",
         "kind": "tool",
@@ -40824,13 +40387,6 @@
         "label": "analysis, reporting, and measurement work"
       },
       {
-        "id": "13905348777566bc",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 9,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
         "id": "15c2335c7d0e634c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -40985,13 +40541,6 @@
         "label": "crm tool usage"
       },
       {
-        "id": "79c62d28074989e9",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
         "id": "7e8e599959a36821",
         "key": "customer_service_guest_experience",
         "kind": "stakeholder",
@@ -41034,13 +40583,6 @@
         "label": "consumer, market, or user research"
       },
       {
-        "id": "b097647c154a00b5",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
-      },
-      {
         "id": "b4b8ba0dbc56af5a",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -41060,13 +40602,6 @@
         "kind": "function",
         "strength": 10,
         "label": "brand messaging and campaign work"
-      },
-      {
-        "id": "cccb0963c17c5190",
-        "key": "drafting_documentation",
-        "kind": "deliverable",
-        "strength": 10,
-        "label": "drafting, documentation, and written deliverables"
       },
       {
         "id": "cd01101d32eeb0fc",
@@ -41400,7 +40935,6 @@
         "financeSubFamily": null,
         "function_tags": [
           "brand_marketing",
-          "communications_pr",
           "consulting_strategy",
           "consumer_insights_research",
           "data_analytics_bi",
