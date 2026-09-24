@@ -116,6 +116,94 @@ export function LibraryTab({
   const [folderBusy, setFolderBusy] = useState(false)
   const [folderErr, setFolderErr] = useState<string | null>(null)
 
+  // The client's GoHighLevel contact, wired here for the same reason the folder
+  // is: it is the other external system a Networking Plan has to reach, and the
+  // coach sets both once, in the same place, before the first plan runs.
+  //
+  // NOTHING IS STORED UNTIL A HUMAN CONFIRMS A NAME. Search proposes, the coach
+  // confirms. A wrong match does not misfile a document, it emails a client's
+  // plan to someone else.
+  const ghlBase = coachClientId ? `/api/coach/coach-clients/${coachClientId}/ghl-contact` : null
+  type GhlMatch = { id: string; name: string; email?: string | null; source?: string; matched_on?: string | null }
+  const [ghlSaved, setGhlSaved] = useState<{ id: string; name: string | null; source: string | null } | null>(null)
+  const [ghlProposed, setGhlProposed] = useState<GhlMatch | null>(null)
+  const [ghlNoMatch, setGhlNoMatch] = useState(false)
+  const [ghlLink, setGhlLink] = useState("")
+  const [ghlBusy, setGhlBusy] = useState(false)
+  const [ghlErr, setGhlErr] = useState<string | null>(null)
+
+  const loadGhl = useCallback(async () => {
+    if (!ghlBase) return
+    try {
+      const res = await authFetch(ghlBase)
+      const j = await res.json().catch(() => ({}))
+      if (j?.ok) setGhlSaved(j.contact ?? null)
+    } catch {
+      // Same posture as the folder: not worth blocking the library over.
+    }
+  }, [ghlBase])
+
+  /** Propose a match. Stores nothing. */
+  async function findGhl(link?: string) {
+    if (!ghlBase) return
+    setGhlBusy(true); setGhlErr(null); setGhlNoMatch(false); setGhlProposed(null)
+    try {
+      const res = await authFetch(ghlBase, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(link ? { link } : {}),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) throw new Error(j?.error || `Search failed (${res.status})`)
+      if (j.match) setGhlProposed(j.match as GhlMatch)
+      else setGhlNoMatch(true)
+    } catch (e: any) {
+      setGhlErr(e?.message || String(e))
+    } finally {
+      setGhlBusy(false)
+    }
+  }
+
+  /** Store the contact the coach just looked at. */
+  async function confirmGhl(match: GhlMatch) {
+    if (!ghlBase) return
+    setGhlBusy(true); setGhlErr(null)
+    try {
+      const res = await authFetch(ghlBase, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contact_id: match.id, source: match.source ?? "search" }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) throw new Error(j?.error || `Could not save (${res.status})`)
+      setGhlSaved(j.contact ?? null)
+      setGhlProposed(null); setGhlNoMatch(false); setGhlLink("")
+    } catch (e: any) {
+      setGhlErr(e?.message || String(e))
+    } finally {
+      setGhlBusy(false)
+    }
+  }
+
+  async function clearGhl() {
+    if (!ghlBase) return
+    setGhlBusy(true); setGhlErr(null)
+    try {
+      const res = await authFetch(ghlBase, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contact_id: "" }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) throw new Error(j?.error || `Could not clear (${res.status})`)
+      setGhlSaved(null); setGhlProposed(null); setGhlNoMatch(false); setGhlLink("")
+    } catch (e: any) {
+      setGhlErr(e?.message || String(e))
+    } finally {
+      setGhlBusy(false)
+    }
+  }
+
   const loadFolder = useCallback(async () => {
     if (!folderBase) return
     try {
@@ -180,6 +268,7 @@ export function LibraryTab({
 
   useEffect(() => { void load() }, [load])
   useEffect(() => { void loadFolder() }, [loadFolder])
+  useEffect(() => { void loadGhl() }, [loadGhl])
 
   // Silent re-fetch of the documents after a write error (categories rarely
   // change here; the load() retry covers them).
@@ -406,6 +495,86 @@ export function LibraryTab({
             : "Not set. Without it, the first plan creates a folder under Clients."}
         </div>
         {folderErr && <div style={{ fontSize: 12.5, color: T.ERROR ?? "#b00", marginTop: 8 }}>{folderErr}</div>}
+      </div>
+
+      {/* The client's GoHighLevel contact. Beside the folder because they are
+          the same setup step: the two places a Networking Plan has to land.
+          The folder decides where the PDF is filed; this decides who gets told
+          about it. */}
+      <div style={{ border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 12, padding: 14, marginBottom: 16 }}>
+        <div style={{ fontSize: 12, fontWeight: 800, color: T.MUTED, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>
+          GoHighLevel contact
+        </div>
+
+        {ghlSaved ? (
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{ fontSize: 14, fontWeight: 800, color: T.TEXT }}>{ghlSaved.name ?? ghlSaved.id}</span>
+            {ghlSaved.source === "pasted" && (
+              <span style={{ fontSize: 11.5, color: T.DIM }}>set by hand</span>
+            )}
+            <button onClick={() => void findGhl()} disabled={ghlBusy} style={{ ...btnSecondary, opacity: ghlBusy ? 0.6 : 1 }}>
+              {ghlBusy ? "Checking…" : "Re-check"}
+            </button>
+            <button onClick={() => void clearGhl()} disabled={ghlBusy} style={{ ...btnSecondary, opacity: ghlBusy ? 0.6 : 1 }}>
+              Clear
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <button onClick={() => void findGhl()} disabled={ghlBusy} style={{ ...btnSecondary, opacity: ghlBusy ? 0.6 : 1 }}>
+              {ghlBusy ? "Searching…" : "Find by email"}
+            </button>
+            <span style={{ fontSize: 12, color: T.DIM }}>or</span>
+            <input
+              value={ghlLink}
+              onChange={(e) => setGhlLink(e.target.value)}
+              placeholder="Paste the GHL contact link"
+              aria-label="GoHighLevel contact link"
+              style={{ ...input, flex: "1 1 280px" }}
+            />
+            <button
+              onClick={() => void findGhl(ghlLink)}
+              disabled={ghlBusy || !ghlLink.trim()}
+              style={{ ...btnSecondary, opacity: ghlBusy || !ghlLink.trim() ? 0.6 : 1 }}
+            >
+              Check link
+            </button>
+          </div>
+        )}
+
+        {/* PROPOSED, NOT SAVED. The coach reads a name and says yes. */}
+        {ghlProposed && (
+          <div style={{ marginTop: 10, padding: "10px 12px", border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 10 }}>
+            <div style={{ fontSize: 13.5, color: T.TEXT }}>
+              Found <strong>{ghlProposed.name}</strong>
+              {ghlProposed.email ? <span style={{ color: T.MUTED }}> · {ghlProposed.email}</span> : null}
+            </div>
+            {ghlProposed.matched_on && (
+              <div style={{ fontSize: 12, color: T.DIM, marginTop: 3 }}>matched on {ghlProposed.matched_on}</div>
+            )}
+            <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
+              <button onClick={() => void confirmGhl(ghlProposed)} disabled={ghlBusy} style={{ ...btnSecondary, opacity: ghlBusy ? 0.6 : 1 }}>
+                {ghlBusy ? "Saving…" : "Yes, that's them"}
+              </button>
+              <button onClick={() => { setGhlProposed(null); setGhlNoMatch(true) }} disabled={ghlBusy} style={{ ...btnSecondary }}>
+                Not them
+              </button>
+            </div>
+          </div>
+        )}
+
+        {ghlNoMatch && !ghlProposed && (
+          <div style={{ fontSize: 12.5, color: T.MUTED, marginTop: 8 }}>
+            No contact matched. Open them in GoHighLevel and paste the link above.
+          </div>
+        )}
+
+        <div style={{ fontSize: 12, color: T.DIM, marginTop: 8 }}>
+          {ghlSaved
+            ? "Sharing a Networking Plan adds a note here and emails the client."
+            : "Not set. Without it, sharing a plan will not email the client."}
+        </div>
+        {ghlErr && <div style={{ fontSize: 12.5, color: T.ERROR ?? "#b00", marginTop: 8 }}>{ghlErr}</div>}
       </div>
 
       {actionError && <div style={{ marginBottom: 16 }}><Banner kind="error">{actionError}</Banner></div>}

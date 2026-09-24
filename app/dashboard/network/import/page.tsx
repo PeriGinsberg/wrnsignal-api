@@ -50,6 +50,11 @@ type PlanJob = {
   step: string
   drive_file_url: string | null
   shared_at: string | null
+  // The GHL half. ghl_tagged_at is the one that means the client was emailed;
+  // shared_at only means the plan is visible to them.
+  ghl_tagged_at?: string | null
+  ghl_email_sent_count?: number | null
+  ghl_error?: string | null
 }
 type Result = {
   subject: Subject
@@ -198,7 +203,46 @@ export default function ImportPage() {
       })
       const j = await res.json().catch(() => ({}))
       if (!res.ok || !j?.ok) throw new Error(j?.error || `Share failed (${res.status})`)
-      setPlan({ ...plan, shared_at: j.shared_at })
+      setPlan({
+        ...plan,
+        shared_at: j.shared_at,
+        ghl_tagged_at: j.ghl_tagged_at ?? null,
+        ghl_email_sent_count: j.ghl_email_sent_count ?? 0,
+        ghl_error: j.ghl_error ?? null,
+      })
+    } catch (e: any) {
+      setPlanErr(e?.message || String(e))
+    } finally {
+      setPlanBusy(false)
+    }
+  }
+
+  /**
+   * The only button that emails a client about a plan twice.
+   *
+   * Confirmed first, because it is not undoable: the coach is about to put a
+   * second message in a real person's inbox about something they were already
+   * told about.
+   */
+  async function resendPlanEmail() {
+    if (!plan) return
+    const who = boardName ?? "the client"
+    if (!window.confirm(`Send ${who} another email about this plan?`)) return
+    setPlanBusy(true); setPlanErr(null)
+    try {
+      const token = await getToken()
+      const res = await fetch(withSubject(`/api/network/plan/${plan.id}/resend`), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) throw new Error(j?.error || `Re-send failed (${res.status})`)
+      setPlan({
+        ...plan,
+        ghl_tagged_at: new Date().toISOString(),
+        ghl_email_sent_count: j.sent_count ?? ((plan.ghl_email_sent_count ?? 0) + 1),
+        ghl_error: null,
+      })
     } catch (e: any) {
       setPlanErr(e?.message || String(e))
     } finally {
@@ -295,11 +339,45 @@ export default function ImportPage() {
                         {planBusy ? "Sharing…" : "Share with client"}
                       </button>
                     ) : (
-                      <span style={{ color: T.MUTED, fontSize: 13 }}>
-                        {boardName ?? "The client"} can see it in their library now.
-                      </span>
+                      <>
+                        <span style={{ color: T.MUTED, fontSize: 13 }}>
+                          {boardName ?? "The client"} can see it in their library now.
+                        </span>
+                        {/* Separate from Share on purpose: sharing again does not
+                            re-email, so the only way to send a second email is to
+                            ask for one. */}
+                        <button
+                          onClick={resendPlanEmail}
+                          disabled={planBusy}
+                          style={{ ...secondaryBtn, opacity: planBusy ? 0.6 : 1 }}
+                        >
+                          {planBusy ? "Sending…" : "Re-send email"}
+                        </button>
+                      </>
                     )}
                   </div>
+
+                  {/* SHARED AND EMAILED ARE DIFFERENT THINGS, so they are said
+                      separately. A plan can be perfectly shared and the client
+                      still not know it exists. */}
+                  {plan.shared_at && (
+                    <div style={{ marginTop: 10, fontSize: 13 }}>
+                      {plan.ghl_tagged_at ? (
+                        <span style={{ color: T.MUTED }}>
+                          Email sent
+                          {(plan.ghl_email_sent_count ?? 0) > 1
+                            ? ` · ${plan.ghl_email_sent_count} times`
+                            : ""}
+                          .
+                        </span>
+                      ) : (
+                        <span style={{ color: T.TEXT, fontWeight: 700 }}>
+                          Shared, but the client has not been emailed
+                          {plan.ghl_error ? ` — ${plan.ghl_error}` : "."}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 

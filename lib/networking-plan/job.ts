@@ -16,6 +16,8 @@
 // See docs/Features/networking-plan-delivery-frd.md.
 
 import { createHash } from "node:crypto"
+import { ghlConfig } from "@/lib/ghl/client"
+import { shareNetworkingPlan } from "@/lib/ghl/networkingPlanSync"
 import { type SupabaseClient } from "@supabase/supabase-js"
 import {
   DriveError,
@@ -48,6 +50,12 @@ export type PlanJob = {
   drive_permission_id: string | null
   error: string | null
   attempts: number
+  // GHL half of a share. See 20260924_networking_plan_jobs_ghl.sql.
+  ghl_contact_id: string | null
+  ghl_note_added_at: string | null
+  ghl_tagged_at: string | null
+  ghl_email_sent_count: number
+  ghl_error: string | null
 }
 
 const PLAN_TITLE = (clientName: string) => `${clientName} - Networking Plan`
@@ -278,7 +286,73 @@ export async function sharePlanJob(
   const { data } = await supabase.from("networking_plan_jobs")
     .update({ drive_permission_id: permissionId, shared_at: new Date().toISOString() })
     .eq("id", job.id).select("*").single()
-  return { ok: true, job: (data ?? job) as PlanJob }
+
+  // ---- GHL: tell the client.
+  //
+  // DELIBERATELY AFTER Drive and the library, and deliberately NOT fatal.
+  //
+  // By this point the plan is genuinely shared: the link works and the library
+  // row is visible. The GHL tag is what tells the client that. If it fails, the
+  // client has a plan they have not been told about -- quiet, correct, and
+  // resumable. If it ran FIRST and Drive then failed, the client would be
+  // emailed about a plan they cannot open, which is not resumable because
+  // nothing un-sends an email.
+  //
+  // So a GHL failure never fails the share. It is recorded, surfaced, and
+  // retried from the "shared but never told" query.
+  const shared = (data ?? job) as PlanJob
+  const ghl = await notifyClientViaGhl(supabase, shared)
+  return { ok: true, job: ghl }
+}
+
+/**
+ * Note, then tag, on the client's GHL contact. Records what happened.
+ *
+ * Returns the job either way -- never throws. The share has already succeeded
+ * by the time this runs.
+ */
+export async function notifyClientViaGhl(
+  supabase: SupabaseClient,
+  job: PlanJob,
+): Promise<PlanJob> {
+  const { data: cc } = await supabase
+    .from("coach_clients").select("ghl_contact_id").eq("id", job.coach_client_id).maybeSingle()
+  const contactId = cc?.ghl_contact_id ?? null
+
+  if (!contactId) {
+    // Not an error: this client has never been matched to a GHL contact. The
+    // coach wires that at folder setup. Recorded so the gap is visible.
+    const { data } = await supabase.from("networking_plan_jobs")
+      .update({ ghl_error: "No GHL contact is wired for this client, so no email was sent." })
+      .eq("id", job.id).select("*").single()
+    return (data ?? job) as PlanJob
+  }
+
+  let cfg
+  try {
+    cfg = ghlConfig()
+  } catch (e: any) {
+    const { data } = await supabase.from("networking_plan_jobs")
+      .update({ ghl_contact_id: contactId, ghl_error: `GHL not configured: ${e?.message ?? e}` })
+      .eq("id", job.id).select("*").single()
+    return (data ?? job) as PlanJob
+  }
+
+  const res = await shareNetworkingPlan({ contactId }, cfg)
+
+  const patch: Record<string, unknown> = {
+    ghl_contact_id: contactId,
+    ghl_note_added_at: res.note.outcome === "ok" ? new Date().toISOString() : null,
+    ghl_tagged_at: res.tag.outcome === "ok" ? new Date().toISOString() : null,
+    ghl_error: res.tag.outcome === "ok"
+      ? (res.note.outcome === "ok" ? null : `Note failed: ${res.note.error}`)
+      : `Client was not emailed: ${res.tag.error}`,
+  }
+  if (res.emailed) patch.ghl_email_sent_count = (job.ghl_email_sent_count ?? 0) + 1
+
+  const { data } = await supabase.from("networking_plan_jobs")
+    .update(patch).eq("id", job.id).select("*").single()
+  return (data ?? job) as PlanJob
 }
 
 /** Used by the route to show the coach what the file looks like now. */
