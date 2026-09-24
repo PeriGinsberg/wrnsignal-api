@@ -15,22 +15,11 @@
 import { type SupabaseClient } from "@supabase/supabase-js"
 import { getSupabaseAdmin } from "./coachAuth"
 
-// The event vocabulary — typed in code, never user input (so the table has no
-// CHECK on event_type; this union is the source of truth).
-export const COACH_CLIENT_EVENT_TYPES = [
-  "prospect_created",
-  "stage_changed",
-  "converted_to_client",
-  "proposal_sent",
-  "proposal_approved",
-  "proposal_declined",
-  "engagement_attached",
-  "engagement_detached",
-  "activity_completed",
-  "invite_sent",
-  "account_created",
-] as const
-export type CoachClientEventType = (typeof COACH_CLIENT_EVENT_TYPES)[number]
+// The event vocabulary lives in lib/coach/clientEventTypes.ts, so the History
+// tab and its coverage test can read it without loading this module's
+// service-role client. Re-exported here because every writer imports from here.
+export { COACH_CLIENT_EVENT_TYPES, type CoachClientEventType } from "@/lib/coach/clientEventTypes"
+import { type CoachClientEventType as EventType } from "@/lib/coach/clientEventTypes"
 
 // BEST-EFFORT, NEVER THROWS. Inserts one append-only event. Any failure (FK
 // violation, missing env, network, …) is swallowed with a console.warn and the
@@ -38,7 +27,7 @@ export type CoachClientEventType = (typeof COACH_CLIENT_EVENT_TYPES)[number]
 // This is the whole safety contract.
 export async function logCoachClientEvent(args: {
   coachClientId: string
-  eventType: CoachClientEventType
+  eventType: EventType
   actorProfileId?: string | null
   context?: Record<string, unknown> | null
 }): Promise<void> {
@@ -66,10 +55,16 @@ export type CoachClientEventRow = {
 // Only the four returned fields are selected — id / coach_client_id never leave.
 const COACH_CLIENT_EVENT_SELECT = "event_type, actor_profile_id, context, created_at"
 
-export function toApiEvent(r: CoachClientEventRow) {
+export function toApiEvent(r: CoachClientEventRow, actorName?: string | null) {
   return {
     event_type: r.event_type,
     actor_profile_id: r.actor_profile_id,
+    // WHO DID IT. A null actor is the system acting on its own (a webhook, a
+    // scheduled job); the tab says "System". Anything else is a person, and
+    // with delegate coaches in a practice "which of us" is the whole question
+    // the timeline is asked.
+    actor_name: r.actor_profile_id ? actorName ?? null : null,
+    actor_is_system: r.actor_profile_id === null,
     context: r.context,
     created_at: r.created_at,
   }
@@ -84,5 +79,18 @@ export async function listApiEvents(supabase: SupabaseClient, coachClientId: str
     .eq("coach_client_id", coachClientId)
     .order("created_at", { ascending: false })
   if (error) throw new Error(`Failed to read events: ${error.message}`)
-  return (data as CoachClientEventRow[] ?? []).map(toApiEvent)
+  const rows = (data as CoachClientEventRow[]) ?? []
+
+  // One lookup for every distinct actor, not one per row.
+  const ids = [...new Set(rows.map((r) => r.actor_profile_id).filter(Boolean) as string[])]
+  const names = new Map<string, string | null>()
+  if (ids.length) {
+    const { data: people, error: peopleErr } = await supabase
+      .from("client_profiles").select("id, name, email").in("id", ids)
+    // A name we cannot resolve must not cost the whole timeline: the rows still
+    // render, just without a name on the ones affected.
+    if (peopleErr) console.warn("[coach-client-events] actor lookup failed:", peopleErr.message)
+    for (const p of people ?? []) names.set(p.id as string, (p.name as string) || (p.email as string) || null)
+  }
+  return rows.map((r) => toApiEvent(r, r.actor_profile_id ? names.get(r.actor_profile_id) ?? null : null))
 }

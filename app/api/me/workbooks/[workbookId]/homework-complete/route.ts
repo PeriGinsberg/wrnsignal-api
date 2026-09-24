@@ -16,6 +16,7 @@
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { workbookError } from "../../../../_lib/workbookError"
+import { logCoachClientEvent } from "../../../../_lib/coachClientEvents"
 import { clientWorkbookScope, rpcError } from "@/lib/workbook/server"
 
 export const runtime = "nodejs"
@@ -48,7 +49,7 @@ export async function OPTIONS(req: NextRequest) { return corsOptionsResponse(req
 export async function POST(req: NextRequest, { params }: { params: Promise<{ workbookId: string }> }) {
   try {
     const { workbookId } = await params
-    const { supabase } = await clientWorkbookScope(req)
+    const { supabase, actorId } = await clientWorkbookScope(req)
 
     const { data, error } = await supabase.rpc("workbook_mark_homework_complete", { p_workbook: workbookId })
     if (error) throw rpcError("mark homework complete", error)
@@ -56,6 +57,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ wor
       fired: boolean; completed_at: string; webhook_sent_at: string | null
       email: string; first_name: string; last_name: string | null
       template_id: string | null; session: number | null; title: string
+      coach_client_id: string | null
+    }
+    const session = sessionNumber(r.session, r.template_id, workbookId)
+
+    // On the History timeline once, for the call that actually completed it.
+    if (r.fired && r.coach_client_id) {
+      await logCoachClientEvent({
+        coachClientId: r.coach_client_id,
+        eventType: "homework_complete",
+        actorProfileId: actorId,
+        context: { title: r.title, session },
+      })
     }
 
     let webhook: "sent" | "skipped" | "not_configured" | "failed" = r.fired ? "not_configured" : "skipped"
@@ -70,7 +83,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ wor
             email: r.email,
             first_name: r.first_name,
             last_name: r.last_name ?? "",
-            session: sessionNumber(r.session, r.template_id, workbookId),
+            session,
             event: "homework_complete",
             workbook_id: workbookId,
           }),
@@ -84,6 +97,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ wor
         // The completion stands; only the notification is missing.
         webhook = "failed"
         console.error("[homework-complete] webhook failed:", e?.message ?? e, "workbook:", workbookId)
+        // A silent failure is the reason this event exists: the coach is
+        // otherwise told nothing, and a console line is not somewhere they
+        // look. Logged with no actor, because nobody did it: the system tried
+        // and the far end did not answer.
+        if (r.coach_client_id) {
+          await logCoachClientEvent({
+            coachClientId: r.coach_client_id,
+            eventType: "homework_webhook_failed",
+            actorProfileId: null,
+            context: { title: r.title, session, reason: String(e?.message ?? e).slice(0, 200) },
+          })
+        }
       }
     }
 

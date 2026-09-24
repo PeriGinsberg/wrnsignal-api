@@ -8,6 +8,7 @@ import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { workbookError } from "../../../../_lib/workbookError"
 import { must } from "../../../../_lib/must"
+import { logCoachClientEvent } from "../../../../_lib/coachClientEvents"
 import { coachWorkbookScope } from "@/lib/workbook/server"
 import { getTemplate } from "@/lib/workbook/templates"
 import { applyTemplate, unresolvedPlaceholders, validateContent } from "@/lib/workbook/content"
@@ -134,7 +135,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cli
         })
         .select("id, slug, status")
         .single()
-      if (!error) return withCorsJson(req, { ok: true, workbook: data }, 201)
+      if (!error) {
+        await logCoachClientEvent({
+          coachClientId: scope.linkId,
+          eventType: "workbook_created",
+          actorProfileId: scope.actorId,
+          context: { title: content.title ?? data.slug, template_id: template.template_id },
+        })
+        return withCorsJson(req, { ok: true, workbook: data }, 201)
+      }
       if (error.code !== "23505") throw new Error(`Create workbook: ${error.message}`)
     }
     throw new Error("Could not find a free slug for this workbook")

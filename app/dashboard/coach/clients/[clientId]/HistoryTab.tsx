@@ -15,36 +15,66 @@
 import { useCallback, useEffect, useState } from "react"
 import { T, btnSecondary } from "../../../../../lib/dashboard-theme"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
+import type { CoachClientEventType } from "../../../../../lib/coach/clientEventTypes"
 
-type CoachClientEvent = {
+export type CoachClientEvent = {
   event_type: string
   actor_profile_id: string | null
+  actor_name: string | null
+  actor_is_system: boolean
   context: Record<string, any> | null
   created_at: string
 }
 
+/** Who did it. A null actor is the system acting alone (a webhook, a job). */
+export function actorLabel(e: CoachClientEvent): string | null {
+  if (e.actor_is_system) return "System"
+  return e.actor_name
+}
+
 // event_type (+ context) → a readable line. Falls back to the raw type for any
 // future event the UI doesn't have copy for yet.
-function describe(e: CoachClientEvent): string {
-  const name = typeof e.context?.name === "string" ? e.context.name : null
-  const withName = (label: string) => (name ? `${label} · ${name}` : label)
-  switch (e.event_type) {
-    case "prospect_created": return "Prospect created"
-    case "stage_changed": return `Moved to stage: ${e.context?.stage_key ?? "—"}`
-    case "converted_to_client": return "Converted to client"
-    case "proposal_sent": return withName("Proposal sent")
-    case "proposal_approved": return withName("Proposal approved")
-    case "proposal_declined": return withName("Proposal declined")
-    case "engagement_attached": return withName("Engagement attached")
-    case "engagement_detached": return withName("Engagement detached")
-    // by_client flag is set ONLY by the client write route (/api/me/activities);
-    // its absence = a coach completion. No actor-name resolution — the
-    // distinction rides entirely on the context flag.
-    case "activity_completed":
-      return withName(e.context?.by_client === true ? "Activity completed by client" : "Activity completed")
-    case "invite_sent": return "SIGNAL invite sent"
-    default: return e.event_type
-  }
+/**
+ * EVERY event type needs wording. The map is exhaustive over the union, so
+ * adding a type to COACH_CLIENT_EVENT_TYPES without a line here fails the
+ * typecheck rather than shipping: `account_created` reached production with no
+ * case and rendered to coaches as the literal string "account_created".
+ */
+export const LABELS: Record<CoachClientEventType, (e: CoachClientEvent) => string> = {
+  prospect_created: () => "Prospect created",
+  stage_changed: (e) => `Moved to stage: ${e.context?.stage_key ?? "—"}`,
+  converted_to_client: () => "Converted to client",
+  proposal_sent: () => "Proposal sent",
+  proposal_approved: () => "Proposal approved",
+  proposal_declined: () => "Proposal declined",
+  engagement_attached: () => "Engagement attached",
+  engagement_detached: () => "Engagement detached",
+  // The actor's name now says who completed it, so the line no longer has to.
+  activity_completed: () => "Activity completed",
+  invite_sent: () => "SIGNAL invite sent",
+  invite_accepted: () => "Invite accepted",
+  account_created: () => "Account created",
+  workbook_created: () => "Workbook created",
+  workbook_shared: () => "Workbook shared",
+  workbook_sent_for_review: (e) => {
+    const n = Number(e.context?.open_questions ?? 0)
+    return n > 0 ? `Workbook sent for review, ${n} question${n === 1 ? "" : "s"}` : "Workbook sent for review"
+  },
+  workbook_returned: () => "Workbook returned with comments",
+  homework_complete: (e) =>
+    e.context?.session ? `Session ${e.context.session} homework marked complete` : "Homework marked complete",
+  homework_webhook_failed: () => "Homework notification to GoHighLevel failed",
+}
+
+export function describe(e: CoachClientEvent): string {
+  const name = typeof e.context?.name === "string" ? e.context.name
+    : typeof e.context?.title === "string" ? e.context.title
+    : null
+  const label = LABELS[e.event_type as CoachClientEventType]
+  // An event type the server knows and this build does not: show the raw type
+  // rather than nothing, so it is visibly wrong instead of silently missing.
+  const text = label ? label(e) : e.event_type
+  return name ? `${text} · ${name}` : text
 }
 
 // Relative time ("3 days ago"); the exact datetime rides along as a tooltip.
@@ -145,7 +175,7 @@ export function HistoryTab({ coachClientId }: { coachClientId: string | null }) 
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, color: T.TEXT }}>{describe(e)}</div>
             <div style={{ fontSize: 11, color: T.DIM, marginTop: 2 }} title={exactTime(e.created_at)}>
-              {relTime(e.created_at)}
+              {actorLabel(e) ? `${actorLabel(e)} · ${relTime(e.created_at)}` : relTime(e.created_at)}
             </div>
           </div>
         </div>

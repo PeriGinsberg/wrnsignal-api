@@ -15,8 +15,11 @@
 -- CASCADEs (the log lives and dies with the relationship). context holds
 -- event-specific detail (e.g. { new_status }, { stage_key }).
 --
--- DEV ENV ONLY. Applied to DEV (zydrqckpwidipwbhrfgd) via direct Postgres. Do
--- NOT promote to prod (joins the closed-gate pile).
+-- APPLIED TO BOTH. This once said "DEV ENV ONLY, do NOT promote to prod", and
+-- that stopped being true: prod (ejhnokcnahauvrcbcmic) has held this table for
+-- months and was carrying 423 rows when it was checked on 2026-09-23. The note
+-- stayed behind and read as a live instruction, which is worse than no note.
+-- Probe the artifact before trusting any line like this.
 
 CREATE TABLE coach_client_events (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),

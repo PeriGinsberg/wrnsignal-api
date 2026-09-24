@@ -2,6 +2,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { logCoachClientEvent } from "../../_lib/coachClientEvents"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -114,6 +115,14 @@ export async function POST(req: NextRequest) {
       .eq("id", invite.id)
 
     if (updateErr) throw new Error(`Failed to accept invite: ${updateErr.message}`)
+
+    // The other half of invite_sent. Without it the timeline shows every invite
+    // going out and nothing ever coming back. Actor is the client: they did it.
+    await logCoachClientEvent({
+      coachClientId: invite.id,
+      eventType: "invite_accepted",
+      actorProfileId: profileId,
+    })
 
     // Fetch coach name and org for response
     const { data: coachProfile } = await supabase
