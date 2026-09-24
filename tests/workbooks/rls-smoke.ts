@@ -174,6 +174,9 @@ async function main() {
     ok("client marks homework complete", !hw1.error && (hw1.data as any)?.fired === true, hw1.error ?? hw1.data)
     ok("it carries the details the webhook needs",
       !!(hw1.data as any)?.email && !!(hw1.data as any)?.first_name && !!(hw1.data as any)?.completed_at, hw1.data)
+    // Ryan's is a per-client workbook: it declares no session, and the RPC says
+    // so rather than answering 1. The route logs that case instead of guessing.
+    ok("a workbook with no session says so", (hw1.data as any)?.session === null, (hw1.data as any)?.session)
     const hw2 = await A.rpc("workbook_mark_homework_complete", { p_workbook: W })
     ok("a second press does not fire again", !hw2.error && (hw2.data as any)?.fired === false, hw2.error ?? hw2.data)
     ok("the completion time does not move",
@@ -191,6 +194,23 @@ async function main() {
     ok("the owner can stamp the webhook", !(await A.rpc("workbook_record_homework_webhook", { p_workbook: W })).error)
     ok("the client read reports the completion",
       !!((await A.rpc("workbook_for_client", { p_workbook: W })).data as any)?.homework_completed_at)
+
+    {
+      // The number the webhook reports must come from the CONTENT, not from a
+      // fallback. A session 2 workbook proves it: if this says 1, the payload
+      // would file a Session 2 completion as Session 1.
+      const slug2 = `rls-smoke-s2-${Date.now()}`
+      const { data: two, error: twoErr } = await admin.from("workbooks").insert({
+        coach_client_id: link.id, client_profile_id: aId, slug: slug2, status: "with_client", created_by: coachId,
+        content: { ...content, slug: slug2, template_id: "session-2-something", session: 2 },
+      }).select("id").single()
+      if (twoErr) throw new Error(`session 2 workbook: ${twoErr.message}`)
+      const hw = await A.rpc("workbook_mark_homework_complete", { p_workbook: two.id })
+      ok("a session 2 workbook reports session 2", (hw.data as any)?.session === 2, hw.error ?? (hw.data as any)?.session)
+      await admin.from("workbooks").delete().eq("id", two.id)
+      await admin.from("coach_client_notes").delete().eq("client_profile_id", aId).eq("link_tab", "workbooks")
+        .like("body", "%marked homework complete%")
+    }
 
     console.log("creating a workbook (the INSERT policy)")
     {

@@ -23,10 +23,24 @@ export const dynamic = "force-dynamic"
 
 const WEBHOOK_TIMEOUT_MS = 8000
 
-/** "session-1-foundations" -> 1. Absent or unnumbered templates report null. */
-function sessionNumber(templateId: string | null): number | null {
+/**
+ * Which session this workbook is, for the webhook.
+ *
+ * The template STATES it (content.session). The regex over template_id is only
+ * for workbooks created before templates did that, and it is not a fallback for
+ * "no idea": a workbook that can answer neither is reported, loudly, rather than
+ * being sent as Session 1, which is what this code used to do to anything
+ * without a template_id.
+ */
+function sessionNumber(stated: number | null, templateId: string | null, workbookId: string): number {
+  if (typeof stated === "number" && Number.isInteger(stated) && stated > 0) return stated
   const m = (templateId ?? "").match(/session-(\d+)/i)
-  return m ? Number(m[1]) : null
+  if (m) return Number(m[1])
+  console.error(
+    "[homework-complete] no session number on workbook", workbookId,
+    `(template_id: ${templateId ?? "none"}); reporting 1`,
+  )
+  return 1
 }
 
 export async function OPTIONS(req: NextRequest) { return corsOptionsResponse(req.headers.get("origin")) }
@@ -40,7 +54,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ wor
     if (error) throw rpcError("mark homework complete", error)
     const r = data as {
       fired: boolean; completed_at: string; webhook_sent_at: string | null
-      email: string; first_name: string; last_name: string | null; template_id: string | null; title: string
+      email: string; first_name: string; last_name: string | null
+      template_id: string | null; session: number | null; title: string
     }
 
     let webhook: "sent" | "skipped" | "not_configured" | "failed" = r.fired ? "not_configured" : "skipped"
@@ -55,7 +70,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ wor
             email: r.email,
             first_name: r.first_name,
             last_name: r.last_name ?? "",
-            session: sessionNumber(r.template_id) ?? 1,
+            session: sessionNumber(r.session, r.template_id, workbookId),
             event: "homework_complete",
             workbook_id: workbookId,
           }),

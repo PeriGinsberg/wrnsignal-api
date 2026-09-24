@@ -104,10 +104,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cli
     if (left.length) {
       return withCorsJson(req, { ok: false, error: `The template still has ${left.join(", ")} in it` }, 500)
     }
-    // A template is filled in, so it is no longer a template: the workbook
-    // carries the finished content, exactly as a per-client content file does.
-    const { template: _t, template_id: _tid, ...filled } = content as Record<string, unknown>
-    const parsed = validateContent(filled)
+    // template_id and session STAY on the stored content. The homework webhook
+    // reports which session was completed, and it reads that from here: an
+    // earlier version of this route dropped both, which did not fail, it just
+    // made every workbook report itself as Session 1. The content is kept
+    // exactly as scripts/create-workbook.ts writes it, so rows made by the
+    // button and rows made by the script are the same shape.
+    const parsed = validateContent(content)
     if (!parsed.ok) {
       return withCorsJson(req, { ok: false, error: `Template ${template.template_id}: ${parsed.errors.join("; ")}` }, 500)
     }

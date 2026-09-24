@@ -28,6 +28,11 @@ for (const summary of all) {
   const t = getTemplate(summary.template_id)!
   ok("getTemplate finds it", !!t)
   ok("it is marked as a template", t.content.template === true && t.content.template_id === summary.template_id)
+  // The homework webhook reports this number to GoHighLevel. A template that
+  // does not state it gets reported as Session 1 by a fallback, which is how a
+  // Session 2 workbook would quietly file itself as a Session 1 completion.
+  ok("it states which session it is",
+    Number.isInteger(t.content.session) && (t.content.session ?? 0) > 0, t.content.session)
   ok("it has a description for the picker", summary.description.trim().length > 0)
   ok("the counts match the content",
     summary.sections === t.content.sections.length && summary.fields === allFieldKeys(t.content).length,
@@ -43,14 +48,15 @@ for (const summary of all) {
     unresolvedPlaceholders(t.content).every((p) => TEMPLATE_KEYS.includes(p.slice(1, -1) as any)),
     unresolvedPlaceholders(t.content))
 
-  // What the create route stores: filled, with the template flags dropped.
-  const { template: _t, template_id: _tid, ...asStored } = filled as Record<string, unknown>
-  const parsed = validateContent(asStored)
+  // What the create route stores: the filled content, whole.
+  const parsed = validateContent(filled)
   ok("the filled result is a valid workbook", parsed.ok, parsed.ok ? "" : parsed.errors)
   if (parsed.ok) {
     ok("names reached the content",
       parsed.content.client.first_name === "Alex" && parsed.content.coach.first_name === "Peri")
-    ok("it is no longer a template", parsed.content.template === undefined && parsed.content.template_id === undefined)
+    // Both survive the fill, because the webhook reads them off the stored row.
+    ok("the session number survives", parsed.content.session === t.content.session)
+    ok("template_id survives", parsed.content.template_id === summary.template_id)
   }
 }
 

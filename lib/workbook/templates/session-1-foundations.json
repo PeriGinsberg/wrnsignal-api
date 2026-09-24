@@ -2,6 +2,7 @@
   "schema_version": 1,
   "template": true,
   "template_id": "session-1-foundations",
+  "session": 1,
   "slug": "session-1-foundations",
   "title": "Session 1: Foundations",
   "client": {

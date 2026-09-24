@@ -69,6 +69,13 @@ export type WorkbookContent = {
   /** Session templates: the same content for every client, with placeholders. */
   template?: boolean
   template_id?: string
+  /**
+   * Which session this is, stated rather than parsed. The homework webhook
+   * reports it to GoHighLevel, and it used to be read out of template_id with a
+   * regex that fell back to 1, so a workbook with no template_id announced
+   * itself as Session 1. A template says which session it is, in one place.
+   */
+  session?: number
   title?: string
   client: { first_name: string; full_name: string }
   /** null on a session workbook: it is not about one interview. */
@@ -294,6 +301,11 @@ export function validateContent(raw: unknown): { ok: true; content: WorkbookCont
   if (c.interview?.date != null && !/^\d{4}-\d{2}-\d{2}$/.test(c.interview.date)) errors.push("interview.date must be YYYY-MM-DD or null")
   if (c.template != null && typeof c.template !== "boolean") errors.push("template must be true or absent")
   if (c.template && !str(c.template_id)) errors.push("a template needs template_id")
+  if (c.session != null && (!Number.isInteger(c.session) || c.session < 1)) {
+    errors.push("session must be a whole number of 1 or more")
+  }
+  // A session template drives the homework webhook, so it must say WHICH session.
+  if (c.template && c.session == null) errors.push("a session template needs a session number")
   if (!Array.isArray(c.sections) || c.sections.length === 0) errors.push("sections must be a non-empty array")
 
   const keys = new Set<string>()

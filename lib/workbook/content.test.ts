@@ -122,6 +122,15 @@ if (!tParsed.ok) console.error(tParsed.errors)
 const t = (tParsed as { ok: true; content: WorkbookContent }).content
 ok("a session workbook has no interview", t.interview === null)
 ok("template keys survive validation", t.template === true && t.template_id === "session-1-foundations")
+// The homework webhook reports this number, so validation is where a template
+// without one is caught, rather than the payload silently saying Session 1.
+ok("the session number survives validation", t.session === 1)
+ok("a template must declare its session",
+  !validateContent({ ...filled, session: undefined }).ok)
+ok("a session of zero is refused", !validateContent({ ...filled, session: 0 }).ok)
+ok("a fractional session is refused", !validateContent({ ...filled, session: 1.5 }).ok)
+ok("a per-client workbook needs no session",
+  validateContent({ ...filled, template: undefined, template_id: undefined, session: undefined }).ok)
 ok("section modes are read", t.sections.filter((s) => s.mode === "in_session").length === 5 && t.sections.filter((s) => s.mode === "homework").length === 2)
 ok("the homework button belongs to the last homework section", lastHomeworkSectionId(t) === "finish")
 ok("an interview workbook has no homework section", lastHomeworkSectionId(c) === null)
