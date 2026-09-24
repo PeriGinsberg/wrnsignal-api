@@ -124,9 +124,7 @@ export function LibraryTab({
   // confirms. A wrong match does not misfile a document, it emails a client's
   // plan to someone else.
   const ghlBase = coachClientId ? `/api/coach/coach-clients/${coachClientId}/ghl-contact` : null
-  type GhlMatch = { id: string; name: string; email?: string | null; source?: string; matched_on?: string | null }
   const [ghlSaved, setGhlSaved] = useState<{ id: string; name: string | null; source: string | null } | null>(null)
-  const [ghlProposed, setGhlProposed] = useState<GhlMatch | null>(null)
   const [ghlNoMatch, setGhlNoMatch] = useState(false)
   const [ghlLink, setGhlLink] = useState("")
   const [ghlBusy, setGhlBusy] = useState(false)
@@ -143,20 +141,27 @@ export function LibraryTab({
     }
   }, [ghlBase])
 
-  /** Propose a match. Stores nothing. */
-  async function findGhl(link?: string) {
+  /**
+   * Look the client up and wire them, with no confirmation step.
+   *
+   * The server accepts a match only when exactly one GHL contact carries the
+   * address, which is a stricter test than a human glancing at a name. When it
+   * refuses, it says which address it searched, and the paste-link box below is
+   * the way through.
+   */
+  async function findGhl() {
     if (!ghlBase) return
-    setGhlBusy(true); setGhlErr(null); setGhlNoMatch(false); setGhlProposed(null)
+    setGhlBusy(true); setGhlErr(null); setGhlNoMatch(false)
     try {
       const res = await authFetch(ghlBase, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(link ? { link } : {}),
+        body: JSON.stringify({ auto: true }),
       })
       const j = await res.json().catch(() => ({}))
       if (!res.ok || !j?.ok) throw new Error(j?.error || `Search failed (${res.status})`)
-      if (j.match) setGhlProposed(j.match as GhlMatch)
-      else setGhlNoMatch(true)
+      if (j.contact) { setGhlSaved(j.contact); setGhlNoMatch(false) }
+      else { setGhlNoMatch(true); setGhlErr(j.message ?? null) }
     } catch (e: any) {
       setGhlErr(e?.message || String(e))
     } finally {
@@ -164,20 +169,20 @@ export function LibraryTab({
     }
   }
 
-  /** Store the contact the coach just looked at. */
-  async function confirmGhl(match: GhlMatch) {
-    if (!ghlBase) return
+  /** The escape hatch: the coach pastes a contact link and it is stored. */
+  async function wireGhlFromLink() {
+    if (!ghlBase || !ghlLink.trim()) return
     setGhlBusy(true); setGhlErr(null)
     try {
       const res = await authFetch(ghlBase, {
-        method: "PATCH",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contact_id: match.id, source: match.source ?? "search" }),
+        body: JSON.stringify({ link: ghlLink }),
       })
       const j = await res.json().catch(() => ({}))
-      if (!res.ok || !j?.ok) throw new Error(j?.error || `Could not save (${res.status})`)
-      setGhlSaved(j.contact ?? null)
-      setGhlProposed(null); setGhlNoMatch(false); setGhlLink("")
+      if (!res.ok || !j?.ok) throw new Error(j?.error || `Could not use that link (${res.status})`)
+      if (!j.contact) throw new Error("That link did not resolve to a contact.")
+      setGhlSaved(j.contact); setGhlNoMatch(false); setGhlLink("")
     } catch (e: any) {
       setGhlErr(e?.message || String(e))
     } finally {
@@ -196,7 +201,7 @@ export function LibraryTab({
       })
       const j = await res.json().catch(() => ({}))
       if (!res.ok || !j?.ok) throw new Error(j?.error || `Could not clear (${res.status})`)
-      setGhlSaved(null); setGhlProposed(null); setGhlNoMatch(false); setGhlLink("")
+      setGhlSaved(null); setGhlNoMatch(false); setGhlLink("")
     } catch (e: any) {
       setGhlErr(e?.message || String(e))
     } finally {
@@ -533,46 +538,28 @@ export function LibraryTab({
               style={{ ...input, flex: "1 1 280px" }}
             />
             <button
-              onClick={() => void findGhl(ghlLink)}
+              onClick={() => void wireGhlFromLink()}
               disabled={ghlBusy || !ghlLink.trim()}
               style={{ ...btnSecondary, opacity: ghlBusy || !ghlLink.trim() ? 0.6 : 1 }}
             >
-              Check link
+              Use this link
             </button>
           </div>
         )}
 
-        {/* PROPOSED, NOT SAVED. The coach reads a name and says yes. */}
-        {ghlProposed && (
-          <div style={{ marginTop: 10, padding: "10px 12px", border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 10 }}>
-            <div style={{ fontSize: 13.5, color: T.TEXT }}>
-              Found <strong>{ghlProposed.name}</strong>
-              {ghlProposed.email ? <span style={{ color: T.MUTED }}> · {ghlProposed.email}</span> : null}
-            </div>
-            {ghlProposed.matched_on && (
-              <div style={{ fontSize: 12, color: T.DIM, marginTop: 3 }}>matched on {ghlProposed.matched_on}</div>
-            )}
-            <div style={{ display: "flex", gap: 10, marginTop: 10, flexWrap: "wrap" }}>
-              <button onClick={() => void confirmGhl(ghlProposed)} disabled={ghlBusy} style={{ ...btnSecondary, opacity: ghlBusy ? 0.6 : 1 }}>
-                {ghlBusy ? "Saving…" : "Yes, that's them"}
-              </button>
-              <button onClick={() => { setGhlProposed(null); setGhlNoMatch(true) }} disabled={ghlBusy} style={{ ...btnSecondary }}>
-                Not them
-              </button>
-            </div>
-          </div>
-        )}
-
-        {ghlNoMatch && !ghlProposed && (
+        {/* Only shown when the automatic lookup declined. It says which address
+            was searched, because "not found" without the address sends a coach
+            looking in the wrong place. */}
+        {ghlNoMatch && (
           <div style={{ fontSize: 12.5, color: T.MUTED, marginTop: 8 }}>
-            No contact matched. Open them in GoHighLevel and paste the link above.
+            {ghlErr ?? "No GHL contact found. Open them in GoHighLevel and paste the link above."}
           </div>
         )}
 
         <div style={{ fontSize: 12, color: T.DIM, marginTop: 8 }}>
           {ghlSaved
             ? "Sharing a Networking Plan adds a note here and emails the client."
-            : "Not set. Without it, sharing a plan will not email the client."}
+            : "Found automatically when the Networking folder is saved, or when a plan is shared."}
         </div>
         {ghlErr && <div style={{ fontSize: 12.5, color: T.ERROR ?? "#b00", marginTop: 8 }}>{ghlErr}</div>}
       </div>

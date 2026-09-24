@@ -73,6 +73,50 @@ export async function findContactByEmail(
 }
 
 /**
+ * Every contact in this location with EXACTLY this email.
+ *
+ *   POST /contacts/search  { locationId, filters: [{field:"email", operator:"eq", value}] }
+ *
+ * WHY NOT search/duplicate, which is simpler. That endpoint returns the ONE
+ * contact HighLevel considers the duplicate of an email; it cannot tell you
+ * whether there were two. Auto-storing a match without confirmation is only
+ * safe if "exactly one" is a thing we can actually check, so this returns the
+ * list and the caller counts it.
+ *
+ * Probed against the real location before being relied on: an exact address
+ * returns total 1, a nonsense address returns total 0, and two different
+ * addresses return two different contacts. So the filter genuinely narrows.
+ *
+ * The email is re-checked HERE as well, case-insensitively, because `eq` is
+ * HighLevel's definition of equal and not ours. A contact that comes back not
+ * actually carrying the address we asked for is dropped.
+ */
+export async function searchContactsByEmail(
+  email: string,
+  cfg: GhlConfig,
+): Promise<GhlContact[]> {
+  const wanted = String(email ?? "").trim()
+  if (!wanted) return []
+
+  const res = await ghlRequest<any>(
+    "/contacts/search",
+    {
+      method: "POST",
+      body: {
+        locationId: cfg.locationId,
+        page: 1,
+        pageLimit: 20,
+        filters: [{ field: "email", operator: "eq", value: wanted }],
+      },
+    },
+    cfg,
+  )
+
+  const list: any[] = Array.isArray(res.data?.contacts) ? res.data.contacts : []
+  return list.filter((c) => c?.id && String(c.email ?? "").trim().toLowerCase() === wanted.toLowerCase())
+}
+
+/**
  * A pasted GHL contact link -> the contact id.
  *
  * Accepts the shapes a coach can actually copy out of the GHL UI:

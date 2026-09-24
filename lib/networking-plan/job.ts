@@ -17,7 +17,7 @@
 
 import { createHash } from "node:crypto"
 import { ghlConfig } from "@/lib/ghl/client"
-import { shareNetworkingPlan } from "@/lib/ghl/networkingPlanSync"
+import { autoResolveContact, noContactMessage, shareNetworkingPlan } from "@/lib/ghl/networkingPlanSync"
 import { type SupabaseClient } from "@supabase/supabase-js"
 import {
   DriveError,
@@ -316,16 +316,54 @@ export async function notifyClientViaGhl(
   job: PlanJob,
 ): Promise<PlanJob> {
   const { data: cc } = await supabase
-    .from("coach_clients").select("ghl_contact_id").eq("id", job.coach_client_id).maybeSingle()
-  const contactId = cc?.ghl_contact_id ?? null
+    .from("coach_clients")
+    .select("ghl_contact_id, invited_email, client_profile_id")
+    .eq("id", job.coach_client_id).maybeSingle()
+  let contactId = cc?.ghl_contact_id ?? null
 
-  if (!contactId) {
-    // Not an error: this client has never been matched to a GHL contact. The
-    // coach wires that at folder setup. Recorded so the gap is visible.
+  let cfgEarly
+  try {
+    cfgEarly = ghlConfig()
+  } catch (e: any) {
     const { data } = await supabase.from("networking_plan_jobs")
-      .update({ ghl_error: "No GHL contact is wired for this client, so no email was sent." })
+      .update({ ghl_error: `GHL not configured: ${e?.message ?? e}` })
       .eq("id", job.id).select("*").single()
     return (data ?? job) as PlanJob
+  }
+
+  // NOT WIRED YET? FIND THEM. No confirmation step: a match is accepted only
+  // when exactly one contact carries the address, which is a stronger check
+  // than a human glancing at a name, and it happens without making the coach
+  // do setup they did not ask for.
+  //
+  // A failure here NEVER fails the share. The plan is already shared by this
+  // point; not finding a contact means nobody was told, which is recorded and
+  // shown, not thrown.
+  if (!contactId) {
+    let loginEmail: string | null = null
+    if (cc?.client_profile_id) {
+      const { data: prof } = await supabase
+        .from("client_profiles").select("email").eq("id", cc.client_profile_id).maybeSingle()
+      loginEmail = prof?.email ?? null
+    }
+    const found = await autoResolveContact(
+      { loginEmail, invitedEmail: cc?.invited_email }, cfgEarly,
+    ).catch((e) => ({ status: "not_found" as const, triedEmails: [String(e?.message ?? e)] }))
+
+    if (found.status === "matched") {
+      contactId = found.contactId
+      await supabase.from("coach_clients").update({
+        ghl_contact_id: found.contactId,
+        ghl_contact_name: found.displayName,
+        ghl_contact_source: "search",
+        ghl_contact_resolved_at: new Date().toISOString(),
+      }).eq("id", job.coach_client_id)
+    } else {
+      const { data } = await supabase.from("networking_plan_jobs")
+        .update({ ghl_error: noContactMessage(found) })
+        .eq("id", job.id).select("*").single()
+      return (data ?? job) as PlanJob
+    }
   }
 
   let cfg

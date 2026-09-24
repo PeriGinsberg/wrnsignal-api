@@ -17,6 +17,8 @@ import { resolveCoach } from "@/app/api/_lib/coachAuth"
 import { getOwnedRelationship, libraryAccessDenied } from "@/app/api/_lib/coachClientDocuments"
 import { parseDriveFolderUrl, driveFolderUrl } from "@/lib/drive/folderUrl"
 import { verifyFolder } from "@/lib/drive/client"
+import { ghlConfig } from "@/lib/ghl/client"
+import { autoResolveContact } from "@/lib/ghl/networkingPlanSync"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -46,6 +48,50 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const status = errorStatus(err)
     if (status === 401) return withCorsJson(req, { ok: false, error: "Please sign in again." }, 401)
     return withCorsJson(req, { ok: false, error: err?.message || String(err) }, 500)
+  }
+}
+
+
+/**
+ * Try to wire the client's GHL contact, swallowing every failure.
+ *
+ * Returns the contact when one was found or was already set, otherwise null.
+ * Never throws: the caller is saving a Drive folder and that must succeed on
+ * its own terms.
+ */
+async function resolveContactQuietly(
+  supabase: any,
+  coachClientId: string,
+): Promise<{ id: string; name: string | null } | null> {
+  try {
+    const { data: cc } = await supabase
+      .from("coach_clients")
+      .select("ghl_contact_id, ghl_contact_name, invited_email, client_profile_id")
+      .eq("id", coachClientId).maybeSingle()
+    if (!cc) return null
+    if (cc.ghl_contact_id) return { id: cc.ghl_contact_id, name: cc.ghl_contact_name ?? null }
+
+    let loginEmail: string | null = null
+    if (cc.client_profile_id) {
+      const { data: prof } = await supabase
+        .from("client_profiles").select("email").eq("id", cc.client_profile_id).maybeSingle()
+      loginEmail = prof?.email ?? null
+    }
+
+    const found = await autoResolveContact(
+      { loginEmail, invitedEmail: cc.invited_email }, ghlConfig(),
+    )
+    if (found.status !== "matched") return null
+
+    await supabase.from("coach_clients").update({
+      ghl_contact_id: found.contactId,
+      ghl_contact_name: found.displayName,
+      ghl_contact_source: "search",
+      ghl_contact_resolved_at: new Date().toISOString(),
+    }).eq("id", coachClientId)
+    return { id: found.contactId, name: found.displayName }
+  } catch {
+    return null
   }
 }
 
@@ -86,7 +132,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       .from("coach_clients").update({ drive_folder_id: parsed.id, drive_folder_url: url }).eq("id", id)
     if (upErr) throw new Error(`Could not save the folder: ${upErr.message}`)
 
-    return withCorsJson(req, { ok: true, folder: { id: parsed.id, url, name: check.name } }, 200)
+    // Wiring the folder is the moment this client becomes plan-ready, so it is
+    // also the moment to find their GHL contact -- quietly, with no extra step
+    // for the coach. Only an unambiguous single match is stored.
+    //
+    // BEST EFFORT, ALWAYS. GHL being down, misconfigured, or simply not having
+    // this person must never stop a folder from being saved. Sharing resolves
+    // again later if this found nothing.
+    const contact = await resolveContactQuietly(supabase, id)
+
+    return withCorsJson(req, { ok: true, folder: { id: parsed.id, url, name: check.name }, contact }, 200)
   } catch (err: any) {
     const msg = err?.message || String(err)
     console.error("[coach/drive-folder]", err?.stack || msg)

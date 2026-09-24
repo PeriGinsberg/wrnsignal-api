@@ -33,6 +33,7 @@ import {
   networkingPlanNoteText,
   parseContactLink,
   removeContactTags,
+  searchContactsByEmail,
   type GhlContact,
 } from "./contacts"
 
@@ -130,6 +131,68 @@ export async function resolveForClient(
     if (r.status === "matched") return { ...r, triedEmail: email }
   }
   return { status: "not_found", contactId: null }
+}
+
+/**
+ * Resolve a client's GHL contact with NO human in the loop.
+ *
+ * Tries each candidate address in order and accepts a match only when that
+ * address returns EXACTLY ONE contact. Anything else is refused:
+ *
+ *   0 matches  -> try the next address, then give up as "not_found"
+ *   1 match    -> store it and proceed
+ *   2+ matches -> "ambiguous", store NOTHING
+ *
+ * WHY AMBIGUOUS IS A REFUSAL AND NOT A COIN FLIP. The cost of picking wrong is
+ * not a misfiled document: it emails one client's plan to a different person.
+ * Two contacts sharing an address is rare and is somebody's data problem; the
+ * right response is to leave it alone and let a human paste the link, which is
+ * the same escape hatch "not_found" uses.
+ *
+ * Returns the address that produced the answer so the coach can be told which
+ * email was searched, not just that nothing was found.
+ */
+export type AutoResolution =
+  | { status: "matched"; contactId: string; displayName: string; matchedOn: string; contact: GhlContact }
+  | { status: "not_found"; triedEmails: string[] }
+  | { status: "ambiguous"; email: string; count: number }
+  | { status: "no_email" }
+
+export async function autoResolveContact(
+  args: { loginEmail?: string | null; invitedEmail?: string | null },
+  cfg: GhlConfig,
+): Promise<AutoResolution> {
+  const emails = candidateEmails(args)
+  if (emails.length === 0) return { status: "no_email" }
+
+  for (const email of emails) {
+    const hits = await searchContactsByEmail(email, cfg)
+    if (hits.length === 1) {
+      return {
+        status: "matched",
+        contactId: hits[0].id,
+        displayName: contactDisplayName(hits[0]),
+        matchedOn: email,
+        contact: hits[0],
+      }
+    }
+    if (hits.length > 1) return { status: "ambiguous", email, count: hits.length }
+  }
+  return { status: "not_found", triedEmails: emails }
+}
+
+/** What the coach is told when nothing was wired and nothing was sent. */
+export function noContactMessage(r: AutoResolution): string {
+  if (r.status === "not_found") {
+    return `No GHL contact found for ${r.triedEmails.join(" or ")}, client was not emailed.`
+  }
+  if (r.status === "ambiguous") {
+    return `${r.count} GHL contacts share ${r.email}, so none was chosen and the client was not emailed. Paste the right contact link.`
+  }
+  if (r.status === "no_email") {
+    return "This client has no email on file, so no GHL contact could be found and the client was not emailed."
+  }
+  return ""
 }
 
 // ---------------------------------------------------------------------------

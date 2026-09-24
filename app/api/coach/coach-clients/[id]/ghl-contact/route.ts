@@ -1,14 +1,15 @@
 // app/api/coach/coach-clients/[id]/ghl-contact/route.ts
 // Wire a client to their GoHighLevel contact, alongside the Drive folder.
 //
-// Same shape and same place as drive-folder, because it is the same job: two
-// external systems a client's plan has to be filed into, both set once by a
-// human who can see what was matched.
+// Same shape and same place as drive-folder, because it is the same job: the
+// two external systems a client's plan has to reach.
 //
 // GET     what is wired now
-// POST    propose a match (search by email, or parse a pasted link). Stores
-//         nothing — the coach confirms first.
-// PATCH   store a confirmed contact id. An empty id clears the wiring.
+// POST    wire it. { auto: true } searches by login email then invited email
+//         and stores a match only when EXACTLY ONE contact carries that
+//         address; { link } stores a contact the coach pasted. No confirmation
+//         step -- "exactly one exact match" is the check.
+// PATCH   set or clear a contact id directly. An empty id clears the wiring.
 //
 // NOTHING IS EVER CREATED IN GHL. The lookup is read-only. A client who is not
 // in GHL stays not in GHL until somebody puts them there, because a contact
@@ -22,7 +23,7 @@ import { resolveCoach } from "@/app/api/_lib/coachAuth"
 import { getOwnedRelationship, libraryAccessDenied } from "@/app/api/_lib/coachClientDocuments"
 import { ghlConfig } from "@/lib/ghl/client"
 import { contactDisplayName, getContactById, parseContactLink } from "@/lib/ghl/contacts"
-import { candidateEmails, resolveForClient } from "@/lib/ghl/networkingPlanSync"
+import { autoResolveContact, candidateEmails, noContactMessage } from "@/lib/ghl/networkingPlanSync"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -78,14 +79,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 /**
- * Propose a match. Stores NOTHING.
+ * Wire the contact. STORES what it finds -- there is no confirmation step.
  *
- * With no body: search GHL by the client's login email, then their invited
- * email. With { link }: parse it and confirm it resolves to a real contact.
+ * { auto: true }  search by login email, then invited email. A match is stored
+ *                 only when EXACTLY ONE contact carries that address.
+ * { link: "..." } the coach pasted a contact link; parse, confirm it exists,
+ *                 store it.
  *
- * Either way the coach is handed a name to confirm. The whole point of this
- * step is that a human sees "Peri Ginsberg" before anything is wired, because
- * the cost of a wrong match is a client's plan being emailed to someone else.
+ * WHY NO CONFIRM. The old flow showed a name and waited for a click. Requiring
+ * exactly one exact-email match is a stricter test than a human glancing at a
+ * name, and it removes a setup step the coach never asked for. Two contacts
+ * sharing an address is refused outright rather than guessed at, because the
+ * cost of guessing is emailing one client's plan to another.
  */
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -105,6 +110,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const body = await req.json().catch(() => ({}))
     const cfg = ghlConfig()
 
+    // ---- pasted link
     if (typeof body?.link === "string" && body.link.trim()) {
       const parsedId = parseContactLink(body.link)
       if (!parsedId) {
@@ -117,41 +123,28 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       if (!contact) {
         return withCorsJson(req, { ok: false, error: "No contact with that id exists in this GHL location." }, 404)
       }
-      return withCorsJson(req, {
-        ok: true,
-        match: { id: contact.id, name: contactDisplayName(contact), email: contact.email ?? null, source: "pasted" },
-      }, 200)
+      const stored = await storeContact(supabase, id, contact.id, contactDisplayName(contact), "pasted")
+      if ("error" in stored) return withCorsJson(req, { ok: false, error: stored.error }, stored.status)
+      return withCorsJson(req, { ok: true, contact: stored.contact }, 200)
     }
 
-    const emails = candidateEmails({ loginEmail: cc.loginEmail, invitedEmail: cc.invited_email })
-    if (emails.length === 0) {
-      return withCorsJson(req, {
-        ok: false,
-        error: "This client has no email on file, so there is nothing to search on. Paste their GHL contact link instead.",
-      }, 409)
-    }
-
-    const found = await resolveForClient({ loginEmail: cc.loginEmail, invitedEmail: cc.invited_email }, cfg)
+    // ---- automatic
+    const found = await autoResolveContact(
+      { loginEmail: cc.loginEmail, invitedEmail: cc.invited_email }, cfg,
+    )
     if (found.status !== "matched") {
+      // Not an error: no contact is a normal state with a normal remedy.
       return withCorsJson(req, {
         ok: true,
-        match: null,
-        tried_emails: emails,
-        message: "No GHL contact matched. Paste their contact link to wire it by hand.",
+        contact: null,
+        message: noContactMessage(found),
+        tried_emails: candidateEmails({ loginEmail: cc.loginEmail, invitedEmail: cc.invited_email }),
       }, 200)
     }
 
-    return withCorsJson(req, {
-      ok: true,
-      match: {
-        id: found.contactId,
-        name: found.displayName,
-        email: found.contact.email ?? null,
-        source: "search",
-        matched_on: found.triedEmail ?? null,
-      },
-      tried_emails: emails,
-    }, 200)
+    const stored = await storeContact(supabase, id, found.contactId, found.displayName, "search")
+    if ("error" in stored) return withCorsJson(req, { ok: false, error: stored.error }, stored.status)
+    return withCorsJson(req, { ok: true, contact: stored.contact, matched_on: found.matchedOn }, 200)
   } catch (err: any) {
     const msg = err?.message || String(err)
     console.error("[coach/ghl-contact POST]", err?.stack || msg)
@@ -159,6 +152,28 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (status === 401) return withCorsJson(req, { ok: false, error: "Please sign in again." }, 401)
     return withCorsJson(req, { ok: false, error: msg }, status === 403 ? 403 : 500)
   }
+}
+
+/** One place that writes the contact, so the unique-index message is uniform. */
+async function storeContact(
+  supabase: any, coachClientId: string, contactId: string, name: string, source: "search" | "pasted",
+): Promise<{ contact: { id: string; name: string; source: string } } | { error: string; status: number }> {
+  const { error } = await supabase.from("coach_clients").update({
+    ghl_contact_id: contactId,
+    ghl_contact_name: name,
+    ghl_contact_source: source,
+    ghl_contact_resolved_at: new Date().toISOString(),
+  }).eq("id", coachClientId)
+
+  if (error) {
+    // One GHL contact backs one client: two would email one of them the
+    // other's plan.
+    if (/coach_clients_ghl_contact_unique/.test(error.message)) {
+      return { error: "That GHL contact is already wired to a different client.", status: 409 }
+    }
+    return { error: `Could not save the contact: ${error.message}`, status: 500 }
+  }
+  return { contact: { id: contactId, name, source } }
 }
 
 /** Store a contact the coach has confirmed. An empty contact_id clears it. */
