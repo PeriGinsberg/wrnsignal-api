@@ -47,11 +47,12 @@ function open() {
   )
 }
 
-/** Step one: pick the template, so the rest of the tests start on the preview. */
+/** Step one: pick the template and press Next, so the rest start on the preview. */
 async function pick() {
   open()
   const card = await screen.findByText(template.title)
   fireEvent.click(card.closest("button")!)
+  fireEvent.click(screen.getByText("Next"))
   await screen.findByText("Check it over")
 }
 
@@ -63,6 +64,27 @@ describe("picking a template", () => {
     open()
     await screen.findByText(template.title)
     expect(screen.getByText(new RegExp(`${template.sections} sections?, ${template.fields} write-ins?`))).toBeTruthy()
+    expect(screen.getByText(template.description)).toBeTruthy()
+  })
+
+  it("shows the selection, and offers a way forward", async () => {
+    open()
+    const card = (await screen.findByText(template.title)).closest("button")!
+    // One template, so it starts selected and Next is live: the step is never
+    // a dead end, which is what it was when the card was the only way on.
+    expect(card.getAttribute("aria-checked")).toBe("true")
+    expect(screen.getByText("Selected")).toBeTruthy()
+    const nextBtn = screen.getByText("Next").closest("button") as HTMLButtonElement
+    expect(nextBtn.disabled).toBe(false)
+    fireEvent.click(nextBtn)
+    await screen.findByText("Check it over")
+  })
+
+  it("goes back to the picker without losing the selection", async () => {
+    await pick()
+    fireEvent.click(screen.getByText("Back"))
+    const card = (await screen.findByText(template.title)).closest("button")!
+    expect(card.getAttribute("aria-checked")).toBe("true")
   })
 })
 
@@ -138,6 +160,7 @@ describe("creating", () => {
     )
     const card = await screen.findByText(template.title)
     fireEvent.click(card.closest("button")!)
+    fireEvent.click(screen.getByText("Next"))
     await screen.findByText("Check it over")
     await waitFor(() =>
       expect((screen.getByLabelText(/Your first name/) as HTMLInputElement).value).toBe("Peri"))

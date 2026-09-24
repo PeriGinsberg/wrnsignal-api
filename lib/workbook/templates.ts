@@ -18,7 +18,7 @@ type Registration = { description: string; raw: unknown }
 
 const REGISTRY: Registration[] = [
   {
-    description: "The first working session: where they are, what they want, and the homework that follows it.",
+    description: "The WRN Three, your hook, Tell Me About Yourself, and Walk Me Through Your Resume, plus five homework questions.",
     raw: sessionOneFoundations,
   },
 ]

@@ -34,6 +34,8 @@ export function AddWorkbookModal({
   onCreated(workbookId: string): void
 }) {
   const [templates, setTemplates] = useState<Summary[] | null>(null)
+  /** Step 1 picks, step 2 previews. Selecting is not committing. */
+  const [picked, setPicked] = useState<string | null>(null)
   const [chosen, setChosen] = useState<Full | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -50,6 +52,8 @@ export function AddWorkbookModal({
       if (!live) return
       if (status !== 200) { setError(body.error || "Couldn't load the templates."); return }
       setTemplates(body.templates)
+      // One template is the common case: select it so Next is live immediately.
+      if (body.templates.length === 1) setPicked(body.templates[0].template_id)
     })()
     return () => { live = false }
   }, [])
@@ -65,9 +69,13 @@ export function AddWorkbookModal({
     return () => { live = false }
   }, [])
 
-  async function choose(t: Summary) {
+  /** Step 1 to step 2: fetch the picked template's content for the preview. */
+  async function next() {
+    if (!picked) return
     setError(null)
-    const { status, body } = await wbFetch<{ template: Full }>(`/api/coach/workbook-templates/${t.template_id}`)
+    setBusy(true)
+    const { status, body } = await wbFetch<{ template: Full }>(`/api/coach/workbook-templates/${picked}`)
+    setBusy(false)
     if (status !== 200) { setError(body.error || "Couldn't load that template."); return }
     setChosen(body.template)
   }
@@ -139,20 +147,34 @@ export function AddWorkbookModal({
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {!templates && !error && <p className="wb-p wb-muted">Loading</p>}
               {templates?.length === 0 && <p className="wb-p wb-muted">There are no session templates yet.</p>}
-              {templates?.map((t) => (
-                <button
-                  key={t.template_id} type="button" onClick={() => void choose(t)} className="wb-card-soft"
-                  style={{ textAlign: "left", cursor: "pointer", font: "inherit", color: "inherit" }}
-                >
-                  <div className="wb-card-head">
-                    <span className="wb-serif" style={{ fontSize: 22, fontWeight: 600 }}>{t.title}</span>
-                  </div>
-                  <span className="wb-p" style={{ margin: 0 }}>{t.description}</span>
-                  <span className="wb-muted" style={{ fontSize: 14 }}>
-                    {t.sections} section{t.sections === 1 ? "" : "s"}, {t.fields} write-in{t.fields === 1 ? "" : "s"}
-                  </span>
-                </button>
-              ))}
+              {templates?.map((t) => {
+                const on = picked === t.template_id
+                return (
+                  <button
+                    key={t.template_id} type="button" role="radio" aria-checked={on}
+                    onClick={() => setPicked(t.template_id)}
+                    onDoubleClick={() => void next()}
+                    className="wb-card-soft"
+                    style={{
+                      textAlign: "left", cursor: "pointer", font: "inherit", color: "inherit",
+                      // Selected has to be obvious without colour alone: a heavier
+                      // border, a tinted fill, and the word "Selected".
+                      border: on ? "2px solid #009BFF" : "1px solid #DCE1E8",
+                      background: on ? "#F2F9FF" : "#fff",
+                      padding: on ? 17 : 18,
+                    }}
+                  >
+                    <div className="wb-card-head">
+                      <span className="wb-serif" style={{ fontSize: 22, fontWeight: 600 }}>{t.title}</span>
+                      {on && <span className="wb-tag ok">Selected</span>}
+                    </div>
+                    <span className="wb-p" style={{ margin: 0 }}>{t.description}</span>
+                    <span className="wb-muted" style={{ fontSize: 14 }}>
+                      {t.sections} section{t.sections === 1 ? "" : "s"}, {t.fields} write-in{t.fields === 1 ? "" : "s"}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           )}
 
@@ -199,9 +221,13 @@ export function AddWorkbookModal({
           <button type="button" className="wb-btn" onClick={chosen ? () => setChosen(null) : onClose} disabled={busy}>
             {chosen ? "Back" : "Cancel"}
           </button>
-          {chosen && (
-            <button type="button" className="wb-btn-solid" onClick={() => void create()} disabled={busy || !ready}>
+          {chosen ? (
+            <button type="button" className="wb-btn wb-btn-solid" onClick={() => void create()} disabled={busy || !ready}>
               {busy ? "Creating" : "Create draft"}
+            </button>
+          ) : (
+            <button type="button" className="wb-btn wb-btn-solid" onClick={() => void next()} disabled={busy || !picked}>
+              {busy ? "Opening" : "Next"}
             </button>
           )}
         </div>

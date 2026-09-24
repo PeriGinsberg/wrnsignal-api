@@ -25,7 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clie
     const rows = must(
       await supabase
         .from("workbooks")
-        .select("id, slug, status, created_at, updated_at, signal_interview_id, title:content->>title, interview:content->interview")
+        .select("id, slug, status, created_at, updated_at, signal_interview_id, homework_completed_at, title:content->>title, interview:content->interview")
         .eq("client_profile_id", scope.subjectId)
         .order("updated_at", { ascending: false }),
       "list workbooks",

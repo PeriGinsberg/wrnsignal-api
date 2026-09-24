@@ -22,6 +22,7 @@ import { AddWorkbookModal } from "./AddWorkbookModal"
 type ListRow = {
   id: string; slug: string; status: "draft" | "with_client" | "with_coach"; updated_at: string
   title: string | null
+  homework_completed_at: string | null
   interview: { company: string | null; role: string | null } | null
   last_to_coach: { sent_at: string; item_count: number } | null
   last_to_client: { sent_at: string } | null
@@ -68,7 +69,7 @@ export function WorkbooksTab({ clientId, clientName }: { clientId: string; clien
             <span className="wb-eyebrow">Interview workbooks</span>
             <h2 className="wb-h2">{clientName}</h2>
           </div>
-          <button type="button" className="wb-btn-solid" onClick={() => setAdding(true)}>Add workbook</button>
+          <button type="button" className="wb-btn wb-btn-solid" onClick={() => setAdding(true)}>Add workbook</button>
         </div>
         {error && <p className="wb-warn" role="alert">{error}</p>}
         {!list && !error && <p className="wb-p wb-muted">Loading</p>}
@@ -82,9 +83,15 @@ export function WorkbooksTab({ clientId, clientName }: { clientId: string; clien
               <span className="wb-serif" style={{ fontSize: 22, fontWeight: 600 }}>
                 {[w.title, w.interview?.company, w.interview?.role].filter(Boolean).join(", ") || w.slug}
               </span>
-              <span className={`wb-tag ${w.status === "with_coach" ? "review" : w.status === "draft" ? "draft" : "sent"}`}>{STATUS_LABEL[w.status]}</span>
+              <span style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
+                {/* Two workbooks from the same template read identically without
+                    this: the homework is what tells them apart. */}
+                {w.homework_completed_at && <span className="wb-tag ok">Homework complete</span>}
+                <span className={`wb-tag ${w.status === "with_coach" ? "review" : w.status === "draft" ? "draft" : "sent"}`}>{STATUS_LABEL[w.status]}</span>
+              </span>
             </div>
             <span className="wb-muted" style={{ fontSize: 14 }}>
+              {w.homework_completed_at && `Homework completed ${fmtWhen(w.homework_completed_at)}. `}
               {w.last_to_coach
                 ? `Last sent to you ${fmtWhen(w.last_to_coach.sent_at)}${w.last_to_coach.item_count ? `, ${w.last_to_coach.item_count} open question${w.last_to_coach.item_count === 1 ? "" : "s"}` : ""}`
                 : w.last_to_client ? `Shared ${fmtWhen(w.last_to_client.sent_at)}` : `Updated ${fmtWhen(w.updated_at)}`}
