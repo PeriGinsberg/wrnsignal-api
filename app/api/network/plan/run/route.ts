@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
       // Saved BEFORE the plan runs, so an upload whose build then fails still
       // leaves a source the coach can retry from. Upsert, because one current
       // source per client is the whole model.
-      await supabase.from("networking_plan_sources").upsert({
+      const { error: srcErr } = await supabase.from("networking_plan_sources").upsert({
         coach_client_id: relEarly.id,
         client_profile_id: String(scope.subjectId),
         rows,
@@ -99,6 +99,10 @@ export async function POST(req: NextRequest) {
         uploaded_by_id: scope.actorId,
         updated_at: new Date().toISOString(),
       }, { onConflict: "coach_client_id" })
+      // Logged rather than ignored. An upsert whose error nobody reads is
+      // indistinguishable from one that worked, which is how the first cut of
+      // the status bar shipped looking fine and storing nothing.
+      if (srcErr) console.error("[plan/run] plan source not saved:", srcErr.message)
     }
 
     // The relationship was resolved at the top; a plan is a coaching artifact,

@@ -21,6 +21,9 @@ import { errorStatus } from "../../../_lib/routeError"
 import { getSupabaseAdmin } from "@/lib/collab/identity"
 import { createdBy, resolveRequestScope } from "@/lib/collab/scope"
 import { parseFile, dataRows, MAX_ROWS } from "@/lib/network-tracker/import-parse"
+import { detectHeaderRow } from "@/lib/network-tracker/import-parse"
+import { resolveDelegation } from "@/lib/collab/delegation"
+import { sourceHash } from "@/lib/networking-plan/job"
 import { matchOrCreateCompany } from "@/lib/network-tracker/company"
 import { buildSourceRows, loadBoardState, loadSubjectName } from "@/lib/network-tracker/import-load"
 import { resolveImport } from "@/lib/network-tracker/import-resolve"
@@ -188,6 +191,28 @@ export async function POST(req: NextRequest) {
       else notesLogged = data?.length ?? 0
     }
 
+    // ── The Networking Plan's source rows ───────────────────────────────
+    //
+    // SAVED HERE, AT IMPORT, not when the plan is built.
+    //
+    // They were saved in /api/network/plan/run, which only fires when a coach
+    // clicks Build Networking Plan WITH the workbook still attached. That is
+    // the exact button the status bar exists to make reachable later, so a
+    // coach who imported a list and walked away had no source, the status
+    // endpoint answered "no_source", and the bar rendered nothing. The fix
+    // for "you cannot get back to Build" cannot itself depend on having
+    // already pressed Build.
+    //
+    // This is the same workbook: the commit re-posts the file, so the
+    // "Outreach Messages" tab is in hand right here.
+    //
+    // Best effort. The contacts are already imported by this point and a
+    // missing plan source must not fail that, but it IS logged: a silent
+    // no-op here is what made the first attempt look like it worked.
+    await savePlanSource(supabase, scope, buffer, filename).catch((e) => {
+      console.error("[import/commit] plan source not saved:", e?.message ?? e)
+    })
+
     return withCorsJson(req, {
       ok: true,
       subject: { id: String(scope.subjectId), name: subjectName, isCoachView: scope.actorRole === "coach" },
@@ -215,4 +240,50 @@ export async function POST(req: NextRequest) {
     if (status === 404) return withCorsJson(req, { ok: false, error: "We couldn't find your profile." }, 404)
     return withCorsJson(req, { ok: false, error: "The import didn't finish. Some rows may have been created — re-run the same file to finish; existing contacts are never duplicated." }, 500)
   }
+}
+
+/**
+ * Store the "Outreach Messages" rows so Build Networking Plan can run later
+ * without the file.
+ *
+ * A workbook with no such tab is NORMAL: plenty of imports are a plain
+ * contact list. That is a no-op, not an error, which is why this returns
+ * quietly rather than throwing.
+ */
+async function savePlanSource(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  scope: { actorId: string; subjectId: string | number; actorRole: string },
+  buffer: Buffer,
+  filename: string,
+): Promise<void> {
+  // A plan belongs to a coach-client relationship. An owner importing onto
+  // their own board has none, and no plan.
+  const { data: rel } = await supabase
+    .from("coach_clients").select("id")
+    .in("coach_profile_id", (await resolveDelegation(supabase, scope.actorId)).actingIds)
+    .eq("client_profile_id", scope.subjectId)
+    .eq("status", "active").maybeSingle()
+  if (!rel) return
+
+  const probe = await parseFile(buffer, filename)
+  const tab = probe.sheets.find((x: string) => x.trim().toLowerCase() === "outreach messages")
+  if (!tab) return
+
+  const { grid } = await parseFile(buffer, filename, tab)
+  const rows = dataRows(grid, detectHeaderRow(grid))
+  if (!rows.length) return
+
+  const { error } = await supabase.from("networking_plan_sources").upsert({
+    coach_client_id: rel.id,
+    client_profile_id: String(scope.subjectId),
+    rows,
+    source_hash: sourceHash(rows),
+    file_name: filename,
+    uploaded_by_id: scope.actorId,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: "coach_client_id" })
+
+  // CHECKED, not assumed. The first version of this did not look at the
+  // error, which is how a save that never happened looked like one that had.
+  if (error) throw new Error(`networking_plan_sources upsert failed: ${error.message}`)
 }
