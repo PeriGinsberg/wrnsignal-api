@@ -562,7 +562,7 @@ function EngagementSignalsSection({ items, onItemClick, onShowAll, noBottomMargi
     <Section
       icon={<IconBell />}
       title="Engagement Signals"
-      titleHref="/dashboard/coach/required-actions"
+      titleHref="/dashboard/coach/tasks"
       count={localItems.length}
       accentColor={T.SECTION_SIGNALS}
       noBottomMargin={noBottomMargin}
@@ -1074,11 +1074,11 @@ export default function CoachHomePage() {
         }}
       >
         {/* ONE card, not two. Action Items and tasks were the same thing
-            described twice; since 2026-09-26 an action item IS a task, so
-            this renders the condensed task row and links to the full list. */}
+            described twice; an action item IS a task, and since 2026-09-25 the
+            surface is called Tasks everywhere. */}
         <Section
           icon={<IconClipboardCheck />}
-          title="Action Items"
+          title="Tasks"
           titleHref="/dashboard/coach/tasks"
           accentColor={T.SECTION_ACTION_ITEMS}
           noBottomMargin
@@ -1090,7 +1090,7 @@ export default function CoachHomePage() {
           <EngagementSignalsSection
             items={data.requiresAction}
             onItemClick={goToClient}
-            onShowAll={() => router.push("/dashboard/coach/required-actions")}
+            onShowAll={() => router.push("/dashboard/coach/tasks")}
             noBottomMargin
           />
         )}

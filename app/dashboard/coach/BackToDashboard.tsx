@@ -5,7 +5,7 @@
 // child pages they may have drilled into:
 //
 //   /dashboard/coach/clients               My Clients full roster
-//   /dashboard/coach/required-actions      Cross-client Required Actions
+//   /dashboard/coach/tasks                 Cross-client Tasks
 //   /dashboard/coach/applications-recent   (Commit 2.3) cross-client apps
 //
 // Intentionally NOT used on:

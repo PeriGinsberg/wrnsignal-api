@@ -39,7 +39,7 @@ export type TaskListProps = {
 export function TaskList({
   assignee = "me",
   client,
-  emptyText = "No items due",
+  emptyText = "No open tasks.",
   newTaskClientId,
   editable = false,
 }: TaskListProps) {

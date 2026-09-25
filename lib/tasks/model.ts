@@ -127,29 +127,50 @@ export function matchesView(t: Task, view: TaskView, now = new Date()): boolean 
 }
 
 /**
- * What the dashboard card shows: my overdue first, then what is coming.
+ * The dashboard card's order, in three bands.
  *
- * Overdue before upcoming, each oldest-first, because the question the card
- * answers is "what have I let slip", and the oldest slip is the worst one. A
- * plain due_at sort would bury a three-week-old task under today's.
+ *   1. overdue, oldest due first
+ *   2. due today and the rest of this week, soonest first
+ *   3. everything else still open, oldest CREATED first, undated included
+ *
+ * BAND 3 IS THE CHANGE THAT MATTERS. The card used to show only bands 1 and 2,
+ * so a coach with nothing overdue and nothing due this week saw an empty card
+ * while holding thirty open tasks. Worse, every one of the 55 migrated action
+ * items arrived with no due date, so for those coaches the card was empty by
+ * construction. A card that is blank when there is work is not a calm card, it
+ * is a broken one.
+ *
+ * Oldest created first in band 3, not newest: the question the band answers is
+ * "what have I been sitting on", and the newest task is the one least likely to
+ * have been forgotten.
  */
 export function compareForCard(a: Task, b: Task, now = new Date()): number {
-  const ao = isOverdue(a, now) ? 0 : 1
-  const bo = isOverdue(b, now) ? 0 : 1
-  if (ao !== bo) return ao - bo
-  const at = a.due_at ? new Date(a.due_at).getTime() : Number.MAX_SAFE_INTEGER
-  const bt = b.due_at ? new Date(b.due_at).getTime() : Number.MAX_SAFE_INTEGER
-  if (at !== bt) return at - bt
+  const band = (t: Task) => (isOverdue(t, now) ? 0 : isDueThisWeek(t, now) ? 1 : 2)
+  const ab = band(a), bb = band(b)
+  if (ab !== bb) return ab - bb
+
+  // Bands 1 and 2 sort by when they are due. Band 3 has no due date to sort by
+  // for most of its members, so it sorts by age instead.
+  if (ab < 2) {
+    const at = a.due_at ? new Date(a.due_at).getTime() : Number.MAX_SAFE_INTEGER
+    const bt = b.due_at ? new Date(b.due_at).getTime() : Number.MAX_SAFE_INTEGER
+    if (at !== bt) return at - bt
+  }
   return a.created_at < b.created_at ? -1 : 1
 }
 
-/** The card shows at most this many, with a "View all" link for the rest. */
+/** The card shows at most this many, with a "View all tasks" link for the rest. */
 export const CARD_LIMIT = 5
 
+/**
+ * `shown` is what the card renders; `total` is every open task the coach has,
+ * which is the number the footer link reports. They are different questions:
+ * the footer says how much work exists, not how much of it fitted.
+ */
 export function cardTasks(tasks: Task[], now = new Date()): { shown: Task[]; total: number } {
-  const mine = tasks.filter((t) => !t.deleted_at && (isOverdue(t, now) || isDueThisWeek(t, now)))
-  mine.sort((a, b) => compareForCard(a, b, now))
-  return { shown: mine.slice(0, CARD_LIMIT), total: mine.length }
+  const open = tasks.filter((t) => !t.deleted_at && t.status === "open")
+  open.sort((a, b) => compareForCard(a, b, now))
+  return { shown: open.slice(0, CARD_LIMIT), total: open.length }
 }
 
 // ---------------------------------------------------------------------------

@@ -91,10 +91,11 @@ export function TaskCard() {
       {error && <p style={{ color: T.ERROR, fontSize: 13, margin: "10px 0 0 0" }}>{error}</p>}
 
       {tasks.length === 0 && !error && (
-        // Said plainly rather than with an empty box. Nothing overdue is good
-        // news and should read like it.
+        // Now that the card shows every open task and not just the dated ones,
+        // empty means empty. Saying "nothing overdue" here would have been
+        // true and useless.
         <p style={{ color: T.MUTED, fontSize: 13, margin: "10px 0 0 0" }}>
-          Nothing overdue, and nothing due this week.
+          No open tasks.
         </p>
       )}
 
@@ -116,17 +117,18 @@ export function TaskCard() {
         </>
       )}
 
-      {total > tasks.length && (
-        <button
-          onClick={() => router.push("/dashboard/coach/tasks")}
-          style={{
-            background: "none", border: "none", padding: "10px 0 0 0", cursor: "pointer",
-            color: T.TASK_HEADER, fontSize: 13, fontWeight: 600,
-          }}
-        >
-          + {total - tasks.length} more
-        </button>
-      )}
+      {/* ALWAYS SHOWN, even when everything fits. The link is the way to the
+          full list, not just an overflow indicator, and a coach with four tasks
+          still needs a route to filters and search. */}
+      <button
+        onClick={() => router.push("/dashboard/coach/tasks")}
+        style={{
+          background: "none", border: "none", padding: "12px 0 0 0", cursor: "pointer",
+          color: T.TASK_HEADER, fontSize: 13, fontWeight: 600,
+        }}
+      >
+        View all tasks ({total})
+      </button>
     </div>
   )
 }

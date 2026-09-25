@@ -95,13 +95,14 @@ export async function GET(req: NextRequest) {
     const now = new Date()
 
     if (card) {
+      // cardTasks does the banding and the cap. `total` is EVERY open task the
+      // coach has, not the number shown, because the footer link reports how
+      // much work exists rather than how much of it fitted on the card.
       const { shown, total } = cardTasks(all, now)
       return withCorsJson(req, {
         ok: true,
         tasks: shown,
         total,
-        // The card shows at most CARD_LIMIT; "View all" needs to know whether
-        // there is anything behind it.
         has_more: total > CARD_LIMIT,
       }, 200)
     }

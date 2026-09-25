@@ -169,14 +169,15 @@ export function NeedsAttentionSection({ authFetch, clientId, refreshKey }: Props
       {loading && !hasContent ? (
         <p style={{ color: T.DIM, fontSize: 13 }}>Loading…</p>
       ) : !hasContent ? (
-        <p style={{ color: T.MUTED, fontSize: 13, fontStyle: "italic" }}>No items due</p>
+        <p style={{ color: T.MUTED, fontSize: 13, fontStyle: "italic" }}>No open tasks.</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          {/* ── Action Items (coach-authored, top per Q2 design lock) ── */}
+          {/* ── Tasks (top per Q2 design lock). The data has been coach_tasks
+              since 2026-09-26; the label caught up on 2026-09-25. ── */}
           {actionItems.length > 0 && (
             <div>
               <div style={{ ...eyebrow, color: T.DIM, fontSize: 9, marginBottom: 8 }}>
-                ACTION ITEMS
+                TASKS
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {visibleActions.map((item) => {

@@ -19,7 +19,7 @@ import {
 
 // Sprint 3 (2026-05-08): conditional nav rendering by is_coach.
 //   • D2C: My Account (renamed from Overview), Job Tracker
-//   • Coach: Coaches Center group (Dashboard / Required Actions / My
+//   • Coach: Coaches Center group (Dashboard / Tasks / My
 //     Clients), then My Account, then Back to SIGNAL. Job Tracker
 //     hidden from coach nav.
 // (Resume Rx was a third D2C item here; the feature was removed 2026-08-27.)
@@ -96,7 +96,7 @@ const COACH_NAV: NavGroup[] = [
       { href: "/dashboard/coach/clients", label: "My Clients", matchPrefix: true },
       // matchPrefix so /dashboard/coach/prospects/[id] highlights "My Prospects"
       { href: "/dashboard/coach/prospects", label: "My Prospects", matchPrefix: true },
-      { href: "/dashboard/coach/required-actions", label: "Required Actions" },
+      { href: "/dashboard/coach/tasks", label: "Tasks" },
     ],
   },
   {
