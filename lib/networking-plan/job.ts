@@ -34,6 +34,7 @@ import {
   verifyFolder,
 } from "@/lib/drive/client"
 import { driveFileUrl } from "@/lib/drive/folderUrl"
+import { emitAndRun } from "@/lib/automation/run"
 import { buildPlanContent } from "./planData"
 import { renderPlanHtml } from "./render"
 import { htmlToPdf } from "./pdf"
@@ -48,6 +49,8 @@ export type PlanJob = {
   drive_file_url: string | null
   document_id: string | null
   shared_at: string | null
+  /** The campaign this plan was built for, when there was one. */
+  brief_id: string | null
   drive_permission_id: string | null
   error: string | null
   attempts: number
@@ -107,7 +110,7 @@ export async function resolveFolder(
 /** Find the job for this workbook, or start one. */
 export async function findOrCreateJob(
   supabase: SupabaseClient,
-  args: { coachClientId: string; clientProfileId: string; createdById: string; hash: string },
+  args: { coachClientId: string; clientProfileId: string; createdById: string; hash: string; briefId?: string | null },
 ): Promise<PlanJob> {
   // ONLY AN UNSHARED JOB IS REUSED.
   //
@@ -139,6 +142,7 @@ export async function findOrCreateJob(
     client_profile_id: args.clientProfileId,
     created_by_id: args.createdById,
     source_hash: args.hash,
+    brief_id: args.briefId ?? null,
     status: "pending",
     drive_file_id: prior?.drive_file_id ?? null,
     drive_file_url: prior?.drive_file_url ?? null,
@@ -256,7 +260,23 @@ export async function runPlanJob(
         .eq("id", current.document_id)
     }
 
-    return await patch({ step: "filed", status: "complete" })
+    const finished = await patch({ step: "filed", status: "complete" })
+
+    // THE CHAIN IS TOLD HERE, not by the route, because "the plan was
+    // generated" is a fact about the job and every caller of runPlanJob has
+    // made it true. A rule completes the open "Upload Campaign and Build
+    // Plan" task and creates the share task in its place.
+    //
+    // brief_id may be null on a plan built the old way; the rules then fall
+    // back to matching on the client, and no open task is a recorded no-op.
+    // Never throws: the plan is built either way.
+    await emitAndRun(supabase, "networking_plan.generated", {
+      brief_id: finished.brief_id ?? null,
+      job_id: finished.id,
+      coach_client_id: finished.coach_client_id,
+    }, finished.client_profile_id)
+
+    return finished
   } catch (e: any) {
     const message = e instanceof DriveError ? `Drive: ${e.message}` : (e?.message ?? String(e))
     await patch({ status: "failed", error: message })
@@ -351,6 +371,15 @@ export async function sharePlanJob(
   // is recoverable by clicking Share again; an email that has left cannot be
   // unsent, so it goes after the plan is provably shareable.
   const emailed = await emailClientPlanReady(supabase, ghl)
+
+  // The chain, after everything that could still fail. "Share Plan with
+  // Client" ticks itself here, which is the last step of the campaign.
+  await emitAndRun(supabase, "networking_plan.shared", {
+    brief_id: emailed.brief_id ?? null,
+    job_id: emailed.id,
+    coach_client_id: emailed.coach_client_id,
+  }, emailed.client_profile_id)
+
   return { ok: true, job: emailed }
 }
 

@@ -256,12 +256,23 @@ export type TaskRowProps = {
   onToggleDone: (task: Task, next: boolean) => void
   onEdit?: (task: Task) => void
   onDelete?: (task: Task) => void
+  /**
+   * The decisions this task is closed with, from its template.
+   *
+   * A REVIEW TASK HAS NO CHECKBOX. "Review Networking Campaign" is finished by
+   * approving it or sending it back, and those do different things: one
+   * creates the next task, the other reopens the previous one with a note. A
+   * tick cannot say which, so the row shows the two buttons instead.
+   */
+  decisionOptions?: string[] | null
+  onDecide?: (task: Task, decision: string) => void
 }
 
 export function TaskRow(props: TaskRowProps) {
   const { task, condensed = false } = props
   const late = isOverdue(task)
   const done = task.status === "done"
+  const decides = !done && !!props.onDecide && !!props.decisionOptions?.length
 
   // The first line of the description, as a snippet. Kept to one line by CSS
   // ellipsis rather than by slicing, so a long word cannot break the layout
@@ -274,7 +285,21 @@ export function TaskRow(props: TaskRowProps) {
       style={{ borderLeft: `3px solid ${late ? T.TASK_OVERDUE : "transparent"}` }}
     >
       {/* Complete. Unticking reopens, which is why it is a real checkbox bound
-          to status rather than a one-way "done" button. */}
+          to status rather than a one-way "done" button.
+
+          A decision task gets a marker in its place rather than a disabled
+          checkbox: a greyed tick promises that some permission would unlock it,
+          and none would. The buttons at the end of the row are the way. */}
+      {decides ? (
+        <span
+          title="This task is closed by approving it or sending it back"
+          aria-hidden="true"
+          style={{
+            width: 10, height: 10, borderRadius: "50%", display: "inline-block",
+            border: `2px solid ${T.WRN_ORANGE}`, margin: "0 3px",
+          }}
+        />
+      ) : (
       <input
         type="checkbox"
         checked={done}
@@ -284,6 +309,7 @@ export function TaskRow(props: TaskRowProps) {
         title={done ? "Reopen this task" : "Mark done"}
         style={{ cursor: "pointer", accentColor: T.TASK_DONE, width: 16, height: 16 }}
       />
+      )}
 
       <div className="tsk-cell" style={{ minWidth: 0, display: "block" }}>
         <div style={{
@@ -345,7 +371,29 @@ export function TaskRow(props: TaskRowProps) {
       )}
 
       {!condensed && (
-        <div className="tsk-cell tsk-actions" style={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
+        <div className="tsk-cell tsk-actions" style={{ display: "flex", justifyContent: "flex-end", gap: 2, alignItems: "center" }}>
+          {decides && props.decisionOptions!.includes("approve") && (
+            <button
+              onClick={() => props.onDecide!(task, "approve")}
+              disabled={props.busy}
+              style={{
+                padding: "5px 11px", borderRadius: 7, fontSize: 12, fontWeight: 800, cursor: "pointer",
+                border: "none", background: T.TASK_DONE, color: T.INK_ON_ACCENT, marginRight: 4,
+                opacity: props.busy ? 0.6 : 1,
+              }}
+            >Approve</button>
+          )}
+          {decides && props.decisionOptions!.includes("request_changes") && (
+            <button
+              onClick={() => props.onDecide!(task, "request_changes")}
+              disabled={props.busy}
+              style={{
+                padding: "5px 11px", borderRadius: 7, fontSize: 12, fontWeight: 800, cursor: "pointer",
+                border: `1px solid ${T.BORDER_SOFT}`, background: "transparent", color: T.MUTED,
+                marginRight: 6, opacity: props.busy ? 0.6 : 1,
+              }}
+            >Request changes</button>
+          )}
           {props.onEdit && (
             <IconButton title="Edit task" onClick={() => props.onEdit!(task)}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"

@@ -18,6 +18,7 @@ import { parseFile, detectHeaderRow, dataRows } from "@/lib/network-tracker/impo
 import { loadSubjectName } from "@/lib/network-tracker/import-load"
 import { findOrCreateJob, runPlanJob, sourceHash } from "@/lib/networking-plan/job"
 import { resolveDelegation } from "@/lib/collab/delegation"
+import { resolveBriefId } from "@/lib/briefs/resolve"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
 
     if (!file) {
       const { data: src } = await supabase
-        .from("networking_plan_sources").select("rows, file_name")
+        .from("networking_plan_sources").select("rows, file_name, brief_id")
         .eq("coach_client_id", relEarly.id).maybeSingle()
       if (!src) {
         return withCorsJson(req, {
@@ -96,6 +97,9 @@ export async function POST(req: NextRequest) {
         rows,
         source_hash: sourceHash(rows),
         file_name: fileName,
+        // Which campaign this list was uploaded for. Explicit if the screen
+        // asked, otherwise the client's most recent open campaign.
+        brief_id: await resolveBriefId(supabase, relEarly.id, (form?.get("brief_id") as string | null) ?? null),
         uploaded_by_id: scope.actorId,
         updated_at: new Date().toISOString(),
       }, { onConflict: "coach_client_id" })
@@ -115,6 +119,10 @@ export async function POST(req: NextRequest) {
       clientProfileId: String(scope.subjectId),
       createdById: scope.actorId,
       hash: sourceHash(rows),
+      // Read again rather than carried from above, because the no-file path
+      // never went near that branch and the stored source is where the
+      // campaign was recorded at upload time.
+      briefId: await resolveBriefId(supabase, rel.id, (form?.get("brief_id") as string | null) ?? null),
     })
 
     const done = await runPlanJob(supabase, {

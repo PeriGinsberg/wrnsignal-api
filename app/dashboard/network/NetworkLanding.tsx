@@ -34,6 +34,7 @@ import { matchesQuery } from "./contacts/search"
 import { inActivityWindow, ACTIVITY_LABELS, type ActivityWindow } from "./contacts/activityWindow"
 import { EmptyCompanyStrip, type EmptyCompany } from "./EmptyCompanyStrip"
 import { PlanStatusBar } from "./PlanStatusBar"
+import { CampaignBriefPanel } from "./CampaignBriefPanel"
 import { CompanyPanel } from "./CompanyPanel"
 import { SearchIcon, ImportIcon } from "../../../components/icons"
 import { subjectId, withSubject } from "./authFetch"
@@ -83,6 +84,8 @@ function ContactsInner() {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [banner, setBanner] = useState<string | null>(null)
+  // Bumped when a campaign is submitted, so the plan bar re-reads.
+  const [planReload, setPlanReload] = useState(0)
 
   // Post-delete confirmation from the contact record (?deleted=Name). Read once,
   // then strip the param so a refresh doesn't re-show it.
@@ -438,9 +441,21 @@ function ContactsInner() {
         </div>
       </div>
 
+      {/* THE CAMPAIGN, THEN THE PLAN, in the order the work happens. The brief
+          is what the list is built from, so it sits above the bar that builds
+          it. Coach only, and only on a client's board: a client looking at
+          their own networking has no campaign to brief. */}
+      {viewingClientBoard && (
+        <CampaignBriefPanel
+          clientProfileId={subjectId()!}
+          authFetch={authFetch}
+          onChanged={() => setPlanReload((n) => n + 1)}
+        />
+      )}
+
       {/* The plan's next step, wherever the coach is. Renders nothing until a
           networking list has been uploaded for this client. */}
-      <PlanStatusBar authFetch={authFetch} tone="light" />
+      <PlanStatusBar authFetch={authFetch} tone="light" refreshKey={planReload} />
 
       {addOpen && (
         <AddContactForm

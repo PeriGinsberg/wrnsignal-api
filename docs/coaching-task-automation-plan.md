@@ -271,6 +271,22 @@ skipped entirely when a coach has none.
 
 ---
 
+### STANDING RULE: coach mail is redirected outside production too
+
+`sendToCoach` redirects to `peri@workforcereadynow.com` and prefixes the
+subject with `[<env> -> <intended>]` whenever `VERCEL_ENV` is not
+`production`, exactly as `sendToClient` does. Every internal subject therefore
+begins with `{{subject_prefix}}`, which renders empty in production.
+
+It was not written this way at first, on the reasoning that internal mail goes
+to three people who always open it. That reasoning is wrong in the one
+environment it matters: **dev carries a copy of production's coach profiles**,
+so a chain smoke that creates six tasks sends six genuine "you have a new
+task" emails to real coaches about work that does not exist. Mail about
+imaginary work is worse than mail nobody reads, because it gets acted on.
+
+---
+
 ## 6. The GHL tag: what was confirmed and what was not
 
 ### Confirmed, on the SIGNAL side
@@ -317,6 +333,7 @@ verified safe change. The tag removal is Step 6, so there is time.
 - `..._coach_task_automation.sql` — templates, rules, events, task events
 - `..._coach_tasks_backfill.sql` — the 55 action items
 - `..._coach_email_log.sql`
+- `20260927_campaign_briefs.sql` — `networking_campaign_briefs`, plus `brief_id` on tasks, plan jobs and plan sources, plus `decision` on tasks
 
 ### Library
 
@@ -326,6 +343,10 @@ verified safe change. The tag removal is Step 6, so there is time.
 - `lib/automation/run.ts` — match rules, apply actions, mark processed, including the no-match path
 - `lib/email/send.ts` — the shared sender
 - `lib/postmark.ts` — lazy client
+- `lib/email/sendTaskEmails.ts` — assignment, reassignment, the reopen note, the digest
+- `lib/briefs/model.ts` — the brief type, `toList`, the submit gate
+- `lib/briefs/prefill.ts` — profile prefill, and the AI read of `profile_text` offered as suggestions
+- `lib/briefs/resolve.ts` — which campaign an upload, build or share belongs to
 
 ### API
 
@@ -333,7 +354,10 @@ verified safe change. The tag removal is Step 6, so there is time.
 - `app/api/coach/tasks/[taskId]/route.ts` — edit, delete
 - `app/api/coach/tasks/[taskId]/complete/route.ts` — accepts a decision
 - `app/api/coach/tasks/[taskId]/reassign/route.ts`
-- `app/api/internal/tasks/overdue-digest/route.ts`
+- `app/api/internal/tasks/overdue-digest/route.ts` — cron, 11:00 UTC
+- `app/api/internal/automation/run/route.ts` — cron, every 30 minutes; the queue safety net
+- `app/api/coach/briefs/route.ts` — this client's campaigns, and start one
+- `app/api/coach/briefs/[briefId]/route.ts` — edit, submit, delete a draft
 - `app/api/coach/action-items/route.ts` — repointed, response shape preserved
 
 ### UI
@@ -342,6 +366,9 @@ verified safe change. The tag removal is Step 6, so there is time.
 - `app/dashboard/coach/tasks/page.tsx` — full list
 - `app/dashboard/coach/_tasks/TaskFormModal.tsx` — add, edit, reassign
 - `app/dashboard/coach/required-actions/page.tsx` — Action Items half now reads tasks
+- `app/dashboard/coach/_tasks/TaskRow.tsx` — Approve / Request changes in place of the checkbox on a decision task
+- `app/dashboard/network/CampaignBriefPanel.tsx` — the campaign bar and the brief form, on the client's networking board
+- `app/dashboard/network/import/page.tsx` — the campaign picker on import
 
 ---
 
@@ -354,13 +381,36 @@ verified safe change. The tag removal is Step 6, so there is time.
 3. **Dashboard card and Required Actions.** Repoint `/api/coach/action-items`;
    Required Actions should render unchanged.
 4. **Email.** Lazy Postmark client, shared sender, two streams, templates,
-   `coach_email_log`. Assignment mail, then the digest cron.
+   `coach_email_log`. Assignment mail, then the digest cron. **Done on dev.**
 5. **Automation engine.** Events, rules, runner, including the no-match no-op.
-   Seed the Networking chain as rows. Exercise end to end on dev.
+   Seed the Networking chain as rows. Exercise end to end on dev. **Done on
+   dev**; `tests/automation/chain-smoke.ts`, 17 checks.
 6. **Wire the auto-completes** into `runPlanJob` and `sharePlanJob`, add the
    Postmark client email, and remove the GHL tag write. Requires section 6
-   confirmed first.
-7. **Prod.** Migrations, then promote, then seed template and rule rows.
+   confirmed first. **Auto-completes done on dev**; the GHL tag write is still
+   there and is a prod decision.
+7. **The Campaign Brief.** The form that starts the chain, its history, the AI
+   read of `profile_text`, the campaign picker on import. **Done on dev.**
+8. **Prod.** Migrations, then promote, then seed template and rule rows.
+
+---
+
+## 8a. Crons
+
+Both are in `vercel.json` and both take `Authorization: Bearer $CRON_SECRET`,
+the convention `/api/internal/ingest/staleness` already uses.
+
+| Path | Schedule (UTC) | What it is |
+|---|---|---|
+| `/api/internal/automation/run` | `*/30 * * * *` | Drains the queue. The safety net, not the primary path: every emit drains inline so the chain moves while the coach is still on the screen. This catches an event whose inline drain failed. |
+| `/api/internal/tasks/overdue-digest` | `0 11 * * *` | One email per coach with overdue tasks. Coaches with none get nothing. |
+
+**The digest hour drifts by one, twice a year.** Vercel crons are UTC and do
+not follow a timezone, so `0 11` is 7am Eastern during daylight saving and 6am
+once it ends. 11:00 was chosen over 12:00 because arriving an hour early in
+winter beats arriving an hour after the working day has started. The fix, if
+the hour ever matters more than the simplicity, is an hourly cron that returns
+early unless it is 7am in `America/New_York`.
 
 ---
 
@@ -440,6 +490,25 @@ Kept in this doc because there is no general backlog doc in the repo, and the
 only existing one (`docs/jobfit-ticket1-plan.md`) is JobFit-scoped. Move these
 if a real backlog lands.
 
+**The profile parser drops secondary roles and never extracts education or
+industries.** `app/api/profile/route.ts` parses `target_roles` out of
+`profile_text` by taking the text between "Primary Roles:" and "Secondary
+Roles:" and discarding the second half. There is no education field, no
+industries field and no goals field on `client_profiles` at all.
+
+This is why a Campaign Brief can only be prefilled with primary roles and
+locations, and why everything else has to come from an AI read of
+`profile_text` offered as a suggestion. The brief works around the gap rather
+than closing it, deliberately: adding the columns is easy, but changing what
+the parser writes changes the meaning of every profile already stored, and
+`target_roles` feeds JobFit scoring. That is its own piece of work with its own
+regression run, not a side effect of the networking build.
+
+**A duplicate Lily Stein test profile in prod: `91e418e9`.** Found while
+checking which profile fields are populated. Not touched. Worth cleaning up
+alongside the Lukas duplicate `c902cde4`, and worth doing before the brief
+reaches prod: a coach picking the wrong Lily would brief a campaign against an
+empty profile and the prefill would silently produce nothing.
 **The "ingest silent" staleness alert fires falsely.** On 2026-09-25 at 05:00
 it emailed `[SIGNAL] ingest silent for 109h`, two hours after the Greenhouse
 sweep ran at 03:01 and half an hour after SmartRecruiters ran at 04:30. Both

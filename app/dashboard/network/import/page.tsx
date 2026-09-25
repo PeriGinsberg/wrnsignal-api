@@ -97,6 +97,16 @@ export default function ImportPage() {
   const [err, setErr] = useState<string | null>(null)
   const [result, setResult] = useState<Result | null>(null)
   const [confirmed, setConfirmed] = useState(false)
+
+  // WHICH CAMPAIGN THIS LIST IS FOR.
+  //
+  // Defaulted, not demanded. A client has one campaign running at a time, and
+  // making the coach answer a question whose answer is almost always the top
+  // of the list would put a toll on an action that worked before campaigns
+  // existed. The picker only appears when there is more than one, or when the
+  // coach wants to see what it chose.
+  const [campaigns, setCampaigns] = useState<{ id: string; name: string; submitted_at: string | null }[]>([])
+  const [campaignId, setCampaignId] = useState<string>("")
   // The Networking Plan is a second act on the SAME file, which the page still
   // holds, so the coach does not have to find the workbook again.
   const [plan, setPlan] = useState<PlanJob | null>(null)
@@ -128,6 +138,29 @@ export default function ImportPage() {
       } catch {
         // The preview will supply the name a moment later; a failed roster
         // lookup should not block the page.
+      }
+    })()
+    return () => { alive = false }
+  }, [])
+
+  // The client's open campaigns, newest first. A board with none is the
+  // ordinary case at cutover and the picker simply does not appear.
+  useEffect(() => {
+    const id = subjectId()
+    if (!id) return
+    let alive = true
+    void (async () => {
+      try {
+        const res = await authFetch(`/api/coach/briefs?client_profile_id=${encodeURIComponent(id)}`)
+        const j = await res.json().catch(() => ({}))
+        const open = (j?.briefs ?? []).filter((b: any) => b.status === "submitted")
+        if (!alive) return
+        setCampaigns(open)
+        // The newest is what this upload is almost certainly for.
+        if (open[0]) setCampaignId(open[0].id)
+      } catch {
+        // No campaign attached, which is what every import did before
+        // campaigns existed. The import still works.
       }
     })()
     return () => { alive = false }
@@ -172,6 +205,9 @@ export default function ImportPage() {
       form.append("headerRow", String(preview.headerRow))
       form.append("mapping", JSON.stringify(mapping))
       if (preview.subject.name) form.append("confirmName", preview.subject.name)
+      // Sent only when the coach chose one. Empty means "work it out", which
+      // is the most recent open campaign.
+      if (campaignId) form.append("brief_id", campaignId)
       const { res, j } = await authForm("/api/network/import/commit", form)
       if (!res.ok || !j?.ok) throw new Error(j?.error || `Import failed (${res.status})`)
       setResult(j)
@@ -188,6 +224,7 @@ export default function ImportPage() {
     try {
       const form = new FormData()
       form.append("file", file)
+      if (campaignId) form.append("brief_id", campaignId)
       const { res, j } = await authForm("/api/network/plan/run", form)
       if (!res.ok || !j?.ok) throw new Error(j?.error || `Plan failed (${res.status})`)
       setPlan(j.job)
@@ -554,6 +591,25 @@ export default function ImportPage() {
                       These {dry.summary.create} contacts belong to <strong>{boardName ?? "this client"}</strong> and should be added to their networking board.
                     </span>
                   </label>
+
+                  {campaigns.length > 0 && (
+                    <div style={{ marginTop: 14 }}>
+                      <div style={{ ...eyebrow, color: T.MUTED, marginBottom: 6 }}>Campaign</div>
+                      <select
+                        value={campaignId}
+                        onChange={(e) => setCampaignId(e.target.value)}
+                        style={{ ...selectStyle, minWidth: 260 }}
+                      >
+                        {campaigns.map((c) => (
+                          <option key={c.id} value={c.id} style={selectOption}>{c.name}</option>
+                        ))}
+                        {/* An upload that belongs to no campaign is a real
+                            answer, not an oversight: the list may predate the
+                            brief or be a one-off. */}
+                        <option value="" style={selectOption}>No campaign</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
               )}
 

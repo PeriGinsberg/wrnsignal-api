@@ -16,7 +16,8 @@
 // processed_at, which is visible and replayable.
 
 import type { SupabaseClient } from "@supabase/supabase-js"
-import { createTask, setTaskStatus, type ServiceResult } from "../tasks/service"
+import { createTask, emitTaskEvent, setTaskStatus, type ServiceResult } from "../tasks/service"
+import { sendTaskReopenedEmail } from "../email/sendTaskEmails"
 import type { Task } from "../tasks/model"
 
 export type RuleAction = "create_task" | "complete_task" | "reopen_task"
@@ -165,10 +166,18 @@ async function applyRule(
 
   // reopen_task. The note is the whole point: Request Changes reopens task one
   // and the reason has to travel with it.
+  const note = ev.payload?.note ? String(ev.payload.note) : null
   const r: ServiceResult<Task> = await setTaskStatus(db, target.id, "open", null, {
-    note: ev.payload?.note ? String(ev.payload.note) : "Reopened automatically",
+    note: note ?? "Reopened automatically",
   })
-  return r.ok ? { outcome: "reopened", detail: target.id } : { outcome: "error", detail: r.error }
+  if (!r.ok) return { outcome: "error", detail: r.error }
+
+  // AND THE PERSON WHO HAS TO ACT ON IT IS TOLD. A task that quietly comes
+  // back sits in a list the builder has already stopped looking at, and the
+  // reviewer ends up chasing it by hand. Awaited, because a floating promise
+  // on a serverless function is dropped when the request ends.
+  await sendTaskReopenedEmail(db, target.id, note)
+  return { outcome: "reopened", detail: target.id }
 }
 
 /**
@@ -274,4 +283,31 @@ export async function drain(
     }
   }
   return all
+}
+
+/**
+ * Emit an event and immediately work the queue.
+ *
+ * THE CHAIN SHOULD MOVE WHILE THE COACH IS STILL LOOKING AT THE SCREEN. A
+ * coach who ticks "Create Networking Campaign" and does not see the review task
+ * appear has no way to tell a working system from a broken one, and the cron
+ * that would eventually produce it runs every half hour.
+ *
+ * The drain is wrapped, because it must never fail the write that emitted. The
+ * event row is already appended by that point, so a failure here means the
+ * cron picks it up later, which is exactly the fallback the cron is for.
+ */
+export async function emitAndRun(
+  db: SupabaseClient,
+  eventKey: string,
+  payload: Record<string, unknown>,
+  clientProfileId: string | null,
+): Promise<RunResult[]> {
+  await emitTaskEvent(db, eventKey, payload, clientProfileId)
+  try {
+    return await drain(db)
+  } catch (e: any) {
+    console.error(`[automation] drain after ${eventKey} failed:`, e?.message ?? e)
+    return []
+  }
 }

@@ -44,6 +44,10 @@ export function TaskList({
   editable = false,
 }: TaskListProps) {
   const [tasks, setTasks] = useState<Task[] | null>(null)
+  // Which template each task came from, and what closes it. Sent with the
+  // list so the row does not have to guess from the title which tasks are
+  // decided rather than ticked.
+  const [templates, setTemplates] = useState<Record<string, { key: string; decision_options: string[] | null }>>({})
   const [assignees, setAssignees] = useState<Assignee[]>([])
   const [clients, setClients] = useState<Array<{ id: string; name: string }>>([])
   const [error, setError] = useState<string | null>(null)
@@ -55,8 +59,10 @@ export function TaskList({
     try {
       const p = new URLSearchParams({ assignee, status: "open", view: "all" })
       if (client) p.set("client", client)
-      const j = await apiJson<{ tasks: Task[] }>(`/api/coach/tasks?${p.toString()}`)
+      const j = await apiJson<{ tasks: Task[]; templates?: Record<string, { key: string; decision_options: string[] | null }> }>(
+        `/api/coach/tasks?${p.toString()}`)
       setTasks(j.tasks)
+      setTemplates(j.templates ?? {})
       setError(null)
     } catch (e: any) {
       setError(e?.message ?? String(e))
@@ -92,6 +98,42 @@ export function TaskList({
         method: "PATCH",
         body: JSON.stringify({ status: next ? "done" : "open" }),
       })
+    } catch (e: any) {
+      setTasks(before)
+      setError(e?.message ?? String(e))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  /**
+   * Approve, or send it back.
+   *
+   * REQUEST CHANGES ASKS FOR THE NOTE HERE, before the request goes out. The
+   * server rejects a note-less request_changes, and meeting that as a red
+   * error after the click would be a worse way to learn it. The note is what
+   * reopens the previous task and what gets emailed to whoever has to redo it.
+   */
+  async function decide(task: Task, decision: string) {
+    let note: string | null = null
+    if (decision === "request_changes") {
+      note = window.prompt("What needs changing? This goes back with the task.")
+      // Cancelled, or left empty. Not an error: the coach changed their mind.
+      if (note === null || !note.trim()) return
+    }
+
+    setBusy(task.id)
+    const before = tasks
+    setTasks((ts) => (ts ?? []).filter((t) => t.id !== task.id))
+    try {
+      await apiJson(`/api/coach/tasks/${task.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "done", decision, note }),
+      })
+      // RE-READ, because the decision creates or reopens another task and the
+      // list has to show it. The route drains the queue before answering, so
+      // by the time this runs the new row exists.
+      await load()
     } catch (e: any) {
       setTasks(before)
       setError(e?.message ?? String(e))
@@ -152,6 +194,8 @@ export function TaskList({
                 assigneeName={assigneeName(t.assignee_profile_id)}
                 busy={busy === t.id}
                 onToggleDone={toggleDone}
+                decisionOptions={t.template_id ? templates[t.template_id]?.decision_options : null}
+                onDecide={decide}
                 onEdit={editable ? setEditing : undefined}
                 onDelete={editable ? remove : undefined}
               />

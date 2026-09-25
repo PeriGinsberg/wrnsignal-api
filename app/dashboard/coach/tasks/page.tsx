@@ -45,6 +45,9 @@ const darkSelect: React.CSSProperties = {
 
 export default function CoachTasksPage() {
   const [tasks, setTasks] = useState<Task[] | null>(null)
+  // What closes each task, from its template. A review task is approved or
+  // sent back rather than ticked, and this is the only place that is recorded.
+  const [templates, setTemplates] = useState<Record<string, { key: string; decision_options: string[] | null }>>({})
   const [assignees, setAssignees] = useState<Assignee[]>([])
   const [me, setMe] = useState<string | null>(null)
   const [clients, setClients] = useState<ClientOpt[]>([])
@@ -81,8 +84,10 @@ export default function CoachTasksPage() {
 
   const load = useCallback(async () => {
     try {
-      const j = await apiJson<{ tasks: Task[] }>(`/api/coach/tasks?${query}`)
+      const j = await apiJson<{ tasks: Task[]; templates?: Record<string, { key: string; decision_options: string[] | null }> }>(
+        `/api/coach/tasks?${query}`)
       setTasks(j.tasks)
+      setTemplates(j.templates ?? {})
       setError(null)
     } catch (e: any) {
       setError(e?.message ?? String(e))
@@ -136,6 +141,38 @@ export default function CoachTasksPage() {
       if (status !== "all") void load()
     } catch (e: any) {
       setTasks(before)
+      setError(e?.message ?? String(e))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  /**
+   * Approve, or send it back with a note.
+   *
+   * THE NOTE IS ASKED FOR HERE, not rejected by the server afterwards. It is
+   * what reopens the earlier task and what gets emailed to the person who has
+   * to redo the work, so "sent back, no reason" is not a state worth allowing.
+   */
+  async function decide(task: Task, decision: string) {
+    let note: string | null = null
+    if (decision === "request_changes") {
+      note = window.prompt("What needs changing? This goes back with the task.")
+      if (note === null || !note.trim()) return
+    }
+
+    setBusy(task.id)
+    try {
+      await apiJson(`/api/coach/tasks/${task.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "done", decision, note }),
+      })
+      // NOT OPTIMISTIC, unlike the tick. A decision creates or reopens another
+      // task, so the list after it is not the list before it with one row
+      // changed. The route drains the chain before answering, so a re-read
+      // here shows the task the decision produced.
+      await load()
+    } catch (e: any) {
       setError(e?.message ?? String(e))
     } finally {
       setBusy(null)
@@ -252,6 +289,8 @@ export default function CoachTasksPage() {
                 assigneeName={assigneeName(t.assignee_profile_id)}
                 busy={busy === t.id}
                 onToggleDone={toggleDone}
+                decisionOptions={t.template_id ? templates[t.template_id]?.decision_options : null}
+                onDecide={decide}
                 onEdit={setEditing}
                 onDelete={remove}
               />

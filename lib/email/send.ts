@@ -85,29 +85,40 @@ export async function sendToClient(args: {
 }
 
 /**
- * Send a coach-facing template: task assignment, reassignment, the digest.
+ * Send a coach-facing template: task assignment, the reopen, the digest.
  *
- * No redirect and no signature. Internal mail goes to three known addresses
- * that always open it, and signing a task notification as the founder would be
- * odd. It rides the internal stream so a bounce on a client address cannot
- * affect its deliverability, and vice versa.
+ * NO SIGNATURE. Signing a task notification as the founder would be odd. It
+ * rides the internal stream so a bounce on a client address cannot affect its
+ * deliverability, and vice versa.
+ *
+ * REDIRECTED OUTSIDE PRODUCTION, exactly like client mail, and for a sharper
+ * reason than politeness. The coaches a dev database assigns work to are the
+ * REAL ones: dev carries a copy of production's profiles, so a smoke test that
+ * creates three tasks sends three genuine "you have a new task" emails to
+ * people who do not have those tasks. Mail about work that does not exist is
+ * worse than mail nobody reads, because it gets acted on.
  */
 export async function sendToCoach(args: {
   to: string
   templateAlias: string
   model: Record<string, unknown>
 }): Promise<SendResult> {
-  const to = String(args.to || "").trim()
-  if (!to) return { ok: false, error: "No email address for this coach." }
+  const intended = String(args.to || "").trim()
+  if (!intended) return { ok: false, error: "No email address for this coach." }
+
+  const production = isProduction()
+  const to = production ? intended : NON_PROD_REDIRECT
+  const subjectPrefix = production ? "" : `[${process.env.VERCEL_ENV ?? "local"} -> ${intended}] `
+
   try {
     const res = await getPostmarkClient().sendEmailWithTemplate({
       From: FROM_EMAIL,
       To: to,
       TemplateAlias: args.templateAlias,
       MessageStream: INTERNAL_STREAM,
-      TemplateModel: args.model,
+      TemplateModel: { ...args.model, subject_prefix: subjectPrefix },
     })
-    return { ok: true, to, redirected: false, messageId: res.MessageID }
+    return { ok: true, to, redirected: !production, messageId: res.MessageID }
   } catch (e: any) {
     return { ok: false, error: String(e?.message ?? e) }
   }

@@ -24,6 +24,7 @@ import { parseFile, dataRows, MAX_ROWS } from "@/lib/network-tracker/import-pars
 import { detectHeaderRow } from "@/lib/network-tracker/import-parse"
 import { resolveDelegation } from "@/lib/collab/delegation"
 import { sourceHash } from "@/lib/networking-plan/job"
+import { resolveBriefId } from "@/lib/briefs/resolve"
 import { matchOrCreateCompany } from "@/lib/network-tracker/company"
 import { buildSourceRows, loadBoardState, loadSubjectName } from "@/lib/network-tracker/import-load"
 import { resolveImport } from "@/lib/network-tracker/import-resolve"
@@ -59,6 +60,10 @@ export async function POST(req: NextRequest) {
     // checked against the board this request is actually authorised for. A
     // confirmation the server does not verify is decoration.
     const confirmedName = (form.get("confirmName") as string | null) ?? null
+    // Which campaign this upload belongs to. Optional: the import screen
+    // defaults it to the most recent open campaign and only sends an id when
+    // the coach picked a different one.
+    const briefIdParam = (form.get("brief_id") as string | null) ?? null
     const subjectName = await loadSubjectName(supabase, scope.subjectId)
     if (scope.actorRole === "coach") {
       if (!confirmedName) {
@@ -209,7 +214,7 @@ export async function POST(req: NextRequest) {
     // Best effort. The contacts are already imported by this point and a
     // missing plan source must not fail that, but it IS logged: a silent
     // no-op here is what made the first attempt look like it worked.
-    await savePlanSource(supabase, scope, buffer, filename).catch((e) => {
+    await savePlanSource(supabase, scope, buffer, filename, briefIdParam).catch((e) => {
       console.error("[import/commit] plan source not saved:", e?.message ?? e)
     })
 
@@ -255,6 +260,7 @@ async function savePlanSource(
   scope: { actorId: string; subjectId: string | number; actorRole: string },
   buffer: Buffer,
   filename: string,
+  briefId: string | null,
 ): Promise<void> {
   // A plan belongs to a coach-client relationship. An owner importing onto
   // their own board has none, and no plan.
@@ -279,6 +285,11 @@ async function savePlanSource(
     rows,
     source_hash: sourceHash(rows),
     file_name: filename,
+    // WHICH CAMPAIGN THIS LIST IS FOR. The screen may have asked; if it did
+    // not, it is the client's most recent open campaign, which is the one a
+    // coach uploading a list is almost always working on. Null is fine: a
+    // client with no campaign still has a list.
+    brief_id: await resolveBriefId(supabase, rel.id, briefId),
     uploaded_by_id: scope.actorId,
     updated_at: new Date().toISOString(),
   }, { onConflict: "coach_client_id" })

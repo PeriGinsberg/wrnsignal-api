@@ -38,7 +38,7 @@ export async function OPTIONS(req: NextRequest) { return corsOptionsResponse(req
 const TASK_COLUMNS =
   "id, title, description, client_profile_id, coach_client_id, assignee_profile_id, " +
   "created_by_profile_id, due_at, due_has_time, status, completed_at, source, template_id, " +
-  "chain_id, legacy_note_id, created_at, updated_at, deleted_at"
+  "chain_id, brief_id, decision, legacy_note_id, created_at, updated_at, deleted_at"
 
 export async function GET(req: NextRequest) {
   try {
@@ -94,6 +94,22 @@ export async function GET(req: NextRequest) {
     const all = (data ?? []) as unknown as Task[]
     const now = new Date()
 
+    // The templates behind whatever came back, keyed by id.
+    //
+    // WHY THE LIST NEEDS THEM. "Review Networking Campaign" is closed with
+    // Approve or Request Changes rather than a checkbox, and the only place
+    // that fact is recorded is coach_task_templates.decision_options. Without
+    // this the row would have to hard-code which titles get buttons, which is
+    // the chain-in-code the engine exists to avoid.
+    const templateIds = Array.from(new Set(all.map((t) => t.template_id).filter(Boolean))) as string[]
+    const { data: templateRows } = templateIds.length
+      ? await db.from("coach_task_templates").select("id, key, decision_options").in("id", templateIds)
+      : { data: [] as any[] }
+    const templates: Record<string, { key: string; decision_options: string[] | null }> = {}
+    for (const t of templateRows ?? []) {
+      templates[t.id] = { key: t.key, decision_options: t.decision_options ?? null }
+    }
+
     if (card) {
       // cardTasks does the banding and the cap. `total` is EVERY open task the
       // coach has, not the number shown, because the footer link reports how
@@ -104,11 +120,12 @@ export async function GET(req: NextRequest) {
         tasks: shown,
         total,
         has_more: total > CARD_LIMIT,
+        templates,
       }, 200)
     }
 
     const tasks = view === "all" ? all : all.filter((t) => matchesView(t, view, now))
-    return withCorsJson(req, { ok: true, tasks, total: tasks.length }, 200)
+    return withCorsJson(req, { ok: true, tasks, total: tasks.length, templates }, 200)
   } catch (err: any) {
     const msg = err?.message || String(err)
     console.error("[coach/tasks GET]", err?.stack || msg)

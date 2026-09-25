@@ -15,6 +15,7 @@ import { getSupabaseAdmin } from "@/lib/collab/identity"
 import { resolveCoach } from "@/app/api/_lib/coachAuth"
 import { isTaskStatus, validateTaskWrite, type Task } from "@/lib/tasks/model"
 import { deleteTask, reassignTask, setTaskStatus, updateTask } from "@/lib/tasks/service"
+import { drain } from "@/lib/automation/run"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -58,12 +59,39 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ta
       if (!isTaskStatus(body.status)) {
         return withCorsJson(req, { ok: false, error: "Unknown status." }, 400)
       }
+
+      // REQUEST CHANGES WITHOUT A REASON IS NOT A DECISION. It reopens work
+      // for somebody else, and "this came back, no note" is the message they
+      // would otherwise get. Approve needs no note: approval says everything.
+      if (body.decision === "request_changes" && !String(body?.note ?? "").trim()) {
+        return withCorsJson(req, {
+          ok: false,
+          error: "Say what needs changing. The note is what goes back with the task.",
+        }, 400)
+      }
+
       const r = await setTaskStatus(db, taskId, body.status, coachProfileId, {
         note: body?.note ?? null,
         decision: body?.decision ?? null,
       })
       if (!r.ok) return withCorsJson(req, { ok: false, error: r.error }, r.status)
       task = r.data
+
+      // WORK THE QUEUE BEFORE ANSWERING. setTaskStatus appends the event; if
+      // nothing drained it here the next task in the chain would appear only
+      // when the half-hourly cron ran, and the coach who just pressed Approve
+      // would be looking at a screen that showed nothing happening.
+      //
+      // Wrapped: the status change is already saved, and a rule that throws
+      // must not turn a successful tick into an error. The cron is the
+      // fallback.
+      if (body.status === "done") {
+        try {
+          await drain(db)
+        } catch (e: any) {
+          console.error("[coach/tasks PATCH] drain failed:", e?.message ?? e)
+        }
+      }
     }
 
     if (!task) return withCorsJson(req, { ok: false, error: "Nothing to change." }, 400)

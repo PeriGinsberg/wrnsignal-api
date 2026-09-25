@@ -16,6 +16,7 @@
 //      day somebody adds a fifth route, the history quietly stops recording.
 
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { sendTaskAssignedEmail } from "../email/sendTaskEmails"
 import {
   completionPatch,
   type Task,
@@ -159,6 +160,10 @@ export async function createTask(
 
   const task = data as unknown as Task
   await recordEvent(db, task.id, "created", actor, null, { source })
+  // Awaited rather than fired and forgotten: on a serverless function the
+  // request can end before a floating promise resolves, and the email would be
+  // dropped silently. It never throws, so awaiting costs only the latency.
+  await sendTaskAssignedEmail(db, task.id, actor)
   return { ok: true, data: task }
 }
 
@@ -281,6 +286,7 @@ export async function reassignTask(
   // from and to are both recorded: "who had this before" is the question asked
   // when work goes missing, and the new row alone cannot answer it.
   await recordEvent(db, taskId, "reassigned", actor, note ?? null, { from, to: toProfileId })
+  await sendTaskAssignedEmail(db, taskId, actor, { reassignment: true })
   return { ok: true, data: data as unknown as Task }
 }
 
