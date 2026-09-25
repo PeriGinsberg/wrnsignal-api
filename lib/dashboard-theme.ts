@@ -27,6 +27,19 @@ export const T = {
   // product already uses (JobFit's Review pill), reused rather than inventing a
   // second one; the two never appear on the same screen.
   GOLD: "#D4A444",
+
+  // Task-surface accents, added 2026-09-26 for the task list and the
+  // condensed Action Items row. DELIBERATELY NOT the WRN_* values above:
+  // these are more saturated, and none of the four already existed here.
+  // Named by role rather than by hue so the meaning survives a repaint.
+  /** Column headers. Small uppercase. */
+  TASK_HEADER: "#009BFF",
+  /** Overdue: the row border and the due chip. NEVER body text. */
+  TASK_OVERDUE: "#FF6B00",
+  /** Done: the status pill and the tick. */
+  TASK_DONE: "#00B3B3",
+  /** Open: the status pill outline. */
+  TASK_OPEN: "#B6F2F8",
   GOLD_BG: "rgba(212,164,68,0.22)",
   ERROR: "rgba(255,120,120,0.95)",
   SUCCESS: "#4ade80",

@@ -1,21 +1,25 @@
 "use client"
 
 // The full task list: views, filters, search, and add / edit / delete /
-// reassign.
+// reassign, laid out as a table.
 //
 // The four view tabs are applied on the server, by the same predicates the
-// dashboard card and the overdue digest use, so all three agree about what
+// dashboard card and the coming digest use, so all three agree about what
 // "overdue" means. Everything else here is a plain column filter.
 //
 // ASSIGNEE DEFAULTS TO ME. A coach arriving at this page wants their own work;
 // showing everyone's by default makes it useless on arrival.
+//
+// The rows themselves are TaskRow, shared with the condensed Action Items card
+// so the two surfaces cannot drift apart.
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { T, btnPrimary, btnSecondary, card, eyebrow, input, select } from "../../../../lib/dashboard-theme"
-import { TASK_VIEWS, isOverdue, type Task, type TaskView } from "../../../../lib/tasks/model"
+import { T, btnPrimary, btnSecondary, card, input } from "../../../../lib/dashboard-theme"
+import { TASK_VIEWS, type Task, type TaskView } from "../../../../lib/tasks/model"
 import { BackToDashboard } from "../BackToDashboard"
 import { TaskFormModal } from "../_tasks/TaskFormModal"
-import { apiJson, formatDue, linkifyParts, type Assignee } from "../_tasks/taskClient"
+import { TaskRow, TaskRowHeader, TaskRowStyles } from "../_tasks/TaskRow"
+import { apiJson, type Assignee } from "../_tasks/taskClient"
 
 const VIEW_LABEL: Record<TaskView, string> = {
   all: "All",
@@ -26,12 +30,26 @@ const VIEW_LABEL: Record<TaskView, string> = {
 
 type ClientOpt = { id: string; name: string }
 
+// The shared `select` style in dashboard-theme is explicitly white, and it is
+// used across the whole app, so it is left alone and this page gets its own.
+// colorScheme:"dark" is the part that matters: it is what makes the native
+// dropdown panel dark, which no amount of styling the <select> box can do.
+const darkSelect: React.CSSProperties = {
+  ...input,
+  background: T.CARD,
+  color: T.TEXT,
+  border: `1px solid ${T.BORDER}`,
+  colorScheme: "dark",
+  cursor: "pointer",
+}
+
 export default function CoachTasksPage() {
   const [tasks, setTasks] = useState<Task[] | null>(null)
   const [assignees, setAssignees] = useState<Assignee[]>([])
   const [me, setMe] = useState<string | null>(null)
   const [clients, setClients] = useState<ClientOpt[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState<string | null>(null)
 
   const [view, setView] = useState<TaskView>("all")
   const [assignee, setAssignee] = useState("me")
@@ -91,6 +109,53 @@ export default function CoachTasksPage() {
     })()
   }, [])
 
+  const clientName = (id: string | null) => (id && clients.find((c) => c.id === id)?.name) || null
+  // First name only in the assignee column: the full name pushes the column
+  // wide enough to squeeze the title, which is the one that matters.
+  const assigneeName = (id: string | null) => {
+    const full = (id && assignees.find((a) => a.id === id)?.name) || null
+    return full ? full.split(/\s+/)[0] : null
+  }
+
+  async function toggleDone(task: Task, next: boolean) {
+    setBusy(task.id)
+    const before = tasks
+    // Optimistic, because the coach has already decided. The row stays put and
+    // changes state rather than vanishing: under "All" it should still be
+    // there, ticked.
+    setTasks((ts) => (ts ?? []).map((t) => t.id === task.id
+      ? { ...t, status: next ? "done" : "open", completed_at: next ? new Date().toISOString() : null }
+      : t))
+    try {
+      await apiJson(`/api/coach/tasks/${task.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: next ? "done" : "open" }),
+      })
+      // A status filter is showing a subset, so what qualifies may have
+      // changed underneath the edit.
+      if (status !== "all") void load()
+    } catch (e: any) {
+      setTasks(before)
+      setError(e?.message ?? String(e))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  async function remove(task: Task) {
+    setBusy(task.id)
+    const before = tasks
+    setTasks((ts) => (ts ?? []).filter((t) => t.id !== task.id))
+    try {
+      await apiJson(`/api/coach/tasks/${task.id}`, { method: "DELETE" })
+    } catch (e: any) {
+      setTasks(before)
+      setError(e?.message ?? String(e))
+    } finally {
+      setBusy(null)
+    }
+  }
+
   function upsert(t: Task) {
     setTasks((ts) => {
       const list = ts ?? []
@@ -102,11 +167,9 @@ export default function CoachTasksPage() {
     })
   }
 
-  const nameOf = (id: string | null) =>
-    (id && assignees.find((a) => a.id === id)?.name) || "Unassigned"
-
   return (
-    <div style={{ padding: "24px 20px", maxWidth: 1000, margin: "0 auto" }}>
+    <div style={{ padding: "24px 20px", maxWidth: 1180, margin: "0 auto" }}>
+      <TaskRowStyles />
       <BackToDashboard />
 
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginTop: 8 }}>
@@ -124,8 +187,8 @@ export default function CoachTasksPage() {
               ...btnSecondary,
               padding: "6px 14px",
               fontWeight: view === v ? 700 : 500,
-              borderColor: view === v ? (T.WRN_ORANGE) : undefined,
-              color: view === v ? (T.WRN_ORANGE) : undefined,
+              borderColor: view === v ? T.TASK_HEADER : undefined,
+              color: view === v ? T.TASK_HEADER : undefined,
             }}
           >
             {VIEW_LABEL[v]}
@@ -134,8 +197,8 @@ export default function CoachTasksPage() {
       </div>
 
       {/* Filters */}
-      <div style={{ ...card, padding: 14, marginTop: 14, display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}>
-        <select style={select} value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+      <div style={{ ...card, padding: 14, marginTop: 14, display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}>
+        <select style={darkSelect} value={assignee} onChange={(e) => setAssignee(e.target.value)}>
           <option value="me">Assigned to me</option>
           <option value="all">Anyone</option>
           {assignees.filter((a) => a.id !== me).map((a) => (
@@ -143,19 +206,19 @@ export default function CoachTasksPage() {
           ))}
         </select>
 
-        <select style={select} value={status} onChange={(e) => setStatus(e.target.value)}>
+        <select style={darkSelect} value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="open">Open</option>
           <option value="done">Done</option>
           <option value="cancelled">Cancelled</option>
           <option value="all">Any status</option>
         </select>
 
-        <select style={select} value={client} onChange={(e) => setClient(e.target.value)}>
+        <select style={darkSelect} value={client} onChange={(e) => setClient(e.target.value)}>
           <option value="">Any client</option>
           {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
 
-        <select style={select} value={source} onChange={(e) => setSource(e.target.value)}>
+        <select style={darkSelect} value={source} onChange={(e) => setSource(e.target.value)}>
           <option value="">Any source</option>
           <option value="manual">Added by a person</option>
           <option value="auto">Created automatically</option>
@@ -177,47 +240,25 @@ export default function CoachTasksPage() {
         </p>
       )}
 
-      <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8 }}>
-        {(tasks ?? []).map((t) => {
-          const late = isOverdue(t)
-          return (
-            <div
-              key={t.id}
-              style={{
-                ...card, padding: 14, display: "flex", gap: 12, alignItems: "flex-start",
-                borderLeft: `3px solid ${late ? T.ERROR : "transparent"}`,
-              }}
-            >
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, color: T.TEXT, wordBreak: "break-word" }}>{t.title}</div>
-
-                {t.description && (
-                  <p style={{ fontSize: 13, color: T.MUTED, margin: "6px 0 0 0", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                    {linkifyParts(t.description).map((p, i) =>
-                      p.kind === "link" ? (
-                        <a key={i} href={p.value} target="_blank" rel="noopener noreferrer"
-                           style={{ color: T.WRN_ORANGE }}>{p.value}</a>
-                      ) : (
-                        <span key={i}>{p.value}</span>
-                      ),
-                    )}
-                  </p>
-                )}
-
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 8, fontSize: 12, color: late ? T.ERROR : T.MUTED }}>
-                  <span>{late ? "Overdue: " : ""}{formatDue(t)}</span>
-                  <span style={{ color: T.MUTED }}>{nameOf(t.assignee_profile_id)}</span>
-                  {t.status !== "open" && <span style={{ color: T.MUTED }}>{t.status}</span>}
-                  {/* Said plainly so a coach knows a rule put this here, not a person. */}
-                  {t.source === "auto" && <span style={{ color: T.MUTED }}>added automatically</span>}
-                </div>
-              </div>
-
-              <button style={{ ...btnSecondary, padding: "6px 12px" }} onClick={() => setEditing(t)}>Edit</button>
-            </div>
-          )
-        })}
-      </div>
+      {tasks !== null && tasks.length > 0 && (
+        <div style={{ marginTop: 18 }}>
+          <TaskRowHeader />
+          <div style={{ marginTop: 8 }}>
+            {tasks.map((t) => (
+              <TaskRow
+                key={t.id}
+                task={t}
+                clientName={clientName(t.client_profile_id)}
+                assigneeName={assigneeName(t.assignee_profile_id)}
+                busy={busy === t.id}
+                onToggleDone={toggleDone}
+                onEdit={setEditing}
+                onDelete={remove}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {(creating || editing) && (
         <TaskFormModal
