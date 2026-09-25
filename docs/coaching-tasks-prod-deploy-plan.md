@@ -20,7 +20,7 @@ ordering constraint that the rest of the plan depends on.
 | `d106574f` | action item becomes a task; old endpoint retired |
 | *(pending)* | client-page Tasks tab; action-item note type closed |
 
-Four migrations, none of which exist on prod today. Verified absent:
+Six migrations, none of which exist on prod today. Verified absent:
 `coach_tasks`, `coach_task_events`, `coach_task_templates`,
 `coach_automation_events` and `coach_automation_rules` all return PGRST205, and
 `networking_plan_jobs.client_email_*` returns 42703.
@@ -29,34 +29,58 @@ Four migrations, none of which exist on prod today. Verified absent:
 
 ## 2. Migration order, and why it is this order
 
-Run all four **before** promoting. The deployed code reads these tables on the
+Run all six **before** promoting. The deployed code reads these tables on the
 coach dashboard, so code-first means every coach sees errors until the SQL
 lands.
 
 ```
-1.  20260926_coach_tasks.sql            tables, indexes, RLS
-2.  20260926_coach_task_automation.sql  templates, rules, events, FK on coach_tasks
-3.  20260926_coach_tasks_backfill.sql   the 55 action items
-4.  20260926_plan_client_email.sql      4 nullable columns on networking_plan_jobs
+1.  20260926_coach_tasks.sql             tables, indexes, RLS
+2.  20260926_coach_task_automation.sql   templates, rules, events, FK on coach_tasks
+3.  20260926_coach_tasks_backfill.sql    the 55 action items
+4.  20260926_plan_client_email.sql       4 nullable columns on networking_plan_jobs
+5.  20260926_plan_jobs_reshare.sql       partial unique index on the plan jobs
+6.  20260926_plan_sources.sql            networking_plan_sources
 ```
 
-2 must follow 1: it adds a foreign key to `coach_tasks.template_id`, and the
-column has to exist first. 3 must follow 1 for the obvious reason. 4 is
-independent and can run at any point.
+Six, not four. Five and six landed after this plan was first written:
 
-All four are re-runnable and were re-run on dev to prove it. `CREATE POLICY` and
+- **5** narrows `uq_networking_plan_jobs_source` to `WHERE shared_at IS NULL`.
+  Without it, generating a plan returns the previously shared job and the
+  screen claims a share the coach never made. It DROPS the old index and
+  creates the partial one, so it is the only migration here that is not purely
+  additive. Reversible while no client has two rows for one source hash.
+- **6** adds `networking_plan_sources`, which stores the "Outreach Messages"
+  rows at import so Build Networking Plan works without re-uploading the
+  workbook.
+
+2 must follow 1: it adds a foreign key to `coach_tasks.template_id`, and the
+column has to exist first. 3 must follow 1 for the obvious reason. 4, 5 and 6
+are independent of the task tables and of each other, but 5 touches
+`networking_plan_jobs` and 4 adds columns to it, so running them in listed
+order keeps one table's changes together.
+
+All six are re-runnable and were re-run on dev to prove it. `CREATE POLICY` and
 `ADD CONSTRAINT` have no `IF NOT EXISTS`, so they are guarded by hand:
 `DROP POLICY IF EXISTS` and a `pg_constraint` lookup. A second pass changes
 nothing rather than failing, which matters because prod has no migration tracker
 to tell you whether a file already ran.
 
-**How to run them.** `supabase db query --linked` points at dev, so it is the
-wrong tool here. Use the prod SQL editor, the same way the two GHL migrations
-were applied.
+**How to run them.** The CLI can target prod explicitly:
 
-Nothing in the four touches an existing table's data. The only write to
-existing rows is none: the backfill inserts into a new table and leaves
-`coach_client_notes` untouched.
+```
+npx supabase db query --linked --project-ref ejhnokcnahauvrcbcmic -f <file>
+```
+
+`--linked` alone points at DEV. Both flags together are required, and the CLI
+refuses `--project-ref` without `--linked`. Confirm the target before the
+first DDL with a query whose answer differs between the two databases, such as
+the action-item count: 55 on prod, 18 on dev. The prod SQL editor remains a
+fine alternative.
+
+Only migration 5 changes anything that already exists, and what it changes is
+an index rather than a row. No migration writes to an existing table's data:
+the backfill inserts into a new table and leaves `coach_client_notes`
+untouched.
 
 ---
 
