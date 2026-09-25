@@ -271,6 +271,42 @@ skipped entirely when a coach has none.
 
 ---
 
+### STANDING RULE: Notes are written by people, History is written by the system
+
+On a client page:
+
+- **Notes** holds only what a coach chose to type. Session recaps,
+  observations, anything a person decided was worth saying.
+- **History** holds everything that happened on its own. Tasks moving, a brief
+  submitted, a plan generated or shared, an email sent.
+
+**Nothing automatic is ever written to Notes again.** If a new feature wants to
+record that something happened, it calls `logCoachClientEvent` with a type from
+`lib/coach/clientEventTypes.ts` and adds the wording to `LABELS` in
+`HistoryTab.tsx`. That map is exhaustive over the union, so a new type without
+copy fails the typecheck instead of rendering its raw string to a coach.
+
+**Why it matters more than tidiness.** "Networking plan shared with client" sat
+in the note feed between a session recap and a coach's own observations, in the
+same typeface, with a coach's name on it. A reader cannot tell what a colleague
+decided from what the software did, and the note feed is where coaches go to
+remember what they said to someone. An audit line pretending to be a note
+devalues every real note around it.
+
+**Every History line says when and who.** Date and time, absolute, shown rather
+than on hover: "was the email before or after the share" is what an audit trail
+is opened to answer, and two lines both reading "3 days ago" cannot answer it.
+The actor is the coach's name, or **SIGNAL** when nothing chose it. A line with
+no attribution is the one thing an audit trail must not have.
+
+**Known violations still standing.** "SIGNAL invite sent" and "Account created"
+are written to Notes AND logged to History, so they appear twice. On prod that
+is 37 and 13 notes respectively, exactly matching the event counts. Stopping
+those writers and removing the duplicate notes is a separate, deliberate piece
+of work: it deletes 50 rows a coach can currently see.
+
+---
+
 ### STANDING RULE: coach mail is redirected outside production too
 
 `sendToCoach` redirects to `peri@workforcereadynow.com` and prefixes the

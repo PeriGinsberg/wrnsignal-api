@@ -7,7 +7,7 @@
 
 import { describe as suite, it, expect, afterEach, vi } from "vitest"
 import { render, screen, cleanup } from "@testing-library/react"
-import { HistoryTab, LABELS, actorLabel, describe, type CoachClientEvent } from "./HistoryTab"
+import { HistoryTab, LABELS, actorLabel, describe, stamp, type CoachClientEvent } from "./HistoryTab"
 import { COACH_CLIENT_EVENT_TYPES } from "../../../../../lib/coach/clientEventTypes"
 
 // The tab's token lookup needs a Supabase session; what it renders is the
@@ -79,15 +79,17 @@ suite("who did it", () => {
     expect(actorLabel(ev({ actor_name: "Erin Condon" }))).toBe("Erin Condon")
   })
 
-  it("calls a null actor System", () => {
-    expect(actorLabel(ev({ actor_profile_id: null, actor_name: null, actor_is_system: true }))).toBe("System")
+  it("calls a null actor SIGNAL", () => {
+    expect(actorLabel(ev({ actor_profile_id: null, actor_name: null, actor_is_system: true }))).toBe("SIGNAL")
   })
 
-  it("says nothing rather than guessing when the name could not be resolved", () => {
-    expect(actorLabel(ev({ actor_name: null }))).toBeNull()
+  // An unattributed line is the one thing an audit trail must not have, so an
+  // actor whose name could not be resolved still says who acted.
+  it("falls back to SIGNAL rather than leaving the line unattributed", () => {
+    expect(actorLabel(ev({ actor_name: null }))).toBe("SIGNAL")
   })
 
-  it("puts the actor on the row, beside the time", async () => {
+  it("puts the date, the time and the actor on the row", async () => {
     const events = [
       ev({ event_type: "workbook_created", actor_name: "Erin Condon", context: { title: "Session 1" } }),
       ev({ event_type: "homework_webhook_failed", actor_profile_id: null, actor_name: null, actor_is_system: true }),
@@ -97,7 +99,40 @@ suite("who did it", () => {
 
     render(<HistoryTab coachClientId="cc-1" />)
     expect(await screen.findByText("Workbook created · Session 1")).toBeTruthy()
-    expect(screen.getByText(/^Erin Condon · /)).toBeTruthy()
-    expect(screen.getByText(/^System · /)).toBeTruthy()
+    expect(screen.getByText(/ · Erin Condon$/)).toBeTruthy()
+    expect(screen.getByText(/ · SIGNAL$/)).toBeTruthy()
+  })
+
+  // The whole reason relative time was dropped: "3 days ago" twice cannot say
+  // which came first, and an audit trail is opened to answer exactly that.
+  it("shows an absolute stamp, not a relative one", () => {
+    const out = stamp("2026-09-25T15:59:10.000Z")
+    expect(out).toMatch(/2026/)
+    expect(out).toMatch(/\d{1,2}:\d{2}/)
+    expect(out).not.toMatch(/ago/)
+  })
+})
+
+suite("the chain events", () => {
+  it("names the task on every task line", () => {
+    expect(describe(ev({ event_type: "task_created", context: { title: "Create Networking Campaign" } })))
+      .toBe("Task created: Create Networking Campaign")
+  })
+
+  it("says how a review was closed", () => {
+    expect(describe(ev({ event_type: "task_completed", context: { title: "Review", decision: "approve" } })))
+      .toBe("Task completed: Review (approved)")
+    expect(describe(ev({ event_type: "task_completed", context: { title: "Review", decision: "request_changes" } })))
+      .toBe("Task completed: Review (changes requested)")
+  })
+
+  it("carries the Request Changes note onto the reopen", () => {
+    expect(describe(ev({ event_type: "task_reopened", context: { title: "Build", note: "Add five fintech contacts." } })))
+      .toBe("Task reopened: Build — Add five fintech contacts.")
+  })
+
+  it("names the recipient on a client email", () => {
+    expect(describe(ev({ event_type: "client_email_sent", context: { to: "marco@example.com", subject: "Your networking plan is ready" } })))
+      .toBe("Email sent to marco@example.com: Your networking plan is ready")
   })
 })

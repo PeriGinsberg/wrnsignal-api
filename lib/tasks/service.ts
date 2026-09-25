@@ -17,6 +17,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { sendTaskAssignedEmail } from "../email/sendTaskEmails"
+import { logCoachClientEvent } from "../../app/api/_lib/coachClientEvents"
 import {
   completionPatch,
   type Task,
@@ -105,6 +106,38 @@ export async function emitTaskEvent(
   if (error) console.error("[tasks] automation event failed:", eventKey, error.message)
 }
 
+/**
+ * Put a task movement on the client's History.
+ *
+ * THREE THINGS MAKE THIS WORTH ITS OWN FUNCTION. Every task mutation needs it,
+ * every one needs the same title-and-actor shape, and every one must survive
+ * it failing: logCoachClientEvent never throws, and a task that moved has
+ * moved whether or not the audit line landed.
+ *
+ * A task with no coach_client_id writes nothing. That is not a gap: an
+ * unscoped task belongs to no relationship, so there is no History to put it
+ * on.
+ *
+ * ACTOR NULL MEANS SIGNAL, which is exactly right for the chain: a rule
+ * created the task, and saying a coach did would credit them with a decision
+ * they never made.
+ */
+async function logTaskEvent(
+  db: SupabaseClient,
+  task: Pick<Task, "id" | "title" | "coach_client_id" | "brief_id">,
+  eventType: "task_created" | "task_completed" | "task_reopened" | "task_reassigned",
+  actor: ActorId | null,
+  extra: Record<string, unknown> = {},
+): Promise<void> {
+  if (!task.coach_client_id) return
+  await logCoachClientEvent({
+    coachClientId: task.coach_client_id,
+    eventType,
+    actorProfileId: actor,
+    context: { title: task.title, task_id: task.id, brief_id: task.brief_id ?? null, ...extra },
+  })
+}
+
 async function templateKeyOf(db: SupabaseClient, templateId: string | null): Promise<string | null> {
   if (!templateId) return null
   const { data } = await db.from("coach_task_templates").select("key").eq("id", templateId).maybeSingle()
@@ -160,6 +193,7 @@ export async function createTask(
 
   const task = data as unknown as Task
   await recordEvent(db, task.id, "created", actor, null, { source })
+  await logTaskEvent(db, task, "task_created", actor, { source })
   // Awaited rather than fired and forgotten: on a serverless function the
   // request can end before a floating promise resolves, and the email would be
   // dropped silently. It never throws, so awaiting costs only the latency.
@@ -237,6 +271,16 @@ export async function setTaskStatus(
   await recordEvent(db, task.id, kind, actor, opts.note ?? null,
     opts.decision ? { decision: opts.decision } : undefined)
 
+  // CANCELLED GETS NO HISTORY LINE. A coach saying "this is not happening" is
+  // a decision about their own list, not a thing that happened to the client.
+  if (status === "done" || status === "open") {
+    await logTaskEvent(db, task, status === "done" ? "task_completed" : "task_reopened", actor, {
+      ...(opts.decision ? { decision: opts.decision } : {}),
+      // The reason a task came back is the whole value of the reopen line.
+      ...(opts.note ? { note: opts.note } : {}),
+    })
+  }
+
   // Only a completion advances a chain. Cancelling is a coach saying the work
   // is not happening, and reopening is already the result of a rule.
   if (status === "done") {
@@ -286,6 +330,14 @@ export async function reassignTask(
   // from and to are both recorded: "who had this before" is the question asked
   // when work goes missing, and the new row alone cannot answer it.
   await recordEvent(db, taskId, "reassigned", actor, note ?? null, { from, to: toProfileId })
+
+  // The new owner is named, because "reassigned" without a destination tells a
+  // reader only that the work moved, not who to ask about it.
+  const { data: to } = await db.from("client_profiles").select("name").eq("id", toProfileId).maybeSingle()
+  await logTaskEvent(db, data as unknown as Task, "task_reassigned", actor, {
+    to_name: to?.name ?? null, to_profile_id: toProfileId, from_profile_id: from,
+  })
+
   await sendTaskAssignedEmail(db, taskId, actor, { reassignment: true })
   return { ok: true, data: data as unknown as Task }
 }

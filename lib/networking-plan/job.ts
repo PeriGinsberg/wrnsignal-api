@@ -35,6 +35,7 @@ import {
 } from "@/lib/drive/client"
 import { driveFileUrl } from "@/lib/drive/folderUrl"
 import { emitAndRun } from "@/lib/automation/run"
+import { logCoachClientEvent } from "@/app/api/_lib/coachClientEvents"
 import { buildPlanContent } from "./planData"
 import { renderPlanHtml } from "./render"
 import { htmlToPdf } from "./pdf"
@@ -276,6 +277,15 @@ export async function runPlanJob(
       coach_client_id: finished.coach_client_id,
     }, finished.client_profile_id)
 
+    // SIGNAL's own line, not a coach's. Building the PDF is machinery: the
+    // coach asked for a plan, they did not generate it by hand.
+    await logCoachClientEvent({
+      coachClientId: finished.coach_client_id,
+      eventType: "networking_plan_generated",
+      actorProfileId: null,
+      context: { job_id: finished.id, brief_id: finished.brief_id ?? null },
+    })
+
     return finished
   } catch (e: any) {
     const message = e instanceof DriveError ? `Drive: ${e.message}` : (e?.message ?? String(e))
@@ -384,37 +394,40 @@ export async function sharePlanJob(
 }
 
 /**
- * Write "Networking plan shared with client" onto the client's SIGNAL record.
+ * Record the share on the relationship's History.
  *
- * THE COACH AND THE TIMESTAMP ARE COLUMNS, NOT SENTENCE. coach_profile_id and
- * created_at are what the note feed already renders beside every other note, so
- * baking them into the body would print the byline twice and would freeze a
- * formatted date into text that no longer matches if it is ever re-rendered in
- * another timezone.
+ * THIS USED TO BE A NOTE, and that was the wrong tab. The Notes feed is what a
+ * coach chose to write down: session recaps, observations, things a person
+ * decided were worth saying. "Networking plan shared with client" happens
+ * whether or not anyone is watching, and sitting in that feed it read like
+ * something a colleague had typed. History is the audit trail, and this is an
+ * audit line.
  *
- * Never throws. The share has already succeeded by the time this runs.
+ * The actor is the coach on the relationship, because a coach pressed Share.
+ * Contrast the generated and email events, which no one chose and which are
+ * therefore SIGNAL's.
+ *
+ * Never throws: logCoachClientEvent swallows its own failures, and the share
+ * has already succeeded by the time this runs.
  */
 async function noteShareOnClientRecord(supabase: SupabaseClient, job: PlanJob): Promise<void> {
   const { data: cc, error: ccErr } = await supabase
     .from("coach_clients")
-    .select("coach_profile_id, client_profile_id")
+    .select("coach_profile_id")
     .eq("id", job.coach_client_id)
     .maybeSingle()
 
-  if (ccErr || !cc?.coach_profile_id) {
-    console.error("[networking-plan] share note skipped:", ccErr?.message ?? "no coach on the relationship")
-    return
-  }
+  if (ccErr) console.error("[networking-plan] share event: coach lookup failed:", ccErr.message)
 
-  const { error } = await supabase.from("coach_client_notes").insert({
-    coach_client_id: job.coach_client_id,
-    coach_profile_id: cc.coach_profile_id,
-    client_profile_id: cc.client_profile_id ?? job.client_profile_id,
-    type: "other",
-    body: "Networking plan shared with client",
+  await logCoachClientEvent({
+    coachClientId: job.coach_client_id,
+    eventType: "networking_plan_shared",
+    // A relationship with no coach on it still gets the line, attributed to
+    // SIGNAL. Dropping the record because the actor could not be resolved
+    // would lose the event that matters to keep the byline tidy.
+    actorProfileId: cc?.coach_profile_id ?? null,
+    context: { job_id: job.id, brief_id: job.brief_id ?? null },
   })
-
-  if (error) console.error("[networking-plan] share note failed:", error.message)
 }
 
 /**
@@ -558,6 +571,23 @@ export async function emailClientPlanReady(
 
   const { data } = await supabase.from("networking_plan_jobs")
     .update(patch).eq("id", job.id).select("*").single()
+
+  // ONLY A SEND GETS A LINE. A failure is already on the job row and shown on
+  // the plan bar, where the coach can act on it; putting it in History too
+  // would file a permanent record of something they are about to retry.
+  //
+  // THE RECIPIENT IS THE POINT. "An email went out" is worth little without
+  // "to whom", which is exactly the question asked when a client says they
+  // never received it.
+  if (sent.ok) {
+    await logCoachClientEvent({
+      coachClientId: job.coach_client_id,
+      eventType: "client_email_sent",
+      actorProfileId: null,
+      context: { to: sent.to, subject: "Your networking plan is ready", job_id: job.id },
+    })
+  }
+
   return (data ?? job) as PlanJob
 }
 

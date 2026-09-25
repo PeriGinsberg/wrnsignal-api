@@ -26,10 +26,20 @@ export type CoachClientEvent = {
   created_at: string
 }
 
-/** Who did it. A null actor is the system acting alone (a webhook, a job). */
-export function actorLabel(e: CoachClientEvent): string | null {
-  if (e.actor_is_system) return "System"
-  return e.actor_name
+/**
+ * Who or what did it.
+ *
+ * A null actor means nothing chose this: a rule fired, a job ran, a webhook
+ * landed. That is SIGNAL, and the timeline says so by name rather than
+ * "System", because a coach reading their own history should see the product
+ * they use and not a category of software.
+ *
+ * Never null. An event with an actor we cannot name still has to say who: an
+ * unattributed line in an audit trail is the one thing it must not have.
+ */
+export function actorLabel(e: CoachClientEvent): string {
+  if (e.actor_is_system) return "SIGNAL"
+  return e.actor_name || "SIGNAL"
 }
 
 // event_type (+ context) → a readable line. Falls back to the raw type for any
@@ -64,6 +74,34 @@ export const LABELS: Record<CoachClientEventType, (e: CoachClientEvent) => strin
   homework_complete: (e) =>
     e.context?.session ? `Session ${e.context.session} homework marked complete` : "Homework marked complete",
   homework_webhook_failed: () => "Homework notification to GoHighLevel failed",
+
+  campaign_brief_submitted: (e) =>
+    e.context?.name ? `Campaign brief submitted: ${e.context.name}` : "Campaign brief submitted",
+  // The title is the task. Without it the line says an unnamed something
+  // happened, which is the shape of an audit trail nobody reads.
+  task_created: (e) => `Task created: ${e.context?.title ?? "untitled"}`,
+  task_completed: (e) => {
+    const t = `Task completed: ${e.context?.title ?? "untitled"}`
+    if (e.context?.decision === "approve") return `${t} (approved)`
+    if (e.context?.decision === "request_changes") return `${t} (changes requested)`
+    return t
+  },
+  // THE NOTE IS THE POINT of a reopen. Request Changes sends work back, and
+  // the reason is what the next person needs; a timeline saying only that it
+  // came back makes them go and ask.
+  task_reopened: (e) => {
+    const t = `Task reopened: ${e.context?.title ?? "untitled"}`
+    return e.context?.note ? `${t} — ${e.context.note}` : t
+  },
+  task_reassigned: (e) =>
+    e.context?.to_name
+      ? `Task reassigned to ${e.context.to_name}: ${e.context?.title ?? "untitled"}`
+      : `Task reassigned: ${e.context?.title ?? "untitled"}`,
+  networking_plan_generated: () => "Networking plan generated",
+  networking_plan_shared: () => "Networking plan shared with client",
+  client_email_sent: (e) =>
+    e.context?.to ? `Email sent to ${e.context.to}: ${e.context?.subject ?? "networking plan"}`
+      : `Email sent: ${e.context?.subject ?? "networking plan"}`,
 }
 
 export function describe(e: CoachClientEvent): string {
@@ -74,10 +112,21 @@ export function describe(e: CoachClientEvent): string {
   // An event type the server knows and this build does not: show the raw type
   // rather than nothing, so it is visibly wrong instead of silently missing.
   const text = label ? label(e) : e.event_type
-  return name ? `${text} · ${name}` : text
+  // The suffix exists to name the subject of an event whose label is generic
+  // ("Workbook created · Session 1"). The task lines name it themselves,
+  // because a reopen has to read "Task reopened: Build - the reason" rather
+  // than pushing the title past the reason. Appending anyway printed the title
+  // twice, so a label that already said it wins.
+  return name && !text.includes(name) ? `${text} · ${name}` : text
 }
 
-// Relative time ("3 days ago"); the exact datetime rides along as a tooltip.
+// THE DATE AND THE TIME ARE SHOWN, not hidden in a tooltip.
+//
+// This used to render "3 days ago" with the real datetime on hover. Relative
+// time reads well on a feed and badly on a record: "was the email before or
+// after the share" is the question an audit trail is opened to answer, and two
+// lines both saying "3 days ago" cannot answer it. A tooltip cannot be read on
+// a phone at all.
 function relTime(iso: string): string {
   const t = new Date(iso).getTime()
   if (Number.isNaN(t)) return ""
@@ -97,6 +146,16 @@ function relTime(iso: string): string {
 function exactTime(iso: string): string {
   const d = new Date(iso)
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleString()
+}
+
+/** "25 Sep 2026, 11:59 AM" in the reader's own timezone. */
+export function stamp(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ""
+  return d.toLocaleString(undefined, {
+    day: "numeric", month: "short", year: "numeric",
+    hour: "numeric", minute: "2-digit",
+  })
 }
 
 // ── Auth (same inline pattern as EngagementsTab) ──
@@ -174,8 +233,8 @@ export function HistoryTab({ coachClientId }: { coachClientId: string | null }) 
           <span aria-hidden style={{ marginTop: 6, width: 6, height: 6, borderRadius: 999, background: T.DIM, flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, color: T.TEXT }}>{describe(e)}</div>
-            <div style={{ fontSize: 11, color: T.DIM, marginTop: 2 }} title={exactTime(e.created_at)}>
-              {actorLabel(e) ? `${actorLabel(e)} · ${relTime(e.created_at)}` : relTime(e.created_at)}
+            <div style={{ fontSize: 11, color: T.DIM, marginTop: 2 }} title={`${exactTime(e.created_at)} · ${relTime(e.created_at)}`}>
+              {stamp(e.created_at)} · {actorLabel(e)}
             </div>
           </div>
         </div>

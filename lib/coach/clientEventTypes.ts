@@ -35,6 +35,25 @@ export const COACH_CLIENT_EVENT_TYPES = [
   // Only the failure. A successful send always follows homework_complete by
   // under a second and is already stamped on workbooks.homework_webhook_at.
   "homework_webhook_failed",
+
+  // ── The coaching task chain ──
+  //
+  // THESE ARE AUDIT, NOT NOTES. A note is something a coach chose to write
+  // down; these happen whether or not anyone was watching. Mixing them put
+  // "Networking plan shared with client" into the note feed, where it sat
+  // between a session recap and a coach's own observations looking like
+  // something a person had typed.
+  "campaign_brief_submitted",
+  "task_created",
+  "task_completed",
+  "task_reopened",
+  "task_reassigned",
+  "networking_plan_generated",
+  "networking_plan_shared",
+  // The recipient rides in context. "An email went out" is worth little
+  // without "to whom", which is the question asked when a client says they
+  // never got it.
+  "client_email_sent",
 ] as const
 
 export type CoachClientEventType = (typeof COACH_CLIENT_EVENT_TYPES)[number]

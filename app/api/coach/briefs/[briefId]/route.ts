@@ -23,6 +23,7 @@ import {
 } from "@/lib/briefs/model"
 import { emitAndRun } from "@/lib/automation/run"
 import { resolveDelegation } from "@/lib/collab/delegation"
+import { logCoachClientEvent } from "@/app/api/_lib/coachClientEvents"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -145,6 +146,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ br
     // pointing at nothing.
     let started: string | null = null
     if (submitting) {
+      // The coach is the actor here: submitting a brief is a decision somebody
+      // made, unlike everything the chain does afterwards.
+      await logCoachClientEvent({
+        coachClientId: brief.coach_client_id,
+        eventType: "campaign_brief_submitted",
+        actorProfileId: coachProfileId,
+        context: { name: (data as any).name, brief_id: briefId },
+      })
+
       const results = await emitAndRun(db, "campaign_brief.submitted", {
         brief_id: briefId,
         coach_client_id: brief.coach_client_id,
