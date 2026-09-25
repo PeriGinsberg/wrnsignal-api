@@ -220,9 +220,36 @@ refuses a non-coach rather than assigning work to her.
 `https://wrnsignal.workforcereadynow.com`, and the value was read back to
 confirm it.
 
+`CRON_SECRET` is set on **Production** on `peri-ginsbergs-projects/wrnsignal-api`,
+confirmed in `vercel env ls production`. Both new cron routes refuse everything
+without it, and they fail CLOSED rather than open: an unset secret makes
+`authorised()` return false for every request, including one carrying the right
+header, so a misconfigured environment runs nothing instead of exposing the
+runner to the internet.
+
+`ANTHROPIC_API_KEY` is set on Production too, which the Campaign Brief needs:
+without it the form still opens and the profile read comes back as a stated
+error rather than an empty suggestion list.
+
 Nothing else is needed. `POSTMARK_API_KEY` and the Supabase keys are shared
 across all three environments already, which is exactly why the Preview
 deployment reads prod data and why the migrations must precede the promote.
+
+### Crons
+
+Both are declared in `vercel.json` and take effect on the promote.
+
+| Path | Schedule (UTC) | |
+|---|---|---|
+| `/api/internal/automation/run` | `*/30 * * * *` | Drains the automation queue. The safety net, not the primary path: every emit drains inline, so the chain moves while the coach is still on the screen. This catches an event whose inline drain failed. |
+| `/api/internal/tasks/overdue-digest` | `0 11 * * *` | One email per coach with overdue tasks. Coaches with none get nothing. |
+
+**The digest hour drifts by one, twice a year.** Vercel crons are UTC and do
+not follow a timezone, so `0 11` is 7am Eastern during daylight saving and 6am
+once it ends. Arriving an hour early in winter beats arriving an hour after the
+working day has started. The fix, if the hour ever matters more than the
+simplicity, is an hourly cron that returns early unless it is 7am in
+`America/New_York`.
 
 The `signal-client` and `signal-internal` Postmark streams and the
 `networking-plan-ready` template already exist **in production**: there is one
