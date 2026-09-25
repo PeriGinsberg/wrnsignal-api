@@ -343,3 +343,32 @@ verified safe change. The tag removal is Step 6, so there is time.
    only, so the task survives as an unscoped task.
 4. Who receives the digest for tasks assigned to a coach who is inactive?
    Assumed: nobody, and the assertion in step 4 flags it.
+
+---
+
+## 10. Backlog, found here, not fixed here
+
+Kept in this doc because there is no general backlog doc in the repo, and the
+only existing one (`docs/jobfit-ticket1-plan.md`) is JobFit-scoped. Move these
+if a real backlog lands.
+
+**Post-login redirect goes to the API host.** After a successful sign-in,
+`framer/prod/maincomponent.txt` does
+`window.top.location.replace("https://wrnsignal-api.vercel.app/dashboard")`.
+That is the Vercel project URL for the API, not a branded domain, so a client
+who signs in from the plan email ends the journey looking at
+`wrnsignal-api.vercel.app` in the address bar. It needs a branded domain.
+
+Two things make it worse than cosmetic, and both are why it is written down
+rather than left as a note in a commit:
+
+- The destination is **hardcoded and discards the original path**, which is why
+  the plan email links to `/signal/jobfit` rather than deep-linking anywhere.
+  A branded domain alone does not fix the deep-link problem; returning the user
+  to where they came from is a separate change.
+- It is the same class of problem `APP_BASE_URL` was added to solve, but on the
+  Framer side, where this repo's environment variables do not reach. Fixing it
+  means editing the Framer component in both dev and prod, per the house rule
+  that Framer code lives in `framer/dev` and `framer/prod` and gets mirrored.
+
+Deliberately not fixed as part of the task automation work.
