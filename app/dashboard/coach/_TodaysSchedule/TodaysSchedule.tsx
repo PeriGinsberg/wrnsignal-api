@@ -101,8 +101,19 @@ function IconCalendar() {
 function ScheduleCard({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ ...card, padding: 20, marginBottom: 20, position: "relative" }}>
+      {/* Matches the accent rule <Section> draws, by hand, because this card
+          predates that component and is not one. Teal is this section's
+          identity in the dashboard scheme. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute", top: 0, left: 0, right: 0, height: 3,
+          background: T.SECTION_SCHEDULE,
+          borderTopLeftRadius: 18, borderTopRightRadius: 18,
+        }}
+      />
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-        <span style={{ display: "inline-flex", color: T.WRN_ORANGE }}>
+        <span style={{ display: "inline-flex", color: T.SECTION_SCHEDULE }}>
           <IconCalendar />
         </span>
         <span style={{ fontSize: 16, fontWeight: 600, color: T.TEXT, letterSpacing: -0.2 }}>

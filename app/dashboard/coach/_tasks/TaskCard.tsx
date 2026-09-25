@@ -26,6 +26,20 @@ export function TaskCard() {
   const [total, setTotal] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
+  const [clients, setClients] = useState<Array<{ id: string; name: string }>>([])
+
+  // The card spans every client, so it has to resolve names the same way the
+  // full list does. Failure is silent: the column falls back to "No client"
+  // rather than taking the card down with it.
+  const loadClients = useCallback(async () => {
+    try {
+      const c = await apiJson<any>("/api/coach/clients")
+      const rows: any[] = c.clients ?? c.data ?? []
+      setClients(rows
+        .map((r) => ({ id: r.client_profile_id ?? r.id, name: r.name ?? r.client_name ?? r.invited_email ?? "Unnamed" }))
+        .filter((r) => r.id))
+    } catch { /* column shows "No client" */ }
+  }, [])
 
   const load = useCallback(async () => {
     try {
@@ -40,6 +54,7 @@ export function TaskCard() {
   }, [])
 
   useEffect(() => { void load() }, [load])
+  useEffect(() => { void loadClients() }, [loadClients])
 
   async function toggleDone(task: Task, next: boolean) {
     setBusy(task.id)
@@ -92,6 +107,7 @@ export function TaskCard() {
                 key={t.id}
                 task={t}
                 condensed
+                clientName={clients.find((c) => c.id === t.client_profile_id)?.name ?? null}
                 busy={busy === t.id}
                 onToggleDone={toggleDone}
               />

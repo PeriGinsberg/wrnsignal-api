@@ -564,7 +564,7 @@ function EngagementSignalsSection({ items, onItemClick, onShowAll, noBottomMargi
       title="Engagement Signals"
       titleHref="/dashboard/coach/required-actions"
       count={localItems.length}
-      accentColor={T.WRN_BLUE}
+      accentColor={T.SECTION_SIGNALS}
       noBottomMargin={noBottomMargin}
     >
       {localItems.length === 0 ? (
@@ -733,6 +733,7 @@ function MyClientsSection({
     <Section
       icon={<IconUsers />}
       title="My clients"
+      accentColor={T.SECTION_CLIENTS}
       titleHref="/dashboard/coach/clients"
       count={clients.length}
       headerRight={headerRight}
@@ -875,6 +876,7 @@ function MyProspectsSection({
     <Section
       icon={<IconUsers />}
       title="My prospects"
+      accentColor={T.SECTION_PROSPECTS}
       titleHref="/dashboard/coach/prospects"
       count={totalCount}
       headerRight={headerRight}
@@ -1078,7 +1080,7 @@ export default function CoachHomePage() {
           icon={<IconClipboardCheck />}
           title="Action Items"
           titleHref="/dashboard/coach/tasks"
-          accentColor={T.WRN_ORANGE}
+          accentColor={T.SECTION_ACTION_ITEMS}
           noBottomMargin
         >
           <TaskCard />

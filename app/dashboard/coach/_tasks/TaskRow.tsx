@@ -15,7 +15,11 @@ import { isDueToday, isOverdue, type Task } from "../../../../lib/tasks/model"
 import { formatDue } from "./taskClient"
 
 export const TASK_GRID_COLUMNS = "28px minmax(0, 1fr) 150px 130px 140px 96px 40px 76px"
-export const TASK_GRID_COLUMNS_CONDENSED = "28px minmax(0, 1fr) 120px 88px"
+// No status column in the condensed form. The card it serves shows only open
+// work, so an "Open" pill on every row states a constant, and it was costing
+// the title the width it needed: at dashboard column width the titles were
+// rendering as "le...", "ge...", "Fi...".
+export const TASK_GRID_COLUMNS_CONDENSED = "24px minmax(0, 1fr) 104px 80px"
 
 /** Rendered once per page. Owns the grid and the stack-below-tablet behaviour. */
 export function TaskRowStyles() {
@@ -64,7 +68,7 @@ export function TaskRowStyles() {
 }
 
 const HEADERS = ["", "Task", "Client", "Assignee", "Due", "Status", "Source", ""]
-const HEADERS_CONDENSED = ["", "Task", "Due", "Status"]
+const HEADERS_CONDENSED = ["", "Task", "Client", "Due"]
 
 export function TaskRowHeader({ condensed = false }: { condensed?: boolean }) {
   const labels = condensed ? HEADERS_CONDENSED : HEADERS
@@ -140,13 +144,15 @@ function Avatar({ name, title }: { name: string; title?: string }) {
   )
 }
 
-function Person({ name, label }: { name: string | null; label: string }) {
+function Person({ name, label, fullName }: { name: string | null; label: string; fullName?: string | null }) {
   if (!name) {
     return <span style={{ color: T.DIM, fontSize: 12 }}>{label}</span>
   }
+  // The avatar hashes the FULL name even when only the first is shown, so a
+  // client keeps one colour across the condensed and full rows.
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-      <Avatar name={name} />
+      <Avatar name={fullName || name} title={fullName || name} />
       <span style={{
         color: T.MUTED, fontSize: 12,
         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
@@ -298,12 +304,19 @@ export function TaskRow(props: TaskRowProps) {
         )}
       </div>
 
-      {!condensed && (
-        <div className="tsk-cell" style={{ minWidth: 0 }}>
-          <span className="tsk-cell-label">Client</span>
-          <Person name={props.clientName ?? null} label="No client" />
-        </div>
-      )}
+      {/* Client shows in BOTH forms. On the dashboard card a task without
+          one is just a sentence with no owner, and "whose is this" is the
+          first thing a coach asks of a list spanning every client. */}
+      <div className="tsk-cell" style={{ minWidth: 0 }}>
+        <span className="tsk-cell-label">Client</span>
+        <Person
+          name={condensed
+            ? (props.clientName ? props.clientName.split(/\s+/)[0] : null)
+            : (props.clientName ?? null)}
+          fullName={props.clientName ?? null}
+          label="No client"
+        />
+      </div>
 
       {!condensed && (
         <div className="tsk-cell" style={{ minWidth: 0 }}>
@@ -317,10 +330,12 @@ export function TaskRow(props: TaskRowProps) {
         <DueCell task={task} />
       </div>
 
-      <div className="tsk-cell">
-        <span className="tsk-cell-label">Status</span>
-        <StatusPill task={task} />
-      </div>
+      {!condensed && (
+        <div className="tsk-cell">
+          <span className="tsk-cell-label">Status</span>
+          <StatusPill task={task} />
+        </div>
+      )}
 
       {!condensed && (
         <div className="tsk-cell">

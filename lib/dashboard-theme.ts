@@ -40,6 +40,26 @@ export const T = {
   TASK_DONE: "#00B3B3",
   /** Open: the status pill outline. */
   TASK_OPEN: "#B6F2F8",
+
+  // ── Coaches Center section identity ─────────────────────────────────────
+  // Every dashboard card had the same orange rule and orange icon, so the
+  // sections did not read as different things. One accent each, taken from
+  // the JobFit brand palette, applied to the card's top rule, its icon and
+  // its count pill.
+  //
+  // Two palette members are not here. Navy #08203F is the ground on JobFit's
+  // light surfaces and is invisible as a rule on this dark one. Peach tint
+  // #FFEEDC is a FILL there, but on navy it reads as a pale rule and works,
+  // so it takes the fifth section.
+  //
+  // Orange stays on Action Items on purpose: JobFit's rule is that #FF6B00
+  // draws rules, numerals, eyebrows and bullets and never sets body text.
+  // A 3px rule over the card that means "things needing you" is exactly that.
+  SECTION_ACTION_ITEMS: "#FF6B00",
+  SECTION_SCHEDULE: "#00B3B3",
+  SECTION_CLIENTS: "#009BFF",
+  SECTION_PROSPECTS: "#B6F2F8",
+  SECTION_SIGNALS: "#FFEEDC",
   GOLD_BG: "rgba(212,164,68,0.22)",
   ERROR: "rgba(255,120,120,0.95)",
   SUCCESS: "#4ade80",
