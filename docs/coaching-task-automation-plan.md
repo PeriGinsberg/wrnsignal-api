@@ -440,6 +440,22 @@ Kept in this doc because there is no general backlog doc in the repo, and the
 only existing one (`docs/jobfit-ticket1-plan.md`) is JobFit-scoped. Move these
 if a real backlog lands.
 
+**The "ingest silent" staleness alert fires falsely.** On 2026-09-25 at 05:00
+it emailed `[SIGNAL] ingest silent for 109h`, two hours after the Greenhouse
+sweep ran at 03:01 and half an hour after SmartRecruiters ran at 04:30. Both
+wrote 2,813 `ingest_runs` rows between them and added 681 postings, so the
+claim is wrong rather than merely stale.
+
+109 hours before that alert is roughly 2026-09-20, which is when the sweep
+genuinely was broken by the `fetch_detail` schema drift. So the check looks to
+be measuring from a point that stopped advancing rather than from the last
+successful run. Worth confirming what it actually reads before changing it:
+the condition is in `/api/internal/ingest/staleness`.
+
+A monitor that cries wolf is worse than no monitor, because the next real
+outage arrives looking exactly like the last four false ones. Not urgent, but
+it should not sit indefinitely.
+
 **Redesign the `networking-plan-ready` email.** Not urgent. The template shipped
 2026-09-26 and its content is the copy as dictated, in a plain table layout with
 a bulletproof button and a plain-text alternative. It has had no design pass and
