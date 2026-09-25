@@ -36,6 +36,8 @@ export type Task = {
   source: TaskSource
   template_id: string | null
   chain_id: string | null
+  brief_id: string | null
+  decision: string | null
   legacy_note_id: string | null
   created_at: string
   updated_at: string

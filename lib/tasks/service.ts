@@ -35,7 +35,7 @@ export type ServiceResult<T> = { ok: true; data: T } | { ok: false; error: strin
 const TASK_COLUMNS =
   "id, title, description, client_profile_id, coach_client_id, assignee_profile_id, " +
   "created_by_profile_id, due_at, due_has_time, status, completed_at, source, template_id, " +
-  "chain_id, legacy_note_id, created_at, updated_at, deleted_at"
+  "chain_id, brief_id, decision, legacy_note_id, created_at, updated_at, deleted_at"
 
 /**
  * Is this profile a coach who may be handed work?
@@ -125,6 +125,7 @@ export type CreateTaskInput = {
   source?: "manual" | "auto"
   template_id?: string | null
   chain_id?: string | null
+  brief_id?: string | null
 }
 
 export async function createTask(
@@ -151,6 +152,7 @@ export async function createTask(
     source,
     template_id: input.template_id ?? null,
     chain_id: input.chain_id ?? null,
+    brief_id: input.brief_id ?? null,
   }).select(TASK_COLUMNS).single()
 
   if (error) return { ok: false, error: error.message, status: 500 }
@@ -211,7 +213,13 @@ export async function setTaskStatus(
   }
 
   const { data, error } = await db.from("coach_tasks")
-    .update({ ...completionPatch(status), updated_at: new Date().toISOString() })
+    .update({
+      ...completionPatch(status),
+      // Recorded on the row as well as the event: the event is how the rules
+      // branch, the column is how the task says how it was closed.
+      ...(opts.decision ? { decision: opts.decision } : {}),
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", taskId).is("deleted_at", null)
     .select(TASK_COLUMNS).maybeSingle()
 
@@ -232,6 +240,9 @@ export async function setTaskStatus(
       template_key: await templateKeyOf(db, task.template_id),
       decision: opts.decision ?? null,
       chain_id: task.chain_id,
+      brief_id: task.brief_id,
+      coach_client_id: task.coach_client_id,
+      note: opts.note ?? null,
     }, task.client_profile_id)
   }
 
