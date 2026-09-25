@@ -12,7 +12,7 @@
 // it carries the new title into its audit row.
 
 import { useEffect, useRef, useState } from "react"
-import { T, btnPrimary, btnSecondary, fieldLabel, fieldWrap, input, select, textarea } from "../../../../lib/dashboard-theme"
+import { T, btnPrimary, btnSecondary, fieldLabel, fieldWrap, input, selectDark, selectDarkOption, textarea } from "../../../../lib/dashboard-theme"
 import { TASK_STATUSES, type Task, type TaskStatus } from "../../../../lib/tasks/model"
 import { apiJson, type Assignee } from "./taskClient"
 
@@ -193,9 +193,9 @@ export function TaskFormModal(props: TaskFormModalProps) {
 
         <div style={fieldWrap}>
           <label style={fieldLabel} htmlFor="task-assignee">Assignee</label>
-          <select id="task-assignee" style={select} value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+          <select id="task-assignee" style={selectDark} value={assignee} onChange={(e) => setAssignee(e.target.value)}>
             {assignees.map((a) => (
-              <option key={a.id} value={a.id}>
+              <option key={a.id} value={a.id} style={selectDarkOption}>
                 {a.name}{a.active ? "" : " (inactive)"}
               </option>
             ))}
@@ -204,9 +204,9 @@ export function TaskFormModal(props: TaskFormModalProps) {
 
         <div style={fieldWrap}>
           <label style={fieldLabel} htmlFor="task-client">Client (optional)</label>
-          <select id="task-client" style={select} value={clientId} onChange={(e) => setClientId(e.target.value)}>
-            <option value="">No client</option>
-            {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          <select id="task-client" style={selectDark} value={clientId} onChange={(e) => setClientId(e.target.value)}>
+            <option value="" style={selectDarkOption}>No client</option>
+            {clients.map((c) => <option key={c.id} value={c.id} style={selectDarkOption}>{c.name}</option>)}
           </select>
         </div>
 
@@ -225,8 +225,8 @@ export function TaskFormModal(props: TaskFormModalProps) {
         {editing && (
           <div style={fieldWrap}>
             <label style={fieldLabel} htmlFor="task-status">Status</label>
-            <select id="task-status" style={select} value={status} onChange={(e) => setStatus(e.target.value as TaskStatus)}>
-              {TASK_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+            <select id="task-status" style={selectDark} value={status} onChange={(e) => setStatus(e.target.value as TaskStatus)}>
+              {TASK_STATUSES.map((s) => <option key={s} value={s} style={selectDarkOption}>{s}</option>)}
             </select>
           </div>
         )}

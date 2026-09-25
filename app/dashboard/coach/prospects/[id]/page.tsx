@@ -32,6 +32,8 @@ import {
   card,
   eyebrow,
   label,
+  selectDarkInk,
+  selectDarkOption,
 } from "../../../../../lib/dashboard-theme"
 import { JOB_TYPE_OPTIONS, normalizeJobType } from "../../../../../lib/jobType"
 import { SavingSpinner } from "../../SavingSpinner"
@@ -775,8 +777,8 @@ function ProspectInfoBlock({
       <div style={editGroupStyle}>
         <div>
           <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>STATUS</span>
-          <select style={{ ...input, cursor: "pointer", colorScheme: "dark" }} value={draft.education_status} onChange={(e) => set("education_status", e.target.value)}>
-            {EDUCATION_OPTIONS.map((o) => <option key={o.value} value={o.value} style={{ background: T.CARD, color: T.TEXT }}>{o.label}</option>)}
+          <select style={{ ...input, ...selectDarkInk }} value={draft.education_status} onChange={(e) => set("education_status", e.target.value)}>
+            {EDUCATION_OPTIONS.map((o) => <option key={o.value} value={o.value} style={selectDarkOption}>{o.label}</option>)}
           </select>
         </div>
         {field("university", "UNIVERSITY")}

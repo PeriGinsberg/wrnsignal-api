@@ -12,6 +12,8 @@ import {
   card,
   eyebrow,
   label,
+  selectDarkInk,
+  selectDarkOption,
 } from "../../../../../lib/dashboard-theme"
 import ProfilePersonasTab, { type ClientProfileFull, type ClientPersonaFull } from "./ProfilePersonasTab"
 import { NotesTab, type NoteType, type NotePriority } from "./NotesTab"
@@ -958,22 +960,22 @@ export default function CoachClientPage() {
                             <div style={{ display: "flex", gap: 12 }}>
                               <div style={{ flex: 1 }}>
                                 <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4, fontSize: 9 }}>PRIORITY</span>
-                                <select style={{ ...input, cursor: "pointer", colorScheme: "dark", height: 38 } as React.CSSProperties} value={editRecPriority} onChange={(e) => setEditRecPriority(e.target.value)}>
-                                  <option value="urgent" style={{ background: "#0a1628" }}>Urgent</option>
-                                  <option value="this_week" style={{ background: "#0a1628" }}>This Week</option>
-                                  <option value="when_ready" style={{ background: "#0a1628" }}>When Ready</option>
-                                  <option value="not_recommended" style={{ background: "#0a1628" }}>For Awareness</option>
+                                <select style={{ ...input, ...selectDarkInk, height: 38 }} value={editRecPriority} onChange={(e) => setEditRecPriority(e.target.value)}>
+                                  <option value="urgent" style={selectDarkOption}>Urgent</option>
+                                  <option value="this_week" style={selectDarkOption}>This Week</option>
+                                  <option value="when_ready" style={selectDarkOption}>When Ready</option>
+                                  <option value="not_recommended" style={selectDarkOption}>For Awareness</option>
                                 </select>
                               </div>
                               <div style={{ flex: 1 }}>
                                 <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4, fontSize: 9 }}>ACTION</span>
-                                <select style={{ ...input, cursor: "pointer", colorScheme: "dark", height: 38 } as React.CSSProperties} value={editRecAction} onChange={(e) => setEditRecAction(e.target.value)}>
-                                  <option value="apply" style={{ background: "#0a1628" }}>Apply</option>
-                                  <option value="research_first" style={{ background: "#0a1628" }}>Research First</option>
-                                  <option value="tailor_resume" style={{ background: "#0a1628" }}>Tailor Resume</option>
-                                  <option value="reach_out_first" style={{ background: "#0a1628" }}>Reach Out First</option>
-                                  <option value="hold" style={{ background: "#0a1628" }}>Hold</option>
-                                  <option value="skip" style={{ background: "#0a1628" }}>Skip</option>
+                                <select style={{ ...input, ...selectDarkInk, height: 38 }} value={editRecAction} onChange={(e) => setEditRecAction(e.target.value)}>
+                                  <option value="apply" style={selectDarkOption}>Apply</option>
+                                  <option value="research_first" style={selectDarkOption}>Research First</option>
+                                  <option value="tailor_resume" style={selectDarkOption}>Tailor Resume</option>
+                                  <option value="reach_out_first" style={selectDarkOption}>Reach Out First</option>
+                                  <option value="hold" style={selectDarkOption}>Hold</option>
+                                  <option value="skip" style={selectDarkOption}>Skip</option>
                                 </select>
                               </div>
                               <div style={{ flex: 1 }}>

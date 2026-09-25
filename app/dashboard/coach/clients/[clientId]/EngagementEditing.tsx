@@ -19,7 +19,7 @@
 // deliverable with twenty tasks is a planning problem, not a UI one.
 
 import { useState } from "react"
-import { T, btnPrimary, btnSecondary } from "../../../../../lib/dashboard-theme"
+import { T, btnPrimary, btnSecondary, selectDarkInk, selectDarkOption } from "../../../../../lib/dashboard-theme"
 
 const OWNERS = ["coach", "client", "both"] as const
 const OWNER_LABEL: Record<string, string> = { coach: "Coach", client: "Client", both: "Both" }
@@ -177,9 +177,9 @@ export function ActivityEditRow({
           onChange={(e) => void run({ owner: e.target.value })}
           disabled={busy}
           aria-label="Task owner"
-          style={{ ...input, flex: "0 0 auto" }}
+          style={{ ...input, ...selectDarkInk, flex: "0 0 auto" }}
         >
-          {OWNERS.map((o) => <option key={o} value={o}>{OWNER_LABEL[o]}</option>)}
+          {OWNERS.map((o) => <option key={o} value={o} style={selectDarkOption}>{OWNER_LABEL[o]}</option>)}
         </select>
 
         {/* THE SIGN-OFF FLAG. At most one per deliverable; clicking a different
@@ -265,8 +265,8 @@ export function AddActivityRow({ busy, onAdd }: {
         aria-label="New task name"
         style={{ ...input, flex: "1 1 160px" }}
       />
-      <select value={owner} onChange={(e) => setOwner(e.target.value)} disabled={busy} aria-label="New task owner" style={input}>
-        {OWNERS.map((o) => <option key={o} value={o}>{OWNER_LABEL[o]}</option>)}
+      <select value={owner} onChange={(e) => setOwner(e.target.value)} disabled={busy} aria-label="New task owner" style={{ ...input, ...selectDarkInk }}>
+        {OWNERS.map((o) => <option key={o} value={o} style={selectDarkOption}>{OWNER_LABEL[o]}</option>)}
       </select>
       <button type="button" onClick={() => void submit()} disabled={busy || !name.trim()}
         style={{ ...btnSecondary, padding: "5px 12px", fontSize: 12, opacity: busy || !name.trim() ? 0.5 : 1 }}>

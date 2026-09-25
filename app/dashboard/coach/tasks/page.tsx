@@ -14,7 +14,7 @@
 // so the two surfaces cannot drift apart.
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { T, btnPrimary, btnSecondary, card, input } from "../../../../lib/dashboard-theme"
+import { T, btnPrimary, btnSecondary, card, input, selectDark, selectDarkOption } from "../../../../lib/dashboard-theme"
 import { TASK_VIEWS, type Task, type TaskView } from "../../../../lib/tasks/model"
 import { BackToDashboard } from "../BackToDashboard"
 import { TaskFormModal } from "../_tasks/TaskFormModal"
@@ -30,18 +30,6 @@ const VIEW_LABEL: Record<TaskView, string> = {
 
 type ClientOpt = { id: string; name: string }
 
-// The shared `select` style in dashboard-theme is explicitly white, and it is
-// used across the whole app, so it is left alone and this page gets its own.
-// colorScheme:"dark" is the part that matters: it is what makes the native
-// dropdown panel dark, which no amount of styling the <select> box can do.
-const darkSelect: React.CSSProperties = {
-  ...input,
-  background: T.CARD,
-  color: T.TEXT,
-  border: `1px solid ${T.BORDER}`,
-  colorScheme: "dark",
-  cursor: "pointer",
-}
 
 export default function CoachTasksPage() {
   const [tasks, setTasks] = useState<Task[] | null>(null)
@@ -235,30 +223,30 @@ export default function CoachTasksPage() {
 
       {/* Filters */}
       <div style={{ ...card, padding: 14, marginTop: 14, display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}>
-        <select style={darkSelect} value={assignee} onChange={(e) => setAssignee(e.target.value)}>
-          <option value="me">Assigned to me</option>
-          <option value="all">Anyone</option>
+        <select style={selectDark} value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+          <option value="me" style={selectDarkOption}>Assigned to me</option>
+          <option value="all" style={selectDarkOption}>Anyone</option>
           {assignees.filter((a) => a.id !== me).map((a) => (
-            <option key={a.id} value={a.id}>{a.name}{a.active ? "" : " (inactive)"}</option>
+            <option key={a.id} value={a.id} style={selectDarkOption}>{a.name}{a.active ? "" : " (inactive)"}</option>
           ))}
         </select>
 
-        <select style={darkSelect} value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="open">Open</option>
-          <option value="done">Done</option>
-          <option value="cancelled">Cancelled</option>
-          <option value="all">Any status</option>
+        <select style={selectDark} value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="open" style={selectDarkOption}>Open</option>
+          <option value="done" style={selectDarkOption}>Done</option>
+          <option value="cancelled" style={selectDarkOption}>Cancelled</option>
+          <option value="all" style={selectDarkOption}>Any status</option>
         </select>
 
-        <select style={darkSelect} value={client} onChange={(e) => setClient(e.target.value)}>
-          <option value="">Any client</option>
-          {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        <select style={selectDark} value={client} onChange={(e) => setClient(e.target.value)}>
+          <option value="" style={selectDarkOption}>Any client</option>
+          {clients.map((c) => <option key={c.id} value={c.id} style={selectDarkOption}>{c.name}</option>)}
         </select>
 
-        <select style={darkSelect} value={source} onChange={(e) => setSource(e.target.value)}>
-          <option value="">Any source</option>
-          <option value="manual">Added by a person</option>
-          <option value="auto">Created automatically</option>
+        <select style={selectDark} value={source} onChange={(e) => setSource(e.target.value)}>
+          <option value="" style={selectDarkOption}>Any source</option>
+          <option value="manual" style={selectDarkOption}>Added by a person</option>
+          <option value="auto" style={selectDarkOption}>Created automatically</option>
         </select>
 
         <input

@@ -33,7 +33,14 @@ const textareaStyle = (minH: number): React.CSSProperties => ({
 
 const selectStyle: React.CSSProperties = {
   ...inputStyle, cursor: "pointer", appearance: "auto" as any,
+  // This modal is white, so it keeps the light treatment while the rest of the
+  // Coaches Center goes dark. colorScheme is still stated: left to the browser,
+  // a reader in dark mode gets a dark popup with plum text on it.
+  background: "#ffffff", colorScheme: "light",
 }
+// Stated on every option too. Inheriting the colour works until the browser
+// paints the popup itself, which is the failure the Tasks filters had.
+const selectOptionStyle: React.CSSProperties = { background: "#ffffff", color: PLUM_TEXT }
 
 // Education status — University + Grad date reveal only for in_school /
 // graduated (mirrors AddProspectModal). Values match the client_profiles
@@ -293,9 +300,9 @@ export default function CreateClientModal({
               value={educationStatus}
               onChange={(e) => setEducationStatus(e.target.value as typeof educationStatus)}
             >
-              <option value="">Education status (optional)…</option>
+              <option value="" style={selectOptionStyle}>Education status (optional)…</option>
               {EDUCATION_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
+                <option key={o.value} value={o.value} style={selectOptionStyle}>{o.label}</option>
               ))}
             </select>
             {showEducationDetails && (
@@ -364,13 +371,13 @@ export default function CreateClientModal({
                 value={timeframe}
                 onChange={(e) => setTimeframe(e.target.value)}
               >
-                <option value="">Select timeframe...</option>
-                <option value="Actively looking">Actively looking</option>
-                <option value="Within 1 month">Within 1 month</option>
-                <option value="1-3 months">1-3 months</option>
-                <option value="3-6 months">3-6 months</option>
-                <option value="6-12 months">6-12 months</option>
-                <option value="Exploring options">Exploring options</option>
+                <option value="" style={selectOptionStyle}>Select timeframe...</option>
+                <option value="Actively looking" style={selectOptionStyle}>Actively looking</option>
+                <option value="Within 1 month" style={selectOptionStyle}>Within 1 month</option>
+                <option value="1-3 months" style={selectOptionStyle}>1-3 months</option>
+                <option value="3-6 months" style={selectOptionStyle}>3-6 months</option>
+                <option value="6-12 months" style={selectOptionStyle}>6-12 months</option>
+                <option value="Exploring options" style={selectOptionStyle}>Exploring options</option>
               </select>
             </div>
           </div>

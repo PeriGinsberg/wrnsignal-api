@@ -13,7 +13,7 @@
 //   • Persona resume body: explicit Save button (large blob, autosave is risky)
 
 import React, { useEffect, useMemo, useRef, useState } from "react"
-import { T, input, textarea, btnPrimary, btnSecondary, card, eyebrow, label } from "../../../../../lib/dashboard-theme"
+import { T, input, textarea, btnPrimary, btnSecondary, card, eyebrow, label, selectDarkInk, selectDarkOption } from "../../../../../lib/dashboard-theme"
 import { JOB_TYPE_OPTIONS, normalizeJobType } from "../../../../../lib/jobType"
 import { SavingSpinner } from "../../SavingSpinner"
 
@@ -527,14 +527,14 @@ export default function ProfilePersonasTab({
 
           <FieldRow labelText="Education Status">
             <select
-              style={input}
+              style={{ ...input, ...selectDarkInk }}
               value={drafts.education_status}
               onChange={(e) => setDrafts((d) => ({ ...d, education_status: e.target.value }))}
             >
-              <option value="">—</option>
-              <option value="in_school">In school</option>
-              <option value="graduated">Graduated</option>
-              <option value="na">N/A</option>
+              <option value="" style={selectDarkOption}>—</option>
+              <option value="in_school" style={selectDarkOption}>In school</option>
+              <option value="graduated" style={selectDarkOption}>Graduated</option>
+              <option value="na" style={selectDarkOption}>N/A</option>
             </select>
           </FieldRow>
 

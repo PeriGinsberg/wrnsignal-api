@@ -11,7 +11,7 @@
 // URL: a page that displayed the id it was given would confirm nothing.
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { T, headline, eyebrow, card, select as selectStyle, selectOption } from "../../../../lib/dashboard-theme"
+import { T, headline, eyebrow, card, selectDark, selectDarkOption } from "../../../../lib/dashboard-theme"
 import { PlanStatusBar } from "../PlanStatusBar"
 import { authFetch, getToken, subjectId, withSubject } from "../authFetch"
 import { IMPORT_FIELDS, type ImportField } from "../../../../lib/network-tracker/import-fields"
@@ -452,8 +452,8 @@ export default function ImportPage() {
             {preview.sheets.length > 1 && (
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: T.MUTED }}>
                 Sheet
-                <select value={preview.sheet} onChange={(e) => file && runPreview(file, { sheet: e.target.value })} style={{ ...selectStyle, width: "auto", height: 34 }}>
-                  {preview.sheets.map((s) => <option key={s} value={s} style={selectOption}>{s}</option>)}
+                <select value={preview.sheet} onChange={(e) => file && runPreview(file, { sheet: e.target.value })} style={{ ...selectDark, width: "auto", height: 34 }}>
+                  {preview.sheets.map((s) => <option key={s} value={s} style={selectDarkOption}>{s}</option>)}
                 </select>
               </label>
             )}
@@ -462,10 +462,10 @@ export default function ImportPage() {
               <select
                 value={preview.headerRow}
                 onChange={(e) => file && runPreview(file, { sheet: preview.sheet, headerRow: Number(e.target.value) })}
-                style={{ ...selectStyle, width: "auto", height: 34 }}
+                style={{ ...selectDark, width: "auto", height: 34 }}
               >
                 {Array.from({ length: Math.min(10, preview.headerRow + preview.sampleRows.length + 1) }, (_, i) => (
-                  <option key={i} value={i} style={selectOption}>Row {i + 1}</option>
+                  <option key={i} value={i} style={selectDarkOption}>Row {i + 1}</option>
                 ))}
               </select>
             </label>
@@ -489,10 +489,10 @@ export default function ImportPage() {
                           setPreview((p) => (p ? { ...p, dryRun: null } : p)) // mapping changed, the dry run is stale
                           setConfirmed(false)
                         }}
-                        style={{ ...selectStyle, height: 32, fontSize: 12, width: 190 }}
+                        style={{ ...selectDark, height: 32, fontSize: 12, width: 190 }}
                       >
-                        <option value="" style={selectOption}>Don&apos;t import</option>
-                        {IMPORT_FIELDS.map((f) => <option key={f.field} value={f.field} style={selectOption}>{f.label}</option>)}
+                        <option value="" style={selectDarkOption}>Don&apos;t import</option>
+                        {IMPORT_FIELDS.map((f) => <option key={f.field} value={f.field} style={selectDarkOption}>{f.label}</option>)}
                       </select>
                     </td>
                     <td style={{ ...td, color: T.MUTED }}>
@@ -598,15 +598,15 @@ export default function ImportPage() {
                       <select
                         value={campaignId}
                         onChange={(e) => setCampaignId(e.target.value)}
-                        style={{ ...selectStyle, minWidth: 260 }}
+                        style={{ ...selectDark, minWidth: 260 }}
                       >
                         {campaigns.map((c) => (
-                          <option key={c.id} value={c.id} style={selectOption}>{c.name}</option>
+                          <option key={c.id} value={c.id} style={selectDarkOption}>{c.name}</option>
                         ))}
                         {/* An upload that belongs to no campaign is a real
                             answer, not an oversight: the list may predate the
                             brief or be a one-off. */}
-                        <option value="" style={selectOption}>No campaign</option>
+                        <option value="" style={selectDarkOption}>No campaign</option>
                       </select>
                     </div>
                   )}

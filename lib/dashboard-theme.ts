@@ -191,6 +191,39 @@ export const selectOption: React.CSSProperties = {
   color: T.BG,
 }
 
+// The dark pair, for the Coaches Center and every other screen still on the
+// dark shell. White text on the card ground, matching the page rather than
+// punching a white rectangle into it.
+//
+// BOTH HALVES ARE REQUIRED, and forgetting the option half is what made the
+// Tasks filters unreadable. Styling only the <select> sets the colour of the
+// closed control AND is inherited by the options, but the popup's BACKGROUND
+// comes from the browser, which paints it white unless told otherwise. The
+// result is white text on white: the list looks empty until you arrow through
+// it. colorScheme:"dark" asks the browser for a dark popup and most of the
+// time gets one, but it is a hint, not a guarantee, and it does nothing at all
+// when the OS or the browser is in light mode. So the option carries its own
+// background and always has.
+// The colours alone, for layering onto a control that already has its own
+// geometry. Several screens define a local `input` at their own height and
+// font size, and spreading the full `selectDark` over one of those would
+// silently resize it: a 12px control in a table row would come back 44px tall.
+export const selectDarkInk: React.CSSProperties = {
+  background: T.CARD,
+  color: T.TEXT,
+  colorScheme: "dark",
+  cursor: "pointer",
+}
+export const selectDark: React.CSSProperties = {
+  ...input,
+  ...selectDarkInk,
+  border: `1px solid ${T.BORDER}`,
+}
+export const selectDarkOption: React.CSSProperties = {
+  background: T.CARD,
+  color: T.TEXT,
+}
+
 // Small caption above a control, naming the FIELD so the control's value is not
 // mistaken for the field name. Shared so every labelled control looks identical.
 // Pair with FIELD_LABELS for the text.

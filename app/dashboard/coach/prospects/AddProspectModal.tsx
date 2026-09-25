@@ -28,6 +28,8 @@ import {
   card,
   eyebrow,
   label,
+  selectDarkInk,
+  selectDarkOption,
 } from "../../../../lib/dashboard-theme"
 import { SavingSpinner } from "../SavingSpinner"
 
@@ -401,13 +403,13 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
                   EDUCATION STATUS <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
                 </span>
                 <select
-                  style={{ ...input, cursor: "pointer", colorScheme: "dark" }}
+                  style={{ ...input, ...selectDarkInk }}
                   value={educationStatus}
                   onChange={(e) => { setEducationStatus(e.target.value as typeof educationStatus); if (errors.education_status) setErrors({ ...errors, education_status: undefined }) }}
                 >
-                  <option value="">Select…</option>
+                  <option value="" style={selectDarkOption}>Select…</option>
                   {EDUCATION_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
+                    <option key={o.value} value={o.value} style={selectDarkOption}>{o.label}</option>
                   ))}
                 </select>
                 {errors.education_status && (

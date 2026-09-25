@@ -17,7 +17,7 @@
 // (same pair as EngagementsTab).
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { T, input, btnPrimary, btnSecondary } from "../../../../../lib/dashboard-theme"
+import { T, input, btnPrimary, btnSecondary, selectDarkInk, selectDarkOption } from "../../../../../lib/dashboard-theme"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
 import { NoteVisibilityIcon } from "../../NoteVisibilityIcon"
 
@@ -761,13 +761,13 @@ function LinkForm({
         onKeyDown={onKeyDown}
       />
       <select
-        style={{ ...input, cursor: "pointer" }}
+        style={{ ...input, ...selectDarkInk }}
         value={categoryId}
         onChange={(e) => onCategory(e.target.value)}
       >
-        <option value="">Uncategorized</option>
+        <option value="" style={selectDarkOption}>Uncategorized</option>
         {categories.map((c) => (
-          <option key={c.id} value={c.id}>{c.name}</option>
+          <option key={c.id} value={c.id} style={selectDarkOption}>{c.name}</option>
         ))}
       </select>
       {onVisible && (
