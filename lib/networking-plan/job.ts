@@ -109,10 +109,30 @@ export async function findOrCreateJob(
   supabase: SupabaseClient,
   args: { coachClientId: string; clientProfileId: string; createdById: string; hash: string },
 ): Promise<PlanJob> {
+  // ONLY AN UNSHARED JOB IS REUSED.
+  //
+  // Reuse is an idempotency guard for a double click or a retry, and it stops
+  // being one the moment the job has been shared. Returning a shared row here
+  // handed the screen a shared_at the coach had not just earned, so Generate
+  // rendered "Shared with the client." and hid the Share button. The plan
+  // looked like it had shared itself, and nothing was emailed because no share
+  // had run. See 20260926_plan_jobs_reshare.sql.
   const { data: existing } = await supabase
     .from("networking_plan_jobs").select("*")
-    .eq("coach_client_id", args.coachClientId).eq("source_hash", args.hash).maybeSingle()
+    .eq("coach_client_id", args.coachClientId).eq("source_hash", args.hash)
+    .is("shared_at", null).maybeSingle()
   if (existing) return existing as PlanJob
+
+  // Generating again after a share starts a new job, but NOT a second PDF. The
+  // source hash is the same, so the document is byte-for-byte what was shared
+  // before; inheriting the Drive file and the library row means the rebuild
+  // updates them in place instead of leaving two identically named files in
+  // the client's folder. The previously shared link keeps working.
+  const { data: prior } = await supabase
+    .from("networking_plan_jobs").select("drive_file_id, drive_file_url, document_id")
+    .eq("coach_client_id", args.coachClientId).eq("source_hash", args.hash)
+    .not("shared_at", "is", null)
+    .order("shared_at", { ascending: false }).limit(1).maybeSingle()
 
   const { data, error } = await supabase.from("networking_plan_jobs").insert({
     coach_client_id: args.coachClientId,
@@ -120,13 +140,19 @@ export async function findOrCreateJob(
     created_by_id: args.createdById,
     source_hash: args.hash,
     status: "pending",
+    drive_file_id: prior?.drive_file_id ?? null,
+    drive_file_url: prior?.drive_file_url ?? null,
+    document_id: prior?.document_id ?? null,
   }).select("*").single()
   if (error) {
     // Two clicks landing together: the loser of the unique index re-reads.
     if ((error as any).code === "23505") {
+      // Same predicate as above: the index that rejected us is the partial
+      // one, so the row that won is by definition unshared.
       const { data: again } = await supabase
         .from("networking_plan_jobs").select("*")
-        .eq("coach_client_id", args.coachClientId).eq("source_hash", args.hash).single()
+        .eq("coach_client_id", args.coachClientId).eq("source_hash", args.hash)
+        .is("shared_at", null).single()
       return again as PlanJob
     }
     throw new Error(`Could not start the plan job: ${error.message}`)
