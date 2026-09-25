@@ -11,7 +11,7 @@
 // assignment, then status, so a task completed in the same edit that retitles
 // it carries the new title into its audit row.
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { T, btnPrimary, btnSecondary, fieldLabel, fieldWrap, input, select, textarea } from "../../../../lib/dashboard-theme"
 import { TASK_STATUSES, type Task, type TaskStatus } from "../../../../lib/tasks/model"
 import { apiJson, type Assignee } from "./taskClient"
@@ -49,6 +49,34 @@ function toLocalInput(iso: string | null, withTime: boolean): string {
   return withTime ? `${date}T${pad(d.getHours())}:${pad(d.getMinutes())}` : date
 }
 
+/**
+ * What the input holds, back to an instant, read as LOCAL time.
+ *
+ * THIS IS WHY EDITING A DUE DATE APPEARED NOT TO SAVE. `new Date("2026-09-25")`
+ * parses a date-only string as UTC midnight, which in UTC-4 is 8pm on the
+ * 24th. Rendering that back through toLocalInput produced the 24th, so the
+ * date the coach typed came back a day earlier and looked like it had
+ * reverted. Every save and reopen walked it back another day.
+ *
+ * NOON LOCAL, not midnight: it is the furthest point from both day
+ * boundaries, so no timezone or DST shift can move the date onto an adjacent
+ * day. A date-only task has no meaningful time anyway, and due_has_time=false
+ * tells every reader to ignore it.
+ *
+ * datetime-local is left to the platform parser, which reads it as local
+ * already, per spec.
+ */
+function fromLocalInput(v: string, withTime: boolean): Date | null {
+  if (!v) return null
+  if (withTime) {
+    const d = new Date(v)
+    return Number.isNaN(d.getTime()) ? null : d
+  }
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v)
+  if (!m) return null
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0, 0)
+}
+
 export function TaskFormModal(props: TaskFormModalProps) {
   const { task, assignees, clients } = props
   const editing = !!task
@@ -75,7 +103,19 @@ export function TaskFormModal(props: TaskFormModalProps) {
   }, [assignees, props.presetAssigneeId, editing, assignee])
 
   // Switching the time toggle must not silently drop the day already chosen.
-  useEffect(() => { setDue((d) => (d ? toLocalInput(new Date(d).toISOString(), hasTime) : d)) }, [hasTime])
+  //
+  // SKIPPED ON MOUNT. useEffect with a dependency array runs on the first
+  // render too, so this used to reformat the date the instant the modal
+  // opened. Combined with the UTC parsing above, simply opening a task and
+  // saving it moved the due date back a day without anyone touching the field.
+  const mounted = useRef(false)
+  useEffect(() => {
+    if (!mounted.current) { mounted.current = true; return }
+    setDue((d) => {
+      const parsed = fromLocalInput(d, !hasTime)
+      return parsed ? toLocalInput(parsed.toISOString(), hasTime) : d
+    })
+  }, [hasTime])
 
   async function save() {
     setSaving(true)
@@ -86,7 +126,7 @@ export function TaskFormModal(props: TaskFormModalProps) {
         description: description.trim() || null,
         assignee_profile_id: assignee,
         client_profile_id: clientId || null,
-        due_at: due ? new Date(due).toISOString() : null,
+        due_at: fromLocalInput(due, hasTime)?.toISOString() ?? null,
         due_has_time: hasTime,
       }
       if (editing) body.status = status
