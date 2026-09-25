@@ -1,10 +1,11 @@
 "use client"
 
 // Required Actions full list.
-// Two sections (post-2026-05-09 Phase 4 + Item 7 build):
-//   1. Action Items — coach-authored action item notes across all
-//      clients (urgent → this_week → when_ready). Built on the new
-//      /api/coach/action-items endpoint.
+// Two sections:
+//   1. Action Items — the coach's open tasks across all clients, as the
+//      same rows the Tasks page and the dashboard card render. Until
+//      2026-09-26 this was coach_client_notes with type='action_item',
+//      ordered urgent -> this_week -> when_ready, via /api/coach/action-items.
 //   2. From Activity — Sprint 2 heuristic outputs from /api/coach/home
 //      (no_login, rec_pending_review, status changes, offers, low-fit
 //      apps). Preserved as-is from the v1 page.
@@ -16,7 +17,7 @@ import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { getSupabaseBrowser } from "../../../../lib/supabase-browser"
 import { T, card, eyebrow } from "../../../../lib/dashboard-theme"
-import { CrossClientActionItemsList } from "../_action-items/CrossClientActionItemsList"
+import { TaskList } from "../_tasks/TaskList"
 import { BackToDashboard } from "../BackToDashboard"
 import { DismissSignalButton, useDismissSignal } from "../DismissSignalButton"
 import { LoadingShell } from "../LoadingShell"
@@ -145,12 +146,9 @@ export default function RequiredActionsPage() {
             background: T.WRN_ORANGE, borderTopLeftRadius: 18, borderTopRightRadius: 18,
           }}
         />
-        <CrossClientActionItemsList
-          authFetch={authFetch}
-          sectionTitle="Action Items"
-          emptyText="No items due"
-          bodyLineClamp={3}
-        />
+        {/* Action items are tasks since 2026-09-26. Same rows as the Tasks
+            page and the dashboard card, so the three cannot disagree. */}
+        <TaskList assignee="me" emptyText="No items due" />
       </section>
 
       {/* Section 2: Engagement Signals (heuristic — preserved v1

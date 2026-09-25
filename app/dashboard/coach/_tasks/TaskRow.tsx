@@ -204,25 +204,22 @@ function StatusPill({ task }: { task: Task }) {
   )
 }
 
-/** Lightning for a rule, pencil for a person. The tooltip says which. */
+/**
+ * Lightning when a rule made this, nothing when a person did.
+ *
+ * THERE IS NO MANUAL ICON. A pencil was here, and on a row that also carries a
+ * pencil for Edit it read as a second button. Added-by-a-person is the default
+ * anyway, so the absence says it: the icon now means "something you did not
+ * type", which is the only case worth a glance.
+ */
 function SourceIcon({ task }: { task: Task }) {
-  const auto = task.source === "auto"
-  const title = auto
-    ? "Created automatically by a rule"
-    : "Added by a person"
+  if (task.source !== "auto") return null
+  const title = "Created automatically by a rule"
   return (
     <span title={title} aria-label={title} style={{ display: "inline-flex", color: T.DIM }}>
-      {auto ? (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z" />
-        </svg>
-      ) : (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M12 20h9" />
-          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
-        </svg>
-      )}
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12z" />
+      </svg>
     </span>
   )
 }

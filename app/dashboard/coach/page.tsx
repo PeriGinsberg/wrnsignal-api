@@ -25,7 +25,6 @@ import CreateClientModal from "./CreateClientModal"
 import {
   T, input, textarea, btnPrimary, btnSecondary, card, eyebrow, label,
 } from "../../../lib/dashboard-theme"
-import { CrossClientActionItemsList } from "./_action-items/CrossClientActionItemsList"
 import { TaskCard } from "./_tasks/TaskCard"
 import { LifecycleStatusPill, type LifecycleStatus } from "./LifecycleStatusPill"
 import { onCoachRowEnter, onCoachRowLeave, COACH_ROW_DEFAULT_BG, COACH_ROW_TRANSITION } from "./coachRowHover"
@@ -1072,26 +1071,12 @@ export default function CoachHomePage() {
           marginBottom: 20,
         }}
       >
+        {/* ONE card, not two. Action Items and tasks were the same thing
+            described twice; since 2026-09-26 an action item IS a task, so
+            this renders the condensed task row and links to the full list. */}
         <Section
           icon={<IconClipboardCheck />}
           title="Action Items"
-          titleHref="/dashboard/coach/required-actions"
-          accentColor={T.WRN_ORANGE}
-          noBottomMargin
-        >
-          <CrossClientActionItemsList
-            authFetch={authFetch}
-            priorities="urgent,this_week"
-            cap={5}
-            moreHref="/dashboard/coach/required-actions"
-            emptyText="No urgent items"
-            bodyLineClamp={2}
-          />
-        </Section>
-
-        <Section
-          icon={<IconClipboardCheck />}
-          title="My Tasks"
           titleHref="/dashboard/coach/tasks"
           accentColor={T.WRN_ORANGE}
           noBottomMargin

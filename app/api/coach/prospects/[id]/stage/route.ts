@@ -231,38 +231,47 @@ export async function PATCH(
           .insert({ coach_client_id: id, stage_key: stageKey, reached_at: nowIso })
       }
 
-      // 4. Auto-create a "Send SIGNAL invite" action item so the coach is
-      //    reminded to invite the new client. Writes into the existing action
-      //    item system (coach_client_notes, type='action_item') so it surfaces
-      //    on Required Actions / Coach Home via /api/coach/action-items — no new
-      //    surface. The coach checks it off manually (no auto-clear).
-      //    Idempotency: skip if a live invite item already exists for this
-      //    client (guards a double-convert). Best-effort — the conversion has
-      //    already succeeded, so a failure here must NOT fail the response.
+      // 4. Auto-create a "Send SIGNAL invite" task so the coach is reminded
+      //    to invite the new client. It surfaces on the dashboard Action
+      //    Items card and the Tasks list.
+      //
+      //    THIS USED TO WRITE coach_client_notes WITH type='action_item'.
+      //    Those two surfaces read coach_tasks since 2026-09-26, so a note
+      //    written here would now be invisible to the coach it is reminding.
+      //
+      //    source is 'auto' and created_by is left null: a rule made this,
+      //    not the coach who happened to click Convert, and the lightning
+      //    icon on the row says so.
+      //
+      //    Idempotency: skip if a live invite task already exists for this
+      //    client (guards a double-convert). Best-effort, because the
+      //    conversion has already succeeded and must not fail on a reminder.
       try {
         const { data: existingInvite } = await supabase
-          .from("coach_client_notes")
+          .from("coach_tasks")
           .select("id")
           .eq("coach_client_id", id)
-          .eq("type", "action_item")
+          .eq("status", "open")
           .is("deleted_at", null)
-          .ilike("body", `${INVITE_ACTION_PREFIX}%`)
+          .ilike("title", `${INVITE_ACTION_PREFIX}%`)
           .maybeSingle()
         if (!existingInvite) {
           const inviteName = (prospect.name as string | null)?.trim() || "this client"
-          await supabase.from("coach_client_notes").insert({
+          await supabase.from("coach_tasks").insert({
             coach_client_id: id,
-            coach_profile_id: coachProfileId,
             client_profile_id: prospect.client_profile_id,
-            type: "action_item",
-            body: `${INVITE_ACTION_PREFIX}${inviteName}`,
-            priority: INVITE_ACTION_PRIORITY,
+            assignee_profile_id: coachProfileId,
+            created_by_profile_id: null,
+            title: `${INVITE_ACTION_PREFIX}${inviteName}`,
+            source: "auto",
+            // Tomorrow, matching the default offset a task template carries.
+            due_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            due_has_time: false,
           })
         }
       } catch {
-        // Swallow — the invite reminder is a nicety, not part of the convert.
+        // Swallow: the invite reminder is a nicety, not part of the convert.
       }
-
       // Best-effort event log — TERMINAL path logs ONLY converted_to_client
       // (this branch returns, so the non-terminal stage_changed below can never
       // also fire for the convert).
