@@ -51,6 +51,25 @@ function stripTrailingSlash(u: string): string {
  * "Re-send email" button; a client emailed a dead link has already been
  * emailed a dead link.
  */
+/**
+ * The page a client lands on from an email, which shows a magic-link sign-in
+ * when they are signed out.
+ *
+ * WHY NOT DEEP-LINK TO THEIR NETWORKING BOARD. Two reasons, both checked
+ * against framer/prod/maincomponent.txt rather than assumed:
+ *
+ *   1. There is no Networking page under /signal/. The pages that exist are
+ *      jobfit, job-analysis, intake, upgrade, purchase, home, auth and the two
+ *      trial variants.
+ *   2. Signing in does not return you to where you came from. On a successful
+ *      auth the component hard-redirects to a FIXED url and discards the
+ *      original path, so a deep link would be thrown away at the door.
+ *
+ * So a deep link would strand the client somewhere they did not ask to be.
+ * /signal/jobfit signs them in and is a page they already know.
+ */
+export const SIGNAL_LOGIN_PATH = "/signal/jobfit"
+
 export function signalLoginUrl(): string {
   const base = process.env.APP_BASE_URL
   if (!base || !base.trim()) {
@@ -59,5 +78,5 @@ export function signalLoginUrl(): string {
       "Set it on this Vercel environment.",
     )
   }
-  return stripTrailingSlash(base)
+  return stripTrailingSlash(base) + SIGNAL_LOGIN_PATH
 }

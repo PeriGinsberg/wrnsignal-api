@@ -72,7 +72,8 @@ evals/jobfit/cases/
 # and interview dates, same class of data as evals/jobfit/cases above. The
 # workbooks are created from these files with scripts/create-workbook.ts and
 # then live in the database, so the repo is not their home.
-# NOTE: WORKBOOK_V1_SPEC.md and design-reference/ sit in here too and are not
-# client data. Pull them out of this directory if they should be tracked.
+# WORKBOOK_V1_SPEC.md has been moved out to docs/workbooks/ and IS tracked.
+# docs/workbooks/design-reference/ is deliberately NOT tracked yet: the mocks
+# carry a real client's name and employer in the breadcrumb.
 docs/workbooks-v1/
 docs/workbooks-v1.zip
