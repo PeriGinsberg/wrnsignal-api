@@ -23,6 +23,7 @@ if (!url || !key) throw new Error("Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KE
 const db = createClient(url, key, { auth: { persistSession: false } })
 
 const K = {
+  define: "networking.define_campaign",
   create: "networking.create_campaign",
   review: "networking.review_campaign",
   build: "networking.upload_and_build",
@@ -50,11 +51,29 @@ async function main() {
 
   const templates = [
     {
+      key: K.define,
+      title: "Define Networking Campaign",
+      description: "Decide this client should run a networking campaign, and write the brief.",
+      // The FALLBACK, not the assignee. assign_to_lead_coach below means the
+      // runner resolves whoever coaches the client; this is who gets it when
+      // that lookup finds nobody.
+      default_assignee_profile_id: PERI,
+      assign_to_lead_coach: true,
+      // NO DUE DATE. Deciding a client needs a campaign is not late on any
+      // particular day, and a task that goes overdue on its own teaches the
+      // overdue digest to be ignored.
+      due_offset_days: null,
+      decision_options: null,
+      // Submitting the brief IS the completion of this work.
+      auto_complete_event: "campaign_brief.submitted",
+    },
+    {
       key: K.create,
       title: "Create Networking Campaign",
       description: "Build the target list and the outreach messages from the campaign brief.",
       default_assignee_profile_id: ERIN,
       due_offset_days: 1,
+      assign_to_lead_coach: false,
       decision_options: null,
       auto_complete_event: null,
     },
@@ -64,6 +83,7 @@ async function main() {
       description: "Approve the campaign, or send it back with a note saying what to change.",
       default_assignee_profile_id: PERI,
       due_offset_days: 1,
+      assign_to_lead_coach: false,
       // Completed by a decision rather than a tick. The UI shows Approve and
       // Request Changes in place of the checkbox, and the rules below branch
       // on which was pressed.
@@ -76,6 +96,7 @@ async function main() {
       description: "Upload the campaign workbook and generate the Networking Plan PDF.",
       default_assignee_profile_id: PERI,
       due_offset_days: 1,
+      assign_to_lead_coach: false,
       decision_options: null,
       // Ticks itself when the plan is generated for this campaign.
       auto_complete_event: "networking_plan.generated",
@@ -86,6 +107,7 @@ async function main() {
       description: "Share the plan with the client, which also emails them.",
       default_assignee_profile_id: PERI,
       due_offset_days: 1,
+      assign_to_lead_coach: false,
       decision_options: null,
       auto_complete_event: "networking_plan.shared",
     },
@@ -105,37 +127,47 @@ async function main() {
   // Rules. Order within an event key is sort_order; across keys it does not
   // matter, because each fires on its own event.
   const rules = [
+    // 0. A submitted brief finishes "Define Networking Campaign", if one is
+    //    open. match_scope "client" because that task predates the campaign and
+    //    so carries neither chain_id nor brief_id, while this event carries
+    //    both. It also matches the ones coaches typed by hand before the
+    //    template existed, by title. No open one is a no-op, which is the
+    //    ordinary case.
+    { event_key: "campaign_brief.submitted", action: "complete_task",
+      template_id: null, target_template_key: K.define, condition: {},
+      match_scope: "client", sort_order: 0 },
+
     // 1. A submitted brief starts the chain.
     { event_key: "campaign_brief.submitted", action: "create_task",
-      template_id: ids[K.create], target_template_key: null, condition: {}, sort_order: 0 },
+      template_id: ids[K.create], target_template_key: null, condition: {}, match_scope: "chain", sort_order: 1 },
 
     // 2. Erin finishes building -> Peri reviews.
     { event_key: "task.completed", action: "create_task",
       template_id: ids[K.review], target_template_key: null,
-      condition: { template_key: K.create }, sort_order: 0 },
+      condition: { template_key: K.create }, match_scope: "chain", sort_order: 0 },
 
     // 3. Approve -> build the plan.
     { event_key: "task.completed", action: "create_task",
       template_id: ids[K.build], target_template_key: null,
-      condition: { template_key: K.review, decision: "approve" }, sort_order: 1 },
+      condition: { template_key: K.review, decision: "approve" }, match_scope: "chain", sort_order: 1 },
 
     // 4. Request Changes -> task one comes back, carrying the note.
     { event_key: "task.completed", action: "reopen_task",
       template_id: null, target_template_key: K.create,
-      condition: { template_key: K.review, decision: "request_changes" }, sort_order: 2 },
+      condition: { template_key: K.review, decision: "request_changes" }, match_scope: "chain", sort_order: 2 },
 
     // 5. Plan built -> share it.
     { event_key: "task.completed", action: "create_task",
       template_id: ids[K.share], target_template_key: null,
-      condition: { template_key: K.build }, sort_order: 3 },
+      condition: { template_key: K.build }, match_scope: "chain", sort_order: 3 },
 
     // 6 and 7. The two auto-completions. Both no-op when there is no open task,
     // which is the cutover case: clients already part-way through networking
     // have plans and no chain.
     { event_key: "networking_plan.generated", action: "complete_task",
-      template_id: null, target_template_key: K.build, condition: {}, sort_order: 0 },
+      template_id: null, target_template_key: K.build, condition: {}, match_scope: "chain", sort_order: 0 },
     { event_key: "networking_plan.shared", action: "complete_task",
-      template_id: null, target_template_key: K.share, condition: {}, sort_order: 0 },
+      template_id: null, target_template_key: K.share, condition: {}, match_scope: "chain", sort_order: 0 },
   ]
 
   // Replaced rather than upserted: a rule has no natural key, and leaving the

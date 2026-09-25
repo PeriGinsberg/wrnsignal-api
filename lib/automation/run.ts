@@ -31,6 +31,17 @@ export type AutomationRule = {
   condition: Record<string, unknown>
   active: boolean
   sort_order: number
+  /**
+   * How complete_task and reopen_task find their target.
+   *
+   * "chain" walks chain_id, then brief_id, then the client, and stops at the
+   * first one the event can supply. Strict on purpose: an old campaign's share
+   * task must not be ticked by a new campaign's share.
+   *
+   * "client" matches on the client alone, for a task that exists BEFORE any
+   * campaign and therefore carries neither id.
+   */
+  match_scope?: "chain" | "client"
 }
 
 export type AutomationEvent = {
@@ -77,24 +88,47 @@ async function findTargetTask(
   templateKey: string,
   ev: AutomationEvent,
   wanted: "open" | "done",
+  scope: "chain" | "client" = "chain",
 ): Promise<Task | null> {
   const { data: tmpl } = await db
-    .from("coach_task_templates").select("id").eq("key", templateKey).maybeSingle()
+    .from("coach_task_templates").select("id, title").eq("key", templateKey).maybeSingle()
   if (!tmpl) return null
 
-  // Scoped by the chain when the event carries one, so two clients running the
-  // same campaign cannot complete each other's tasks. A chain_id is present on
-  // every task the engine creates, so in practice this is always the path
-  // taken; the client fallback exists for an event emitted from outside a chain.
-  let q = db.from("coach_tasks").select("*")
-    .eq("template_id", tmpl.id).eq("status", wanted).is("deleted_at", null)
+  /** The scoping, applied the same way to the template and the title pass. */
+  const scoped = (q: any) => {
+    // "client" ignores the chain and the brief on purpose. See match_scope.
+    if (scope === "client") {
+      return ev.client_profile_id ? q.eq("client_profile_id", ev.client_profile_id) : null
+    }
+    // Scoped by the chain when the event carries one, so two clients running
+    // the same campaign cannot complete each other's tasks. A chain_id is
+    // present on every task the engine creates, so in practice this is always
+    // the path taken; the client fallback is for an event from outside a chain.
+    if (ev.payload?.chain_id) return q.eq("chain_id", ev.payload.chain_id)
+    if (ev.payload?.brief_id) return q.eq("brief_id", ev.payload.brief_id)
+    if (ev.client_profile_id) return q.eq("client_profile_id", ev.client_profile_id)
+    return null
+  }
 
-  if (ev.payload?.chain_id) q = q.eq("chain_id", ev.payload.chain_id)
-  else if (ev.payload?.brief_id) q = q.eq("brief_id", ev.payload.brief_id)
-  else if (ev.client_profile_id) q = q.eq("client_profile_id", ev.client_profile_id)
-  else return null
+  const base = () => db.from("coach_tasks").select("*")
+    .eq("status", wanted).is("deleted_at", null)
 
-  const { data } = await q.order("created_at", { ascending: wanted === "open" }).limit(1)
+  const byTemplate = scoped(base().eq("template_id", tmpl.id))
+  if (byTemplate) {
+    const { data } = await byTemplate.order("created_at", { ascending: wanted === "open" }).limit(1)
+    if (data?.[0]) return data[0] as unknown as Task
+  }
+
+  // THE TITLE FALLBACK, for tasks that predate the template.
+  //
+  // "Define Networking Campaign" was a task coaches typed by hand long before
+  // it was a template, so the rows already on prod have a null template_id and
+  // nothing but their title to recognise them by. Restricted to template-less
+  // tasks: a task the engine created has a template_id, and matching those by
+  // title as well would give two ways to find the same row.
+  const byTitle = scoped(base().is("template_id", null).eq("title", tmpl.title))
+  if (!byTitle) return null
+  const { data } = await byTitle.order("created_at", { ascending: wanted === "open" }).limit(1)
   return (data?.[0] as unknown as Task) ?? null
 }
 
@@ -121,19 +155,53 @@ async function applyRule(
     if (!tmpl) return { outcome: "error", detail: "template not found" }
     if (tmpl.active === false) return { outcome: "no_match", detail: "template inactive" }
 
-    // The due offset lives on the template and defaults to +1 day. It is a
+    // WHOSE TASK IS THIS?
+    //
+    // A template names one default assignee, which is right for "Erin builds
+    // every campaign" and wrong for a task belonging to whoever coaches this
+    // particular client. assign_to_lead_coach resolves it per task, from the
+    // relationship the event carries.
+    //
+    // FALLS BACK RATHER THAN FAILING. A relationship with no coach, or a coach
+    // row that is not assignable, should not swallow the task: the default is
+    // still a real coach who can act on it and reassign it, which is a far
+    // better outcome than the chain stopping.
+    let assignee = String(tmpl.default_assignee_profile_id)
+    if (tmpl.assign_to_lead_coach === true) {
+      const coachClientId = ev.payload?.coach_client_id ?? null
+      const { data: rel } = coachClientId
+        ? await db.from("coach_clients").select("coach_profile_id").eq("id", coachClientId).maybeSingle()
+        : ev.client_profile_id
+          ? await db.from("coach_clients").select("coach_profile_id")
+              .eq("client_profile_id", ev.client_profile_id).eq("status", "active").limit(1).maybeSingle()
+          : { data: null as any }
+      if (rel?.coach_profile_id) assignee = String(rel.coach_profile_id)
+      else console.warn(`[automation] ${tmpl.key}: no lead coach found, using the template default`)
+    }
+
+    // The due offset lives on the template and is usually +1 day. It is a
     // default, not a rule: the task's due_at is editable the moment it exists.
-    const due = new Date()
-    due.setDate(due.getDate() + (Number(tmpl.due_offset_days) || 0))
-    due.setHours(12, 0, 0, 0)
+    //
+    // NULL MEANS NO DUE DATE, and is not the same as 0. A template with no
+    // natural deadline ("Define Networking Campaign") must not be handed one,
+    // because a task that goes overdue on its own trains the overdue digest to
+    // be ignored. `Number(null) || 0` read that as today, which is the bug this
+    // spells out rather than relies on.
+    let dueAt: string | null = null
+    if (tmpl.due_offset_days !== null && tmpl.due_offset_days !== undefined) {
+      const due = new Date()
+      due.setDate(due.getDate() + (Number(tmpl.due_offset_days) || 0))
+      due.setHours(12, 0, 0, 0)
+      dueAt = due.toISOString()
+    }
 
     const created = await createTask(db, {
       title: String(tmpl.title),
       description: tmpl.description ?? null,
       client_profile_id: ev.client_profile_id,
       coach_client_id: ev.payload?.coach_client_id ?? null,
-      assignee_profile_id: String(tmpl.default_assignee_profile_id),
-      due_at: due.toISOString(),
+      assignee_profile_id: assignee,
+      due_at: dueAt,
       due_has_time: false,
       source: "auto",
       template_id: tmpl.id,
@@ -153,6 +221,7 @@ async function applyRule(
   }
   const target = await findTargetTask(
     db, rule.target_template_key, ev, rule.action === "reopen_task" ? "done" : "open",
+    rule.match_scope ?? "chain",
   )
   if (!target) {
     const state = rule.action === "reopen_task" ? "completed" : "open"

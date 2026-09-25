@@ -144,14 +144,28 @@ function Avatar({ name, title }: { name: string; title?: string }) {
   )
 }
 
-function Person({ name, label, fullName }: { name: string | null; label: string; fullName?: string | null }) {
+/**
+ * A name with its avatar, optionally linked.
+ *
+ * THE LINK IS ON THE NAME, NOT THE ROW. A whole-row link would swallow the
+ * checkbox, the Approve buttons and the edit and delete icons, and a coach
+ * aiming at any of those would land on a client page instead. The name is the
+ * part that means "this client", so the name is the part that navigates.
+ *
+ * stopPropagation because the row may gain its own click handler later; a
+ * navigation that also fires the row's action would do two things for one
+ * click.
+ */
+function Person({ name, label, fullName, href }: {
+  name: string | null; label: string; fullName?: string | null; href?: string | null
+}) {
   if (!name) {
     return <span style={{ color: T.DIM, fontSize: 12 }}>{label}</span>
   }
   // The avatar hashes the FULL name even when only the first is shown, so a
   // client keeps one colour across the condensed and full rows.
-  return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+  const inner = (
+    <>
       <Avatar name={fullName || name} title={fullName || name} />
       <span style={{
         color: T.MUTED, fontSize: 12,
@@ -159,7 +173,29 @@ function Person({ name, label, fullName }: { name: string | null; label: string;
       }}>
         {name}
       </span>
-    </span>
+    </>
+  )
+  const shell: React.CSSProperties = {
+    display: "inline-flex", alignItems: "center", gap: 8, minWidth: 0,
+  }
+  if (!href) return <span style={shell}>{inner}</span>
+  return (
+    <a
+      href={href}
+      title={`Open ${fullName || name}`}
+      onClick={(e) => e.stopPropagation()}
+      style={{ ...shell, textDecoration: "none", cursor: "pointer" }}
+      onMouseEnter={(e) => {
+        const label = e.currentTarget.querySelector("span:last-child") as HTMLElement | null
+        if (label) label.style.color = T.TEXT
+      }}
+      onMouseLeave={(e) => {
+        const label = e.currentTarget.querySelector("span:last-child") as HTMLElement | null
+        if (label) label.style.color = T.MUTED
+      }}
+    >
+      {inner}
+    </a>
   )
 }
 
@@ -341,6 +377,7 @@ export function TaskRow(props: TaskRowProps) {
             : (props.clientName ?? null)}
           fullName={props.clientName ?? null}
           label="No client"
+          href={task.client_profile_id ? `/dashboard/coach/clients/${task.client_profile_id}` : null}
         />
       </div>
 

@@ -68,12 +68,35 @@ async function main() {
   if (bErr) throw new Error(`brief insert: ${bErr.message}`)
   console.log(`brief ${brief.id} on relationship ${rel.id}\n`)
 
+  // ---- the step BEFORE the chain, as a coach would have typed it
+  //
+  // No template_id and no brief_id: this is what the rows already on prod look
+  // like, written by hand months before the template existed. The rule has to
+  // find it by title and by client alone.
+  const { data: lead } = await db.from("coach_clients")
+    .select("coach_profile_id").eq("id", rel.id).maybeSingle()
+  const { data: manualDefine } = await db.from("coach_tasks").insert({
+    title: "Define Networking Campaign",
+    client_profile_id: rel.client_profile_id,
+    coach_client_id: rel.id,
+    assignee_profile_id: lead!.coach_profile_id,
+    status: "open",
+    source: "manual",
+  }).select("id").single()
+
   await emitTaskEvent(db, "campaign_brief.submitted", {
     brief_id: brief.id, coach_client_id: rel.id,
   }, rel.client_profile_id)
 
   // ---- 1. submit -> Create Networking Campaign
   await drain(db)
+
+  // The hand-written task ticks itself, matched by title and by client.
+  const { data: defineAfter } = await db.from("coach_tasks")
+    .select("status").eq("id", manualDefine!.id).single()
+  ck("a hand-written Define task auto-completes on submit", defineAfter?.status === "done",
+    String(defineAfter?.status))
+
   let tasks = await openTasks(brief.id)
   ck("submit creates one task", tasks.length === 1, await titleOf(tasks[0]?.template_id))
   ck("it is Create Networking Campaign", (await titleOf(tasks[0]?.template_id)) === "networking.create_campaign")
@@ -155,6 +178,8 @@ async function main() {
 
   // ---- clean up everything this run made
   const ids = (await openTasks(brief.id)).map((t) => t.id)
+  await db.from("coach_task_events").delete().eq("task_id", manualDefine!.id)
+  await db.from("coach_tasks").delete().eq("id", manualDefine!.id)
   for (const t of await allTasksFor(brief.id)) await db.from("coach_task_events").delete().eq("task_id", t.id)
   await db.from("coach_tasks").delete().eq("brief_id", brief.id)
   await db.from("coach_automation_events").delete().eq("client_profile_id", rel.client_profile_id)
