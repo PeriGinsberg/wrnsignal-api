@@ -29,7 +29,7 @@ Six migrations, none of which exist on prod today. Verified absent:
 
 ## 2. Migration order, and why it is this order
 
-Run all six **before** promoting. The deployed code reads these tables on the
+Run all seven **before** promoting. The deployed code reads these tables on the
 coach dashboard, so code-first means every coach sees errors until the SQL
 lands.
 
@@ -40,7 +40,31 @@ lands.
 4.  20260926_plan_client_email.sql       4 nullable columns on networking_plan_jobs
 5.  20260926_plan_jobs_reshare.sql       partial unique index on the plan jobs
 6.  20260926_plan_sources.sql            networking_plan_sources
+7.  20260927_campaign_briefs.sql         networking_campaign_briefs, brief_id x3, decision
 ```
+
+**1 to 6 are already on prod** (applied 2026-09-26, re-verified by probing the
+exact artifact each one creates). 7 is the only one outstanding.
+
+**7 must follow 1 and 6**, because it adds a foreign key from `coach_tasks`,
+`networking_plan_jobs` and `networking_plan_sources` to the new briefs table,
+and all three have to exist first. It is purely additive: one new table, four
+nullable columns, three indexes. Nothing it touches has existing data to
+migrate, and every task already on prod keeps a null `brief_id`, which is what
+"this task is not part of a campaign" means.
+
+Reversal is in the migration header:
+
+```sql
+ALTER TABLE coach_tasks DROP COLUMN brief_id;
+ALTER TABLE networking_plan_jobs DROP COLUMN brief_id;
+ALTER TABLE networking_plan_sources DROP COLUMN brief_id;
+DROP TABLE networking_campaign_briefs;
+```
+
+`coach_tasks.decision` is left in place on a reversal: it is a nullable TEXT
+column nothing else reads, and dropping it would throw away how a review task
+was closed.
 
 Six, not four. Five and six landed after this plan was first written:
 
@@ -157,6 +181,36 @@ LEFT JOIN client_profiles p ON p.id = t.client_profile_id
 WHERE e.payload->>'legacy_priority' = 'urgent'
   AND t.status = 'open' AND t.deleted_at IS NULL;
 ```
+
+---
+
+## 3a. Seeding the Networking chain
+
+**Creating the tables is not the same as filling them.** `coach_task_templates`
+and `coach_automation_rules` are empty on a fresh prod, so a submitted brief
+would save and start nothing: the runner would find no rule, record `no_rule`,
+and the coach would wait for a task that is not coming.
+
+```
+SUPABASE_URL=<prod> SUPABASE_SERVICE_ROLE_KEY=<prod> \
+  npx tsx tests/automation/seed-networking-chain.ts
+```
+
+Four templates and seven rules. Re-runnable: templates upsert on `key`, and the
+rules for this chain's event keys are deleted and reinserted, because a rule has
+no natural key and leaving the old set behind would double every create.
+
+**The assignees are resolved by email, not written as ids**, which is what makes
+the script portable between dev and prod. On prod the two that matter are:
+
+| Role | Email | Profile |
+|---|---|---|
+| Builder | `erin+coach@workforcereadynow.com` | Erin Condon, `is_coach` true |
+| Reviewer | `peri@workforcereadynow.com` | Coach: Peri Ginsberg, `is_coach` true |
+
+Those are the script's defaults, so no overrides are needed on prod. **Plain
+`erin@workforcereadynow.com` in prod is a CLIENT, Camila Ward**, and the script
+refuses a non-coach rather than assigning work to her.
 
 ---
 
