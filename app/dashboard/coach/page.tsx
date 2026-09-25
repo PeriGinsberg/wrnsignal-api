@@ -26,6 +26,7 @@ import {
   T, input, textarea, btnPrimary, btnSecondary, card, eyebrow, label,
 } from "../../../lib/dashboard-theme"
 import { CrossClientActionItemsList } from "./_action-items/CrossClientActionItemsList"
+import { TaskCard } from "./_tasks/TaskCard"
 import { LifecycleStatusPill, type LifecycleStatus } from "./LifecycleStatusPill"
 import { onCoachRowEnter, onCoachRowLeave, COACH_ROW_DEFAULT_BG, COACH_ROW_TRANSITION } from "./coachRowHover"
 import { DismissSignalButton, useDismissSignal } from "./DismissSignalButton"
@@ -1086,6 +1087,16 @@ export default function CoachHomePage() {
             emptyText="No urgent items"
             bodyLineClamp={2}
           />
+        </Section>
+
+        <Section
+          icon={<IconClipboardCheck />}
+          title="My Tasks"
+          titleHref="/dashboard/coach/tasks"
+          accentColor={T.WRN_ORANGE}
+          noBottomMargin
+        >
+          <TaskCard />
         </Section>
 
         {SHOW_ENGAGEMENT_SIGNALS && (
