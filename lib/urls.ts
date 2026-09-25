@@ -22,8 +22,18 @@ import type { NextRequest } from "next/server"
 export const FRAMER_URL =
   process.env.NEXT_PUBLIC_FRAMER_URL || "https://wrnsignal.workforcereadynow.com"
 
+// APP_BASE_URL IS DELIBERATELY NOT READ HERE. It was, for about a day, and it
+// broke every magic link in production.
+//
+// The two URLs are different hosts doing different jobs. getAppUrl is THIS app:
+// the dashboard, the API, the OAuth callbacks, the Supabase redirectTo targets.
+// APP_BASE_URL is the Framer marketing site, which is where a client signs in
+// from an email and which has no /dashboard route at all. Pointing auth at it
+// sent coaches to https://wrnsignal.workforcereadynow.com/dashboard/coach and a
+// Page Not Found, with their access token sitting in the fragment.
+//
+// Only signalLoginUrl() may read APP_BASE_URL.
 export function getAppUrl(req?: NextRequest): string {
-  if (process.env.APP_BASE_URL) return stripTrailingSlash(process.env.APP_BASE_URL)
   if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL
   if (req) {
     const host = req.headers.get("x-forwarded-host") || req.headers.get("host")
