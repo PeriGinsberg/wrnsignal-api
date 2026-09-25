@@ -4,15 +4,17 @@
 // open coach action items used by the dashboard's "Needs your attention"
 // section.
 //
-// Pilot scope is coach-authored action items only (heuristic items are
+// Pilot scope is the coach's open tasks for this client (heuristic items are
 // deferred to post-pilot per SIGNAL PM Item 8). The query filters:
-//   - notes.type = 'action_item'
-//   - notes.completed_at IS NULL
-//   - notes.deleted_at IS NULL
-//   - notes.client_profile_id = <clientId>
-//   - notes.coach_profile_id = <authenticated coach>
+//   - coach_tasks.status = 'open'
+//   - coach_tasks.deleted_at IS NULL
+//   - coach_tasks.coach_client_id IN <this client's relationships>
 //
-// Sort: priority urgent → this_week → when_ready, then created_at DESC
+// Sort: due date ascending, undated last, then created_at DESC.
+//
+// Until 2026-09-26 this read coach_client_notes with type='action_item',
+// sorted urgent → this_week → when_ready. Those rows were migrated into
+// coach_tasks; counting them here as well would report work twice.
 // within each bucket. Sort is JS-side because the existing index sorts
 // priority alphabetically (this_week, urgent, when_ready) which is the
 // wrong logical order. The index still serves the WHERE clause.
@@ -33,12 +35,6 @@ import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-
-const PRIORITY_ORDER: Record<string, number> = {
-  urgent: 0,
-  this_week: 1,
-  when_ready: 2,
-}
 
 function getSupabaseAdmin() {
   const url = process.env.SUPABASE_URL
@@ -152,13 +148,18 @@ export async function GET(
     const ccIds = await coachClientIdsForClient(supabase, clientProfileId)
 
     const [notesResult, clientProfileResult] = await Promise.all([
+      // TASKS, NOT NOTES, since 2026-09-26. Action items became coach_tasks,
+      // and counting the old notes here would keep reporting work that was
+      // migrated and has since been ticked off somewhere else.
+      //
+      // Matched on coach_client_id, the same set as before, so a prospect-era
+      // task with a null client_profile_id is still counted.
       supabase
-        .from("coach_client_notes")
-        .select("id, body, priority, created_at, completed_at")
+        .from("coach_tasks")
+        .select("id, title, description, due_at, created_at, completed_at")
         .in("coach_client_id", ccIds)
-        .eq("type", "action_item")
-        .is("deleted_at", null)
-        .is("completed_at", null),
+        .eq("status", "open")
+        .is("deleted_at", null),
       // For the heuristic engine we need the client's name/email/user_id;
       // last_viewed_at comes from the verifyCoachAccess result above (it
       // already pulled the coach_clients row). One extra query for the
@@ -173,19 +174,25 @@ export async function GET(
     const { data: notesData, error: notesErr } = notesResult
     if (notesErr) throw new Error(`Needs-attention query failed: ${notesErr.message}`)
 
+    // The response keys are unchanged so the client dashboard renders as it
+    // did: note_id now carries a task id, and body carries the task title.
+    //
+    // ORDERED BY DUE DATE, soonest first, with undated tasks last. The old
+    // order was by priority, which tasks do not have; "no due date" sorting to
+    // the bottom is the honest reading, since nothing undated is late.
     const actionItems = (notesData ?? [])
       .map((r) => ({
         note_id: r.id as string,
-        body: r.body as string,
-        priority: r.priority as string,
+        body: r.title as string,
+        priority: "",
+        due_at: (r.due_at as string | null) ?? null,
         created_at: r.created_at as string,
         completed_at: r.completed_at as string | null,
       }))
       .sort((a, b) => {
-        // priority rank ascending (urgent=0 first), then created_at desc
-        const pa = PRIORITY_ORDER[a.priority] ?? 99
-        const pb = PRIORITY_ORDER[b.priority] ?? 99
-        if (pa !== pb) return pa - pb
+        if (a.due_at && b.due_at) return a.due_at.localeCompare(b.due_at)
+        if (a.due_at) return -1
+        if (b.due_at) return 1
         return b.created_at.localeCompare(a.created_at)
       })
 

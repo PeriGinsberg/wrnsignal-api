@@ -222,19 +222,28 @@ export async function POST(
       type = body.type as NoteType
     }
 
-    // Priority is required for action_item, must be NULL for other types.
-    // CHECK constraints on the table enforce this; we resolve here so the
-    // caller doesn't have to know about constraint shapes.
-    let priority: NotePriority | null = null
+    // NO NEW ACTION ITEMS. An action item is a task since 2026-09-26: tasks
+    // carry an assignee, a due date and a status, and the dashboard, Required
+    // Actions and the client's Tasks tab all read them. A note written with
+    // this type would be invisible to every one of those.
+    //
+    // Refused rather than silently rewritten to "other", because a coach who
+    // sent this meant "something to do" and deserves to be told where that now
+    // lives. Existing rows keep the type and still render; only creation and
+    // conversion are closed.
     if (type === "action_item") {
-      if (body.priority === undefined || body.priority === null || body.priority === "") {
-        priority = DEFAULT_ACTION_ITEM_PRIORITY
-      } else if ((NOTE_PRIORITIES as readonly string[]).includes(body.priority)) {
-        priority = body.priority as NotePriority
-      } else {
-        return withCorsJson(req, { ok: false, error: "Invalid priority" }, 400)
-      }
+      return withCorsJson(req, {
+        ok: false,
+        error: "Action items are tasks now. Add it on the client's Tasks tab.",
+      }, 400)
     }
+
+    // Priority was only ever meaningful for action_item, and that type can no
+    // longer be created here, so it is always NULL. The column and its CHECK
+    // constraints stay for the rows written before 2026-09-26. A task's
+    // equivalent is its due date, which is a claim about when something is
+    // late rather than about how it felt when it was written.
+    const priority: NotePriority | null = null
 
     const { data: inserted, error: insertErr } = await supabase
       .from("coach_client_notes")

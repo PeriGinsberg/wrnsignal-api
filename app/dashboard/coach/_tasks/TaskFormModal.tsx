@@ -20,6 +20,8 @@ export type TaskFormModalProps = {
   task: Task | null
   assignees: Assignee[]
   clients: Array<{ id: string; name: string }>
+  /** Pre-select this client on a new task (the client page passes its own). */
+  presetClientId?: string
   onClose: () => void
   onSaved: (task: Task) => void
   onDeleted?: (taskId: string) => void
@@ -42,7 +44,7 @@ export function TaskFormModal(props: TaskFormModalProps) {
   const [title, setTitle] = useState(task?.title ?? "")
   const [description, setDescription] = useState(task?.description ?? "")
   const [assignee, setAssignee] = useState(task?.assignee_profile_id ?? assignees[0]?.id ?? "")
-  const [clientId, setClientId] = useState(task?.client_profile_id ?? "")
+  const [clientId, setClientId] = useState(task?.client_profile_id ?? props.presetClientId ?? "")
   const [hasTime, setHasTime] = useState(task?.due_has_time ?? false)
   const [due, setDue] = useState(toLocalInput(task?.due_at ?? null, task?.due_has_time ?? false))
   const [status, setStatus] = useState<TaskStatus>(task?.status ?? "open")

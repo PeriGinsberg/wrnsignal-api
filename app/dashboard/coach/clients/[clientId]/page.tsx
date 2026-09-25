@@ -16,6 +16,7 @@ import {
 import ProfilePersonasTab, { type ClientProfileFull, type ClientPersonaFull } from "./ProfilePersonasTab"
 import { NotesTab, type NoteType, type NotePriority } from "./NotesTab"
 import { AddNotePanel } from "./AddNotePanel"
+import { TaskList } from "../../_tasks/TaskList"
 import { ClientHeaderStrip } from "./dashboard/ClientHeaderStrip"
 import { LanesPanel } from "../../../lanes/LanesPanel"
 import type { LifecycleStatus } from "../../LifecycleStatusPill"
@@ -40,7 +41,7 @@ import { describeClientStatus } from "@/lib/coachRecommendations"
 // retained (data is preserved; only the surface is gone).
 // "engagements" added for the attached-package snapshots (Client Engagement UI).
 // "history" added for the read-only event timeline (Client Event Log UI).
-type Tab = "dashboard" | "tracker" | "source" | "lanes" | "notes" | "analysis" | "engagements" | "workbooks" | "library" | "history"
+type Tab = "dashboard" | "tracker" | "source" | "lanes" | "notes" | "tasks" | "analysis" | "engagements" | "workbooks" | "library" | "history"
 
 // Status filter buckets exposed to Job Tracker tab via URL ?status= param
 // or in-app tile click. "all" = no filter.
@@ -632,6 +633,7 @@ export default function CoachClientPage() {
     { id: "source", label: "Source a Job" },
     { id: "lanes", label: "Lanes" },
     { id: "notes", label: "Notes" },
+    { id: "tasks", label: "Tasks" },
     { id: "analysis", label: "Profile & Personas" },
     { id: "engagements", label: "Engagements" },
     { id: "workbooks", label: "Workbooks" },
@@ -1919,6 +1921,19 @@ export default function CoachClientPage() {
           clientId={clientId}
           clientName={clientProfile?.name || null}
           refreshKey={notesRefreshKey}
+        />
+      )}
+
+      {/* Tasks for this client. assignee="all" on purpose: the question here
+          is "what is outstanding for this person", not "what is on my plate",
+          and a co-coach's task is still outstanding. */}
+      {tab === "tasks" && (
+        <TaskList
+          assignee="all"
+          client={clientId}
+          newTaskClientId={clientId}
+          editable
+          emptyText="No open tasks for this client."
         />
       )}
 

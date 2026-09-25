@@ -14,9 +14,13 @@ import { SavingSpinner } from "../../SavingSpinner"
 export type NoteType = "session_recap" | "action_item" | "other"
 export type NotePriority = "urgent" | "this_week" | "when_ready"
 
+// "Action Item" is deliberately not offered any more. An action item is a
+// task, and tasks live on the client's Tasks tab where they carry an assignee,
+// a due date and a status that the cross-client surfaces can read. A note
+// could carry none of those. The type remains in NoteType because rows written
+// before 2026-09-26 still say action_item and still have to render.
 const TYPE_OPTIONS: { value: NoteType; label: string }[] = [
   { value: "session_recap", label: "Session Recap" },
-  { value: "action_item", label: "Action Item" },
   { value: "other", label: "Other" },
 ]
 

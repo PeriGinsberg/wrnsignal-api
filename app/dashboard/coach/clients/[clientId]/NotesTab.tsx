@@ -54,7 +54,6 @@ const DEFAULT_ACTION_ITEM_PRIORITY: NotePriority = "this_week"
 const FILTER_OPTIONS: { value: "" | NoteType; label: string }[] = [
   { value: "", label: "All" },
   { value: "session_recap", label: "Session Recap" },
-  { value: "action_item", label: "Action Item" },
   { value: "other", label: "Other" },
 ]
 
@@ -321,7 +320,6 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
                       {[
                         { value: "session_recap" as const, label: "Session Recap" },
-                        { value: "action_item" as const, label: "Action Item" },
                         { value: "other" as const, label: "Other" },
                       ].map((opt) => (
                         <button
