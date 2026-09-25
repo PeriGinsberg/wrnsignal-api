@@ -320,8 +320,12 @@ only one is the client plan email. Worth also checking for a second workflow
 that removes the tag or reacts to its removal, since the Re-send button removes
 and re-adds it.
 
-Until that is confirmed, section 1 decision 3 stands as a decision, not as a
-verified safe change. The tag removal is Step 6, so there is time.
+**SETTLED, 2026-09-26.** The check was made, the GHL workflow was the only
+thing keying off the tag, and the tag write was removed in `1d4c49da`
+alongside the Postmark client email, which is live in production. What is left
+on the GHL contact is the note: an audit line so anyone working in GHL can see
+the plan went out. It is not how the client is told and it never was. See
+`lib/ghl/networkingPlanSync.ts`.
 
 ---
 
@@ -387,8 +391,9 @@ verified safe change. The tag removal is Step 6, so there is time.
    dev**; `tests/automation/chain-smoke.ts`, 17 checks.
 6. **Wire the auto-completes** into `runPlanJob` and `sharePlanJob`, add the
    Postmark client email, and remove the GHL tag write. Requires section 6
-   confirmed first. **Auto-completes done on dev**; the GHL tag write is still
-   there and is a prod decision.
+   confirmed first. **Done.** The Postmark client email and the tag removal
+   shipped in `1d4c49da` and are live in production; the two auto-completes are
+   wired on dev.
 7. **The Campaign Brief.** The form that starts the chain, its history, the AI
    read of `profile_text`, the campaign picker on import. **Done on dev.**
 8. **Prod.** Migrations, then promote, then seed template and rule rows.
