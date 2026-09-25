@@ -22,6 +22,7 @@ import {
   type CampaignBrief,
 } from "@/lib/briefs/model"
 import { emitAndRun } from "@/lib/automation/run"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -29,10 +30,30 @@ export const maxDuration = 60
 
 export async function OPTIONS(req: NextRequest) { return corsOptionsResponse(req.headers.get("origin")) }
 
+/**
+ * May this coach act on this brief?
+ *
+ * Checked against the relationship the brief hangs off, not against the brief.
+ * Scoped the same way /api/network/plan/run scopes the plan, because the brief
+ * and the plan are two halves of one act.
+ */
+async function mayActOn(
+  db: ReturnType<typeof getSupabaseAdmin>,
+  coachClientId: string,
+  actorProfileId: string,
+): Promise<boolean> {
+  const { actingIds } = await resolveDelegation(db, actorProfileId)
+  const { data } = await db.from("coach_clients")
+    .select("id").eq("id", coachClientId).in("coach_profile_id", actingIds).maybeSingle()
+  return !!data
+}
+
+const NOT_YOURS = "That campaign is on a client who is not one of yours."
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ briefId: string }> }) {
   try {
     const { briefId } = await params
-    const { error } = await resolveCoach(req)
+    const { coachProfileId, error } = await resolveCoach(req)
     if (error) return error
 
     const db = getSupabaseAdmin()
@@ -40,6 +61,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ brie
       .select(BRIEF_COLUMNS).eq("id", briefId).is("deleted_at", null).maybeSingle()
     if (qErr) return withCorsJson(req, { ok: false, error: qErr.message }, 500)
     if (!data) return withCorsJson(req, { ok: false, error: "That campaign no longer exists." }, 404)
+    if (!(await mayActOn(db, (data as any).coach_client_id, coachProfileId))) {
+      return withCorsJson(req, { ok: false, error: NOT_YOURS }, 403)
+    }
 
     const { data: tasks } = await db.from("coach_tasks")
       .select("id, title, status, decision, assignee_profile_id, due_at, template_id, completed_at")
@@ -66,6 +90,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ br
     if (!before) return withCorsJson(req, { ok: false, error: "That campaign no longer exists." }, 404)
 
     const brief = before as unknown as CampaignBrief
+    if (!(await mayActOn(db, brief.coach_client_id, coachProfileId))) {
+      return withCorsJson(req, { ok: false, error: NOT_YOURS }, 403)
+    }
+
     const body = await req.json().catch(() => ({}))
     const submitting = body?.status === "submitted"
 
@@ -140,13 +168,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ br
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ briefId: string }> }) {
   try {
     const { briefId } = await params
-    const { error } = await resolveCoach(req)
+    const { coachProfileId, error } = await resolveCoach(req)
     if (error) return error
 
     const db = getSupabaseAdmin()
     const { data: brief } = await db.from("networking_campaign_briefs")
-      .select("id, status").eq("id", briefId).is("deleted_at", null).maybeSingle()
+      .select("id, status, coach_client_id").eq("id", briefId).is("deleted_at", null).maybeSingle()
     if (!brief) return withCorsJson(req, { ok: false, error: "That campaign no longer exists." }, 404)
+    if (!(await mayActOn(db, brief.coach_client_id, coachProfileId))) {
+      return withCorsJson(req, { ok: false, error: NOT_YOURS }, 403)
+    }
 
     // Only a draft. A submitted brief has tasks and possibly a plan hanging off
     // it, and deleting it would orphan work somebody is doing.

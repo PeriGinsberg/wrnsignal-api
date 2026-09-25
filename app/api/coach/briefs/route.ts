@@ -19,6 +19,7 @@ import {
   validateBriefWrite,
 } from "@/lib/briefs/model"
 import { buildPrefill } from "@/lib/briefs/prefill"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -28,19 +29,37 @@ export const maxDuration = 60
 
 export async function OPTIONS(req: NextRequest) { return corsOptionsResponse(req.headers.get("origin")) }
 
-/** The relationship this client is on, for this coach. */
-async function relationshipFor(db: ReturnType<typeof getSupabaseAdmin>, clientProfileId: string) {
+/**
+ * The relationship this client is on, for the coach who is asking.
+ *
+ * SCOPED TO THE ACTING COACH AND THEIR PRINCIPALS, the same check
+ * /api/network/plan/run makes. A brief drives that plan, so the two cannot
+ * disagree about who may act on a client: a coach who can brief a campaign but
+ * not build it would file work nobody can do.
+ *
+ * limit(1) rather than a bare maybeSingle: a client on two active
+ * relationships is not supposed to happen, and PostgREST answers a second row
+ * with a 500 rather than a useful message. Taking the first is the right
+ * failure here, because the brief lands on a real relationship either way.
+ */
+async function relationshipFor(
+  db: ReturnType<typeof getSupabaseAdmin>,
+  clientProfileId: string,
+  actorProfileId: string,
+) {
+  const { actingIds } = await resolveDelegation(db, actorProfileId)
   const { data } = await db.from("coach_clients")
     .select("id, coach_profile_id, client_profile_id")
     .eq("client_profile_id", clientProfileId)
+    .in("coach_profile_id", actingIds)
     .eq("status", "active")
-    .maybeSingle()
+    .limit(1).maybeSingle()
   return data
 }
 
 export async function GET(req: NextRequest) {
   try {
-    const { error } = await resolveCoach(req)
+    const { coachProfileId, error } = await resolveCoach(req)
     if (error) return error
 
     const clientProfileId = new URL(req.url).searchParams.get("client_profile_id")
@@ -49,6 +68,13 @@ export async function GET(req: NextRequest) {
     }
 
     const db = getSupabaseAdmin()
+    // Refused rather than answered empty. "No campaigns" and "not your client"
+    // are different facts and a coach reading the first when the second is true
+    // would start a duplicate campaign.
+    if (!(await relationshipFor(db, clientProfileId, coachProfileId))) {
+      return withCorsJson(req, { ok: false, error: "That client is not on one of your active coaching relationships." }, 403)
+    }
+
     const { data, error: qErr } = await db.from("networking_campaign_briefs")
       .select(BRIEF_COLUMNS)
       .eq("client_profile_id", clientProfileId)
@@ -103,9 +129,9 @@ export async function POST(req: NextRequest) {
     }
 
     const db = getSupabaseAdmin()
-    const rel = await relationshipFor(db, clientProfileId)
+    const rel = await relationshipFor(db, clientProfileId, coachProfileId)
     if (!rel) {
-      return withCorsJson(req, { ok: false, error: "That client is not on an active coaching relationship." }, 404)
+      return withCorsJson(req, { ok: false, error: "That client is not on one of your active coaching relationships." }, 403)
     }
 
     // PREFILL IS THE DEFAULT, and the AI read with it. A coach who clicks New
