@@ -22,6 +22,18 @@ export type TaskFormModalProps = {
   clients: Array<{ id: string; name: string }>
   /** Pre-select this client on a new task (the client page passes its own). */
   presetClientId?: string
+  /** Pre-select this assignee on a new task. The client page passes "me". */
+  presetAssigneeId?: string
+  /**
+   * Pre-fill the due date on a new task, as an ISO instant.
+   *
+   * Every one of these is a default and not a decision: the fields stay
+   * editable, which is why they are separate props rather than a "locked"
+   * mode. A coach adding a task from a client's page is usually adding it for
+   * that client, for themselves, for tomorrow, and should have to change only
+   * the ones that are wrong.
+   */
+  presetDueAt?: string
   onClose: () => void
   onSaved: (task: Task) => void
   onDeleted?: (taskId: string) => void
@@ -43,13 +55,24 @@ export function TaskFormModal(props: TaskFormModalProps) {
 
   const [title, setTitle] = useState(task?.title ?? "")
   const [description, setDescription] = useState(task?.description ?? "")
-  const [assignee, setAssignee] = useState(task?.assignee_profile_id ?? assignees[0]?.id ?? "")
+  const [assignee, setAssignee] = useState(
+    task?.assignee_profile_id ?? props.presetAssigneeId ?? assignees[0]?.id ?? "",
+  )
   const [clientId, setClientId] = useState(task?.client_profile_id ?? props.presetClientId ?? "")
   const [hasTime, setHasTime] = useState(task?.due_has_time ?? false)
-  const [due, setDue] = useState(toLocalInput(task?.due_at ?? null, task?.due_has_time ?? false))
+  const [due, setDue] = useState(
+    toLocalInput(task?.due_at ?? props.presetDueAt ?? null, task?.due_has_time ?? false),
+  )
   const [status, setStatus] = useState<TaskStatus>(task?.status ?? "open")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // The assignee list arrives after the first render, so a preset that is not
+  // yet in `assignees` would leave the select on its first option. Re-apply it
+  // once the options exist, but only while the field is untouched.
+  useEffect(() => {
+    if (!editing && props.presetAssigneeId && !assignee) setAssignee(props.presetAssigneeId)
+  }, [assignees, props.presetAssigneeId, editing, assignee])
 
   // Switching the time toggle must not silently drop the day already chosen.
   useEffect(() => { setDue((d) => (d ? toLocalInput(new Date(d).toISOString(), hasTime) : d)) }, [hasTime])

@@ -17,6 +17,15 @@ import ProfilePersonasTab, { type ClientProfileFull, type ClientPersonaFull } fr
 import { NotesTab, type NoteType, type NotePriority } from "./NotesTab"
 import { AddNotePanel } from "./AddNotePanel"
 import { TaskList } from "../../_tasks/TaskList"
+import { TaskFormModal } from "../../_tasks/TaskFormModal"
+
+/** Tomorrow, as an ISO instant, with no time component that matters. */
+function tomorrowIso(): string {
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  d.setHours(12, 0, 0, 0)
+  return d.toISOString()
+}
 import { ClientHeaderStrip } from "./dashboard/ClientHeaderStrip"
 import { LanesPanel } from "../../../lanes/LanesPanel"
 import type { LifecycleStatus } from "../../LifecycleStatusPill"
@@ -365,6 +374,16 @@ export default function CoachClientPage() {
   // needsAttentionRefreshKey similarly drives the dashboard's
   // Needs-Attention section.
   const [addNoteOpen, setAddNoteOpen] = useState(false)
+
+  // Add Task, from the header. Separate state from the Tasks tab so the modal
+  // opens over whichever tab the coach happens to be on, the same way Add Note
+  // already does.
+  const [addTaskOpen, setAddTaskOpen] = useState(false)
+  const [taskAssignees, setTaskAssignees] = useState<Array<{ id: string; name: string; email: string | null; active: boolean }>>([])
+  const [meProfileId, setMeProfileId] = useState<string | null>(null)
+  // Bumped after a save so the Tasks tab re-reads rather than showing a list
+  // that predates the task just added.
+  const [tasksRefresh, setTasksRefresh] = useState(0)
   const [notesRefreshKey, setNotesRefreshKey] = useState(0)
   const [needsAttentionRefreshKey, setNeedsAttentionRefreshKey] = useState(0)
   const [removingClient, setRemovingClient] = useState(false)
@@ -419,6 +438,25 @@ export default function CoachClientPage() {
   }, [clientId])
 
   useEffect(() => { loadAll() }, [loadAll])
+
+  // The assignee options and who "me" is, for the header's Add Task.
+  // Fetched once per client page rather than when the modal opens, so the
+  // select is already populated the moment it appears. A failure leaves the
+  // dropdown empty and the modal still usable: Add Task is not worth an error
+  // banner on a page that is mostly about something else.
+  useEffect(() => {
+    let alive = true
+    void (async () => {
+      try {
+        const res = await authFetch("/api/coach/tasks/assignees")
+        const j = await res.json().catch(() => null)
+        if (!alive || !res.ok || !j?.ok) return
+        setTaskAssignees(j.assignees ?? [])
+        setMeProfileId(j.me ?? null)
+      } catch { /* dropdown stays empty */ }
+    })()
+    return () => { alive = false }
+  }, [])
 
   // Deep-link landing behavior for arrivals from
   // /dashboard/coach/applications-recent. Two URL hints drive two
@@ -763,6 +801,7 @@ export default function CoachClientPage() {
           sendingInvite={sendingInvite}
           inviteError={inviteError}
           onAddNote={() => setAddNoteOpen(true)}
+          onAddTask={() => setAddTaskOpen(true)}
           onSourceJob={() => setTab("source")}
           onRemoveClient={() => {
             if (!removingClient) handleRemoveClient()
@@ -1929,6 +1968,7 @@ export default function CoachClientPage() {
           and a co-coach's task is still outstanding. */}
       {tab === "tasks" && (
         <TaskList
+          key={tasksRefresh}
           assignee="all"
           client={clientId}
           newTaskClientId={clientId}
@@ -1988,6 +2028,21 @@ export default function CoachClientPage() {
         applicationId={jobPanelAppId}
         initialSection={jobPanelSection}
       />
+
+      {/* Add Task, over whichever tab is open. Client, assignee and due date
+          are pre-filled and all three stay editable. */}
+      {addTaskOpen && (
+        <TaskFormModal
+          task={null}
+          assignees={taskAssignees}
+          clients={clientProfile ? [{ id: clientId, name: clientProfile.name || "This client" }] : []}
+          presetClientId={clientId}
+          presetAssigneeId={meProfileId ?? undefined}
+          presetDueAt={tomorrowIso()}
+          onClose={() => setAddTaskOpen(false)}
+          onSaved={() => setTasksRefresh((n) => n + 1)}
+        />
+      )}
 
       {/* Slide-in Add Note panel — overlays current tab without navigation */}
       <AddNotePanel

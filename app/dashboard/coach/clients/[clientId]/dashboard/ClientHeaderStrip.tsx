@@ -39,6 +39,7 @@ type Props = {
   sendingInvite: boolean
   inviteError?: string | null
   onAddNote: () => void
+  onAddTask: () => void
   onSourceJob: () => void
   onRemoveClient: () => void
   onLifecycleStatusChange: (next: LifecycleStatus) => void
@@ -55,6 +56,7 @@ export function ClientHeaderStrip({
   sendingInvite,
   inviteError,
   onAddNote,
+  onAddTask,
   onSourceJob,
   onRemoveClient,
   onLifecycleStatusChange,
@@ -147,6 +149,9 @@ export function ClientHeaderStrip({
         </ActionButton>
         <ActionButton onClick={onAddNote} accent="orange">
           + Add Note
+        </ActionButton>
+        <ActionButton onClick={onAddTask} accent="orange">
+          + Add Task
         </ActionButton>
         <ActionButton accent="muted" disabled title="Calendly integration coming soon">
           Schedule
