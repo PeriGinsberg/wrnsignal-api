@@ -217,6 +217,38 @@ behaviour is auditable rather than silent.
 
 ## 5. Email
 
+### STANDING RULE: every client-facing email carries the signature
+
+Decided 2026-09-25. Not a convention to remember, a mechanism.
+
+The Postmark **layout** `signal-client` holds the WRN logo header, the orange
+hairline and the signature. A template that names that layout inherits all
+three, so a new client-facing email gets them without restating anything.
+
+Adding one is two steps, and the second is what enforces the first:
+
+1. Create the template with `LayoutTemplate: "signal-client"`.
+2. Send it with `sendToClient()` from `lib/email/send.ts`, which also applies
+   the non-production redirect, the client stream and the subject prefix.
+
+`lib/email/signature.ts` is the signature's only definition, and
+`tests/email/sync-email-layout.ts` compiles it into the layout and pushes it.
+Edit the module, re-run the script; never edit the layout in the Postmark UI,
+because the next push would overwrite it.
+
+Coach-facing mail is deliberately NOT signed: `sendToCoach()` uses the
+internal stream and no layout. A task notification signed by the founder
+would be odd, and internal mail has its own deliverability to protect.
+
+Images are served from `public/logo/` on this Vercel project, a stable URL we
+control and version with the code, rather than Postmark's asset store.
+
+The signature's navy is `#25395C`, sampled from the existing artwork, and is
+NOT the `#08203F` used for email body text. The wordmark in the SIGNAL logo is
+that navy, so changing it would leave the logo disagreeing with the text
+beside it. Worth unifying one day; worth doing deliberately, not silently.
+
+
 One shared send function, `lib/email/send.ts`, taking a template alias, a model,
 a stream and a dedupe key. Postmark templates rather than hand-built HTML.
 

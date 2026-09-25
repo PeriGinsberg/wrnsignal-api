@@ -77,3 +77,8 @@ evals/jobfit/cases/
 # carry a real client's name and employer in the breadcrumb.
 docs/workbooks-v1/
 docs/workbooks-v1.zip
+
+# Reference-only artwork: the signature mock the email signature was rebuilt
+# from. Not used by the app and not a source asset; the real images live in
+# public/logo/ and are served from there.
+logo/sample signature.png
