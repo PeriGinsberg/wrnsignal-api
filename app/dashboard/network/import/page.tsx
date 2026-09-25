@@ -12,6 +12,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { T, headline, eyebrow, card, select as selectStyle, selectOption } from "../../../../lib/dashboard-theme"
+import { PlanStatusBar } from "../PlanStatusBar"
 import { authFetch, getToken, subjectId, withSubject } from "../authFetch"
 import { IMPORT_FIELDS, type ImportField } from "../../../../lib/network-tracker/import-fields"
 import { resolveImportedName, displayName } from "../../../../lib/network-tracker/parse-name"
@@ -100,6 +101,7 @@ export default function ImportPage() {
   // holds, so the coach does not have to find the workbook again.
   const [plan, setPlan] = useState<PlanJob | null>(null)
   const [planBusy, setPlanBusy] = useState(false)
+  const [planRefresh, setPlanRefresh] = useState(0)
   const [planErr, setPlanErr] = useState<string | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
 
@@ -207,6 +209,7 @@ export default function ImportPage() {
       })
       const j = await res.json().catch(() => ({}))
       if (!res.ok || !j?.ok) throw new Error(j?.error || `Share failed (${res.status})`)
+      setPlanRefresh((n) => n + 1)
       setPlan({
         ...plan,
         shared_at: j.shared_at,
@@ -243,6 +246,7 @@ export default function ImportPage() {
       })
       const j = await res.json().catch(() => ({}))
       if (!res.ok || !j?.ok) throw new Error(j?.error || `Re-send failed (${res.status})`)
+      setPlanRefresh((n) => n + 1)
       setPlan({
         ...plan,
         client_email_sent_at: new Date().toISOString(),
@@ -266,6 +270,12 @@ export default function ImportPage() {
     <main style={{ padding: "24px", maxWidth: 1100, margin: "0 auto" }}>
       <div style={eyebrow}>NETWORK TRACKER</div>
       <h1 style={{ ...headline, marginTop: 6 }}>Import contacts</h1>
+
+      {/* The plan's next step, read from the server rather than from this
+          page's state, so leaving and coming back keeps it. */}
+      <div style={{ marginTop: 14 }}>
+        <PlanStatusBar authFetch={authFetch} tone="dark" refreshKey={planRefresh} />
+      </div>
 
       {/* Whose board. On every step, not just the confirm. */}
       {isCoachView && (

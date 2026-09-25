@@ -33,6 +33,7 @@ import { sortForAttention, attentionRank, BAND_LABELS, type AttentionRank } from
 import { matchesQuery } from "./contacts/search"
 import { inActivityWindow, ACTIVITY_LABELS, type ActivityWindow } from "./contacts/activityWindow"
 import { EmptyCompanyStrip, type EmptyCompany } from "./EmptyCompanyStrip"
+import { PlanStatusBar } from "./PlanStatusBar"
 import { CompanyPanel } from "./CompanyPanel"
 import { SearchIcon, ImportIcon } from "../../../components/icons"
 import { subjectId, withSubject } from "./authFetch"
@@ -436,6 +437,10 @@ function ContactsInner() {
           </button>
         </div>
       </div>
+
+      {/* The plan's next step, wherever the coach is. Renders nothing until a
+          networking list has been uploaded for this client. */}
+      <PlanStatusBar authFetch={authFetch} tone="light" />
 
       {addOpen && (
         <AddContactForm

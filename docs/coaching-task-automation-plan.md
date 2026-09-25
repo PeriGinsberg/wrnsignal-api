@@ -408,6 +408,14 @@ Kept in this doc because there is no general backlog doc in the repo, and the
 only existing one (`docs/jobfit-ticket1-plan.md`) is JobFit-scoped. Move these
 if a real backlog lands.
 
+**Redesign the `networking-plan-ready` email.** Not urgent. The template shipped
+2026-09-26 and its content is the copy as dictated, in a plain table layout with
+a bulletproof button and a plain-text alternative. It has had no design pass and
+does not follow the JobFit visual system: no brand ground, no orange rule, none
+of the structural devices the product's other surfaces now use. Worth doing when
+the Coaches Center light conversion settles the tokens, since an email designed
+against the old palette would need redoing.
+
 **Post-login redirect goes to the API host.** After a successful sign-in,
 `framer/prod/maincomponent.txt` does
 `window.top.location.replace("https://wrnsignal-api.vercel.app/dashboard")`.

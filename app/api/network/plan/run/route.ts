@@ -34,14 +34,48 @@ export async function POST(req: NextRequest) {
     const supabase = getSupabaseAdmin()
     const scope = await resolveRequestScope(req, supabase, { require: "write" })
 
-    const form = await req.formData()
-    const file = form.get("file") as File | null
-    if (!file) return withCorsJson(req, { ok: false, error: "No file uploaded." }, 400)
+    // THE RELATIONSHIP IS RESOLVED FIRST NOW, because the stored-source path
+    // needs it to find the rows and the file path needs it to save them.
+    const { data: relEarly } = await supabase
+      .from("coach_clients").select("id")
+      .in("coach_profile_id", (await resolveDelegation(supabase, scope.actorId)).actingIds)
+      .eq("client_profile_id", scope.subjectId)
+      .eq("status", "active").maybeSingle()
+    if (!relEarly) {
+      return withCorsJson(req, { ok: false, error: "A Networking Plan is created by a coach for a client." }, 403)
+    }
+
+    const form = await req.formData().catch(() => null)
+    const file = (form?.get("file") as File | null) ?? null
+
+    // REBUILD WITHOUT THE FILE. Until now the only moment a plan could be
+    // built was the moment of upload, while the workbook was still in the
+    // browser. A coach who clicked away to look at the imported contacts could
+    // not get back to Build without finding and uploading the file again.
+    //
+    // With no file, the rows come from the source saved at the last upload.
+    let rows: string[][]
+    let fileName: string | null = null
+
+    if (!file) {
+      const { data: src } = await supabase
+        .from("networking_plan_sources").select("rows, file_name")
+        .eq("coach_client_id", relEarly.id).maybeSingle()
+      if (!src) {
+        return withCorsJson(req, {
+          ok: false,
+          error: "No networking list has been uploaded for this client yet.",
+        }, 400)
+      }
+      rows = src.rows as string[][]
+      fileName = (src.file_name as string | null) ?? null
+    } else {
 
     const buffer = Buffer.from(await file.arrayBuffer())
+    fileName = file.name || "workbook.xlsx"
     const first = await parseFile(buffer, file.name || "workbook.xlsx")
     const sheet =
-      (form.get("sheet") as string | null) ||
+      (form?.get("sheet") as string | null) ||
       first.sheets.find((s) => s.trim().toLowerCase() === MESSAGES_SHEET)
     if (!sheet) {
       return withCorsJson(req, {
@@ -50,19 +84,26 @@ export async function POST(req: NextRequest) {
       }, 400)
     }
     const parsed = sheet === first.sheet ? first : await parseFile(buffer, file.name || "workbook.xlsx", sheet)
-    const rows = dataRows(parsed.grid, detectHeaderRow(parsed.grid))
+    rows = dataRows(parsed.grid, detectHeaderRow(parsed.grid))
     if (!rows.length) return withCorsJson(req, { ok: false, error: "That tab has no rows." }, 400)
 
-    // The relationship this plan belongs to. A coach acting on a client always
-    // has one; an owner running this on their own board does not, and the plan
-    // is a coaching artifact, so that is refused rather than half-supported.
-    const { data: rel } = await supabase
-      .from("coach_clients").select("id")
-      .in("coach_profile_id", (await resolveDelegation(supabase, scope.actorId)).actingIds).eq("client_profile_id", scope.subjectId)
-      .eq("status", "active").maybeSingle()
-    if (!rel) {
-      return withCorsJson(req, { ok: false, error: "A Networking Plan is created by a coach for a client." }, 403)
+      // Saved BEFORE the plan runs, so an upload whose build then fails still
+      // leaves a source the coach can retry from. Upsert, because one current
+      // source per client is the whole model.
+      await supabase.from("networking_plan_sources").upsert({
+        coach_client_id: relEarly.id,
+        client_profile_id: String(scope.subjectId),
+        rows,
+        source_hash: sourceHash(rows),
+        file_name: fileName,
+        uploaded_by_id: scope.actorId,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "coach_client_id" })
     }
+
+    // The relationship was resolved at the top; a plan is a coaching artifact,
+    // so an owner running this on their own board is refused there.
+    const rel = relEarly
 
     const clientName = (await loadSubjectName(supabase, scope.subjectId)) ?? "Client"
     const job = await findOrCreateJob(supabase, {
