@@ -50,10 +50,14 @@ type PlanJob = {
   step: string
   drive_file_url: string | null
   shared_at: string | null
-  // The GHL half. ghl_tagged_at is the one that means the client was emailed;
-  // shared_at only means the plan is visible to them.
-  ghl_tagged_at?: string | null
-  ghl_email_sent_count?: number | null
+  // Telling the client is a separate thing from sharing with them.
+  // client_email_sent_at means they were emailed; shared_at only means the
+  // plan is visible to them. Before 2026-09-26 the first of those was
+  // ghl_tagged_at, when a GoHighLevel workflow sent the mail.
+  client_email_sent_at?: string | null
+  client_email_sent_count?: number | null
+  client_email_to?: string | null
+  client_email_error?: string | null
   ghl_error?: string | null
 }
 type Result = {
@@ -206,8 +210,10 @@ export default function ImportPage() {
       setPlan({
         ...plan,
         shared_at: j.shared_at,
-        ghl_tagged_at: j.ghl_tagged_at ?? null,
-        ghl_email_sent_count: j.ghl_email_sent_count ?? 0,
+        client_email_sent_at: j.client_email_sent_at ?? null,
+        client_email_sent_count: j.client_email_sent_count ?? 0,
+        client_email_to: j.client_email_to ?? null,
+        client_email_error: j.client_email_error ?? null,
         ghl_error: j.ghl_error ?? null,
       })
     } catch (e: any) {
@@ -239,9 +245,10 @@ export default function ImportPage() {
       if (!res.ok || !j?.ok) throw new Error(j?.error || `Re-send failed (${res.status})`)
       setPlan({
         ...plan,
-        ghl_tagged_at: new Date().toISOString(),
-        ghl_email_sent_count: j.sent_count ?? ((plan.ghl_email_sent_count ?? 0) + 1),
-        ghl_error: null,
+        client_email_sent_at: new Date().toISOString(),
+        client_email_sent_count: j.sent_count ?? ((plan.client_email_sent_count ?? 0) + 1),
+        client_email_to: j.sent_to ?? null,
+        client_email_error: null,
       })
     } catch (e: any) {
       setPlanErr(e?.message || String(e))
@@ -362,11 +369,11 @@ export default function ImportPage() {
                       still not know it exists. */}
                   {plan.shared_at && (
                     <div style={{ marginTop: 10, fontSize: 13 }}>
-                      {plan.ghl_tagged_at ? (
+                      {plan.client_email_sent_at ? (
                         <span style={{ color: T.MUTED }}>
                           Email sent
-                          {(plan.ghl_email_sent_count ?? 0) > 1
-                            ? ` · ${plan.ghl_email_sent_count} times`
+                          {(plan.client_email_sent_count ?? 0) > 1
+                            ? ` · ${plan.client_email_sent_count} times`
                             : ""}
                           .
                         </span>

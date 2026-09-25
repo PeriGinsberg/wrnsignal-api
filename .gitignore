@@ -67,3 +67,12 @@ signal-jobfit-cc-scaffold.zip
 
 # JobFit diagnosis cases pulled from prod: real resumes + contact details.
 evals/jobfit/cases/
+
+# Per-client interview workbook content: real names, employers, interviewers
+# and interview dates, same class of data as evals/jobfit/cases above. The
+# workbooks are created from these files with scripts/create-workbook.ts and
+# then live in the database, so the repo is not their home.
+# NOTE: WORKBOOK_V1_SPEC.md and design-reference/ sit in here too and are not
+# client data. Pull them out of this directory if they should be tracked.
+docs/workbooks-v1/
+docs/workbooks-v1.zip

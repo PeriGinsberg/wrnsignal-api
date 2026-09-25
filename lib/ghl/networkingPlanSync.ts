@@ -8,31 +8,32 @@
  * these results. Recording them here against a table that does not exist would
  * be guessing at a schema.
  *
- * THE ORDER IS THE WHOLE POINT:
+ * WHAT THIS FILE DOES NOW: resolves a client to their GoHighLevel contact, and
+ * writes one audit note on it.
  *
  *   1. note   "Networking Plan shared from SIGNAL on <date>"
- *   2. tag    networking-plan-shared   <- the workflow emails the client
  *
- * THERE IS NO CUSTOM FIELD and none is being created. The plan reaches the
- * client through the Drive link and the SIGNAL library; the GHL email is a
- * notification, not the delivery mechanism.
+ * THERE IS NO STEP 2 ANY MORE. Until 2026-09-26 the note was followed by the
+ * tag `networking-plan-shared`, and a GHL workflow watching that tag sent the
+ * client their email. That made GoHighLevel the thing that told the client,
+ * with SIGNAL blind to whether it worked.
  *
- * The note is first because it is the reversible half. If it fails the tag
- * still goes: a missing audit line is worth less than a client who is never
- * told their plan is ready. The tag is last because it is the irreversible
- * one -- nothing un-sends an email.
+ * SIGNAL now sends that email itself, through the Postmark template
+ * `networking-plan-ready`. See lib/email/sendNetworkingPlanReady.ts and
+ * emailClientPlanReady in lib/networking-plan/job.ts.
+ *
+ * So nothing in this file is irreversible any more. The note is an audit line
+ * for people working in GHL; it is not, and never was, how the plan reaches the
+ * client. That is the Drive link and the SIGNAL library.
  */
 
 import type { GhlConfig } from "./client"
 import {
-  NETWORKING_PLAN_TAG,
   addContactNote,
-  addContactTags,
   contactDisplayName,
   findContactByEmail,
   networkingPlanNoteText,
   parseContactLink,
-  removeContactTags,
   searchContactsByEmail,
   type GhlContact,
 } from "./contacts"
@@ -204,125 +205,59 @@ export type StepOutcome = "ok" | "failed"
 export type ShareResult = {
   contactId: string
   note: { outcome: StepOutcome; id?: string | null; error?: string }
-  tag: { outcome: StepOutcome; tags?: string[]; error?: string }
-  /** True only when the tag landed, i.e. the client has actually been emailed. */
-  emailed: boolean
 }
 
 export type ShareOptions = { now?: Date }
 
 /**
- * Note, then tag. The tag emails the client.
+ * Write the audit note on the client's GoHighLevel contact.
  *
- * A failed note does NOT stop the tag. The note is an audit line for the coach;
- * the tag is the client being told their plan is ready. Losing the first to
- * protect the second would be the wrong trade.
+ * THE TAG IS GONE. Until 2026-09-26 this also put `networking-plan-shared` on
+ * the contact, and a GHL workflow watching that tag sent the client their
+ * email. SIGNAL now sends that email itself through Postmark, so writing the
+ * tag as well would send it twice. The GHL workflow was confirmed to be the
+ * only thing keying off that tag before it was removed.
+ *
+ * What is left is the note, which is what it always was: a line on the contact
+ * so anyone working in GHL can see the plan went out. It is not how the client
+ * is told, and it never was.
  */
 export async function shareNetworkingPlan(
   args: { contactId: string },
   cfg: GhlConfig,
   opts: ShareOptions = {},
 ): Promise<ShareResult> {
-  const result: ShareResult = {
-    contactId: args.contactId,
-    note: { outcome: "failed" },
-    tag: { outcome: "failed" },
-    emailed: false,
-  }
-
   try {
     const n = await addContactNote(args.contactId, networkingPlanNoteText(opts.now), cfg)
-    result.note = { outcome: "ok", id: n.id }
+    return { contactId: args.contactId, note: { outcome: "ok", id: n.id } }
   } catch (e: any) {
-    result.note = { outcome: "failed", error: String(e?.message ?? e) }
+    return { contactId: args.contactId, note: { outcome: "failed", error: String(e?.message ?? e) } }
   }
-
-  try {
-    const tags = await addContactTags(args.contactId, [NETWORKING_PLAN_TAG], cfg)
-    result.tag = { outcome: "ok", tags }
-    result.emailed = true
-  } catch (e: any) {
-    result.tag = { outcome: "failed", error: String(e?.message ?? e) }
-  }
-
-  return result
 }
 
 /**
  * A RE-SHARE SENDS NOTHING.
  *
  * The coach regenerates a plan and shares again. The client already has the
- * link and already has the tag, so all that is left to record is that it
- * happened. A second "your plan is ready" email erodes trust in the tool faster
- * than a missing feature does.
- *
- * The tag is deliberately untouched. Whether a no-op re-add re-fires the
- * workflow is a GHL workflow setting we cannot read from the API, so not
- * touching it is the only behaviour that is certain.
+ * link, so all that is left to record is that it happened. A second "your plan
+ * is ready" email erodes trust in the tool faster than a missing feature does.
  */
 export async function reshareNetworkingPlan(
   args: { contactId: string },
   cfg: GhlConfig,
   opts: ShareOptions = {},
-): Promise<{ contactId: string; note: ShareResult["note"]; emailed: false }> {
+): Promise<{ contactId: string; note: ShareResult["note"] }> {
   try {
     const n = await addContactNote(args.contactId, networkingPlanNoteText(opts.now) + " (updated)", cfg)
-    return { contactId: args.contactId, note: { outcome: "ok", id: n.id }, emailed: false }
+    return { contactId: args.contactId, note: { outcome: "ok", id: n.id } }
   } catch (e: any) {
-    return {
-      contactId: args.contactId,
-      note: { outcome: "failed", error: String(e?.message ?? e) },
-      emailed: false,
-    }
+    return { contactId: args.contactId, note: { outcome: "failed", error: String(e?.message ?? e) } }
   }
 }
 
-export type ResendResult = {
-  removed: string[]
-  added: string[]
-  emailed: boolean
-  /** Set when the tag was removed and could not be put back. See below. */
-  tagLost: boolean
-  attempts: number
-  error?: string
-}
-
-/**
- * The "Re-send email" button, and the ONLY path that re-emails a client.
- *
- * Remove the tag, then add it back, because a plain re-add may or may not
- * re-fire the workflow depending on its re-entry setting -- and a button
- * labelled "Re-send email" is promising that it definitely does.
- *
- * THE DANGEROUS WINDOW is between the two calls. If the remove succeeds and the
- * add fails, the contact has lost the tag: their record no longer says a plan
- * was shared, and no email went out either. So the add is retried ONCE, and if
- * that also fails the caller is told `tagLost` so it can show the coach
- * "Re-send failed, click again" rather than a generic error. Clicking again is
- * safe and is the repair: remove is a no-op on a contact with no tag, and the
- * add is what was missing.
- */
-export async function resendNetworkingPlanEmail(
-  args: { contactId: string },
-  cfg: GhlConfig,
-): Promise<ResendResult> {
-  let removed: string[] = []
-  try {
-    removed = await removeContactTags(args.contactId, [NETWORKING_PLAN_TAG], cfg)
-  } catch (e: any) {
-    // Nothing was touched, so nothing is lost.
-    return { removed: [], added: [], emailed: false, tagLost: false, attempts: 0, error: String(e?.message ?? e) }
-  }
-
-  let lastError = ""
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    try {
-      const added = await addContactTags(args.contactId, [NETWORKING_PLAN_TAG], cfg)
-      return { removed, added, emailed: true, tagLost: false, attempts: attempt }
-    } catch (e: any) {
-      lastError = String(e?.message ?? e)
-    }
-  }
-
-  return { removed, added: [], emailed: false, tagLost: true, attempts: 2, error: lastError }
-}
+// resendNetworkingPlanEmail lived here until 2026-09-26. It removed the tag
+// and added it back, because a plain re-add might not re-fire the GHL workflow
+// and a button labelled "Re-send email" has to actually re-send. That whole
+// dance existed only because GoHighLevel owned the email. SIGNAL owns it now,
+// so re-sending is simply sending again: see resendPlanEmail in
+// lib/networking-plan/job.ts.

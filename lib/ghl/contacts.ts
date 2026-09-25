@@ -192,41 +192,18 @@ export function networkingPlanNoteText(on: Date = new Date()): string {
   return `Networking Plan shared from SIGNAL on ${d}`
 }
 
-export const NETWORKING_PLAN_TAG = "networking-plan-shared"
-
-/**
- * POST /contacts/{id}/tags -- returns the contact's tags AFTER the operation.
- *
- * THIS IS THE CALL THAT EMAILS THE CLIENT. A GHL workflow triggers on the tag.
- * Everything else in this file is reversible; this is not.
- */
-export async function addContactTags(
-  contactId: string,
-  tags: string[],
-  cfg: GhlConfig,
-): Promise<string[]> {
-  const res = await ghlRequest<any>(
-    `/contacts/${encodeURIComponent(contactId)}/tags`,
-    { method: "POST", body: { tags } },
-    cfg,
-  )
-  return Array.isArray(res.data?.tags) ? res.data.tags : []
-}
-
-/**
- * DELETE /contacts/{id}/tags -- only used by the explicit "Re-send email"
- * action, which removes the tag and adds it again so the workflow definitely
- * re-fires. A plain re-share must never call this.
- */
-export async function removeContactTags(
-  contactId: string,
-  tags: string[],
-  cfg: GhlConfig,
-): Promise<string[]> {
-  const res = await ghlRequest<any>(
-    `/contacts/${encodeURIComponent(contactId)}/tags`,
-    { method: "DELETE", body: { tags } },
-    cfg,
-  )
-  return Array.isArray(res.data?.tags) ? res.data.tags : []
-}
+// THE TAG IS GONE, AND SO ARE ITS HELPERS.
+//
+// NETWORKING_PLAN_TAG ("networking-plan-shared"), addContactTags and
+// removeContactTags lived here until 2026-09-26. Writing that tag was how a
+// client got told their plan was ready: a GoHighLevel workflow watched for it
+// and sent the email. SIGNAL could see nothing past the tag write, so it could
+// not say whether the mail was sent or where it went.
+//
+// SIGNAL now sends that email itself, through the Postmark template
+// `networking-plan-ready`. Keeping the tag as well would send it twice, and
+// keeping the helpers would leave a loaded gun in the file: the whole comment
+// above addContactTags used to read "THIS IS THE CALL THAT EMAILS THE CLIENT".
+//
+// The GHL contact NOTE above is unaffected. It was always an audit line for
+// people working in GHL, never how the client was told.

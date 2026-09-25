@@ -7,18 +7,22 @@
 // a coach genuinely needs the email sent again, it is an explicit act with its
 // own button rather than a side effect of re-sharing.
 //
-// It removes the tag and adds it back, because a plain re-add may or may not
-// re-fire the GHL workflow depending on its re-entry setting, and a button
-// labelled "Re-send email" is promising that it definitely does.
+// SINCE 2026-09-26 THIS IS JUST A SEND. It used to remove the GoHighLevel tag
+// `networking-plan-shared` and add it back, because a plain re-add might not
+// re-fire the GHL workflow and a button labelled "Re-send email" has to
+// actually re-send. That left a window where the remove succeeded and the add
+// failed, and the contact ended up with neither the tag nor the email: the
+// route had to report `tag_lost` and ask the coach to click again.
+//
+// None of that exists now. SIGNAL owns the email, so re-sending is sending
+// again. There is no window, no `tag_lost`, and no repair to explain.
 
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { errorStatus } from "../../../../_lib/routeError"
 import { getSupabaseAdmin } from "@/lib/collab/identity"
 import { resolveRequestScope } from "@/lib/collab/scope"
-import { ghlConfig } from "@/lib/ghl/client"
-import { resendNetworkingPlanEmail } from "@/lib/ghl/networkingPlanSync"
-import { type PlanJob } from "@/lib/networking-plan/job"
+import { emailClientPlanReady, type PlanJob } from "@/lib/networking-plan/job"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -41,47 +45,35 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ job
 
     const plan = job as PlanJob
 
-    // Re-sending something that was never sent is not a re-send. Share it first,
-    // which is also the path that writes the note.
+    // Re-sending something that was never sent is not a re-send. Share it
+    // first, which is also the path that writes the notes.
     if (!plan.shared_at) {
-      return withCorsJson(req, { ok: false, error: "Share the plan first — it has not been sent yet." }, 409)
+      return withCorsJson(req, { ok: false, error: "Share the plan first. It has not been sent yet." }, 409)
     }
-    if (!plan.ghl_contact_id) {
+
+    // NO GHL CONTACT CHECK ANY MORE. It used to be required here because the
+    // GHL contact was how the client got emailed. The email now goes to the
+    // client's own address, so a client with no GHL contact can still be
+    // re-sent to.
+    const updated = await emailClientPlanReady(supabase, plan)
+
+    if (updated.client_email_error) {
       return withCorsJson(req, {
         ok: false,
-        error: "No GHL contact is wired for this client, so there is no one to email. Set it on the client's folder setup.",
-      }, 409)
+        emailed: false,
+        error: `Re-send failed: ${updated.client_email_error}`,
+      }, 502)
     }
-
-    const res = await resendNetworkingPlanEmail({ contactId: plan.ghl_contact_id }, ghlConfig())
-
-    if (res.emailed) {
-      const { data: updated } = await supabase.from("networking_plan_jobs")
-        .update({
-          ghl_tagged_at: new Date().toISOString(),
-          ghl_email_sent_count: (plan.ghl_email_sent_count ?? 0) + 1,
-          ghl_error: null,
-        })
-        .eq("id", plan.id).select("ghl_email_sent_count").single()
-      return withCorsJson(req, { ok: true, emailed: true, sent_count: updated?.ghl_email_sent_count ?? null }, 200)
-    }
-
-    // THE ONE STATE THAT NEEDS A SPECIFIC MESSAGE. The tag was removed and could
-    // not be put back after a retry, so the contact no longer shows the plan as
-    // shared AND no email went out. Clicking again is the repair: remove is a
-    // no-op on an untagged contact and the add is what was missing.
-    await supabase.from("networking_plan_jobs")
-      .update({ ghl_tagged_at: res.tagLost ? null : plan.ghl_tagged_at, ghl_error: res.error ?? "Re-send failed" })
-      .eq("id", plan.id)
 
     return withCorsJson(req, {
-      ok: false,
-      emailed: false,
-      tag_lost: res.tagLost,
-      error: res.tagLost
-        ? "Re-send failed, click again."
-        : `Re-send failed: ${res.error ?? "unknown error"}`,
-    }, 502)
+      ok: true,
+      emailed: true,
+      sent_count: updated.client_email_sent_count,
+      // Outside production this is the internal redirect address, not the
+      // client's. Returned so the coach UI can say so rather than implying a
+      // client was written to when they were not.
+      sent_to: updated.client_email_to,
+    }, 200)
   } catch (err: any) {
     const msg = err?.message || String(err)
     console.error("[plan/resend]", err?.stack || msg)

@@ -41,16 +41,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ job
       return withCorsJson(req, { ok: false, error: result.error, policy: result.policy ?? false }, result.policy ? 409 : 500)
     }
 
-    // shared_at and ghl_tagged_at are reported separately because they mean
-    // different things: the first is "the client can see it", the second is
-    // "the client has been told". A share can succeed at the first and fail at
-    // the second, and the screen has to be able to say so.
+    // shared_at and client_email_sent_at are reported separately because they
+    // mean different things: the first is "the client can see it", the second
+    // is "the client has been told". A share can succeed at the first and fail
+    // at the second, and the screen has to be able to say so.
     return withCorsJson(req, {
       ok: true,
       shared_at: result.job.shared_at,
       drive_file_url: result.job.drive_file_url,
-      ghl_tagged_at: result.job.ghl_tagged_at ?? null,
-      ghl_email_sent_count: result.job.ghl_email_sent_count ?? 0,
+      client_email_sent_at: result.job.client_email_sent_at ?? null,
+      client_email_sent_count: result.job.client_email_sent_count ?? 0,
+      client_email_to: result.job.client_email_to ?? null,
+      client_email_error: result.job.client_email_error ?? null,
       ghl_error: result.job.ghl_error ?? null,
     }, 200)
   } catch (err: any) {
