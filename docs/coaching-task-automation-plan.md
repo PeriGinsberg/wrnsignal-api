@@ -346,7 +346,63 @@ verified safe change. The tag removal is Step 6, so there is time.
 
 ---
 
-## 10. Backlog, found here, not fixed here
+## 10. Coaches Center design: decided 2026-09-26
+
+**The Coaches Center converts to the light theme, to match JobFit. Not now.**
+
+The interim design is what shipped today: the existing dark ground, with one
+accent per dashboard section driving the card's top rule, its icon and its
+count pill.
+
+| Section | Accent |
+|---|---|
+| Action Items | `#FF6B00` |
+| Today's schedule | `#00B3B3` |
+| My clients | `#009BFF` |
+| My prospects | `#B6F2F8` |
+| Engagement Signals | `#FFEEDC` |
+
+### Priority order
+
+1. **Tasks prod deploy**, once dev testing passes. See
+   `docs/coaching-tasks-prod-deploy-plan.md`.
+2. **Update `lib/theme/surfaces.ts` LIGHT to the new brand palette.** Its
+   meaning accents are still the older set (`#F26B52` attention, `#E5397E`
+   current, `#51ADE5` progress) while JobFit has moved to `#009BFF`, `#00B3B3`
+   and `#FF6B00`. **Not started, deliberately.**
+3. **Convert the coach dashboard to LIGHT**, keeping per-section identity.
+   Screenshot for approval before it goes further.
+4. **The remaining Coaches Center pages.**
+
+2 comes before 3 on purpose. Converting a page against tokens that are about to
+change means doing the colour work twice, and the second pass would be invisible
+in a diff full of layout churn.
+
+### What the conversion will actually involve
+
+- **`LIGHT_ROUTES` in `app/dashboard/layout.tsx` is the opt-in.** A route is
+  light because it is listed there, and the list is deliberately exact rather
+  than prefix-matched (`"/dashboard"` converts the home and nothing below it).
+  So the dashboard can convert alone, and `/dashboard/coach/*` stays dark until
+  each page is named. Step 4 is adding entries one at a time.
+- **The coach dashboard does not import `surfaces.ts` at all.** It is on
+  `lib/dashboard-theme` (dark `#13294A` ground). The coaching hub and the
+  network pages are already converted, so they are the worked examples.
+- **Two JobFit rules have to survive the port**, because both are contrast
+  decisions rather than taste: orange `#FF6B00` draws rules, numerals, eyebrows
+  and bullets and never sets body text or fills a button (2.7:1 on the ground);
+  and teal fails as text on white at 2.3:1, so every teal WORD takes the
+  darkened `#00757A` while the brand teal stays for fills and rails.
+- **Navy `#08203F` changes job.** On the dark ground it is invisible and unused;
+  on light it is both the primary ink and the action colour, so every primary
+  button becomes solid navy with white text.
+- The five section accents above were chosen to read on navy. On a light ground
+  `#FFEEDC` and `#B6F2F8` become fills rather than rules, so Engagement Signals
+  and My prospects will need re-picking rather than porting.
+
+---
+
+## 11. Backlog, found here, not fixed here
 
 Kept in this doc because there is no general backlog doc in the repo, and the
 only existing one (`docs/jobfit-ticket1-plan.md`) is JobFit-scoped. Move these
