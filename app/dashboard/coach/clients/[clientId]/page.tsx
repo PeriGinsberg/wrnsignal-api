@@ -251,7 +251,10 @@ function buildClientInfoGroups(cap: Capture | null, profile: ClientProfile): Inf
       { label: "GRAD DATE", value: gradDate ? formatDate(gradDate) : null, show: !!gradDate },
     ] },
     { title: "TARGETING", rows: [
-      { label: "ROLES", value: roles, show: !!roles },
+      // Capped at two lines. A client targeting ten role titles turned the
+      // header into four lines of prose before the tabs, and the header is
+      // meant to be glanceable.
+      { label: "ROLES", value: roles, show: !!roles, clamp: 2 },
       { label: "LOCATIONS", value: locations, show: !!locations },
       { label: "PREFERRED", value: preferred, show: !!preferred },
       { label: "TIMELINE", value: timeline, show: !!timeline },
