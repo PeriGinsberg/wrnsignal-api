@@ -113,14 +113,14 @@ async function authFetch(url: string, opts: RequestInit = {}) {
 
 const PRIORITY_STYLE: Record<string, { bg: string; color: string }> = {
   urgent: { bg: "rgba(248,113,113,0.15)", color: "#f87171" },
-  high: { bg: "rgba(254,176,106,0.15)", color: "#FEB06A" },
-  normal: { bg: "rgba(81,173,229,0.12)", color: "#51ADE5" },
+  high: { bg: "rgba(254,176,106,0.15)", color: T.WRN_ORANGE },
+  normal: { bg: "rgba(81,173,229,0.12)", color: T.WRN_BLUE },
 }
 
 const DECISION_STYLE: Record<string, { bg: string; color: string }> = {
   "Priority Apply": { bg: "rgba(15,214,104,0.15)", color: "#0FD668" },
-  Apply: { bg: "rgba(74,222,128,0.12)", color: "#4ade80" },
-  Review: { bg: "rgba(212,164,68,0.15)", color: "#D4A444" },
+  Apply: { bg: "rgba(74,222,128,0.12)", color: T.SUCCESS },
+  Review: { bg: "rgba(212,164,68,0.15)", color: T.GOLD },
   Pass: { bg: "rgba(232,112,112,0.12)", color: "#E87070" },
 }
 
@@ -171,11 +171,11 @@ const SOURCE_LABEL: Record<string, string> = {
   personal_contact: "Personal Contact", other: "Other",
 }
 const SOURCE_STYLE: Record<string, { bg: string; color: string }> = {
-  referral:         { bg: "rgba(81,173,229,0.12)",  color: "#51ADE5" },
+  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.WRN_BLUE },
   social_media:     { bg: "rgba(167,139,250,0.18)", color: "#C8B6F8" },
-  website:          { bg: "rgba(45,165,141,0.15)",  color: "#2CA58D" },
-  personal_contact: { bg: "rgba(74,222,128,0.15)",  color: "#4ade80" },
-  other:            { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.60)" },
+  website:          { bg: "rgba(45,165,141,0.15)",  color: T.WRN_TEAL },
+  personal_contact: { bg: "rgba(74,222,128,0.15)",  color: T.SUCCESS },
+  other:            { bg: T.BORDER_SOFT, color: T.MUTED },
 }
 const EDUCATION_LABEL: Record<string, string> = {
   in_school: "In school", graduated: "Graduated", na: "Not applicable",
@@ -772,7 +772,7 @@ export default function CoachClientPage() {
             style={{
               fontSize: TYPE.secondary,
               fontWeight: 600,
-              color: "#2CA58D",
+              color: T.WRN_TEAL,
               textDecoration: "none",
               display: "inline-block",
               marginBottom: 18,
@@ -832,19 +832,19 @@ export default function CoachClientPage() {
             style={{
               fontSize: TYPE.secondary, fontWeight: 900, padding: "8px 16px", borderRadius: 10, cursor: "pointer",
               border: tab === t.id ? `1px solid rgba(254,176,106,0.35)` : `1px solid ${T.BORDER_SOFT}`,
-              background: tab === t.id ? "rgba(254,176,106,0.08)" : "rgba(255,255,255,0.04)",
+              background: tab === t.id ? "rgba(254,176,106,0.08)" : T.GLASS,
               color: tab === t.id ? T.WRN_ORANGE : T.MUTED,
               transition: "background 120ms ease, color 120ms ease, border-color 120ms ease",
             }}
             onMouseEnter={(e) => {
               if (tab !== t.id) {
-                ;(e.currentTarget.style as any).background = "rgba(255,255,255,0.08)"
+                ;(e.currentTarget.style as any).background = T.BORDER_SOFT
                 ;(e.currentTarget.style as any).color = T.TEXT
               }
             }}
             onMouseLeave={(e) => {
               if (tab !== t.id) {
-                ;(e.currentTarget.style as any).background = "rgba(255,255,255,0.04)"
+                ;(e.currentTarget.style as any).background = T.GLASS
                 ;(e.currentTarget.style as any).color = T.MUTED
               }
             }}
@@ -867,18 +867,18 @@ export default function CoachClientPage() {
           style={{
             fontSize: TYPE.secondary, fontWeight: 900, padding: "8px 16px", borderRadius: 10,
             border: `1px solid ${T.BORDER_SOFT}`,
-            background: "rgba(255,255,255,0.04)",
+            background: T.GLASS,
             color: T.MUTED,
             textDecoration: "none",
             display: "inline-flex", alignItems: "center", gap: 6,
             transition: "background 120ms ease, color 120ms ease",
           }}
           onMouseEnter={(e) => {
-            ;(e.currentTarget.style as any).background = "rgba(255,255,255,0.08)"
+            ;(e.currentTarget.style as any).background = T.BORDER_SOFT
             ;(e.currentTarget.style as any).color = T.TEXT
           }}
           onMouseLeave={(e) => {
-            ;(e.currentTarget.style as any).background = "rgba(255,255,255,0.04)"
+            ;(e.currentTarget.style as any).background = T.GLASS
             ;(e.currentTarget.style as any).color = T.MUTED
           }}
         >
@@ -930,7 +930,7 @@ export default function CoachClientPage() {
                         <span style={{ fontSize: TYPE.body, fontWeight: 950, color: T.TEXT }}>{rec.company}</span>
                         <span style={{ fontSize: TYPE.secondary, color: T.MUTED }}>— {rec.title}</span>
                         {rec.verdict && (
-                          <Badge text={rec.verdict} style={DECISION_STYLE[rec.verdict] || { bg: "rgba(255,255,255,0.08)", color: T.MUTED }} />
+                          <Badge text={rec.verdict} style={DECISION_STYLE[rec.verdict] || { bg: T.BORDER_SOFT, color: T.MUTED }} />
                         )}
                       </div>
 
@@ -954,7 +954,7 @@ export default function CoachClientPage() {
 
                       {/* Inline edit form */}
                       {editingRecId === rec.id ? (
-                        <div style={{ marginBottom: 8, padding: 14, background: "rgba(255,255,255,0.03)", borderRadius: 10, border: `1px solid ${T.BORDER_SOFT}` }}>
+                        <div style={{ marginBottom: 8, padding: 14, background: T.GLASS, borderRadius: 10, border: `1px solid ${T.BORDER_SOFT}` }}>
                           <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: TYPE.micro, marginBottom: 10 }}>EDIT RECOMMENDATION</div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                             <div>
@@ -1167,7 +1167,7 @@ export default function CoachClientPage() {
                           }}
                         />
                         {app.signal_decision && (
-                          <Badge text={app.signal_decision} style={DECISION_STYLE[app.signal_decision] || { bg: "rgba(255,255,255,0.08)", color: T.MUTED }} />
+                          <Badge text={app.signal_decision} style={DECISION_STYLE[app.signal_decision] || { bg: T.BORDER_SOFT, color: T.MUTED }} />
                         )}
                         {app.signal_score !== null && (
                           <span style={{ fontSize: TYPE.micro, color: T.DIM }}>Score: {app.signal_score}</span>
@@ -1222,7 +1222,7 @@ export default function CoachClientPage() {
                               Mirrors the client tracker section. Null for
                               manual/legacy jobs → nothing renders. */}
                           {app.job_description && (
-                            <div style={{ marginBottom: 12, background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "12px 14px", border: `1px solid ${T.BORDER_SOFT}` }}>
+                            <div style={{ marginBottom: 12, background: T.GLASS, borderRadius: 10, padding: "12px 14px", border: `1px solid ${T.BORDER_SOFT}` }}>
                               <div onClick={() => setJdOpenIds((prev) => { const next = new Set(prev); next.has(app.id) ? next.delete(app.id) : next.add(app.id); return next })} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
                                 <span style={{ ...eyebrow, fontSize: TYPE.micro, color: T.DIM }}>JOB DESCRIPTION</span>
                                 <span style={{ fontSize: TYPE.secondary, color: T.DIM }}>{jdOpenIds.has(app.id) ? "▲" : "▼"}</span>
@@ -1292,7 +1292,7 @@ export default function CoachClientPage() {
                                         fontSize: TYPE.label, fontWeight: 900, padding: "4px 10px", borderRadius: 6, cursor: "pointer",
                                         textTransform: "uppercase", letterSpacing: 0.6,
                                         border: annotationPriority === p ? `1px solid ${T.WRN_ORANGE}50` : `1px solid ${T.BORDER_SOFT}`,
-                                        background: annotationPriority === p ? "rgba(254,176,106,0.1)" : "rgba(255,255,255,0.03)",
+                                        background: annotationPriority === p ? "rgba(254,176,106,0.1)" : T.GLASS,
                                         color: annotationPriority === p ? T.WRN_ORANGE : T.DIM,
                                       }}
                                     >
@@ -1345,7 +1345,7 @@ export default function CoachClientPage() {
                                     }
                                   }}
                                   disabled={annotationSaving || !annotationNote.trim()}
-                                  style={{ ...btnPrimary, fontSize: TYPE.micro, padding: "6px 14px", background: "#FEB06A", color: "#04060F", opacity: annotationSaving || !annotationNote.trim() ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
+                                  style={{ ...btnPrimary, fontSize: TYPE.micro, padding: "6px 14px", background: "#FEB06A", color: "var(--sig-ink-on-bright, #04060F)", opacity: annotationSaving || !annotationNote.trim() ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
                                 >
                                   {annotationSaving && <SavingSpinner size={10} />}
                                   {annotationSaving ? "Saving..." : "Save Note"}
@@ -1413,13 +1413,13 @@ export default function CoachClientPage() {
                 {i > 0 && (
                   <div style={{
                     flex: 1, height: 1,
-                    background: step.done ? T.WRN_ORANGE : "rgba(255,255,255,0.1)",
+                    background: step.done ? T.WRN_ORANGE : T.BORDER,
                   }} />
                 )}
                 <div style={{
                   width: 24, height: 24, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: TYPE.micro, fontWeight: 900,
-                  background: step.done ? T.WRN_ORANGE : "rgba(255,255,255,0.08)",
+                  background: step.done ? T.WRN_ORANGE : T.BORDER_SOFT,
                   color: step.done ? "#04060F" : T.DIM,
                   flexShrink: 0,
                 }}>
@@ -1590,7 +1590,7 @@ export default function CoachClientPage() {
                         display: "flex", alignItems: "center", gap: 8,
                         padding: "10px 16px", borderRadius: 12, cursor: "pointer",
                         border: selectedPersona === p.id ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
-                        background: selectedPersona === p.id ? "rgba(254,176,106,0.07)" : "rgba(255,255,255,0.03)",
+                        background: selectedPersona === p.id ? "rgba(254,176,106,0.07)" : T.GLASS,
                       }}>
                         <input
                           type="radio"
@@ -1620,7 +1620,7 @@ export default function CoachClientPage() {
                 onClick={runDryAnalysis}
                 disabled={running || !selectedPersona}
                 style={{
-                  ...btnPrimary, background: "#FEB06A", color: "#04060F", fontWeight: 900,
+                  ...btnPrimary, background: "#FEB06A", color: "var(--sig-ink-on-bright, #04060F)", fontWeight: 900,
                   width: "100%", opacity: running || !selectedPersona ? 0.5 : 1,
                   display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
                 }}
@@ -1640,7 +1640,7 @@ export default function CoachClientPage() {
                 {runResult.decision && (
                   <Badge
                     text={runResult.decision}
-                    style={DECISION_STYLE[runResult.decision] || { bg: "rgba(255,255,255,0.08)", color: T.MUTED }}
+                    style={DECISION_STYLE[runResult.decision] || { bg: T.BORDER_SOFT, color: T.MUTED }}
                   />
                 )}
                 {runResult.score !== undefined && (
@@ -1659,10 +1659,10 @@ export default function CoachClientPage() {
                 }}>
                   <div style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>⚡</div>
                   <div>
-                    <div style={{ fontSize: TYPE.body, fontWeight: 800, color: "rgba(255,255,255,0.95)", marginBottom: 3 }}>
+                    <div style={{ fontSize: TYPE.body, fontWeight: 800, color: T.TEXT, marginBottom: 3 }}>
                       Read this before you apply.
                     </div>
-                    <div style={{ fontSize: TYPE.secondary, color: "rgba(255,255,255,0.45)", lineHeight: "18px" }}>
+                    <div style={{ fontSize: TYPE.secondary, color: T.MUTED, lineHeight: "18px" }}>
                       Your strengths tell you what to lead with. Your risks tell you what to address.
                       This is how you stand out — most applicants never do this work.
                     </div>
@@ -1697,13 +1697,13 @@ export default function CoachClientPage() {
                             width: 32, height: 32, borderRadius: 10, flexShrink: 0,
                             background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.35)",
                             display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: TYPE.body, color: "#4ade80",
+                            fontSize: TYPE.body, color: T.SUCCESS,
                           }}>✦</div>
                           <div>
-                            <div style={{ fontSize: TYPE.body, fontWeight: 800, color: "#4ade80" }}>
+                            <div style={{ fontSize: TYPE.body, fontWeight: 800, color: T.SUCCESS }}>
                               {isPass ? "Strengths to Remember" : "Why You Are Competitive"}
                             </div>
-                            <div style={{ fontSize: TYPE.micro, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                            <div style={{ fontSize: TYPE.micro, color: T.DIM, marginTop: 2 }}>
                               Lead with these in your application
                             </div>
                           </div>
@@ -1718,16 +1718,16 @@ export default function CoachClientPage() {
                                   width: 22, height: 22, borderRadius: "50%",
                                   background: "rgba(74,222,128,0.15)", border: "1.5px solid rgba(74,222,128,0.50)",
                                   display: "flex", alignItems: "center", justifyContent: "center",
-                                  flexShrink: 0, marginTop: 2, fontSize: TYPE.micro, color: "#4ade80", fontWeight: 900,
+                                  flexShrink: 0, marginTop: 2, fontSize: TYPE.micro, color: T.SUCCESS, fontWeight: 900,
                                 }}>✓</div>
                                 <div style={{ flex: 1 }}>
                                   {keyword && (
                                     <div style={{
                                       fontSize: TYPE.label, fontWeight: 900, letterSpacing: "1.4px",
-                                      textTransform: "uppercase" as const, color: "#4ade80", marginBottom: 4,
+                                      textTransform: "uppercase" as const, color: T.SUCCESS, marginBottom: 4,
                                     }}>{keyword} |</div>
                                   )}
-                                  <div style={{ fontSize: TYPE.secondary, lineHeight: "19px", color: "rgba(255,255,255,0.82)", fontWeight: 400 }}>
+                                  <div style={{ fontSize: TYPE.secondary, lineHeight: "19px", color: T.TEXT, fontWeight: 400 }}>
                                     {bullet}
                                   </div>
                                 </div>
@@ -1759,7 +1759,7 @@ export default function CoachClientPage() {
                             <div style={{ fontSize: TYPE.body, fontWeight: 800, color: "#f87171" }}>
                               {isPass ? "Why This Is a Pass" : "Your Risks"}
                             </div>
-                            <div style={{ fontSize: TYPE.micro, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                            <div style={{ fontSize: TYPE.micro, color: T.DIM, marginTop: 2 }}>
                               Address these before you apply
                             </div>
                           </div>
@@ -1773,7 +1773,7 @@ export default function CoachClientPage() {
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 flexShrink: 0, marginTop: 2, fontSize: TYPE.micro, color: "#f87171", fontWeight: 900,
                               }}>!</div>
-                              <div style={{ fontSize: TYPE.secondary, lineHeight: "19px", color: "rgba(255,255,255,0.82)", fontWeight: 400, flex: 1 }}>
+                              <div style={{ fontSize: TYPE.secondary, lineHeight: "19px", color: T.TEXT, fontWeight: 400, flex: 1 }}>
                                 {bullet}
                               </div>
                             </div>
@@ -1794,7 +1794,7 @@ export default function CoachClientPage() {
               <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                 <button
                   onClick={() => setShowAnnotation(true)}
-                  style={{ ...btnPrimary, background: "#FEB06A", color: "#04060F", fontWeight: 900 }}
+                  style={{ ...btnPrimary, background: "#FEB06A", color: "var(--sig-ink-on-bright, #04060F)", fontWeight: 900 }}
                 >
                   Add Coaching Note & Send →
                 </button>
@@ -1815,7 +1815,7 @@ export default function CoachClientPage() {
 
               {sendSuccess ? (
                 <div style={{ padding: 16, background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 10 }}>
-                  <span style={{ color: "#4ade80", fontWeight: 900, fontSize: TYPE.secondary }}>
+                  <span style={{ color: T.SUCCESS, fontWeight: 900, fontSize: TYPE.secondary }}>
                     Sent to {clientProfile?.name || "client"}'s dashboard. Clearing form...
                   </span>
                 </div>
@@ -1837,7 +1837,7 @@ export default function CoachClientPage() {
                             fontSize: TYPE.micro, fontWeight: 900, padding: "6px 14px", borderRadius: 8, cursor: "pointer",
                             textTransform: "uppercase", letterSpacing: 0.8,
                             border: annPriority === p.val ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
-                            background: annPriority === p.val ? "rgba(254,176,106,0.1)" : "rgba(255,255,255,0.04)",
+                            background: annPriority === p.val ? "rgba(254,176,106,0.1)" : T.GLASS,
                             color: annPriority === p.val ? T.WRN_ORANGE : T.DIM,
                           }}
                         >
@@ -1864,7 +1864,7 @@ export default function CoachClientPage() {
                             fontSize: TYPE.micro, fontWeight: 900, padding: "6px 14px", borderRadius: 8, cursor: "pointer",
                             textTransform: "uppercase", letterSpacing: 0.8,
                             border: annAction === a.val ? `1px solid rgba(81,173,229,0.4)` : `1px solid ${T.BORDER_SOFT}`,
-                            background: annAction === a.val ? "rgba(81,173,229,0.1)" : "rgba(255,255,255,0.04)",
+                            background: annAction === a.val ? "rgba(81,173,229,0.1)" : T.GLASS,
                             color: annAction === a.val ? T.WRN_BLUE : T.DIM,
                           }}
                         >
@@ -1912,7 +1912,7 @@ export default function CoachClientPage() {
                     onClick={sendToClientDashboard}
                     disabled={sending || annNote.trim().length < 20}
                     style={{
-                      ...btnPrimary, background: "#FEB06A", color: "#04060F", fontWeight: 900,
+                      ...btnPrimary, background: "#FEB06A", color: "var(--sig-ink-on-bright, #04060F)", fontWeight: 900,
                       width: "100%", opacity: sending || annNote.trim().length < 20 ? 0.5 : 1,
                       display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
                     }}

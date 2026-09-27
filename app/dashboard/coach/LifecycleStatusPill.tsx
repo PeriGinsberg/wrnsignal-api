@@ -13,6 +13,7 @@
 // Never surface the word "lifecycle" in the UI.
 
 import { useEffect, useRef, useState } from "react"
+import { T } from "../../../lib/dashboard-theme"
 import { useDropdownPlacement } from "./useDropdownPlacement"
 
 // Estimated dropdown height for placement detection. 4 options × ~28px
@@ -41,10 +42,10 @@ const PILL_STYLES: Record<
   LifecycleStatus,
   { bg: string; color: string }
 > = {
-  Prospect: { bg: "#F4A261", color: "#FFFFFF" },
-  Active: { bg: "#2CA58D", color: "#FFFFFF" },
-  Inactive: { bg: "#7DD3FC", color: "#333333" },
-  Archived: { bg: "#333333", color: "#FFFFFF" },
+  Prospect: { bg: "var(--sig-pill-prospect-bg, #F4A261)", color: "var(--sig-pill-prospect-ink, #FFFFFF)" },
+  Active: { bg: "var(--sig-pill-active-bg, #2CA58D)", color: "var(--sig-pill-active-ink, #FFFFFF)" },
+  Inactive: { bg: "var(--sig-pill-inactive-bg, #7DD3FC)", color: "var(--sig-pill-inactive-ink, #333333)" },
+  Archived: { bg: "var(--sig-pill-archived-bg, #333333)", color: "var(--sig-pill-archived-ink, #FFFFFF)" },
 }
 
 type Props = {
@@ -182,14 +183,14 @@ export function LifecycleStatusPill({
                   cursor: "pointer",
                   textAlign: "left",
                   fontFamily: "inherit",
-                  color: "rgba(255,255,255,0.92)",
+                  color: T.TEXT,
                   fontSize: 12,
                   fontWeight: isCurrent ? 900 : 700,
                   opacity: isCurrent ? 1 : 0.85,
                 }}
                 onMouseEnter={(e) => {
                   ;(e.currentTarget as HTMLButtonElement).style.background =
-                    "rgba(255,255,255,0.06)"
+                    T.BORDER_SOFT
                 }}
                 onMouseLeave={(e) => {
                   ;(e.currentTarget as HTMLButtonElement).style.background = "none"
@@ -206,7 +207,7 @@ export function LifecycleStatusPill({
                 />
                 {opt}
                 {isCurrent && (
-                  <span style={{ marginLeft: "auto", color: "rgba(255,255,255,0.45)" }}>
+                  <span style={{ marginLeft: "auto", color: T.MUTED }}>
                     ✓
                   </span>
                 )}

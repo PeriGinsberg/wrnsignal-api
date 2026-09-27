@@ -72,26 +72,29 @@ type CoachClient = {
 // /api/coach/clients/[client_profile_id] which would 404; render a
 // non-interactive chip instead).
 const STATIC_PILL_COLORS: Record<LifecycleStatus, { bg: string; color: string }> = {
-  Prospect: { bg: "#F4A261", color: "#FFFFFF" },
-  Active: { bg: "#2CA58D", color: "#FFFFFF" },
-  Inactive: { bg: "#7DD3FC", color: "#333333" },
-  Archived: { bg: "#333333", color: "#FFFFFF" },
+  Prospect: { bg: "var(--sig-pill-prospect-bg, #F4A261)", color: "var(--sig-pill-prospect-ink, #FFFFFF)" },
+  Active: { bg: "var(--sig-pill-active-bg, #2CA58D)", color: "var(--sig-pill-active-ink, #FFFFFF)" },
+  Inactive: { bg: "var(--sig-pill-inactive-bg, #7DD3FC)", color: "var(--sig-pill-inactive-ink, #333333)" },
+  Archived: { bg: "var(--sig-pill-archived-bg, #333333)", color: "var(--sig-pill-archived-ink, #FFFFFF)" },
 }
 
 // The lookup is Record<LifecycleStatus, ...> and therefore exhaustive over the
 // TYPE. The column is nullable, and the type is a promise about the server, not
 // the database: one row with a status outside the union takes the whole roster
 // down, not just its own pill.
-const PILL_FALLBACK = { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.60)" }
+const PILL_FALLBACK = { bg: T.BORDER_SOFT, color: T.MUTED }
 const pillColors = (s: LifecycleStatus | null | undefined) =>
   (s && STATIC_PILL_COLORS[s]) || PILL_FALLBACK
 
 const AVATAR_PALETTE = [
-  { bg: "rgba(81,173,229,0.18)",  text: "#9FC9EE" },
-  { bg: "rgba(254,176,106,0.18)", text: "#FECDA0" },
-  { bg: "rgba(167,139,250,0.18)", text: "#C8B6F8" },
-  { bg: "rgba(244,114,182,0.18)", text: "#F4ADC9" },
-  { bg: "rgba(74,222,128,0.18)",  text: "#9CE7B5" },
+  // Variables, because these read on navy and vanish on white. The
+  // wash is the dark fallback; lib/theme/coachSurface.ts supplies a
+  // solid tint and a dark ink for the light ground.
+  { bg: "var(--sig-avatar-0-bg, rgba(81,173,229,0.18))", text: "var(--sig-avatar-0-ink, #9FC9EE)" },
+  { bg: "var(--sig-avatar-1-bg, rgba(254,176,106,0.18))", text: "var(--sig-avatar-1-ink, #FECDA0)" },
+  { bg: "var(--sig-avatar-2-bg, rgba(167,139,250,0.18))", text: "var(--sig-avatar-2-ink, #C8B6F8)" },
+  { bg: "var(--sig-avatar-3-bg, rgba(244,114,182,0.18))", text: "var(--sig-avatar-3-ink, #F4ADC9)" },
+  { bg: "var(--sig-avatar-4-bg, rgba(74,222,128,0.18))", text: "var(--sig-avatar-4-ink, #9CE7B5)" },
 ] as const
 
 function hashIndex(s: string, mod: number): number {
@@ -278,7 +281,7 @@ export default function MyClientsFullPage() {
         {filter && (
           <div style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 8,
             background: "rgba(254,176,106,0.10)", border: "1px solid rgba(254,176,106,0.30)",
-            color: "#FEB06A", borderRadius: 999, padding: "5px 12px", fontSize: 12, fontWeight: 700,
+            color: T.WRN_ORANGE, borderRadius: 999, padding: "5px 12px", fontSize: 12, fontWeight: 700,
           }}>
             <span>Filtered: {FILTER_LABELS[filter]}</span>
             <button
@@ -286,7 +289,7 @@ export default function MyClientsFullPage() {
               aria-label="Clear filter"
               title="Clear filter"
               style={{
-                background: "none", border: "none", color: "#FEB06A",
+                background: "none", border: "none", color: T.WRN_ORANGE,
                 fontSize: 14, fontWeight: 900, cursor: "pointer",
                 padding: 0, lineHeight: 1, fontFamily: "inherit",
               }}
@@ -369,7 +372,7 @@ export default function MyClientsFullPage() {
               style={{
                 background: selected ? "rgba(254,176,106,0.10)" : T.NAV_DEFAULT_BG,
                 border: `1px solid ${selected ? "rgba(254,176,106,0.30)" : T.BORDER_SOFT}`,
-                color: selected ? "#FEB06A" : T.MUTED,
+                color: selected ? T.WRN_ORANGE : T.MUTED,
                 fontSize: TYPE.control,
                 fontWeight: 700,
                 minHeight: SPACE.control,

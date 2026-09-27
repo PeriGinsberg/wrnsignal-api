@@ -95,7 +95,7 @@ export function MetricsWindowToggle({ value, onChange }: Props) {
       aria-label="Metrics time window"
       style={{
         display: "inline-flex",
-        background: "rgba(255,255,255,0.04)",
+        background: T.GLASS,
         border: `1px solid ${T.BORDER_SOFT}`,
         borderRadius: 10,
         padding: 3,
@@ -124,7 +124,7 @@ export function MetricsWindowToggle({ value, onChange }: Props) {
             }}
             onMouseEnter={(e) => {
               if (!active) {
-                ;(e.currentTarget.style as any).background = "rgba(255,255,255,0.04)"
+                ;(e.currentTarget.style as any).background = T.GLASS
                 ;(e.currentTarget.style as any).color = T.TEXT
               }
             }}

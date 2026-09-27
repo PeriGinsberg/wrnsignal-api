@@ -41,7 +41,7 @@ export type EditActivity = {
 // ── Small shared styles ────────────────────────────────────────────────────
 
 const input: React.CSSProperties = {
-  background: "rgba(255,255,255,0.05)",
+  background: T.GLASS,
   border: `1px solid ${T.BORDER}`,
   borderRadius: 7,
   color: T.TEXT,
@@ -52,7 +52,7 @@ const input: React.CSSProperties = {
 }
 
 const iconBtn: React.CSSProperties = {
-  background: "rgba(255,255,255,0.05)",
+  background: T.GLASS,
   border: `1px solid ${T.BORDER_SOFT}`,
   borderRadius: 6,
   color: T.MUTED,
@@ -200,7 +200,7 @@ export function ActivityEditRow({
             fontWeight: 900,
             letterSpacing: 0.6,
             color: a.is_signoff ? T.INK_ON_ACCENT : T.DIM,
-            background: a.is_signoff ? T.WRN_ORANGE : "rgba(255,255,255,0.05)",
+            background: a.is_signoff ? T.WRN_ORANGE : T.GLASS,
             borderColor: a.is_signoff ? T.WRN_ORANGE : T.BORDER_SOFT,
           }}
         >
@@ -371,7 +371,7 @@ export function ProofProjectToggle({ on, busy, onToggle }: {
         cursor: busy ? "default" : "pointer",
         fontFamily: "inherit",
         color: on ? T.INK_ON_ACCENT : T.DIM,
-        background: on ? T.WRN_ORANGE : "rgba(255,255,255,0.05)",
+        background: on ? T.WRN_ORANGE : T.GLASS,
         border: `1px solid ${on ? T.WRN_ORANGE : T.BORDER_SOFT}`,
         opacity: busy ? 0.6 : 1,
       }}

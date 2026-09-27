@@ -258,7 +258,7 @@ export const fieldWrap: React.CSSProperties = {
 // meets it. See TYPE and SPACE in lib/theme/surfaces.ts.
 export const btnPrimary: React.CSSProperties = {
   background: T.GRAD_PRIMARY,
-  color: "#04060F",
+  color: "var(--sig-ink-on-primary, #04060F)",
   fontWeight: 900,
   borderRadius: 12,
   minHeight: SPACE.control,

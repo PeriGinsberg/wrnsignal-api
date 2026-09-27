@@ -65,11 +65,11 @@ const EDUCATION_OPTIONS: { value: "in_school" | "graduated" | "na"; label: strin
 // personal_contact uses T.SUCCESS green to avoid CTA-collision with
 // T.WRN_ORANGE; "personal warmth" semantics fit a green tone.
 const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string; border: string }> = {
-  referral:         { bg: "rgba(81,173,229,0.12)",  color: "#51ADE5", border: "rgba(81,173,229,0.40)" },
+  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.WRN_BLUE, border: "rgba(81,173,229,0.40)" },
   social_media:     { bg: "rgba(167,139,250,0.18)", color: "#C8B6F8", border: "rgba(167,139,250,0.40)" },
-  website:          { bg: "rgba(45,165,141,0.15)",  color: "#2CA58D", border: "rgba(45,165,141,0.40)" },
-  personal_contact: { bg: "rgba(74,222,128,0.15)",  color: "#4ade80", border: "rgba(74,222,128,0.40)" },
-  other:            { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.60)", border: "rgba(255,255,255,0.18)" },
+  website:          { bg: "rgba(45,165,141,0.15)",  color: T.WRN_TEAL, border: "rgba(45,165,141,0.40)" },
+  personal_contact: { bg: "rgba(74,222,128,0.15)",  color: T.SUCCESS, border: "rgba(74,222,128,0.40)" },
+  other:            { bg: T.BORDER_SOFT, color: T.MUTED, border: T.BORDER },
 }
 
 // ── Auth helpers (inline per established convention) ──
@@ -291,7 +291,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
                       textTransform: "uppercase",
                       letterSpacing: 0.6,
                       border: active ? `1px solid ${s.border}` : `1px solid ${T.BORDER_SOFT}`,
-                      background: active ? s.bg : "rgba(255,255,255,0.04)",
+                      background: active ? s.bg : T.GLASS,
                       color: active ? s.color : T.DIM,
                       fontFamily: "inherit",
                     }}
@@ -521,7 +521,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
             style={{
               ...btnPrimary,
               background: "#FEB06A",
-              color: "#04060F",
+              color: "var(--sig-ink-on-bright, #04060F)",
               fontWeight: 900,
               opacity: canSubmit ? 1 : 0.5,
               display: "inline-flex",

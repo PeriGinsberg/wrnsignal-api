@@ -21,6 +21,7 @@
 // undo.
 
 import { useCallback, useEffect, useState } from "react"
+import { T } from "../../../lib/dashboard-theme"
 
 // Match the engine's emitted shape — kept loose here so the consumer
 // can pass any signal type with at least { id, kind }.
@@ -45,8 +46,8 @@ export function DismissSignalButton({
   const [hovered, setHovered] = useState(false)
   // Subtle muted gray → slightly-brighter neutral on hover. NOT brand
   // colors per design lock — "set aside, not delete."
-  const baseColor = "rgba(255,255,255,0.35)"
-  const hoverColor = "rgba(255,255,255,0.70)"
+  const baseColor = T.BORDER
+  const hoverColor = T.BORDER
   return (
     <button
       onClick={(e) => {
@@ -133,7 +134,7 @@ export function SignalUndoToast({
             pointerEvents: "auto",
           }}
         >
-          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.88)", flex: 1 }}>
+          <span style={{ fontSize: 13, color: T.TEXT, flex: 1 }}>
             Dismissed engagement signal.
           </span>
           <button
@@ -141,7 +142,7 @@ export function SignalUndoToast({
             style={{
               background: "rgba(81,173,229,0.15)",
               border: "1px solid rgba(81,173,229,0.35)",
-              color: "#51ADE5",
+              color: T.WRN_BLUE,
               borderRadius: 6,
               padding: "4px 12px",
               fontSize: 12,
@@ -160,7 +161,7 @@ export function SignalUndoToast({
               border: "none",
               cursor: "pointer",
               padding: 2,
-              color: "rgba(255,255,255,0.45)",
+              color: T.MUTED,
               fontSize: 14,
               fontWeight: 700,
               fontFamily: "inherit",

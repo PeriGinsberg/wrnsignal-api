@@ -113,7 +113,7 @@ export function InfoCard({
             <div
               key={g.title}
               style={{
-                background: "rgba(255,255,255,0.02)",
+                background: T.GLASS,
                 border: `1px solid ${T.BORDER_SOFT}`,
                 borderRadius: 12,
                 padding: "12px 14px",

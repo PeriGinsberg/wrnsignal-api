@@ -50,10 +50,10 @@ type Row = {
 // editable from this surface, just labeled). Inactive revised 6.4 from
 // #D1D5DB to #7DD3FC (icy blue) for better contrast on dark navy bg.
 const LIFECYCLE_STYLE: Record<string, { bg: string; color: string }> = {
-  Prospect: { bg: "#F4A261", color: "#FFFFFF" },
-  Active: { bg: "#2CA58D", color: "#FFFFFF" },
-  Inactive: { bg: "#7DD3FC", color: "#333333" },
-  Archived: { bg: "#333333", color: "#FFFFFF" },
+  Prospect: { bg: "var(--sig-pill-prospect-bg, #F4A261)", color: "var(--sig-pill-prospect-ink, #FFFFFF)" },
+  Active: { bg: "var(--sig-pill-active-bg, #2CA58D)", color: "var(--sig-pill-active-ink, #FFFFFF)" },
+  Inactive: { bg: "var(--sig-pill-inactive-bg, #7DD3FC)", color: "var(--sig-pill-inactive-ink, #333333)" },
+  Archived: { bg: "var(--sig-pill-archived-bg, #333333)", color: "var(--sig-pill-archived-ink, #FFFFFF)" },
 }
 
 // APP_STATUS_STYLE is imported above — single source of truth shared
@@ -149,7 +149,7 @@ export default function ApplicationsRecentPage() {
         {status !== "all" && (
           <div style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 8,
             background: "rgba(254,176,106,0.10)", border: "1px solid rgba(254,176,106,0.30)",
-            color: "#FEB06A", borderRadius: 999, padding: "5px 12px", fontSize: 12, fontWeight: 700,
+            color: T.WRN_ORANGE, borderRadius: 999, padding: "5px 12px", fontSize: 12, fontWeight: 700,
           }}>
             <span>Filtered: {CHIP_LABELS[status]}</span>
             <button
@@ -157,7 +157,7 @@ export default function ApplicationsRecentPage() {
               aria-label="Show all applications"
               title="Show all applications"
               style={{
-                background: "none", border: "none", color: "#FEB06A",
+                background: "none", border: "none", color: T.WRN_ORANGE,
                 fontSize: 14, fontWeight: 900, cursor: "pointer",
                 padding: 0, lineHeight: 1, fontFamily: "inherit",
               }}

@@ -44,7 +44,7 @@ export function SettingsTabs({
               ...base,
               cursor: "pointer",
               border: active ? `1px solid rgba(254,176,106,0.35)` : `1px solid ${T.BORDER_SOFT}`,
-              background: active ? "rgba(254,176,106,0.08)" : "rgba(255,255,255,0.04)",
+              background: active ? "rgba(254,176,106,0.08)" : T.GLASS,
               color: active ? T.WRN_ORANGE : T.MUTED,
             }}
           >

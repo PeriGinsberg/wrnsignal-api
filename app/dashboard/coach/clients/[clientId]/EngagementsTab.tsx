@@ -688,7 +688,7 @@ function EngagementCard({
                 onMouseLeave={() => setHoveredStatus((h) => (h === st ? null : h))}
                 aria-pressed={active}
                 style={{
-                  background: active ? m.bg : isHover ? "rgba(255,255,255,0.06)" : "transparent",
+                  background: active ? m.bg : isHover ? T.BORDER_SOFT : "transparent",
                   color: active ? m.color : isHover ? T.TEXT : T.MUTED,
                   border: "none",
                   borderLeft: i === 0 ? "none" : `1px solid ${isHover ? T.BORDER : T.BORDER_SOFT}`,
@@ -944,7 +944,7 @@ function ActivityStatusControl({
             onMouseLeave={() => setHovered((h) => (h === st ? null : h))}
             aria-pressed={active}
             style={{
-              background: active ? m.bg : isHover ? "rgba(255,255,255,0.06)" : "transparent",
+              background: active ? m.bg : isHover ? T.BORDER_SOFT : "transparent",
               color: active ? m.color : isHover ? T.TEXT : T.MUTED,
               border: "none",
               borderLeft: i === 0 ? "none" : `1px solid ${isHover ? T.BORDER : T.BORDER_SOFT}`,

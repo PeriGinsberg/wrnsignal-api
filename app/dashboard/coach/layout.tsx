@@ -26,23 +26,15 @@
 // highest-contrast pairing either theme has. See TC-617.
 
 import type { ReactNode } from "react"
-import { COACH_SURFACE, lightCoachSurfaceCss } from "@/lib/theme/coachSurface"
+import { T } from "../../../lib/dashboard-theme"
+import { COACH_SURFACE } from "@/lib/theme/coachSurface"
 import { TYPE } from "@/lib/theme/surfaces"
 
-
-const SURFACE_ATTR = "light"
 
 export default function CoachLayout({ children }: { children: ReactNode }) {
   const light = COACH_SURFACE === "light"
   return (
-    <div
-      data-coach-surface={light ? SURFACE_ATTR : "dark"}
-      style={light ? { background: "var(--sig-bg)", minHeight: "100%" } : undefined}
-    >
-      {/* Emitted unconditionally. The rule only bites on a subtree carrying the
-          attribute, and shipping it always means flipping COACH_SURFACE is the
-          only edit a repaint needs. */}
-      <style>{lightCoachSurfaceCss(`[data-coach-surface="${SURFACE_ATTR}"]`)}</style>
+    <div>
 
       <div
         style={{

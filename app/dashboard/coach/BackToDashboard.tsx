@@ -19,6 +19,7 @@
 // color), hover underlines. Sits above the page heading with ~18px gap.
 
 import Link from "next/link"
+import { T } from "../../../lib/dashboard-theme"
 import { useState } from "react"
 
 export function BackToDashboard() {
@@ -32,7 +33,7 @@ export function BackToDashboard() {
         display: "inline-block",
         fontSize: 13,
         fontWeight: 600,
-        color: "#2CA58D",
+        color: T.WRN_TEAL,
         textDecoration: hovered ? "underline" : "none",
         marginBottom: 18,
         letterSpacing: 0.2,

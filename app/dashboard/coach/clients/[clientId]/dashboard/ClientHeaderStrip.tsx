@@ -162,7 +162,7 @@ export function ClientHeaderStrip({
             onClick={() => setOverflowOpen((v) => !v)}
             aria-label="More actions"
             style={{
-              background: "rgba(255,255,255,0.04)",
+              background: T.GLASS,
               border: `1px solid ${T.BORDER_SOFT}`,
               color: T.MUTED,
               fontSize: TYPE.body,
@@ -237,7 +237,7 @@ export function ClientHeaderStrip({
 // been sent; subdued teal "Invited {date}" once it has.
 function InvitePill({ invitedDate }: { invitedDate: string | null }) {
   const s = invitedDate
-    ? { bg: "rgba(45,165,141,0.15)", color: "#2CA58D", border: "1px solid rgba(45,165,141,0.3)" }
+    ? { bg: "rgba(45,165,141,0.15)", color: T.WRN_TEAL, border: "1px solid rgba(45,165,141,0.3)" }
     : { bg: "rgba(255,149,0,0.15)", color: "#FF9500", border: "1px solid rgba(255,149,0,0.3)" }
   return (
     <span
@@ -280,7 +280,7 @@ function ActionButton({
           color: T.WRN_ORANGE,
         }
       : {
-          background: "rgba(255,255,255,0.03)",
+          background: T.GLASS,
           border: `1px solid ${T.BORDER_SOFT}`,
           color: T.DIM,
         }

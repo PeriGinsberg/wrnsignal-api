@@ -47,10 +47,10 @@ const PROSPECT_STATUS_VALUES = Object.keys(PROSPECT_STATUS_LABEL) as ProspectSta
 // Selected colors kept in sync with the detail page (prospects/[id]/page.tsx):
 // Active green, Inactive amber "on hold", Lost red, Won teal.
 const PROSPECT_STATUS_STYLE: Record<ProspectStatus, { bg: string; color: string; border: string }> = {
-  active:   { bg: "rgba(74,222,128,0.18)",  color: "#4ade80", border: "rgba(74,222,128,0.50)" },
-  inactive: { bg: "rgba(254,176,106,0.18)", color: "#FEB06A", border: "rgba(254,176,106,0.50)" },
+  active:   { bg: "rgba(74,222,128,0.18)",  color: T.SUCCESS, border: "rgba(74,222,128,0.50)" },
+  inactive: { bg: "rgba(254,176,106,0.18)", color: T.WRN_ORANGE, border: "rgba(254,176,106,0.50)" },
   lost:     { bg: "rgba(248,113,113,0.20)", color: "#f87171", border: "rgba(248,113,113,0.55)" },
-  won:      { bg: "rgba(45,165,141,0.18)",  color: "#2CA58D", border: "rgba(45,165,141,0.45)" },
+  won:      { bg: "rgba(45,165,141,0.18)",  color: T.WRN_TEAL, border: "rgba(45,165,141,0.45)" },
 }
 
 const SOURCE_CATEGORIES = [
@@ -71,19 +71,22 @@ const SOURCE_LABEL: Record<SourceCategory, string> = {
 }
 
 const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string }> = {
-  referral:         { bg: "rgba(81,173,229,0.12)",  color: "#51ADE5" },
+  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.WRN_BLUE },
   social_media:     { bg: "rgba(167,139,250,0.18)", color: "#C8B6F8" },
-  website:          { bg: "rgba(45,165,141,0.15)",  color: "#2CA58D" },
-  personal_contact: { bg: "rgba(74,222,128,0.15)",  color: "#4ade80" },
-  other:            { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.60)" },
+  website:          { bg: "rgba(45,165,141,0.15)",  color: T.WRN_TEAL },
+  personal_contact: { bg: "rgba(74,222,128,0.15)",  color: T.SUCCESS },
+  other:            { bg: T.BORDER_SOFT, color: T.MUTED },
 }
 
 const AVATAR_PALETTE = [
-  { bg: "rgba(81,173,229,0.18)",  text: "#9FC9EE" },
-  { bg: "rgba(254,176,106,0.18)", text: "#FECDA0" },
-  { bg: "rgba(167,139,250,0.18)", text: "#C8B6F8" },
-  { bg: "rgba(244,114,182,0.18)", text: "#F4ADC9" },
-  { bg: "rgba(74,222,128,0.18)",  text: "#9CE7B5" },
+  // Variables, because these read on navy and vanish on white. The
+  // wash is the dark fallback; lib/theme/coachSurface.ts supplies a
+  // solid tint and a dark ink for the light ground.
+  { bg: "var(--sig-avatar-0-bg, rgba(81,173,229,0.18))", text: "var(--sig-avatar-0-ink, #9FC9EE)" },
+  { bg: "var(--sig-avatar-1-bg, rgba(254,176,106,0.18))", text: "var(--sig-avatar-1-ink, #FECDA0)" },
+  { bg: "var(--sig-avatar-2-bg, rgba(167,139,250,0.18))", text: "var(--sig-avatar-2-ink, #C8B6F8)" },
+  { bg: "var(--sig-avatar-3-bg, rgba(244,114,182,0.18))", text: "var(--sig-avatar-3-ink, #F4ADC9)" },
+  { bg: "var(--sig-avatar-4-bg, rgba(74,222,128,0.18))", text: "var(--sig-avatar-4-ink, #9CE7B5)" },
 ] as const
 
 // ── Types ──
@@ -428,7 +431,7 @@ export default function ProspectsListPage() {
           onClick={() => setShowAdd(true)}
           style={{
             background: T.WRN_ORANGE,
-            color: "#04060F",
+            color: "var(--sig-ink-on-bright, #04060F)",
             borderRadius: 10,
             minHeight: SPACE.control,
             padding: "0 20px",

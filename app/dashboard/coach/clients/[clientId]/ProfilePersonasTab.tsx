@@ -462,7 +462,7 @@ export default function ProfilePersonasTab({
                         style={{
                           fontSize: TYPE.micro, fontWeight: 900, padding: "6px 12px", borderRadius: 8, cursor: "pointer",
                           border: active ? `1px solid ${T.WRN_BLUE}` : `1px solid ${T.BORDER_SOFT}`,
-                          background: active ? "rgba(81,173,229,0.15)" : "rgba(255,255,255,0.04)",
+                          background: active ? "rgba(81,173,229,0.15)" : T.GLASS,
                           color: active ? T.WRN_BLUE : T.DIM, fontFamily: "inherit",
                         }}
                       >
@@ -666,7 +666,7 @@ export default function ProfilePersonasTab({
                     }}
                     style={{
                       padding: "7px 16px", fontSize: TYPE.secondary, border: "none", cursor: "pointer",
-                      background: resumeTab === t ? "rgba(254,176,106,0.10)" : "rgba(255,255,255,0.03)",
+                      background: resumeTab === t ? "rgba(254,176,106,0.10)" : T.GLASS,
                       color: resumeTab === t ? T.WRN_ORANGE : T.MUTED,
                       fontWeight: 900, letterSpacing: 0.5,
                     }}
@@ -939,7 +939,7 @@ function ArchivedPersonaCard({
         <span style={{ fontSize: TYPE.body, fontWeight: 900, color: T.MUTED }}>{p.name}</span>
         <span style={{
           fontSize: TYPE.micro, fontWeight: 900, letterSpacing: 1.5, textTransform: "uppercase",
-          color: T.DIM, background: "rgba(255,255,255,0.04)", padding: "3px 8px", borderRadius: 6,
+          color: T.DIM, background: T.GLASS, padding: "3px 8px", borderRadius: 6,
         }}>
           Archived
         </span>

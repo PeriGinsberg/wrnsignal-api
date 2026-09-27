@@ -208,7 +208,7 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
                     textTransform: "uppercase",
                     letterSpacing: 0.6,
                     border: type === opt.value ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
-                    background: type === opt.value ? "rgba(254,176,106,0.1)" : "rgba(255,255,255,0.04)",
+                    background: type === opt.value ? "rgba(254,176,106,0.1)" : T.GLASS,
                     color: type === opt.value ? T.WRN_ORANGE : T.DIM,
                   }}
                 >
@@ -256,7 +256,7 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
                         textTransform: "uppercase",
                         letterSpacing: 0.6,
                         border: active ? `1px solid ${accentBorder}` : `1px solid ${T.BORDER_SOFT}`,
-                        background: active ? accentBg : "rgba(255,255,255,0.04)",
+                        background: active ? accentBg : T.GLASS,
                         color: active ? accentColor : T.DIM,
                       }}
                     >

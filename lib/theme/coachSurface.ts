@@ -23,6 +23,8 @@
 // they are visible precisely because the ground moved under them. That is the
 // intended order: flip the ground, then fix what the ground exposes.
 
+import { T } from "../dashboard-theme"
+
 /**
  * Which palette the Coaches Center is on.
  *
@@ -35,7 +37,7 @@
  * the build. Which is a better home anyway: the switch belongs beside the
  * palette it switches to.
  */
-export const COACH_SURFACE: "dark" | "light" = "dark"
+export const COACH_SURFACE: "dark" | "light" = "light"
 
 /** The variable name for a token. Prefixed, because these are global. */
 export const cssVar = (token: string) => `--sig-${token.toLowerCase().replace(/_/g, "-")}`
@@ -153,15 +155,105 @@ export const LIGHT_COACH_VARS: Record<string, string> = {
 }
 
 /**
- * The CSS that puts the light palette on a subtree.
+ * The pieces that are not `T` tokens but had exactly the same problem.
+ *
+ * Each was a hand-written pair designed for navy, and each measured under
+ * 3:1 against a white card once the ground flipped. They become variables
+ * for the same reason the tokens did: so the value follows the ground
+ * instead of the component having to know which ground it is on.
+ *
+ * Named by ROLE rather than by file, because five separate files carried
+ * their own copy of the same five avatar colours.
+ */
+export const LIGHT_COACH_EXTRAS: Record<string, string> = {
+  // Avatar initials. The wash was 18% alpha over navy; on white the same
+  // wash is almost nothing and the pale ink measured 1.0 to 1.5 against the
+  // card. Solid tint, ink dark enough to carry two letters.
+  "avatar-0-bg": "#DCEDF9", "avatar-0-ink": "#00569A",
+  "avatar-1-bg": "#FFEEDC", "avatar-1-ink": "#8A3D00",
+  "avatar-2-bg": "#EDE4F9", "avatar-2-ink": "#5B3392",
+  "avatar-3-bg": "#FDE3EC", "avatar-3-ink": "#A3215B",
+  "avatar-4-bg": "#DFF5E6", "avatar-4-ink": "#1B6B44",
+
+  // Lifecycle pills. #F4A261 with white text is 2.1:1. On navy the
+  // surround carried it; on white it is a pale badge with white letters.
+  "pill-prospect-bg": "#FFEEDC", "pill-prospect-ink": "#8A3D00",
+  "pill-active-bg": "#D6EFEC", "pill-active-ink": "#17706F",
+  "pill-inactive-bg": "#DCEDF9", "pill-inactive-ink": "#00569A",
+  "pill-archived-bg": "#E9EEF4", "pill-archived-ink": "#3D5878",
+  // The same orange as a NUMERAL on a white card rather than a chip fill.
+  "pill-prospect-ink-on-card": "#8A3D00",
+
+  // GRAD_PRIMARY is solid navy on light, so near-black ink on it is 1.2:1.
+  "ink-on-primary": "#FFFFFF",
+  // AND NOT THE OTHER WAY. --sig-ink-on-bright is the ink for the count pills
+  // and the peach buttons, whose fills are bright on BOTH grounds. It stays
+  // near-black: white on #B6F2F8 measures 1.2:1. The two were briefly one
+  // variable and the prospect count went white on ice.
+  "ink-on-bright": "#04060F",
+
+  // The due chip. TASK_OVERDUE stays brand orange, because it draws the row
+  // border and the chip fill and that is what orange is for. The WORD inside
+  // the chip cannot be that orange: on the peach fill it measured 1.0.
+  "chip-overdue-ink": "#8A3D00",
+  "chip-due-ink": "#00569A",
+  // A 14% wash over white is not a chip. 26% is.
+  "chip-wash": "0.26",
+
+  // The task-row avatars mix their hue toward navy rather than carrying
+  // a second palette. 0% on dark, 34% on light, which is what takes the
+  // palest member (SUCCESS green) past 4.5:1 on its own wash.
+  "avatar-darken": "34%",
+  "avatar-wash": "0.22",
+}
+
+/**
+ * The dark values, read back out of `T` itself.
+ *
+ * DERIVED, NOT RETYPED. Every token in T is `var(--sig-x, <dark value>)`, so
+ * the fallback IS the dark palette, and parsing it out means the two cannot
+ * disagree. A hand-written copy would drift the first time somebody tuned a
+ * hex in dashboard-theme.ts without thinking to look here.
+ */
+function darkVars(): Record<string, string> {
+  const out: Record<string, string> = {}
+  for (const [token, value] of Object.entries(T as unknown as Record<string, string>)) {
+    const m = /^var\(--sig-[a-z-]+,\s*([\s\S]+)\)$/.exec(value)
+    if (m) out[token] = m[1].trim()
+  }
+  return out
+}
+
+/** The extras are already CSS-variable names, so they skip cssVar(). */
+function extraDecls(): string {
+  return Object.entries(LIGHT_COACH_EXTRAS).map(([k, v]) => `  --sig-${k}: ${v};`).join("\n")
+}
+
+function declsFor(vars: Record<string, string>): string {
+  return Object.entries(vars).map(([t, v]) => `  ${cssVar(t)}: ${v};`).join("\n")
+}
+
+/**
+ * Both palettes, as two rules.
+ *
+ * THE DARK RULE EXISTS SO A DARK ISLAND CAN SIT INSIDE A LIGHT PAGE. Custom
+ * properties inherit, so without it the nav would pick up the light values
+ * from its ancestor and turn white. The nav is navy on BOTH grounds by
+ * design: navy is structure, and it sits happily next to either ground. It
+ * opts back out by carrying data-coach-surface="dark".
  *
  * Scoped to an attribute rather than a class so it cannot collide with
- * anything, and emitted as a plain string so the shell can drop it in a
+ * anything, and emitted as a plain string so the shell can drop it into a
  * `<style>` without a build step.
  */
+export function coachSurfaceCss(): string {
+  return [
+    `[data-coach-surface="light"] {\n${declsFor(LIGHT_COACH_VARS)}\n${extraDecls()}\n}`,
+    `[data-coach-surface="dark"] {\n${declsFor(darkVars())}\n}`,
+  ].join("\n")
+}
+
+/** The light half alone, for a wrapper that only ever needs that. */
 export function lightCoachSurfaceCss(selector = '[data-coach-surface="light"]'): string {
-  const decls = Object.entries(LIGHT_COACH_VARS)
-    .map(([token, value]) => `  ${cssVar(token)}: ${value};`)
-    .join("\n")
-  return `${selector} {\n${decls}\n}`
+  return `${selector} {\n${declsFor(LIGHT_COACH_VARS)}\n}`
 }

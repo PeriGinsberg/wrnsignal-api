@@ -24,9 +24,9 @@ const TYPE_LABEL: Record<NoteType, string> = {
 }
 
 const TYPE_BADGE: Record<NoteType, { bg: string; color: string }> = {
-  session_recap: { bg: "rgba(81,173,229,0.12)", color: "#51ADE5" },
-  action_item: { bg: "rgba(254,176,106,0.12)", color: "#FEB06A" },
-  other: { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.55)" },
+  session_recap: { bg: "rgba(81,173,229,0.12)", color: T.WRN_BLUE },
+  action_item: { bg: "rgba(254,176,106,0.12)", color: T.WRN_ORANGE },
+  other: { bg: T.BORDER_SOFT, color: T.MUTED },
 }
 
 const PRIORITY_LABEL: Record<Priority, string> = {
@@ -37,8 +37,8 @@ const PRIORITY_LABEL: Record<Priority, string> = {
 
 const PRIORITY_BADGE: Record<Priority, { bg: string; color: string }> = {
   urgent: { bg: "rgba(248,113,113,0.15)", color: "#f87171" },
-  this_week: { bg: "rgba(254,176,106,0.15)", color: "#FEB06A" },
-  when_ready: { bg: "rgba(81,173,229,0.12)", color: "#51ADE5" },
+  this_week: { bg: "rgba(254,176,106,0.15)", color: T.WRN_ORANGE },
+  when_ready: { bg: "rgba(81,173,229,0.12)", color: T.WRN_BLUE },
 }
 
 const RECENT_LIMIT = 3
@@ -158,7 +158,7 @@ export function RecentNotesSection({ authFetch, clientId, refreshKey, onNavigate
                   gap: 8,
                   padding: "10px 12px",
                   borderRadius: 10,
-                  background: "rgba(255,255,255,0.025)",
+                  background: T.GLASS,
                   border: `1px solid ${T.BORDER_SOFT}`,
                   textAlign: "left",
                   cursor: "pointer",
@@ -197,7 +197,7 @@ export function RecentNotesSection({ authFetch, clientId, refreshKey, onNavigate
                     </span>
                   )}
                   {isComplete && (
-                    <span style={{ fontSize: TYPE.label, color: "#4ade80", fontWeight: 700 }}>
+                    <span style={{ fontSize: TYPE.label, color: T.SUCCESS, fontWeight: 700 }}>
                       ✓ Complete
                     </span>
                   )}

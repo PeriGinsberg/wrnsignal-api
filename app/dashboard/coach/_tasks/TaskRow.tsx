@@ -141,9 +141,17 @@ function Avatar({ name, title }: { name: string; title?: string }) {
       style={{
         flex: "0 0 auto",
         width: 24, height: 24, borderRadius: "50%",
-        background: `rgba(${r},${g},${b},0.18)`,
+        background: `rgba(${r},${g},${b},var(--sig-avatar-wash, 0.18))`,
         border: `1px solid rgba(${r},${g},${b},0.55)`,
-        color: `rgb(${r},${g},${b})`,
+        // THE HUE SURVIVES, THE LIGHTNESS DOES NOT.
+        //
+        // At 18% over navy these read as a saturated letter on a dark
+        // wash. Over white the same wash is nearly white and the same
+        // ink measures 1.0 against it: the initials are simply gone.
+        // Rather than a second palette to keep in step, the ink is
+        // mixed toward navy by an amount the ground sets, which is 0%
+        // on dark and enough to clear 4.5:1 on light.
+        color: `color-mix(in srgb, rgb(${r},${g},${b}) calc(100% - var(--sig-avatar-darken, 0%)), #13294A)`,
         fontSize: TYPE.micro, fontWeight: 700,
         display: "inline-flex", alignItems: "center", justifyContent: "center",
       }}
@@ -221,10 +229,24 @@ function DueCell({ task }: { task: Task }) {
   const text = formatDue(task)
 
   if (!late && !today) {
-    return <span style={{ color: T.MUTED, fontSize: 12 }}>{text}</span>
+    return <span style={{ color: T.MUTED, fontSize: TYPE.secondary }}>{text}</span>
   }
-  const color = late ? T.TASK_OVERDUE : T.TASK_HEADER
-  const bg = late ? "rgba(255,107,0,0.14)" : "rgba(0,155,255,0.14)"
+  // THE FILL IS THE BRAND ORANGE, THE WORD IS NOT.
+  //
+  // Orange draws the chip and the row border, which is exactly what orange is
+  // for. Setting the label in it measured 1.0:1 against its own fill on the
+  // light ground: a chip with nothing legible in it. The ink follows the
+  // ground through a variable; the fill does not need to, because a 14% wash
+  // over navy and a pale tint on white both read as "orange chip".
+  const color = late
+    ? "var(--sig-chip-overdue-ink, " + T.TASK_OVERDUE + ")"
+    : "var(--sig-chip-due-ink, " + T.TASK_HEADER + ")"
+  // The fill strength follows the ground too. 14% over navy is a
+  // legible chip; 14% over white is not a chip at all, and the ink then
+  // sits on the card rather than on a fill.
+  const bg = late
+    ? "rgba(255,107,0,var(--sig-chip-wash, 0.14))"
+    : "rgba(0,155,255,var(--sig-chip-wash, 0.14))"
   return (
     <span style={{
       display: "inline-block",

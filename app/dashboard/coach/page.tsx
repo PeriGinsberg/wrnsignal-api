@@ -142,22 +142,25 @@ const RULE_LABEL: Record<ActionItem["kind"], string> = {
   poor_fit_no_rec: "Low-fit app",
 }
 const RULE_COLOR: Record<ActionItem["kind"], string> = {
-  no_login: "#FEB06A",
-  rec_pending_review: "#51ADE5",
-  moved_interviewing: "#a78bfa",
-  moved_rejected: "#E87070",
-  offer_no_followup: "#4ade80",
-  poor_fit_no_rec: "#FBBF24",
+  no_login: T.WRN_ORANGE,
+  rec_pending_review: T.WRN_BLUE,
+  moved_interviewing: T.WRN_PINK,
+  moved_rejected: T.ERROR,
+  offer_no_followup: T.SUCCESS,
+  poor_fit_no_rec: T.GOLD,
 }
 
 // Avatar palette — 5 colors, dark-theme adapted (translucent bg + brighter text).
 // Picked by deterministic djb2 hash of client name → mod 5.
 const AVATAR_PALETTE = [
-  { bg: "rgba(81,173,229,0.18)",  text: "#9FC9EE" },  // blue
-  { bg: "rgba(254,176,106,0.18)", text: "#FECDA0" },  // amber
-  { bg: "rgba(167,139,250,0.18)", text: "#C8B6F8" },  // purple
-  { bg: "rgba(244,114,182,0.18)", text: "#F4ADC9" },  // pink
-  { bg: "rgba(74,222,128,0.18)",  text: "#9CE7B5" },  // green
+  // Variables, because these read on navy and vanish on white. The
+  // wash is the dark fallback; lib/theme/coachSurface.ts supplies a
+  // solid tint and a dark ink for the light ground.
+  { bg: "var(--sig-avatar-0-bg, rgba(81,173,229,0.18))", text: "var(--sig-avatar-0-ink, #9FC9EE)" },
+  { bg: "var(--sig-avatar-1-bg, rgba(254,176,106,0.18))", text: "var(--sig-avatar-1-ink, #FECDA0)" },
+  { bg: "var(--sig-avatar-2-bg, rgba(167,139,250,0.18))", text: "var(--sig-avatar-2-ink, #C8B6F8)" },
+  { bg: "var(--sig-avatar-3-bg, rgba(244,114,182,0.18))", text: "var(--sig-avatar-3-ink, #F4ADC9)" },
+  { bg: "var(--sig-avatar-4-bg, rgba(74,222,128,0.18))", text: "var(--sig-avatar-4-ink, #9CE7B5)" },
 ] as const
 
 const COLLAPSED_LIMIT = 5
@@ -268,7 +271,7 @@ function CountPill({ n, color = T.WRN_ORANGE }: { n: number; color?: string }) {
   return (
     <span style={{
       fontSize: 10, fontWeight: 900, letterSpacing: 0.4,
-      color: "#04060F", background: color,
+      color: "var(--sig-ink-on-bright, #04060F)", background: color,
       padding: "2px 8px", borderRadius: 999, marginLeft: 8,
     }}>
       {n}
@@ -727,7 +730,7 @@ function MyClientsSection({
       <button
         onClick={onInvite}
         style={{
-          background: T.WRN_ORANGE, color: "#04060F",
+          background: T.WRN_ORANGE, color: "var(--sig-ink-on-bright, #04060F)",
           borderRadius: 10, padding: "6px 14px", fontSize: 12, fontWeight: 800,
           cursor: "pointer", border: "none", fontFamily: "inherit",
         }}
@@ -860,7 +863,7 @@ function MyProspectsSection({
       onClick={onAdd}
       style={{
         background: T.WRN_ORANGE,
-        color: "#04060F",
+        color: "var(--sig-ink-on-bright, #04060F)",
         borderRadius: 10,
         padding: "6px 14px",
         fontSize: 12,
@@ -1006,9 +1009,9 @@ export default function CoachHomePage() {
     // subtitle change — they have no time concept).
     const sub = windowSubtitle(metricsWindow)
     return [
-      { label: "Active prospects", value: m.activeProspects, color: "#F4A261",
+      { label: "Active prospects", value: m.activeProspects, color: "var(--sig-pill-prospect-ink-on-card, #F4A261)",
         href: "/dashboard/coach/prospects" },
-      { label: "Active clients", value: m.activeClients, color: "#2CA58D",
+      { label: "Active clients", value: m.activeClients, color: T.WRN_TEAL,
         href: "/dashboard/coach/clients?filter=active" },
       { label: "Total applications", value: m.totalApplications, subtitle: sub,
         href: "/dashboard/coach/applications-recent?status=all" },
@@ -1181,7 +1184,7 @@ export default function CoachHomePage() {
                 </p>
                 <button
                   onClick={() => { setInviteOpen(false); setInviteEmail(""); setInviteNote(""); setInviteResult(null) }}
-                  style={{ ...btnPrimary, background: "#FEB06A", color: "#04060F", fontWeight: 900, marginTop: 24, width: "100%" }}
+                  style={{ ...btnPrimary, background: "#FEB06A", color: "var(--sig-ink-on-bright, #04060F)", fontWeight: 900, marginTop: 24, width: "100%" }}
                 >
                   Done
                 </button>
@@ -1243,7 +1246,7 @@ export default function CoachHomePage() {
                   <button
                     onClick={sendInvite}
                     disabled={inviting || !inviteEmail.trim()}
-                    style={{ ...btnPrimary, background: "#FEB06A", color: "#04060F", fontWeight: 900, flex: 1, opacity: inviting || !inviteEmail.trim() ? 0.5 : 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}
+                    style={{ ...btnPrimary, background: "#FEB06A", color: "var(--sig-ink-on-bright, #04060F)", fontWeight: 900, flex: 1, opacity: inviting || !inviteEmail.trim() ? 0.5 : 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}
                   >
                     {inviting && <SavingSpinner />}
                     {inviting ? "Sending..." : "Send Invite →"}

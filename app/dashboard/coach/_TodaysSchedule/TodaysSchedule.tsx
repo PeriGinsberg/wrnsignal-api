@@ -131,7 +131,7 @@ function NestedBox({ children }: { children: React.ReactNode }) {
     <div
       style={{
         padding: 20,
-        background: "rgba(255,255,255,0.03)",
+        background: T.GLASS,
         border: `1px dashed ${T.BORDER_SOFT}`,
         borderRadius: 10,
       }}
@@ -413,7 +413,7 @@ export function TodaysSchedule({ isCalendarBetaEnabled }: TodaysScheduleProps) {
                   style={{
                     padding: "10px 12px",
                     borderRadius: 8,
-                    background: "rgba(255,255,255,0.03)",
+                    background: T.GLASS,
                     border: `1px solid ${T.BORDER_SOFT}`,
                   }}
                 >
@@ -429,7 +429,7 @@ export function TodaysSchedule({ isCalendarBetaEnabled }: TodaysScheduleProps) {
                 style={{
                   padding: "10px 12px",
                   borderRadius: 8,
-                  background: "rgba(255,255,255,0.03)",
+                  background: T.GLASS,
                   border: `1px solid ${T.BORDER_SOFT}`,
                 }}
               >

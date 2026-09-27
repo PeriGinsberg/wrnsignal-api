@@ -14,6 +14,7 @@
 // the 6 standard values to transition the app forward.
 
 import { useEffect, useRef, useState } from "react"
+import { T } from "../../../../../lib/dashboard-theme"
 import { SPACE, TYPE } from "../../../../../lib/theme/surfaces"
 import {
   APP_STATUSES,
@@ -181,14 +182,14 @@ export function ApplicationStatusEditPill({
                   cursor: "pointer",
                   textAlign: "left",
                   fontFamily: "inherit",
-                  color: "rgba(255,255,255,0.92)",
+                  color: T.TEXT,
                   fontSize: TYPE.secondary,
                   fontWeight: isCurrent ? 900 : 700,
                   opacity: isCurrent ? 1 : 0.85,
                 }}
                 onMouseEnter={(e) => {
                   ;(e.currentTarget as HTMLButtonElement).style.background =
-                    "rgba(255,255,255,0.06)"
+                    T.BORDER_SOFT
                 }}
                 onMouseLeave={(e) => {
                   ;(e.currentTarget as HTMLButtonElement).style.background = "none"
@@ -206,7 +207,7 @@ export function ApplicationStatusEditPill({
                 />
                 {opt}
                 {isCurrent && (
-                  <span style={{ marginLeft: "auto", color: "rgba(255,255,255,0.45)" }}>
+                  <span style={{ marginLeft: "auto", color: T.MUTED }}>
                     ✓
                   </span>
                 )}

@@ -67,11 +67,11 @@ const SOURCE_LABEL: Record<SourceCategory, string> = {
 }
 
 const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string }> = {
-  referral:         { bg: "rgba(81,173,229,0.12)",  color: "#51ADE5" },
+  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.WRN_BLUE },
   social_media:     { bg: "rgba(167,139,250,0.18)", color: "#C8B6F8" },
-  website:          { bg: "rgba(45,165,141,0.15)",  color: "#2CA58D" },
-  personal_contact: { bg: "rgba(74,222,128,0.15)",  color: "#4ade80" },
-  other:            { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.60)" },
+  website:          { bg: "rgba(45,165,141,0.15)",  color: T.WRN_TEAL },
+  personal_contact: { bg: "rgba(74,222,128,0.15)",  color: T.SUCCESS },
+  other:            { bg: T.BORDER_SOFT, color: T.MUTED },
 }
 
 // source_category is nullable, and "other" is the honest reading of a value the
@@ -92,9 +92,9 @@ const NOTE_TYPE_LABEL: Record<NoteType, string> = {
 }
 
 const NOTE_TYPE_BADGE: Record<NoteType, { bg: string; color: string }> = {
-  session_recap: { bg: "rgba(81,173,229,0.12)",  color: "#51ADE5" },
-  action_item:   { bg: "rgba(254,176,106,0.12)", color: "#FEB06A" },
-  other:         { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.60)" },
+  session_recap: { bg: "rgba(81,173,229,0.12)",  color: T.WRN_BLUE },
+  action_item:   { bg: "rgba(254,176,106,0.12)", color: T.WRN_ORANGE },
+  other:         { bg: T.BORDER_SOFT, color: T.MUTED },
 }
 
 const NOTE_PRIORITY_LABEL: Record<NotePriority, string> = {
@@ -105,8 +105,8 @@ const NOTE_PRIORITY_LABEL: Record<NotePriority, string> = {
 
 const NOTE_PRIORITY_BADGE: Record<NotePriority, { bg: string; color: string; border: string }> = {
   urgent:     { bg: "rgba(248,113,113,0.15)", color: "#f87171", border: "rgba(248,113,113,0.4)" },
-  this_week:  { bg: "rgba(254,176,106,0.15)", color: "#FEB06A", border: "rgba(254,176,106,0.4)" },
-  when_ready: { bg: "rgba(81,173,229,0.12)",  color: "#51ADE5", border: "rgba(81,173,229,0.4)" },
+  this_week:  { bg: "rgba(254,176,106,0.15)", color: T.WRN_ORANGE, border: "rgba(254,176,106,0.4)" },
+  when_ready: { bg: "rgba(81,173,229,0.12)",  color: T.WRN_BLUE, border: "rgba(81,173,229,0.4)" },
 }
 
 const DEFAULT_NOTE_TYPE: NoteType = "session_recap"
@@ -120,11 +120,14 @@ const NOTE_FILTER_OPTIONS: { value: "" | NoteType; label: string }[] = [
 ]
 
 const AVATAR_PALETTE = [
-  { bg: "rgba(81,173,229,0.18)",  text: "#9FC9EE" },
-  { bg: "rgba(254,176,106,0.18)", text: "#FECDA0" },
-  { bg: "rgba(167,139,250,0.18)", text: "#C8B6F8" },
-  { bg: "rgba(244,114,182,0.18)", text: "#F4ADC9" },
-  { bg: "rgba(74,222,128,0.18)",  text: "#9CE7B5" },
+  // Variables, because these read on navy and vanish on white. The
+  // wash is the dark fallback; lib/theme/coachSurface.ts supplies a
+  // solid tint and a dark ink for the light ground.
+  { bg: "var(--sig-avatar-0-bg, rgba(81,173,229,0.18))", text: "var(--sig-avatar-0-ink, #9FC9EE)" },
+  { bg: "var(--sig-avatar-1-bg, rgba(254,176,106,0.18))", text: "var(--sig-avatar-1-ink, #FECDA0)" },
+  { bg: "var(--sig-avatar-2-bg, rgba(167,139,250,0.18))", text: "var(--sig-avatar-2-ink, #C8B6F8)" },
+  { bg: "var(--sig-avatar-3-bg, rgba(244,114,182,0.18))", text: "var(--sig-avatar-3-ink, #F4ADC9)" },
+  { bg: "var(--sig-avatar-4-bg, rgba(74,222,128,0.18))", text: "var(--sig-avatar-4-ink, #9CE7B5)" },
 ] as const
 
 // ── Types ──
@@ -471,7 +474,7 @@ function ClientNotesSection({
                 textTransform: "uppercase",
                 letterSpacing: 0.6,
                 border: active ? "1px solid rgba(254,176,106,0.4)" : `1px solid ${T.BORDER_SOFT}`,
-                background: active ? "rgba(254,176,106,0.1)" : "rgba(255,255,255,0.04)",
+                background: active ? "rgba(254,176,106,0.1)" : T.GLASS,
                 color: active ? T.WRN_ORANGE : T.DIM,
                 fontFamily: "inherit",
               }}
@@ -487,7 +490,7 @@ function ClientNotesSection({
           style={{
             marginBottom: 16,
             padding: 14,
-            background: "rgba(255,255,255,0.03)",
+            background: T.GLASS,
             border: `1px solid ${T.BORDER_SOFT}`,
             borderRadius: 10,
             display: "flex",
@@ -517,7 +520,7 @@ function ClientNotesSection({
                       textTransform: "uppercase",
                       letterSpacing: 0.6,
                       border: active ? "1px solid rgba(254,176,106,0.4)" : `1px solid ${T.BORDER_SOFT}`,
-                      background: active ? "rgba(254,176,106,0.1)" : "rgba(255,255,255,0.04)",
+                      background: active ? "rgba(254,176,106,0.1)" : T.GLASS,
                       color: active ? T.WRN_ORANGE : T.DIM,
                       fontFamily: "inherit",
                     }}
@@ -549,7 +552,7 @@ function ClientNotesSection({
                         textTransform: "uppercase",
                         letterSpacing: 0.6,
                         border: active ? `1px solid ${s.border}` : `1px solid ${T.BORDER_SOFT}`,
-                        background: active ? s.bg : "rgba(255,255,255,0.04)",
+                        background: active ? s.bg : T.GLASS,
                         color: active ? s.color : T.DIM,
                         fontFamily: "inherit",
                       }}
@@ -632,7 +635,7 @@ function ClientNotesSection({
                 key={n.id}
                 style={{
                   padding: 14,
-                  background: "rgba(255,255,255,0.025)",
+                  background: T.GLASS,
                   border: `1px solid ${T.BORDER_SOFT}`,
                   borderRadius: 10,
                   opacity: isCompleted ? 0.6 : 1,
@@ -712,7 +715,7 @@ function ClientNotesSection({
                                 textTransform: "uppercase",
                                 letterSpacing: 0.6,
                                 border: active ? "1px solid rgba(254,176,106,0.4)" : `1px solid ${T.BORDER_SOFT}`,
-                                background: active ? "rgba(254,176,106,0.1)" : "rgba(255,255,255,0.04)",
+                                background: active ? "rgba(254,176,106,0.1)" : T.GLASS,
                                 color: active ? T.WRN_ORANGE : T.DIM,
                                 fontFamily: "inherit",
                               }}
@@ -743,7 +746,7 @@ function ClientNotesSection({
                                   textTransform: "uppercase",
                                   letterSpacing: 0.6,
                                   border: active ? `1px solid ${s.border}` : `1px solid ${T.BORDER_SOFT}`,
-                                  background: active ? s.bg : "rgba(255,255,255,0.04)",
+                                  background: active ? s.bg : T.GLASS,
                                   color: active ? s.color : T.DIM,
                                   fontFamily: "inherit",
                                 }}
@@ -1002,7 +1005,7 @@ export default function CoachClientPostConversionPage() {
         style={{
           fontSize: 13,
           fontWeight: 600,
-          color: "#2CA58D",
+          color: T.WRN_TEAL,
           textDecoration: "none",
           display: "inline-block",
           marginBottom: 18,
@@ -1118,7 +1121,7 @@ export default function CoachClientPostConversionPage() {
                   }
                   style={{
                     background: T.GRAD_PRIMARY,
-                    color: "#04060F",
+                    color: "var(--sig-ink-on-bright, #04060F)",
                     borderRadius: 10,
                     padding: "10px 18px",
                     fontSize: 13,
@@ -1139,7 +1142,7 @@ export default function CoachClientPostConversionPage() {
                   disabled={sending || !record.invited_email}
                   style={{
                     background: T.GRAD_PRIMARY,
-                    color: "#04060F",
+                    color: "var(--sig-ink-on-bright, #04060F)",
                     borderRadius: 10,
                     padding: "12px 22px",
                     fontSize: 14,
@@ -1160,7 +1163,7 @@ export default function CoachClientPostConversionPage() {
                   onClick={handleSetupAccount}
                   disabled={settingUp || sending || !record.invited_email}
                   style={{
-                    background: "rgba(255,255,255,0.04)",
+                    background: T.GLASS,
                     color: T.TEXT,
                     borderRadius: 10,
                     padding: "12px 22px",

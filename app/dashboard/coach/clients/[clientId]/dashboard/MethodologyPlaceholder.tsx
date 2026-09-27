@@ -49,7 +49,7 @@ export function MethodologyPlaceholder() {
         style={{
           height: 6,
           borderRadius: 3,
-          background: "rgba(255,255,255,0.04)",
+          background: T.GLASS,
           overflow: "hidden",
           marginBottom: 18,
           position: "relative",
@@ -87,12 +87,16 @@ export function MethodologyPlaceholder() {
                   : `1px solid ${T.BORDER_SOFT}`,
                 background: isCurrent
                   ? "rgba(254,176,106,0.08)"
-                  : "rgba(255,255,255,0.025)",
+                  : T.GLASS,
+                // A FUTURE PHASE IS QUIET, NOT INVISIBLE. T.BORDER is a
+                // hairline colour and was being used as ink here: on the
+                // light ground it measured 1.18:1, which is a label nobody
+                // can read at all rather than one that recedes.
                 color: isCurrent
                   ? T.WRN_ORANGE
                   : isPast
                   ? T.DIM
-                  : "rgba(255,255,255,0.22)",
+                  : T.MUTED,
                 opacity: isPast ? 0.55 : 1,
               }}
             >

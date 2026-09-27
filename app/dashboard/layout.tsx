@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { COACH_SURFACE, coachSurfaceCss } from "@/lib/theme/coachSurface"
 import { usePathname } from "next/navigation"
 import { getSupabaseBrowser } from "../../lib/supabase-browser"
 import { T, eyebrow } from "../../lib/dashboard-theme"
@@ -977,6 +978,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Center surfaces are untouched.
   const onNetworking = pathname.startsWith("/dashboard/network")
   const coachOnClientBoard = isCoach && boardClientId !== null
+
+  // THE COACHES CENTER IS ITS OWN GROUND, and it does not go through
+  // LIGHT_ROUTES.
+  //
+  // That list turns pages light one at a time, which was right when each page
+  // was hand-converted. The Coaches Center converts as a unit: every token it
+  // reads is a CSS variable now, so one attribute repaints all of it and a
+  // half-flipped state cannot happen. COACH_SURFACE in lib/theme/coachSurface.ts
+  // is the switch. See that file for why it is done this way.
+  const onCoachCenter = pathname.startsWith("/dashboard/coach")
+  const coachLight = onCoachCenter && COACH_SURFACE === "light"
+
   const useLight = (isD2C || (isCoach && onNetworking)) && isLightRoute(pathname)
   const S = LIGHT
 
@@ -998,7 +1011,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (isBareRoute(pathname)) return <>{children}</>
 
   return (
-    <div style={{ minHeight: "100vh", background: useLight ? S.page : T.BG, display: "flex", flexDirection: "column" }}>
+    <div
+      data-coach-surface={coachLight ? "light" : undefined}
+      style={{
+        minHeight: "100vh",
+        // T.BG is a variable now, so on a light Coaches Center this resolves to
+        // the light ground without a second branch. The ground and the cards on
+        // it can no longer disagree, which is what the old two-decision shape
+        // allowed.
+        background: useLight ? S.page : T.BG,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      {/* Both palettes, always emitted. Each only bites on a subtree carrying
+          its attribute, so this costs nothing when the Coaches Center is dark
+          and makes turning it light a one-word change. */}
+      <style>{coachSurfaceCss()}</style>
       {coachOnClientBoard && boardClientId && (
         <CoachBoardBar clientId={boardClientId} clientName={boardClientName} />
       )}
@@ -1007,7 +1036,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
       {handoffDegraded && <HandoffDegradedBanner />}
       <div style={{ display: "flex", flex: 1 }}>
-        <nav style={{ width: 220, background: navBg, borderRight: `1px solid ${navBorder}`, flexShrink: 0, display: "flex", flexDirection: "column" }}>
+        {/* THE NAV STAYS NAVY ON BOTH GROUNDS. Navy is structure here, not
+            theme: it reads correctly against a light page and a dark one, and
+            it is what JobFit's converted surfaces already do. Custom properties
+            inherit, so it has to opt OUT explicitly or it would turn white
+            along with everything else. */}
+        <nav
+          data-coach-surface="dark"
+          style={{ width: 220, background: navBg, borderRight: `1px solid ${navBorder}`, flexShrink: 0, display: "flex", flexDirection: "column" }}
+        >
           <Logo />
           <div style={{ padding: "0 12px" }}>
             {navGroups.map((group, gi) => {
@@ -1193,9 +1230,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main
           style={{
             flex: 1,
+            // minWidth 0 so a wide table inside cannot push <main> past the
+            // flex row and leave a strip of bare ground down the right. That
+            // strip is what the first light screenshot showed.
+            minWidth: 0,
             padding: isD2C ? "36px 44px 72px 40px" : "32px 40px 60px 36px",
             overflowY: "auto",
-            color: useLight ? S.text.primary : undefined,
+            color: useLight ? S.text.primary : coachLight ? T.TEXT : undefined,
           }}
         >
           {children}

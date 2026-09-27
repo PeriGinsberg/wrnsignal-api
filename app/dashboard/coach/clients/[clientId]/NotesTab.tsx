@@ -33,9 +33,9 @@ const TYPE_LABEL: Record<NoteType, string> = {
 }
 
 const TYPE_BADGE_STYLE: Record<NoteType, { bg: string; color: string }> = {
-  session_recap: { bg: "rgba(81,173,229,0.12)", color: "#51ADE5" },
-  action_item: { bg: "rgba(254,176,106,0.12)", color: "#FEB06A" },
-  other: { bg: "rgba(255,255,255,0.07)", color: T.MUTED },
+  session_recap: { bg: "rgba(81,173,229,0.12)", color: T.WRN_BLUE },
+  action_item: { bg: "rgba(254,176,106,0.12)", color: T.WRN_ORANGE },
+  other: { bg: T.BORDER_SOFT, color: T.MUTED },
 }
 
 const PRIORITY_LABEL: Record<NotePriority, string> = {
@@ -46,8 +46,8 @@ const PRIORITY_LABEL: Record<NotePriority, string> = {
 
 const PRIORITY_BADGE_STYLE: Record<NotePriority, { bg: string; color: string }> = {
   urgent: { bg: "rgba(248,113,113,0.15)", color: "#f87171" },
-  this_week: { bg: "rgba(254,176,106,0.15)", color: "#FEB06A" },
-  when_ready: { bg: "rgba(81,173,229,0.12)", color: "#51ADE5" },
+  this_week: { bg: "rgba(254,176,106,0.15)", color: T.WRN_ORANGE },
+  when_ready: { bg: "rgba(81,173,229,0.12)", color: T.WRN_BLUE },
 }
 
 const DEFAULT_ACTION_ITEM_PRIORITY: NotePriority = "this_week"
@@ -210,7 +210,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
               textTransform: "uppercase",
               letterSpacing: 0.6,
               border: filter === f.value ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
-              background: filter === f.value ? "rgba(254,176,106,0.1)" : "rgba(255,255,255,0.04)",
+              background: filter === f.value ? "rgba(254,176,106,0.1)" : T.GLASS,
               color: filter === f.value ? T.WRN_ORANGE : T.DIM,
             }}
           >
@@ -336,7 +336,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
                             textTransform: "uppercase",
                             letterSpacing: 0.5,
                             border: editType === opt.value ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
-                            background: editType === opt.value ? "rgba(254,176,106,0.1)" : "rgba(255,255,255,0.04)",
+                            background: editType === opt.value ? "rgba(254,176,106,0.1)" : T.GLASS,
                             color: editType === opt.value ? T.WRN_ORANGE : T.DIM,
                           }}
                         >
@@ -366,7 +366,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
                                 textTransform: "uppercase",
                                 letterSpacing: 0.5,
                                 border: active ? `1px solid ${opt.border}` : `1px solid ${T.BORDER_SOFT}`,
-                                background: active ? opt.bg : "rgba(255,255,255,0.04)",
+                                background: active ? opt.bg : T.GLASS,
                                 color: active ? opt.color : T.DIM,
                               }}
                             >

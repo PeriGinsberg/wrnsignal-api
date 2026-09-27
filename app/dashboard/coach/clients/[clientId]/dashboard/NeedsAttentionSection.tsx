@@ -55,8 +55,8 @@ const PRIORITY_LABEL: Record<Priority, string> = {
 
 const PRIORITY_BADGE: Record<Priority, { bg: string; color: string }> = {
   urgent: { bg: "rgba(248,113,113,0.15)", color: "#f87171" },
-  this_week: { bg: "rgba(254,176,106,0.15)", color: "#FEB06A" },
-  when_ready: { bg: "rgba(81,173,229,0.12)", color: "#51ADE5" },
+  this_week: { bg: "rgba(254,176,106,0.15)", color: T.WRN_ORANGE },
+  when_ready: { bg: "rgba(81,173,229,0.12)", color: T.WRN_BLUE },
   // Never rendered: a row with no priority shows no badge. Present so the
   // lookup cannot return undefined even if a future caller forgets the guard.
   "": { bg: "transparent", color: T.DIM },
@@ -86,12 +86,12 @@ const RULE_LABEL: Record<EngagementSignalKind, string> = {
   poor_fit_no_rec: "Low-fit app",
 }
 const RULE_COLOR: Record<EngagementSignalKind, string> = {
-  no_login: "#FEB06A",
-  rec_pending_review: "#51ADE5",
-  moved_interviewing: "#a78bfa",
-  moved_rejected: "#E87070",
-  offer_no_followup: "#4ade80",
-  poor_fit_no_rec: "#FBBF24",
+  no_login: T.WRN_ORANGE,
+  rec_pending_review: T.WRN_BLUE,
+  moved_interviewing: T.WRN_PINK,
+  moved_rejected: T.ERROR,
+  offer_no_followup: T.SUCCESS,
+  poor_fit_no_rec: T.GOLD,
 }
 
 const VISIBLE_CAP = 5
@@ -221,7 +221,7 @@ export function NeedsAttentionSection({ authFetch, clientId, refreshKey }: Props
                         gap: 12,
                         padding: "10px 12px",
                         borderRadius: 10,
-                        background: "rgba(255,255,255,0.025)",
+                        background: T.GLASS,
                         border: `1px solid ${T.BORDER_SOFT}`,
                       }}
                     >
@@ -321,7 +321,7 @@ function NeedsAttentionSignalRow({
       style={{
         display: "flex", alignItems: "center", gap: 12,
         padding: "10px 12px",
-        background: hovered ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.025)",
+        background: hovered ? T.BORDER_SOFT : T.GLASS,
         border: `1px solid ${T.BORDER_SOFT}`,
         borderRadius: 10,
         cursor: "pointer",

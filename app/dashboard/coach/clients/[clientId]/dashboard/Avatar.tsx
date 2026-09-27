@@ -4,11 +4,14 @@
 // djb2 hash of name → mod 5 → palette slot. Translucent bg + brighter text.
 
 const PALETTE = [
-  { bg: "rgba(81,173,229,0.18)",  text: "#9FC9EE" },
-  { bg: "rgba(254,176,106,0.18)", text: "#FECDA0" },
-  { bg: "rgba(167,139,250,0.18)", text: "#C8B6F8" },
-  { bg: "rgba(244,114,182,0.18)", text: "#F4ADC9" },
-  { bg: "rgba(74,222,128,0.18)",  text: "#9CE7B5" },
+  // Variables, because these read on navy and vanish on white. The
+  // wash is the dark fallback; lib/theme/coachSurface.ts supplies a
+  // solid tint and a dark ink for the light ground.
+  { bg: "var(--sig-avatar-0-bg, rgba(81,173,229,0.18))", text: "var(--sig-avatar-0-ink, #9FC9EE)" },
+  { bg: "var(--sig-avatar-1-bg, rgba(254,176,106,0.18))", text: "var(--sig-avatar-1-ink, #FECDA0)" },
+  { bg: "var(--sig-avatar-2-bg, rgba(167,139,250,0.18))", text: "var(--sig-avatar-2-ink, #C8B6F8)" },
+  { bg: "var(--sig-avatar-3-bg, rgba(244,114,182,0.18))", text: "var(--sig-avatar-3-ink, #F4ADC9)" },
+  { bg: "var(--sig-avatar-4-bg, rgba(74,222,128,0.18))", text: "var(--sig-avatar-4-ink, #9CE7B5)" },
 ] as const
 
 function hashSlot(input: string): number {

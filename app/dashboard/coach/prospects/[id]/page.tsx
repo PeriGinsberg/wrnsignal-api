@@ -87,11 +87,11 @@ const SOURCE_LABEL: Record<SourceCategory, string> = {
 }
 
 const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string; border: string }> = {
-  referral:         { bg: "rgba(81,173,229,0.12)",  color: "#51ADE5", border: "rgba(81,173,229,0.40)" },
+  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.WRN_BLUE, border: "rgba(81,173,229,0.40)" },
   social_media:     { bg: "rgba(167,139,250,0.18)", color: "#C8B6F8", border: "rgba(167,139,250,0.40)" },
-  website:          { bg: "rgba(45,165,141,0.15)",  color: "#2CA58D", border: "rgba(45,165,141,0.40)" },
-  personal_contact: { bg: "rgba(74,222,128,0.15)",  color: "#4ade80", border: "rgba(74,222,128,0.40)" },
-  other:            { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.60)", border: "rgba(255,255,255,0.18)" },
+  website:          { bg: "rgba(45,165,141,0.15)",  color: T.WRN_TEAL, border: "rgba(45,165,141,0.40)" },
+  personal_contact: { bg: "rgba(74,222,128,0.15)",  color: T.SUCCESS, border: "rgba(74,222,128,0.40)" },
+  other:            { bg: T.BORDER_SOFT, color: T.MUTED, border: T.BORDER },
 }
 
 // See the note on the same map in coach-clients/[id]: the column is nullable
@@ -116,9 +116,9 @@ const NOTE_TYPE_LABEL: Record<NoteType, string> = {
 }
 
 const NOTE_TYPE_BADGE: Record<NoteType, { bg: string; color: string }> = {
-  session_recap: { bg: "rgba(81,173,229,0.12)",  color: "#51ADE5" },
-  action_item:   { bg: "rgba(254,176,106,0.12)", color: "#FEB06A" },
-  other:         { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.60)" },
+  session_recap: { bg: "rgba(81,173,229,0.12)",  color: T.WRN_BLUE },
+  action_item:   { bg: "rgba(254,176,106,0.12)", color: T.WRN_ORANGE },
+  other:         { bg: T.BORDER_SOFT, color: T.MUTED },
 }
 
 const NOTE_PRIORITY_LABEL: Record<NotePriority, string> = {
@@ -129,8 +129,8 @@ const NOTE_PRIORITY_LABEL: Record<NotePriority, string> = {
 
 const NOTE_PRIORITY_BADGE: Record<NotePriority, { bg: string; color: string; border: string }> = {
   urgent:     { bg: "rgba(248,113,113,0.15)", color: "#f87171", border: "rgba(248,113,113,0.4)" },
-  this_week:  { bg: "rgba(254,176,106,0.15)", color: "#FEB06A", border: "rgba(254,176,106,0.4)" },
-  when_ready: { bg: "rgba(81,173,229,0.12)",  color: "#51ADE5", border: "rgba(81,173,229,0.4)" },
+  this_week:  { bg: "rgba(254,176,106,0.15)", color: T.WRN_ORANGE, border: "rgba(254,176,106,0.4)" },
+  when_ready: { bg: "rgba(81,173,229,0.12)",  color: T.WRN_BLUE, border: "rgba(81,173,229,0.4)" },
 }
 
 const DEFAULT_NOTE_TYPE: NoteType = "session_recap"
@@ -181,8 +181,8 @@ const PROSPECT_STATUS_LABEL: Record<ProspectStatus, string> = {
 // Lost = red (the file's error red #f87171 / T.ERROR family). These are the
 // selected-fill styles; non-selected pills render muted (see the control).
 const PROSPECT_STATUS_STYLE: Record<ProspectStatus, { bg: string; color: string; border: string }> = {
-  active:   { bg: "rgba(74,222,128,0.18)",  color: "#4ade80", border: "rgba(74,222,128,0.50)" },
-  inactive: { bg: "rgba(254,176,106,0.18)", color: "#FEB06A", border: "rgba(254,176,106,0.50)" },
+  active:   { bg: "rgba(74,222,128,0.18)",  color: T.SUCCESS, border: "rgba(74,222,128,0.50)" },
+  inactive: { bg: "rgba(254,176,106,0.18)", color: T.WRN_ORANGE, border: "rgba(254,176,106,0.50)" },
   lost:     { bg: "rgba(248,113,113,0.20)", color: "#f87171", border: "rgba(248,113,113,0.55)" },
 }
 
@@ -480,7 +480,7 @@ function StageTracker({
             disabled={converting}
             style={{
               background: T.GRAD_PRIMARY,
-              color: "#04060F",
+              color: "var(--sig-ink-on-bright, #04060F)",
               borderRadius: 10,
               padding: "9px 16px",
               fontSize: 13,
@@ -746,7 +746,7 @@ function ProspectInfoBlock({
                   fontSize: 11, fontWeight: 900, padding: "6px 12px", borderRadius: 8,
                   cursor: "pointer", textTransform: "uppercase", letterSpacing: 0.6,
                   border: active ? `1px solid ${s.border}` : `1px solid ${T.BORDER_SOFT}`,
-                  background: active ? s.bg : "rgba(255,255,255,0.04)",
+                  background: active ? s.bg : T.GLASS,
                   color: active ? s.color : T.DIM, fontFamily: "inherit",
                 }}
               >
@@ -813,7 +813,7 @@ function ProspectInfoBlock({
                   style={{
                     fontSize: 11, fontWeight: 900, padding: "6px 12px", borderRadius: 8, cursor: "pointer",
                     border: active ? `1px solid ${T.WRN_BLUE}` : `1px solid ${T.BORDER_SOFT}`,
-                    background: active ? "rgba(81,173,229,0.15)" : "rgba(255,255,255,0.04)",
+                    background: active ? "rgba(81,173,229,0.15)" : T.GLASS,
                     color: active ? T.WRN_BLUE : T.DIM, fontFamily: "inherit",
                   }}
                 >
@@ -893,7 +893,7 @@ function TypeChipPicker({
               textTransform: "uppercase",
               letterSpacing: 0.6,
               border: active ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
-              background: active ? "rgba(254,176,106,0.1)" : "rgba(255,255,255,0.04)",
+              background: active ? "rgba(254,176,106,0.1)" : T.GLASS,
               color: active ? T.WRN_ORANGE : T.DIM,
               fontFamily: "inherit",
             }}
@@ -936,7 +936,7 @@ function PriorityChipPicker({
               textTransform: "uppercase",
               letterSpacing: 0.6,
               border: active ? `1px solid ${s.border}` : `1px solid ${T.BORDER_SOFT}`,
-              background: active ? s.bg : "rgba(255,255,255,0.04)",
+              background: active ? s.bg : T.GLASS,
               color: active ? s.color : T.DIM,
               fontFamily: "inherit",
             }}
@@ -1156,7 +1156,7 @@ function ProspectNotesSection({
                 textTransform: "uppercase",
                 letterSpacing: 0.6,
                 border: active ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
-                background: active ? "rgba(254,176,106,0.1)" : "rgba(255,255,255,0.04)",
+                background: active ? "rgba(254,176,106,0.1)" : T.GLASS,
                 color: active ? T.WRN_ORANGE : T.DIM,
                 fontFamily: "inherit",
               }}
@@ -1173,7 +1173,7 @@ function ProspectNotesSection({
           style={{
             marginBottom: 16,
             padding: 14,
-            background: "rgba(255,255,255,0.03)",
+            background: T.GLASS,
             border: `1px solid ${T.BORDER_SOFT}`,
             borderRadius: 10,
             display: "flex",
@@ -1266,7 +1266,7 @@ function ProspectNotesSection({
                 key={n.id}
                 style={{
                   padding: 14,
-                  background: "rgba(255,255,255,0.025)",
+                  background: T.GLASS,
                   border: `1px solid ${T.BORDER_SOFT}`,
                   borderRadius: 10,
                   opacity: isCompleted ? 0.6 : 1,
@@ -1717,7 +1717,7 @@ export default function ProspectDetailPage() {
         style={{
           fontSize: 13,
           fontWeight: 600,
-          color: "#2CA58D",
+          color: T.WRN_TEAL,
           textDecoration: "none",
           display: "inline-block",
           marginBottom: 18,

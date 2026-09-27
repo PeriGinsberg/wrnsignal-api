@@ -39,9 +39,9 @@ type TileDef = {
 }
 
 const TILE_DEFS: readonly TileDef[] = [
-  { key: "totalJobs",  label: "Total Jobs",  color: "rgba(255,255,255,0.85)", filterStatus: "all",          windowed: false },
-  { key: "interviews", label: "Interviews",  color: "#a78bfa",                filterStatus: "interviewing", windowed: true },
-  { key: "offers",     label: "Offers",      color: "#4ade80",                filterStatus: "offer",        windowed: true },
+  { key: "totalJobs",  label: "Total Jobs",  color: T.TEXT, filterStatus: "all",          windowed: false },
+  { key: "interviews", label: "Interviews",  color: T.WRN_PINK,                filterStatus: "interviewing", windowed: true },
+  { key: "offers",     label: "Offers",      color: T.SUCCESS,                filterStatus: "offer",        windowed: true },
   { key: "rejected",   label: "Rejected",    color: "#E87070",                filterStatus: "rejected",     windowed: true },
 ] as const
 
