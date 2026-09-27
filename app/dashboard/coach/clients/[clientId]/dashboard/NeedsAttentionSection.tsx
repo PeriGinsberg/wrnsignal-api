@@ -5,12 +5,19 @@ import { useRouter } from "next/navigation"
 import { T, card, eyebrow } from "../../../../../../lib/dashboard-theme"
 import { DismissSignalButton, useDismissSignal } from "../../../DismissSignalButton"
 
-type Priority = "urgent" | "this_week" | "when_ready"
+// A COACHING TASK HAS NO PRIORITY. This section used to list
+// coach_client_notes, which carried one; it now lists coach_tasks, which do
+// not, and the API sends "" for every row. The empty string is part of the
+// shape, so it is in the type: leaving it out is what let PRIORITY_BADGE[""]
+// be written and typecheck.
+type Priority = "urgent" | "this_week" | "when_ready" | ""
 
 type ActionItem = {
   note_id: string
   body: string
   priority: Priority
+  /** The task's due date. What replaced priority as this list's urgency. */
+  due_at?: string | null
   created_at: string
   completed_at: string | null
 }
@@ -34,16 +41,37 @@ type EngagementSignal = {
   days_elapsed: number
 }
 
+// Exhaustive over Priority, INCLUDING "". A Record<Priority, …> that covers
+// every value the type allows cannot be indexed into undefined, and adding a
+// value to Priority without adding it here fails the typecheck rather than
+// crashing a page.
 const PRIORITY_LABEL: Record<Priority, string> = {
   urgent: "Urgent",
   this_week: "This Week",
   when_ready: "When Ready",
+  "": "",
 }
 
 const PRIORITY_BADGE: Record<Priority, { bg: string; color: string }> = {
   urgent: { bg: "rgba(248,113,113,0.15)", color: "#f87171" },
   this_week: { bg: "rgba(254,176,106,0.15)", color: "#FEB06A" },
   when_ready: { bg: "rgba(81,173,229,0.12)", color: "#51ADE5" },
+  // Never rendered: a row with no priority shows no badge. Present so the
+  // lookup cannot return undefined even if a future caller forgets the guard.
+  "": { bg: "transparent", color: T.DIM },
+}
+
+/**
+ * The style for a priority, whatever arrives.
+ *
+ * BELT AND BRACES, DELIBERATELY. The map above is exhaustive over the type, so
+ * this should be unreachable. It exists because the type is a promise about
+ * what the SERVER sends, and the server is a different deploy: a value added
+ * there reaches this component before the type here knows about it, and the
+ * cost of being wrong was a client page that went white.
+ */
+function badgeFor(priority: string): { bg: string; color: string } {
+  return PRIORITY_BADGE[priority as Priority] ?? PRIORITY_BADGE[""]
 }
 
 // Engagement-signal rule pill — matches the Coach Home Engagement Signals
@@ -181,7 +209,8 @@ export function NeedsAttentionSection({ authFetch, clientId, refreshKey }: Props
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {visibleActions.map((item) => {
-                  const badge = PRIORITY_BADGE[item.priority]
+                  const badge = badgeFor(item.priority)
+                  const label = PRIORITY_LABEL[item.priority as Priority] ?? ""
                   return (
                     <div
                       key={item.note_id}
@@ -203,6 +232,10 @@ export function NeedsAttentionSection({ authFetch, clientId, refreshKey }: Props
                         aria-label="Mark complete"
                       />
                       <div style={{ flex: 1, minWidth: 0 }}>
+                        {/* NO BADGE WHEN THERE IS NO PRIORITY. A task genuinely
+                            has none, and an empty pill is worse than no pill:
+                            it reads as a label that failed to load. */}
+                        {label && (
                         <span
                           style={{
                             background: badge.bg,
@@ -216,8 +249,9 @@ export function NeedsAttentionSection({ authFetch, clientId, refreshKey }: Props
                             marginRight: 8,
                           }}
                         >
-                          {PRIORITY_LABEL[item.priority]}
+                          {label}
                         </span>
+                        )}
                         <span
                           style={{
                             fontSize: 13,

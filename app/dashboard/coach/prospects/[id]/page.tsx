@@ -94,6 +94,11 @@ const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string; border: 
   other:            { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.60)", border: "rgba(255,255,255,0.18)" },
 }
 
+// See the note on the same map in coach-clients/[id]: the column is nullable
+// and the Record is exhaustive over the type, not over the data.
+const sourceStyle = (c: SourceCategory | null | undefined) =>
+  (c && SOURCE_STYLE[c]) || SOURCE_STYLE.other
+
 // ── Note constants (mirror app/dashboard/coach/clients/[clientId]/NotesTab.tsx
 //    for visual parity. Duplicated inline per the established coach-route
 //    pattern rather than extracted to a shared module.) ──
@@ -628,8 +633,8 @@ function ProspectInfoBlock({
       <span
         style={{
           display: "inline-block",
-          background: SOURCE_STYLE[prospect.source_category].bg,
-          color: SOURCE_STYLE[prospect.source_category].color,
+          background: sourceStyle(prospect.source_category).bg,
+          color: sourceStyle(prospect.source_category).color,
           fontSize: 11, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase",
           padding: "3px 10px", borderRadius: 999,
         }}
@@ -1234,7 +1239,7 @@ function ProspectNotesSection({
       {/* Notes list (filtered in-memory) */}
       {filteredNotes.length === 0 ? (
         <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>
-          {filter ? `No ${NOTE_TYPE_LABEL[filter as NoteType].toLowerCase()} notes` : "No notes yet"}
+          {filter ? `No ${(NOTE_TYPE_LABEL[filter as NoteType] ?? "note").toLowerCase()} notes` : "No notes yet"}
         </p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

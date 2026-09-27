@@ -84,8 +84,11 @@ export function DashboardPanels({ contacts }: { contacts: Contact[] }) {
               data-count={g.count}
               style={{ flex: 1, minWidth: 0, textDecoration: "none" }}
             >
-              <div style={{ height: 6, borderRadius: 3, background: g.count > 0 ? PHASE[g.phase].fg : T.BORDER_SOFT }} />
-              <div style={{ marginTop: 6, fontSize: 17, fontWeight: 900, color: g.count > 0 ? PHASE[g.phase].fg : T.DIM }}>
+              {/* PHASE is exhaustive over PhaseKey, not over whatever the
+                  server groups by. An unknown phase should colour like a
+                  quiet one, not take the panel down. */}
+              <div style={{ height: 6, borderRadius: 3, background: g.count > 0 ? (PHASE[g.phase]?.fg ?? T.MUTED) : T.BORDER_SOFT }} />
+              <div style={{ marginTop: 6, fontSize: 17, fontWeight: 900, color: g.count > 0 ? (PHASE[g.phase]?.fg ?? T.MUTED) : T.DIM }}>
                 {g.count}
               </div>
               <div

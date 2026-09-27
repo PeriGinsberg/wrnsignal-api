@@ -74,6 +74,14 @@ const STATIC_PILL_COLORS: Record<LifecycleStatus, { bg: string; color: string }>
   Archived: { bg: "#333333", color: "#FFFFFF" },
 }
 
+// The lookup is Record<LifecycleStatus, ...> and therefore exhaustive over the
+// TYPE. The column is nullable, and the type is a promise about the server, not
+// the database: one row with a status outside the union takes the whole roster
+// down, not just its own pill.
+const PILL_FALLBACK = { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.60)" }
+const pillColors = (s: LifecycleStatus | null | undefined) =>
+  (s && STATIC_PILL_COLORS[s]) || PILL_FALLBACK
+
 const AVATAR_PALETTE = [
   { bg: "rgba(81,173,229,0.18)",  text: "#9FC9EE" },
   { bg: "rgba(254,176,106,0.18)", text: "#FECDA0" },
@@ -372,8 +380,8 @@ export default function MyClientsFullPage() {
                           // these rows.
                           <span
                             style={{
-                              background: STATIC_PILL_COLORS[c.lifecycle_status].bg,
-                              color: STATIC_PILL_COLORS[c.lifecycle_status].color,
+                              background: pillColors(c.lifecycle_status).bg,
+                              color: pillColors(c.lifecycle_status).color,
                               fontSize: 11,
                               fontWeight: 900,
                               padding: "4px 10px",

@@ -74,6 +74,11 @@ const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string }> = {
   other:            { bg: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.60)" },
 }
 
+// source_category is nullable, and "other" is the honest reading of a value the
+// map does not know. Without this an unrecognised category crashes the record.
+const sourceStyle = (c: SourceCategory | null | undefined) =>
+  (c && SOURCE_STYLE[c]) || SOURCE_STYLE.other
+
 const NOTE_TYPES = ["session_recap", "action_item", "other"] as const
 type NoteType = (typeof NOTE_TYPES)[number]
 
@@ -600,7 +605,7 @@ function ClientNotesSection({
 
       {filteredNotes.length === 0 ? (
         <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>
-          {filter ? `No ${NOTE_TYPE_LABEL[filter as NoteType].toLowerCase()} notes` : "No notes yet"}
+          {filter ? `No ${(NOTE_TYPE_LABEL[filter as NoteType] ?? "note").toLowerCase()} notes` : "No notes yet"}
         </p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -1216,8 +1221,8 @@ export default function CoachClientPostConversionPage() {
                 <span
                   style={{
                     display: "inline-block",
-                    background: SOURCE_STYLE[record.source_category].bg,
-                    color: SOURCE_STYLE[record.source_category].color,
+                    background: sourceStyle(record.source_category).bg,
+                    color: sourceStyle(record.source_category).color,
                     fontSize: 11,
                     fontWeight: 900,
                     letterSpacing: 0.8,

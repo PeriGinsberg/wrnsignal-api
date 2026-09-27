@@ -228,7 +228,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
         <p style={{ color: T.MUTED, fontSize: 13 }}>Loading…</p>
       ) : notes.length === 0 ? (
         <p style={{ color: T.MUTED, fontSize: 13 }}>
-          {filter ? `No ${TYPE_LABEL[filter as NoteType].toLowerCase()} notes` : "No notes yet"}
+          {filter ? `No ${(TYPE_LABEL[filter as NoteType] ?? "note").toLowerCase()} notes` : "No notes yet"}
         </p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
