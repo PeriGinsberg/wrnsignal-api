@@ -393,38 +393,16 @@ export async function POST(
       }
     }
 
-    // ── Step 7: log a system note on the coach_clients record ─────
+    // ── Step 7: record the invite on History ──────────────────────
     //
-    // NON-FATAL. Records "SIGNAL invite sent" as an audit-trail note
-    // so the timeline of coach actions on a client is reconstructable
-    // from the notes feed alone. type='other' (matches the FRD lock
-    // for non-action notes); priority must be NULL for 'other' type
-    // (table CHECK constraint). client_profile_id is denormalized
-    // for index-only filtered queries — by this point `profileId` is
-    // populated by the link UPDATE earlier in the flow.
+    // THIS USED TO WRITE A NOTE TOO, and the note said exactly what the event
+    // below says. Every invite therefore appeared twice, and the copy in the
+    // note feed sat among a coach's own writing looking like a colleague had
+    // typed it. The note feed is what a person chose to record; an audit line
+    // pretending to be one devalues every real note around it. See the standing
+    // rule in docs/coaching-task-automation-plan.md.
     //
-    // Wrapped in try/catch + console.warn so a note insert failure
-    // can never block the success response. The invite was already
-    // sent at this point; the note is background logging.
-    try {
-      const { error: noteErr } = await supabase
-        .from("coach_client_notes")
-        .insert({
-          coach_client_id: coachClientId,
-          coach_profile_id: coachProfileId,
-          client_profile_id: profileId,
-          type: "other",
-          body: "SIGNAL invite sent",
-          priority: null,
-        })
-      if (noteErr) {
-        console.warn("[send-invite] System note insert failed:", noteErr.message)
-      }
-    } catch (noteErr: any) {
-      console.warn("[send-invite] System note insert threw:", noteErr?.message)
-    }
-
-    // Best-effort event log (the invite has already been sent at this point).
+    // Best-effort (the invite has already been sent at this point).
     await logCoachClientEvent({
       coachClientId,
       eventType: "invite_sent",

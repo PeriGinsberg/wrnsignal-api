@@ -128,7 +128,19 @@ suite("the chain events", () => {
 
   it("carries the Request Changes note onto the reopen", () => {
     expect(describe(ev({ event_type: "task_reopened", context: { title: "Build", note: "Add five fintech contacts." } })))
-      .toBe("Task reopened: Build — Add five fintech contacts.")
+      .toBe("Task reopened: Build: Add five fintech contacts.")
+  })
+
+  // House rule: no em dashes anywhere in SIGNAL wording. A colon does the
+  // same job and survives every font and mail client.
+  it("uses a colon, never an em dash, to introduce the reason", () => {
+    const line = describe(ev({ event_type: "task_reopened", context: { title: "Build", note: "Add contacts." } }))
+    expect(line).not.toContain("—")
+    expect(line).toBe("Task reopened: Build: Add contacts.")
+  })
+
+  it("never renders an em dash for a missing stage", () => {
+    expect(describe(ev({ event_type: "stage_changed", context: {} }))).toBe("Moved to a new stage")
   })
 
   it("names the recipient on a client email", () => {

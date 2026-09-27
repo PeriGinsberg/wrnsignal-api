@@ -299,11 +299,21 @@ is opened to answer, and two lines both reading "3 days ago" cannot answer it.
 The actor is the coach's name, or **SIGNAL** when nothing chose it. A line with
 no attribution is the one thing an audit trail must not have.
 
-**Known violations still standing.** "SIGNAL invite sent" and "Account created"
-are written to Notes AND logged to History, so they appear twice. On prod that
-is 37 and 13 notes respectively, exactly matching the event counts. Stopping
-those writers and removing the duplicate notes is a separate, deliberate piece
-of work: it deletes 50 rows a coach can currently see.
+**No em dashes in History wording.** A colon does the same job and survives
+every font. "Task reopened: Build: the reason", not an em dash before the
+reason, and a missing stage reads "Moved to a new stage" rather than printing a
+dash as a placeholder. Guarded by a test.
+
+**Fully applied, 2026-09-29.** "SIGNAL invite sent" and "Account created" were
+the last two automatic writers into Notes. Both already logged to History, so
+the notes were duplicates and were deleted rather than moved.
+
+One was not a duplicate: of 37 invite notes on prod, 36 had a matching event
+and one did not (Alexander Nachman, 1 July 2026, predating the event log on
+that route). Deleting it would have destroyed the only record that the invite
+was sent, so the migration backfills an event from the note first, carrying its
+time and its author, and only then deletes notes that provably have one.
+Nothing was lost. Dev had three such notes; all three were backfilled.
 
 ---
 

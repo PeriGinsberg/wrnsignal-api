@@ -324,25 +324,9 @@ export async function POST(
     // client detail screen. (send-invite Steps 5-6 intentionally omitted.)
 
     // ── Audit: non-invite copy (GAP 2) ─────────────────────────────
-    // Note + event record ACCOUNT CREATION, never an invite.
-    try {
-      const { error: noteErr } = await supabase
-        .from("coach_client_notes")
-        .insert({
-          coach_client_id: coachClientId,
-          coach_profile_id: coachProfileId,
-          client_profile_id: profileId,
-          type: "other",
-          body: "Account created",
-          priority: null,
-        })
-      if (noteErr) {
-        console.warn("[setup-account] System note insert failed:", noteErr.message)
-      }
-    } catch (noteErr: any) {
-      console.warn("[setup-account] System note insert threw:", noteErr?.message)
-    }
-
+    // Records ACCOUNT CREATION, never an invite. History only: the matching
+    // "Account created" note is gone, because an audit line does not belong in
+    // the feed of what a coach chose to write down.
     await logCoachClientEvent({
       coachClientId,
       eventType: "account_created",

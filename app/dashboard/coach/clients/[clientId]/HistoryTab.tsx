@@ -1,12 +1,12 @@
 "use client"
 
-// History — a read-only, newest-first timeline of the relationship's business
+// History: a read-only, newest-first timeline of the relationship's business
 // events (coach_client_events). Shared by the linked-client page (tab) and the
 // prospect detail page (section); both pass coach_clients.id directly. Read API:
 //   GET /api/coach/coach-clients/[ccId]/events
 //   → [{ event_type, actor_profile_id, context, created_at }] newest-first.
 //
-// Quiet and scannable — a record to read, not a dashboard. Read-only: no actions.
+// Quiet and scannable: a record to read, not a dashboard. Read-only: no actions.
 // Log-forward, so older relationships legitimately start empty (not an error).
 //
 // getToken/authFetch inlined per the coach-route client convention (same pair as
@@ -52,7 +52,8 @@ export function actorLabel(e: CoachClientEvent): string {
  */
 export const LABELS: Record<CoachClientEventType, (e: CoachClientEvent) => string> = {
   prospect_created: () => "Prospect created",
-  stage_changed: (e) => `Moved to stage: ${e.context?.stage_key ?? "—"}`,
+  stage_changed: (e) =>
+    e.context?.stage_key ? `Moved to stage: ${e.context.stage_key}` : "Moved to a new stage",
   converted_to_client: () => "Converted to client",
   proposal_sent: () => "Proposal sent",
   proposal_approved: () => "Proposal approved",
@@ -91,7 +92,7 @@ export const LABELS: Record<CoachClientEventType, (e: CoachClientEvent) => strin
   // came back makes them go and ask.
   task_reopened: (e) => {
     const t = `Task reopened: ${e.context?.title ?? "untitled"}`
-    return e.context?.note ? `${t} — ${e.context.note}` : t
+    return e.context?.note ? `${t}: ${e.context.note}` : t
   },
   task_reassigned: (e) =>
     e.context?.to_name
@@ -190,7 +191,7 @@ export function HistoryTab({ coachClientId }: { coachClientId: string | null }) 
       }
       setEvents(j.events || [])
     } catch {
-      setLoadError("Network error — try again")
+      setLoadError("Network error. Try again.")
     } finally {
       setLoading(false)
     }

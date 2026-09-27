@@ -152,26 +152,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cli
     const { error: updErr } = await supabase.from("coach_clients").update({ invited_at: invitedAt }).eq("id", access.id)
     if (updErr) throw new Error(`invited_at stamp failed: ${updErr.message}`)
 
-    // Audit trail — NON-FATAL (mirrors the prospect send-invite).
+    // Audit trail, NON-FATAL (mirrors the prospect send-invite).
+    //
+    // HISTORY ONLY. This used to write a matching "SIGNAL invite sent" note as
+    // well, so every invite appeared twice: once in the audit timeline and once
+    // in the note feed, where it read like something a coach had typed. Notes
+    // are what a person chose to write down; this is not. See the standing rule
+    // in docs/coaching-task-automation-plan.md.
     await logCoachClientEvent({
       coachClientId: access.id,
       eventType: "invite_sent",
       actorProfileId: profileId,
       context: { source: "create-client-deferred" },
     })
-    try {
-      const { error: noteErr } = await supabase.from("coach_client_notes").insert({
-        coach_client_id: access.id,
-        coach_profile_id: profileId,
-        client_profile_id: clientProfileId,
-        type: "other",
-        body: "SIGNAL invite sent",
-        priority: null,
-      })
-      if (noteErr) console.warn("[clients/send-invite] System note insert failed:", noteErr.message)
-    } catch (noteErr: any) {
-      console.warn("[clients/send-invite] System note insert threw:", noteErr?.message)
-    }
 
     return withCorsJson(req, { ok: true, email_sent: emailSent, invited_at: invitedAt }, 200)
   } catch (err: any) {
