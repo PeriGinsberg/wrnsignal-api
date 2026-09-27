@@ -701,8 +701,16 @@ function MyClientsSection({
   onShowAll: () => void
   onLifecycleStatusChange: (clientProfileId: string, next: LifecycleStatus) => void
 }) {
-  const visible = clients.slice(0, COLLAPSED_LIMIT)
-  const hasMore = clients.length > COLLAPSED_LIMIT
+  // ACTIVE ONLY, on the dashboard.
+  //
+  // The dashboard is the "who am I working with today" screen. A paused or
+  // archived client is neither, and showing them here pushed real clients off
+  // a five-row list: the section was silently answering a different question
+  // from the one its heading asks. The full roster at My Clients is where
+  // every status lives, and it has a filter for saying so.
+  const active = clients.filter((c) => c.lifecycle_status === "Active")
+  const visible = active.slice(0, COLLAPSED_LIMIT)
+  const hasMore = active.length > COLLAPSED_LIMIT
 
   const headerRight = (
     <div style={{ display: "flex", gap: 8 }}>
@@ -735,11 +743,11 @@ function MyClientsSection({
       title="My clients"
       accentColor={T.SECTION_CLIENTS}
       titleHref="/dashboard/coach/clients"
-      count={clients.length}
+      count={active.length}
       headerRight={headerRight}
       allowOverflow
     >
-      {clients.length === 0 ? (
+      {active.length === 0 ? (
         <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>No clients yet. Use Create or Invite above to add one.</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -760,7 +768,7 @@ function MyClientsSection({
                 padding: "8px 0 0", textAlign: "left", marginTop: 4,
               }}
             >
-              Show all {clients.length} →
+              Show all {active.length} →
             </button>
           )}
         </div>

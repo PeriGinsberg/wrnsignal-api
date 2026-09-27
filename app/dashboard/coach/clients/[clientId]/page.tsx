@@ -1970,6 +1970,7 @@ export default function CoachClientPage() {
           and a co-coach's task is still outstanding. */}
       {tab === "tasks" && (
         <TaskList
+          showStatusFilter
           key={tasksRefresh}
           assignee="all"
           client={clientId}

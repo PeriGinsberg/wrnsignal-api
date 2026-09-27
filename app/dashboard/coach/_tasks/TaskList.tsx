@@ -17,6 +17,7 @@ import { T, btnSecondary } from "../../../../lib/dashboard-theme"
 import type { Task } from "../../../../lib/tasks/model"
 import { TaskFormModal } from "./TaskFormModal"
 import { TaskRow, TaskRowHeader, TaskRowStyles } from "./TaskRow"
+import { SPACE, TYPE } from "../../../../lib/theme/surfaces"
 import { apiJson, type Assignee } from "./taskClient"
 
 export type TaskListProps = {
@@ -34,7 +35,23 @@ export type TaskListProps = {
   newTaskClientId?: string
   /** Rows the coach can edit and delete. Off for the read-only surfaces. */
   editable?: boolean
+  /**
+   * Show an Open / Done / All control above the list.
+   *
+   * ON FOR THE CLIENT PAGE. Without it that tab asked the server for open
+   * tasks and had no way to ask for anything else, so a task a coach ticked
+   * yesterday was simply gone: no record on the client of work that was
+   * actually done. Off elsewhere, where the surrounding page already owns the
+   * filtering.
+   */
+  showStatusFilter?: boolean
 }
+
+const STATUS_TABS: { key: string; label: string }[] = [
+  { key: "open", label: "Open" },
+  { key: "done", label: "Done" },
+  { key: "all", label: "All" },
+]
 
 export function TaskList({
   assignee = "me",
@@ -42,8 +59,12 @@ export function TaskList({
   emptyText = "No open tasks.",
   newTaskClientId,
   editable = false,
+  showStatusFilter = false,
 }: TaskListProps) {
   const [tasks, setTasks] = useState<Task[] | null>(null)
+  // OPEN BY DEFAULT. The question a coach opens this tab with is "what is
+  // outstanding"; history is a deliberate second click.
+  const [status, setStatus] = useState("open")
   // Which template each task came from, and what closes it. Sent with the
   // list so the row does not have to guess from the title which tasks are
   // decided rather than ticked.
@@ -57,7 +78,7 @@ export function TaskList({
 
   const load = useCallback(async () => {
     try {
-      const p = new URLSearchParams({ assignee, status: "open", view: "all" })
+      const p = new URLSearchParams({ assignee, status, view: "all" })
       if (client) p.set("client", client)
       const j = await apiJson<{ tasks: Task[]; templates?: Record<string, { key: string; decision_options: string[] | null }> }>(
         `/api/coach/tasks?${p.toString()}`)
@@ -68,7 +89,7 @@ export function TaskList({
       setError(e?.message ?? String(e))
       setTasks([])
     }
-  }, [assignee, client])
+  }, [assignee, client, status])
 
   useEffect(() => { void load() }, [load])
 
@@ -167,10 +188,46 @@ export function TaskList({
   return (
     <div>
       <TaskRowStyles />
+      {showStatusFilter && (
+        <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }} role="tablist" aria-label="Task status">
+          {STATUS_TABS.map((t) => {
+            const on = t.key === status
+            return (
+              <button
+                key={t.key}
+                role="tab"
+                aria-selected={on}
+                onClick={() => setStatus(t.key)}
+                style={{
+                  fontSize: TYPE.control,
+                  fontWeight: 800,
+                  // 40px minimum, because anything a coach clicks all day has
+                  // to be hittable without aiming.
+                  minHeight: SPACE.control,
+                  padding: "0 18px",
+                  borderRadius: 999,
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  border: `1px solid ${on ? T.TASK_HEADER : T.BORDER_SOFT}`,
+                  background: on ? "rgba(0,155,255,0.12)" : "transparent",
+                  color: on ? T.TASK_HEADER : T.MUTED,
+                }}
+              >{t.label}</button>
+            )
+          })}
+        </div>
+      )}
+
       {error && <p style={{ color: T.ERROR, fontSize: 13, margin: "8px 0 0 0" }}>{error}</p>}
 
       {tasks.length === 0 && !error && (
-        <p style={{ color: T.MUTED, fontSize: 13, margin: "10px 0 0 0" }}>{emptyText}</p>
+        <p style={{ color: T.MUTED, fontSize: TYPE.secondary, margin: "10px 0 0 0" }}>
+          {showStatusFilter
+            ? status === "done" ? "No completed tasks for this client yet."
+              : status === "all" ? "No tasks for this client yet."
+              : "No open tasks."
+            : emptyText}
+        </p>
       )}
 
       {newTaskClientId && (

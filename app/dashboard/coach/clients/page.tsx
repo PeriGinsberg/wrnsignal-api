@@ -8,11 +8,13 @@
 import { useEffect, useMemo, useState, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { getSupabaseBrowser } from "../../../../lib/supabase-browser"
-import { T, btnSecondary, card, eyebrow } from "../../../../lib/dashboard-theme"
+import { T, btnSecondary, card, eyebrow, selectDark, selectDarkOption } from "../../../../lib/dashboard-theme"
 import { LifecycleStatusPill, LIFECYCLE_STATUS_VALUES, type LifecycleStatus } from "../LifecycleStatusPill"
 import { BackToDashboard } from "../BackToDashboard"
 import { LoadingShell } from "../LoadingShell"
 import { onCoachRowEnter, onCoachRowLeave, COACH_ROW_DEFAULT_BG, COACH_ROW_TRANSITION } from "../coachRowHover"
+import { SPACE, TYPE } from "../../../../lib/theme/surfaces"
+import { DEFAULT_SORT, SORT_OPTIONS, applyListControls, type FilterGroup, type SortKey } from "../../../../lib/coach/listControls"
 
 // Phase 2 Item 12 (revised): only lifecycle-status filters route here.
 // Application-count filters go to /dashboard/coach/applications-recent
@@ -58,6 +60,8 @@ type CoachClient = {
     rejected: number
     interview_rate: number
   }
+  /** When the relationship was created. Drives the newest/oldest sorts. */
+  created_at?: string | null
   last_activity: string | null
   last_viewed_at: string | null
   updates_since_visit: number
@@ -119,10 +123,10 @@ function Avatar({ name, email }: { name: string | null; email: string | null }) 
   const palette = AVATAR_PALETTE[hashIndex(seed, AVATAR_PALETTE.length)]
   return (
     <div style={{
-      width: 28, height: 28, borderRadius: "50%",
+      width: 34, height: 34, borderRadius: "50%",
       background: palette.bg, color: palette.text,
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: 11, fontWeight: 900, letterSpacing: 0.3, flexShrink: 0,
+      fontSize: TYPE.secondary, fontWeight: 900, letterSpacing: 0.3, flexShrink: 0,
     }}>
       {initialsOf(name, email)}
     </div>
@@ -131,9 +135,9 @@ function Avatar({ name, email }: { name: string | null; email: string | null }) 
 
 function MiniCell({ label, value, color }: { label: string; value: string | number; color?: string }) {
   return (
-    <div style={{ minWidth: 48, textAlign: "center" }}>
-      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>{label}</div>
-      <div style={{ fontSize: 15, fontWeight: 700, color: color || T.TEXT, marginTop: 2 }}>{value}</div>
+    <div style={{ minWidth: 56, textAlign: "center" }}>
+      <div style={{ fontSize: TYPE.label, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: T.MUTED }}>{label}</div>
+      <div style={{ fontSize: TYPE.subheading, fontWeight: 800, color: color || T.TEXT, marginTop: 2 }}>{value}</div>
     </div>
   )
 }
@@ -155,6 +159,23 @@ export default function MyClientsFullPage() {
   const [lifecycleFilter, setLifecycleFilter] = useState<LifecycleFilter>(
     () => (filter && SEED_FILTER_BY_PARAM[filter]) || "Active",
   )
+
+  // Search and sort. Alphabetical by default: a roster exists so somebody can
+  // find a person they are already thinking about, and "where is Marco" has
+  // an answer under A to Z and none under "most recently active".
+  const [search, setSearch] = useState("")
+  const [sort, setSort] = useState<SortKey>(DEFAULT_SORT)
+
+  // ONE GROUP TODAY, A LIST ON PURPOSE. An engagement-phase filter slots in
+  // beside this one without touching the search, the sort or the rendering.
+  const filterGroups: FilterGroup[] = useMemo(() => [{
+    id: "status",
+    label: "Status",
+    values: LIFECYCLE_FILTER_OPTIONS.filter((o) => o !== "All") as string[],
+    all: "All",
+    initial: "Active",
+    matches: (row: any, sel: string) => row.lifecycle_status === sel,
+  }], [])
 
   // Per-row invite state keyed on coach_clients.id. Tracks the
   // optimistic UI transition for the "Invite to SIGNAL" button.
@@ -219,17 +240,18 @@ export default function MyClientsFullPage() {
   // Lifecycle filter first (on the already Prospect-excluded array), then
   // the same default sort as the Dashboard summary — so sorting applies to
   // the visible subset.
+  // Search, then the status filter, then the sort. The old order put
+  // "unread updates" first, which meant the list reshuffled itself as the
+  // coach read it and a name was never twice in the same place.
   const sorted = useMemo(() => {
     if (!clients) return []
-    const filtered = lifecycleFilter === "All"
-      ? clients
-      : clients.filter((c) => c.lifecycle_status === lifecycleFilter)
-    return [...filtered].sort((a, b) => {
-      if (b.updates_since_visit !== a.updates_since_visit) return b.updates_since_visit - a.updates_since_visit
-      if (a.attention_level !== b.attention_level) return a.attention_level === "medium" ? -1 : 1
-      return (a.name || "").localeCompare(b.name || "")
-    })
-  }, [clients, lifecycleFilter])
+    return applyListControls(clients as any, {
+      search,
+      sort,
+      groups: filterGroups,
+      selected: { status: lifecycleFilter },
+    }) as typeof clients
+  }, [clients, lifecycleFilter, search, sort, filterGroups])
 
   if (loading) return <LoadingShell />
 
@@ -238,7 +260,7 @@ export default function MyClientsFullPage() {
     return (
       <div style={{ ...card, padding: 40, maxWidth: 480, textAlign: "center" }}>
         <div style={{ ...eyebrow, color: T.ERROR, marginBottom: 12 }}>ACCESS DENIED</div>
-        <p style={{ color: T.TEXT, fontSize: 15, fontWeight: 900 }}>Coach access required</p>
+        <p style={{ color: T.TEXT, fontSize: TYPE.subheading, fontWeight: 800 }}>Coach access required</p>
       </div>
     )
   }
@@ -247,11 +269,11 @@ export default function MyClientsFullPage() {
     <div>
       <BackToDashboard />
       <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 500, letterSpacing: -0.5, color: T.TEXT, margin: 0 }}>
-          My Clients <span style={{ color: T.DIM, fontWeight: 400, fontSize: 18 }}>({sorted.length})</span>
+        <h1 style={{ fontSize: TYPE.title, fontWeight: 800, letterSpacing: "-0.01em", color: T.TEXT, margin: 0 }}>
+          My Clients <span style={{ color: T.MUTED, fontWeight: 600, fontSize: TYPE.subheading }}>({sorted.length})</span>
         </h1>
-        <p style={{ fontSize: 13, color: T.MUTED, marginTop: 8 }}>
-          Full client list. Click Open → to drill into a client&apos;s tracker, profile, and personas.
+        <p style={{ fontSize: TYPE.secondary, color: T.MUTED, marginTop: 8 }}>
+          Every client, at every status. Open one to reach their tracker, profile and personas.
         </p>
         {filter && (
           <div style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 8,
@@ -273,9 +295,70 @@ export default function MyClientsFullPage() {
         )}
       </div>
 
-      {/* Lifecycle filter — segmented button group. Selected state reuses
-          the orange accent from the "Filtered:" deep-link pill above. */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
+      {/* SEARCH AND SORT, above the status filter. Search is first because it
+          is what a coach reaches for when they already know who they want;
+          the filters are for when they do not. */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by name or email"
+          aria-label="Search clients by name or email"
+          style={{
+            flex: "1 1 280px", minWidth: 0,
+            height: SPACE.control,
+            padding: "0 14px",
+            fontSize: TYPE.control,
+            fontFamily: "inherit",
+            borderRadius: 10,
+            border: `1px solid ${T.BORDER}`,
+            background: T.GLASS,
+            color: T.TEXT,
+            outline: "none",
+          }}
+        />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            aria-label="Clear search"
+            style={{
+              height: SPACE.control, padding: "0 14px", borderRadius: 10,
+              border: `1px solid ${T.BORDER_SOFT}`, background: "transparent",
+              color: T.MUTED, fontSize: TYPE.control, fontWeight: 700,
+              cursor: "pointer", fontFamily: "inherit",
+            }}
+          >Clear</button>
+        )}
+        <label style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <span style={{
+            fontSize: TYPE.label, fontWeight: 800, letterSpacing: "0.08em",
+            textTransform: "uppercase", color: T.MUTED,
+          }}>Sort</span>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortKey)}
+            style={{
+              ...selectDark,
+              height: SPACE.control,
+              fontSize: TYPE.control,
+              width: "auto",
+              minWidth: 160,
+            }}
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.key} value={o.key} style={selectDarkOption}>{o.label}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {/* Status. Defaults to Active: the roster opens on the people being
+          worked, and every other status is one click away. */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
+        <span style={{
+          fontSize: TYPE.label, fontWeight: 800, letterSpacing: "0.08em",
+          textTransform: "uppercase", color: T.MUTED, marginRight: 2,
+        }}>Status</span>
         {LIFECYCLE_FILTER_OPTIONS.map((opt) => {
           const selected = opt === lifecycleFilter
           return (
@@ -287,9 +370,10 @@ export default function MyClientsFullPage() {
                 background: selected ? "rgba(254,176,106,0.10)" : T.NAV_DEFAULT_BG,
                 border: `1px solid ${selected ? "rgba(254,176,106,0.30)" : T.BORDER_SOFT}`,
                 color: selected ? "#FEB06A" : T.MUTED,
-                fontSize: 12,
+                fontSize: TYPE.control,
                 fontWeight: 700,
-                padding: "6px 14px",
+                minHeight: SPACE.control,
+                padding: "0 18px",
                 borderRadius: 999,
                 cursor: "pointer",
                 fontFamily: "inherit",
@@ -308,8 +392,10 @@ export default function MyClientsFullPage() {
           eliminate this need. */}
       <div style={{ ...card, padding: 20, overflow: "visible" }}>
         {sorted.length === 0 ? (
-          <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>
-            {(clients?.length ?? 0) > 0 && lifecycleFilter !== "All"
+          <p style={{ color: T.MUTED, fontSize: TYPE.body, margin: 0 }}>
+            {search.trim()
+              ? `No client matches "${search.trim()}"${lifecycleFilter !== "All" ? ` under ${lifecycleFilter}` : ""}.`
+              : (clients?.length ?? 0) > 0 && lifecycleFilter !== "All"
               ? `No ${lifecycleFilter} clients.`
               : filter
                 ? `No clients match the "${FILTER_LABELS[filter]}" filter. Clear the filter to see your full roster.`
@@ -339,7 +425,10 @@ export default function MyClientsFullPage() {
                     onMouseLeave={(e) => onCoachRowLeave(e)}
                     style={{
                       display: "flex", alignItems: "center", gap: 14,
-                      padding: "12px 14px",
+                      // ~52px tall, the density GoHighLevel's Contacts table
+                      // uses and the reason its rows scan at a glance.
+                      minHeight: SPACE.row,
+                      padding: `0 ${SPACE.cell}px`,
                       background: COACH_ROW_DEFAULT_BG,
                       border: `1px solid ${T.BORDER_SOFT}`,
                       borderRadius: 10,
@@ -351,7 +440,7 @@ export default function MyClientsFullPage() {
                     <div style={{ minWidth: 0, flex: "1 1 180px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                         <span style={{
-                          fontSize: 14, fontWeight: 700, color: T.TEXT,
+                          fontSize: TYPE.body, fontWeight: 700, color: T.TEXT,
                           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                         }}>{c.name || "Unnamed"}</span>
                         {c.client_profile_id ? (

@@ -165,7 +165,11 @@ export const LIGHT: Surface = {
   // Primary text is the structural navy itself, which is what keeps the two
   // themes reading as one product rather than two apps. `muted` is #526C87
   // rather than the earlier #5E7A99, which measured 3.96 on the ground.
-  text: { primary: "#13294A", secondary: "#3D5878", muted: "#526C87", dim: "#8299B3" },
+  // muted DARKENED 2026-09-27, from #526C87 (5.45 on card, 4.91 on the ground).
+  // It carries 14px secondary text across the Coaches Center now, and 4.91 is
+  // the floor rather than a margin. #46607A measures 6.53 and 5.89, and stays
+  // visibly lighter than `secondary` at 7.33 so the two still rank.
+  text: { primary: "#13294A", secondary: "#3D5878", muted: "#46607A", dim: "#8299B3" },
   meaning: {
     // Coral. "Something needs you": overdue, unfilled, not set, act here.
     //
@@ -179,7 +183,12 @@ export const LIGHT: Surface = {
     // 9.7 dE apart, which is distinguishable side by side but is the closest
     // pair in the system. The INKS, which is what carries text, are 11.3 apart,
     // and the two never appear in the same shape (see COLOR-SYSTEM 6.11).
-    attention: { ink: "#884133", accent: "#F26B52", fill: "#FBE3D6" },
+    // BRAND ORANGE, 2026-09-27. Was coral #F26B52, from the palette JobFit
+    // has since left. The accent is #FF6B00 and the ink is NOT it: orange
+    // measures 2.86 on white, so it draws rules, numerals, eyebrows and
+    // bullets and never sets a word. #8A3D00 carries the words at 7.64.
+    // The fill is the brand peach tint.
+    attention: { ink: "#8A3D00", accent: "#FF6B00", fill: "#FFEEDC" },
     // Rose. The ring on a stepper's current step, and the label under it.
     //
     // The ink is NOT a plain darkening of the accent, and the reason is worth
@@ -191,11 +200,21 @@ export const LIGHT: Surface = {
     // that are equal, lightness does: #93245F is 10.7 dE from the linkedin
     // ink, still reads as rose (hue 328), and measures 7.02 on the worst
     // ground. The accents were never the problem, 17.5 dE apart.
+    // ROSE STAYS, and this is the one member of the old set that did not move
+    // to the brand palette. The palette is navy, blue, ice, teal, orange and
+    // peach tint; navy is the ink, blue went to `progress`, orange to
+    // `attention`, and teal would land on top of `replied` #218C8C and `spoke`
+    // #1B7A72. Three teals a reader cannot name is worse than one rose that is
+    // off-palette. `current` marks a stepper's position on the networking
+    // board and appears nowhere in the Coaches Center, so it is not carrying
+    // brand weight. Flagged for a decision rather than picked quietly.
     current: { ink: "#93245F", accent: "#E5397E", fill: "#FBDCEB" },
     replied: { ink: "#17706F", accent: "#218C8C", fill: "#D6EFEC" },
     spoke: { ink: "#0F5C55", accent: "#1B7A72", fill: "#CDEAE4" },
     done: { ink: "#8A6410", accent: "#D4A444", fill: "#F7EBCC" },
-    progress: { ink: "#1F6FA8", accent: "#51ADE5", fill: "#DCEDF9" },
+    // BRAND BLUE, 2026-09-27. Was #51ADE5. Same rule as orange: #009BFF is
+    // 2.94 on white and cannot carry text, so the ink is #00569A at 7.51.
+    progress: { ink: "#00569A", accent: "#009BFF", fill: "#DCEDF9" },
     sequence: { ink: "#0F6478", accent: "#DCFEFF", fill: "#DCFEFF" },
     linkedin: { ink: "#C2185B", accent: "#FF8FB0", fill: "#FDE3EC" },
     longgame: { ink: "#7B3FB5", accent: "#B679E0", fill: "#EDE4F9" },
@@ -545,5 +564,87 @@ export function tileStructural(s: Surface): React.CSSProperties {
         ? "linear-gradient(135deg, #1B3A63, #13294A)"
         : "linear-gradient(135deg, #16294a, #0F1F38)",
     color: "#FFFFFF",
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TYPE AND SPACING SCALE
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// SIGNAL is somebody's daily work system, not a dashboard they glance at. The
+// Coaches Center was built at 13px body with 10px labels, which is a size that
+// works in a demo and does not work for six hours.
+//
+// The reference is GoHighLevel's Contacts and Tasks tables, which is where this
+// work actually happens today: 14 to 16px rows, roomy hit targets, and labels
+// that are small without being decorative.
+//
+// ONE SCALE, SHARED. Every size a Coaches Center surface uses comes from here,
+// so "make the tables bigger" is one edit rather than a hunt through forty
+// files. Numbers, not a t-shirt scale: a reader should be able to tell what
+// 16 means without a lookup.
+
+export const TYPE = {
+  /** Page title. One per screen. */
+  title: 28,
+  /** Section heading: a card's name, a tab panel's heading. */
+  heading: 22,
+  /** Sub-heading inside a section. */
+  subheading: 20,
+  /**
+   * Body, and every table cell. 16px is the floor for text somebody reads all
+   * day; the old 13 and 14 are what this scale exists to replace.
+   */
+  body: 16,
+  /**
+   * Secondary: a row's supporting line, a caption, a timestamp. Pairs with
+   * text.muted, which was darkened when this landed so 14px still measures
+   * over 5.8:1 on the ground.
+   */
+  secondary: 14,
+  /** Navigation, tabs and buttons. Controls read at body size or a hair under. */
+  control: 15,
+  /** A column header or an eyebrow. Uppercase, tracked, never a sentence. */
+  label: 12,
+  /** The smallest thing allowed: a pill's text, a count badge. */
+  micro: 11,
+} as const
+
+export const SPACE = {
+  /** Minimum height of anything clickable. Below this a pointer misses. */
+  control: 40,
+  /** A table row. GoHighLevel sits near this and scans well. */
+  row: 52,
+  /** A table row in a condensed card (the dashboard's five-task list). */
+  rowCondensed: 44,
+  /** Gap between cards in a section. */
+  card: 16,
+  /** Padding inside a card. */
+  cardPad: 20,
+  /** Horizontal padding inside a table cell. */
+  cell: 14,
+} as const
+
+/** Page title, section heading and sub-heading, as ready-made styles. */
+export function titleStyle(s: Surface): React.CSSProperties {
+  return { fontSize: TYPE.title, fontWeight: 900, color: s.text.primary, margin: 0, letterSpacing: "-0.01em" }
+}
+export function headingStyle(s: Surface): React.CSSProperties {
+  return { fontSize: TYPE.heading, fontWeight: 800, color: s.text.primary, margin: 0 }
+}
+/**
+ * The uppercase eyebrow over a section.
+ *
+ * Tracked and small, but 12px rather than the 10 it was: at 10px an uppercase
+ * label with letter-spacing is decoration that a reader skips, which defeats
+ * the point of naming the section.
+ */
+export function eyebrowStyle(s: Surface, accent?: string): React.CSSProperties {
+  return {
+    fontSize: TYPE.label,
+    fontWeight: 800,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: accent ?? s.text.muted,
   }
 }
