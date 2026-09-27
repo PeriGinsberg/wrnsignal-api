@@ -29,6 +29,7 @@ import {
   type TaskView,
 } from "@/lib/tasks/model"
 import { createTask } from "@/lib/tasks/service"
+import { clientTaskFilter } from "@/lib/tasks/scope"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -67,7 +68,15 @@ export async function GET(req: NextRequest) {
     let sel = db.from("coach_tasks").select(TASK_COLUMNS).is("deleted_at", null)
 
     if (assignee) sel = sel.eq("assignee_profile_id", assignee)
-    if (client) sel = sel.eq("client_profile_id", client)
+
+    // FILTERING BY CLIENT MATCHES EITHER COLUMN, so the client page's Tasks
+    // tab shows the same set as Needs Your Attention beside it. A task with
+    // only client_profile_id and a prospect-era task with only
+    // coach_client_id are both this client's. See lib/tasks/scope.ts.
+    //
+    // Applied before the search or() below, because two or() calls on one
+    // query would AND into a shape neither of them means.
+    if (client) sel = sel.or((await clientTaskFilter(db, client))!)
     if (source === "manual" || source === "auto") sel = sel.eq("source", source)
 
     if (statusParam && statusParam !== "all") {
@@ -85,6 +94,8 @@ export async function GET(req: NextRequest) {
       // Escape the PostgREST or() metacharacters. A title containing a comma
       // would otherwise be read as a second filter and 400 the whole request.
       const safe = search.replace(/[(),*]/g, " ").trim()
+      // WILDCARD IS *, NOT %. PostgREST reads % inside an or() as a literal
+      // and under-returns silently rather than erroring.
       if (safe) sel = sel.or(`title.ilike.*${safe}*,description.ilike.*${safe}*`)
     }
 

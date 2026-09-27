@@ -27,6 +27,7 @@ import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { coachClientIdsForClient } from "../../../../_lib/coachClientIds"
+import { clientTaskFilter } from "@/lib/tasks/scope"
 import {
   runHeuristics,
   type HeuristicClient,
@@ -146,6 +147,7 @@ export async function GET(
     // a solo client; keeps prospect-era NULL-client_profile_id notes (they live
     // on a coach_client_id in the set).
     const ccIds = await coachClientIdsForClient(supabase, clientProfileId)
+    const taskFilter = (await clientTaskFilter(supabase, clientProfileId))!
 
     const [notesResult, clientProfileResult] = await Promise.all([
       // TASKS, NOT NOTES, since 2026-09-26. Action items became coach_tasks,
@@ -157,7 +159,11 @@ export async function GET(
       supabase
         .from("coach_tasks")
         .select("id, title, description, due_at, created_at, completed_at")
-        .in("coach_client_id", ccIds)
+        // EITHER COLUMN. Matching the relationship alone hid a hand-written
+        // task that carried only client_profile_id; matching the person alone
+        // would hide every prospect-era task, which carries only the
+        // relationship. See lib/tasks/scope.ts.
+        .or(taskFilter)
         .eq("status", "open")
         .is("deleted_at", null),
       // For the heuristic engine we need the client's name/email/user_id;

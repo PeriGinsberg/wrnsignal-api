@@ -18,6 +18,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { sendTaskAssignedEmail } from "../email/sendTaskEmails"
 import { logCoachClientEvent } from "../../app/api/_lib/coachClientEvents"
+import { coachClientIdForTask } from "./scope"
 import {
   completionPatch,
   type Task,
@@ -172,11 +173,26 @@ export async function createTask(
 
   const source = input.source ?? "manual"
 
+  // A TASK WITH A CLIENT ALWAYS CARRIES THE RELATIONSHIP TOO.
+  //
+  // The two columns answer different questions (the person, the engagement)
+  // and different surfaces read different ones, so a row with only one of them
+  // is invisible to half the product. A hand-written task carrying only
+  // client_profile_id never appeared in Needs Your Attention, which reads the
+  // relationship.
+  //
+  // Resolved here rather than at each route, because there are four callers and
+  // the day a fifth is added is the day one of them forgets.
+  let coachClientId = input.coach_client_id ?? null
+  if (!coachClientId && input.client_profile_id) {
+    coachClientId = await coachClientIdForTask(db, input.client_profile_id)
+  }
+
   const { data, error } = await db.from("coach_tasks").insert({
     title: input.title.trim(),
     description: input.description?.trim() || null,
     client_profile_id: input.client_profile_id ?? null,
-    coach_client_id: input.coach_client_id ?? null,
+    coach_client_id: coachClientId,
     assignee_profile_id: input.assignee_profile_id,
     // An automated task has no author. Recording the coach who happened to
     // trigger the rule would credit them with writing something they never saw.
