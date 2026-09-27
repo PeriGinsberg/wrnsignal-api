@@ -20,6 +20,7 @@ import { BackToDashboard } from "../BackToDashboard"
 import { TaskFormModal } from "../_tasks/TaskFormModal"
 import { TaskRow, TaskRowHeader, TaskRowStyles } from "../_tasks/TaskRow"
 import { apiJson, type Assignee } from "../_tasks/taskClient"
+import { SPACE, TYPE } from "../../../../lib/theme/surfaces"
 
 const VIEW_LABEL: Record<TaskView, string> = {
   all: "All",
@@ -198,7 +199,7 @@ export default function CoachTasksPage() {
       <BackToDashboard />
 
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginTop: 8 }}>
-        <h1 style={{ fontSize: 24, color: T.TEXT, margin: 0 }}>Tasks</h1>
+        <h1 style={{ fontSize: TYPE.title, fontWeight: 800, letterSpacing: "-0.01em", color: T.TEXT, margin: 0 }}>Tasks</h1>
         <button style={btnPrimary} onClick={() => setCreating(true)}>New task</button>
       </div>
 
@@ -223,7 +224,7 @@ export default function CoachTasksPage() {
 
       {/* Filters */}
       <div style={{ ...card, padding: 14, marginTop: 14, display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))" }}>
-        <select style={selectDark} value={assignee} onChange={(e) => setAssignee(e.target.value)}>
+        <select style={{ ...selectDark, height: SPACE.control, fontSize: TYPE.control }} value={assignee} onChange={(e) => setAssignee(e.target.value)}>
           <option value="me" style={selectDarkOption}>Assigned to me</option>
           <option value="all" style={selectDarkOption}>Anyone</option>
           {assignees.filter((a) => a.id !== me).map((a) => (
@@ -231,33 +232,33 @@ export default function CoachTasksPage() {
           ))}
         </select>
 
-        <select style={selectDark} value={status} onChange={(e) => setStatus(e.target.value)}>
+        <select style={{ ...selectDark, height: SPACE.control, fontSize: TYPE.control }} value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="open" style={selectDarkOption}>Open</option>
           <option value="done" style={selectDarkOption}>Done</option>
           <option value="cancelled" style={selectDarkOption}>Cancelled</option>
           <option value="all" style={selectDarkOption}>Any status</option>
         </select>
 
-        <select style={selectDark} value={client} onChange={(e) => setClient(e.target.value)}>
+        <select style={{ ...selectDark, height: SPACE.control, fontSize: TYPE.control }} value={client} onChange={(e) => setClient(e.target.value)}>
           <option value="" style={selectDarkOption}>Any client</option>
           {clients.map((c) => <option key={c.id} value={c.id} style={selectDarkOption}>{c.name}</option>)}
         </select>
 
-        <select style={selectDark} value={source} onChange={(e) => setSource(e.target.value)}>
+        <select style={{ ...selectDark, height: SPACE.control, fontSize: TYPE.control }} value={source} onChange={(e) => setSource(e.target.value)}>
           <option value="" style={selectDarkOption}>Any source</option>
           <option value="manual" style={selectDarkOption}>Added by a person</option>
           <option value="auto" style={selectDarkOption}>Created automatically</option>
         </select>
 
         <input
-          style={{ ...input, gridColumn: "1 / -1" }}
+          style={{ ...input, gridColumn: "1 / -1", height: SPACE.control, fontSize: TYPE.control }}
           placeholder="Search titles and descriptions"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
-      {error && <p style={{ color: T.ERROR, fontSize: 13 }}>{error}</p>}
+      {error && <p style={{ color: T.ERROR, fontSize: TYPE.body }}>{error}</p>}
 
       {tasks !== null && tasks.length === 0 && !error && (
         <p style={{ color: T.MUTED, fontSize: 14, marginTop: 20 }}>

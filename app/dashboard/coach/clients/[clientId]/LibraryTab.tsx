@@ -17,6 +17,7 @@
 // (same pair as EngagementsTab).
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { SPACE, TYPE } from "../../../../../lib/theme/surfaces"
 import { T, input, btnPrimary, btnSecondary, selectDarkInk, selectDarkOption } from "../../../../../lib/dashboard-theme"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
 import { NoteVisibilityIcon } from "../../NoteVisibilityIcon"
@@ -449,10 +450,10 @@ export function LibraryTab({
 
   // Guard: no relationship resolved → benign empty, not an error.
   if (!coachClientId) {
-    return <p style={{ fontSize: 13, color: T.DIM, margin: 0 }}>No library for this client yet.</p>
+    return <p style={{ fontSize: TYPE.secondary, color: T.DIM, margin: 0 }}>No library for this client yet.</p>
   }
   if (loading) {
-    return <p style={{ fontSize: 13, color: T.MUTED, margin: 0 }}>Loading library…</p>
+    return <p style={{ fontSize: TYPE.secondary, color: T.MUTED, margin: 0 }}>Loading library…</p>
   }
   if (loadError) {
     return (
@@ -465,7 +466,7 @@ export function LibraryTab({
 
   return (
     <div>
-      <p style={{ fontSize: 13, color: T.MUTED, margin: "0 0 16px" }}>
+      <p style={{ fontSize: TYPE.secondary, color: T.MUTED, margin: "0 0 16px" }}>
         Links to {clientName}’s documents — Drive files, resumes, guides. These are pointers
         you paste in, organized by your document categories.
       </p>
@@ -474,7 +475,7 @@ export function LibraryTab({
           into this folder, so it is wired up here, next to the documents it
           produces, rather than hidden in a settings screen. */}
       <div style={{ border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 12, padding: 14, marginBottom: 16 }}>
-        <div style={{ fontSize: 12, fontWeight: 800, color: T.MUTED, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>
+        <div style={{ fontSize: TYPE.secondary, fontWeight: 800, color: T.MUTED, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>
           Networking folder
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -494,7 +495,7 @@ export function LibraryTab({
             </a>
           )}
         </div>
-        <div style={{ fontSize: 12, color: T.DIM, marginTop: 8 }}>
+        <div style={{ fontSize: TYPE.secondary, color: T.DIM, marginTop: 8 }}>
           {folderSaved
             ? "The Networking Plan is saved here."
             : "Not set. Without it, the first plan creates a folder under Clients."}
@@ -507,13 +508,13 @@ export function LibraryTab({
           The folder decides where the PDF is filed; this decides who gets told
           about it. */}
       <div style={{ border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 12, padding: 14, marginBottom: 16 }}>
-        <div style={{ fontSize: 12, fontWeight: 800, color: T.MUTED, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>
+        <div style={{ fontSize: TYPE.secondary, fontWeight: 800, color: T.MUTED, textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 }}>
           GoHighLevel contact
         </div>
 
         {ghlSaved ? (
           <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            <span style={{ fontSize: 14, fontWeight: 800, color: T.TEXT }}>{ghlSaved.name ?? ghlSaved.id}</span>
+            <span style={{ fontSize: TYPE.body, fontWeight: 800, color: T.TEXT }}>{ghlSaved.name ?? ghlSaved.id}</span>
             {ghlSaved.source === "pasted" && (
               <span style={{ fontSize: 11.5, color: T.DIM }}>set by hand</span>
             )}
@@ -529,7 +530,7 @@ export function LibraryTab({
             <button onClick={() => void findGhl()} disabled={ghlBusy} style={{ ...btnSecondary, opacity: ghlBusy ? 0.6 : 1 }}>
               {ghlBusy ? "Searching…" : "Find by email"}
             </button>
-            <span style={{ fontSize: 12, color: T.DIM }}>or</span>
+            <span style={{ fontSize: TYPE.secondary, color: T.DIM }}>or</span>
             <input
               value={ghlLink}
               onChange={(e) => setGhlLink(e.target.value)}
@@ -556,7 +557,7 @@ export function LibraryTab({
           </div>
         )}
 
-        <div style={{ fontSize: 12, color: T.DIM, marginTop: 8 }}>
+        <div style={{ fontSize: TYPE.secondary, color: T.DIM, marginTop: 8 }}>
           {ghlSaved
             ? "Sharing a Networking Plan adds a note here and emails the client."
             : "Found automatically when the Networking folder is saved, or when a plan is shared."}
@@ -567,14 +568,14 @@ export function LibraryTab({
       {actionError && <div style={{ marginBottom: 16 }}><Banner kind="error">{actionError}</Banner></div>}
 
       {docs.length === 0 ? (
-        <p style={{ fontSize: 13, color: T.DIM, margin: "0 0 16px" }}>
+        <p style={{ fontSize: TYPE.secondary, color: T.DIM, margin: "0 0 16px" }}>
           No documents yet — add links to this client’s Drive files, resumes, guides…
         </p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 18, marginBottom: 20 }}>
           {groups.map((g) => (
             <div key={g.key}>
-              <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM, marginBottom: 8 }}>
+              <div style={{ fontSize: TYPE.micro, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM, marginBottom: 8 }}>
                 {g.name}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -619,7 +620,7 @@ export function LibraryTab({
           <button style={btnPrimary} onClick={openAdd}>+ Add a link</button>
         ) : (
           <div style={{ borderRadius: 12, border: `1px solid ${T.BORDER_SOFT}`, background: T.GLASS, padding: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM, marginBottom: 10 }}>
+            <div style={{ fontSize: TYPE.micro, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM, marginBottom: 10 }}>
               Add a link
             </div>
             <LinkForm
@@ -664,18 +665,18 @@ function LinkRow({
           href={doc.url}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ fontSize: 14, color: T.WRN_BLUE, fontWeight: 600, textDecoration: "none", wordBreak: "break-word" }}
+          style={{ fontSize: TYPE.body, color: T.WRN_BLUE, fontWeight: 600, textDecoration: "none", wordBreak: "break-word" }}
         >
           {doc.title}
         </a>
-        <div style={{ fontSize: 12, color: T.DIM, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        <div style={{ fontSize: TYPE.secondary, color: T.DIM, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {fmtHost(doc.url)}
         </div>
       </div>
 
       {confirming ? (
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-          <span style={{ fontSize: 12, color: T.MUTED }}>Remove this link?</span>
+          <span style={{ fontSize: TYPE.secondary, color: T.MUTED }}>Remove this link?</span>
           <button onClick={onConfirmDelete} disabled={deleting} style={{ ...smallBtn, color: T.ERROR, borderColor: "rgba(255,120,120,0.4)", opacity: deleting ? 0.6 : 1 }}>
             {deleting ? "Removing…" : "Remove"}
           </button>
@@ -708,7 +709,7 @@ function VisibilityToggle({ visible, busy, onClick }: { visible: boolean; busy: 
       style={{
         display: "inline-flex", alignItems: "center", gap: 6,
         background: "transparent", border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 8,
-        color, fontSize: 11, fontWeight: 800, whiteSpace: "nowrap",
+        color, fontSize: TYPE.micro, fontWeight: 800, whiteSpace: "nowrap",
         cursor: busy ? "default" : "pointer", opacity: busy ? 0.6 : 1, padding: "5px 8px",
       }}
     >
@@ -771,7 +772,7 @@ function LinkForm({
         ))}
       </select>
       {onVisible && (
-        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: T.MUTED, cursor: "pointer" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: TYPE.secondary, color: T.MUTED, cursor: "pointer" }}>
           <input
             type="checkbox"
             checked={!!visible}
@@ -808,7 +809,7 @@ function IconBtn({ children, label, danger, onClick }: { children: React.ReactNo
         color: danger ? T.ERROR : T.MUTED,
         borderRadius: 8,
         cursor: "pointer",
-        fontSize: 12,
+        fontSize: TYPE.secondary,
         lineHeight: "12px",
         padding: "6px 8px",
       }}
@@ -824,7 +825,7 @@ const smallBtn: React.CSSProperties = {
   color: T.MUTED,
   borderRadius: 8,
   cursor: "pointer",
-  fontSize: 12,
+  fontSize: TYPE.secondary,
   fontWeight: 700,
   padding: "6px 10px",
 }
@@ -837,7 +838,7 @@ function Banner({ kind, children }: { kind: "error" | "success" | "info"; childr
       ? { color: T.SUCCESS, bg: T.SUCCESS_BG, border: "rgba(74,222,128,0.30)" }
       : { color: T.WRN_BLUE, bg: "rgba(81,173,229,0.10)", border: "rgba(81,173,229,0.30)" }
   return (
-    <div style={{ fontSize: 12, color: palette.color, background: palette.bg, border: `1px solid ${palette.border}`, borderRadius: 10, padding: "10px 12px" }}>
+    <div style={{ fontSize: TYPE.secondary, color: palette.color, background: palette.bg, border: `1px solid ${palette.border}`, borderRadius: 10, padding: "10px 12px" }}>
       {children}
     </div>
   )

@@ -1,4 +1,6 @@
 // lib/dashboard-theme.ts
+import { SPACE, TYPE } from "./theme/surfaces"
+
 export const T = {
   BG: "#13294A",
   NAV_BG: "#091629",
@@ -163,7 +165,7 @@ export const input: React.CSSProperties = {
   color: T.TEXT,
   height: 44,
   padding: "0 14px",
-  fontSize: 13,
+  fontSize: TYPE.control,
   width: "100%",
   outline: "none",
 }
@@ -229,7 +231,7 @@ export const selectDarkOption: React.CSSProperties = {
 // Pair with FIELD_LABELS for the text.
 export const fieldLabel: React.CSSProperties = {
   color: T.MUTED,
-  fontSize: 10,
+  fontSize: TYPE.label,
   fontWeight: 800,
   letterSpacing: 0.3,
   whiteSpace: "nowrap",
@@ -240,13 +242,18 @@ export const fieldWrap: React.CSSProperties = {
   gap: 4,
 }
 
+// THE TWO SHARED BUTTONS, raised to the scale once rather than per screen.
+// 13px labels in 44px of padding read as small print inside a large target,
+// which is the worst of both. minHeight holds the 40px floor and the label
+// meets it. See TYPE and SPACE in lib/theme/surfaces.ts.
 export const btnPrimary: React.CSSProperties = {
   background: T.GRAD_PRIMARY,
   color: "#04060F",
   fontWeight: 900,
-  borderRadius: 13,
-  padding: "13px 18px",
-  fontSize: 13,
+  borderRadius: 12,
+  minHeight: SPACE.control,
+  padding: "0 20px",
+  fontSize: TYPE.control,
   border: "none",
   cursor: "pointer",
 }
@@ -256,9 +263,10 @@ export const btnSecondary: React.CSSProperties = {
   border: `1px solid ${T.BORDER_SOFT}`,
   color: T.TEXT,
   fontWeight: 900,
-  borderRadius: 13,
-  padding: "13px 18px",
-  fontSize: 13,
+  borderRadius: 12,
+  minHeight: SPACE.control,
+  padding: "0 20px",
+  fontSize: TYPE.control,
   cursor: "pointer",
 }
 
@@ -277,7 +285,7 @@ export const eyebrow: React.CSSProperties = {
 }
 
 export const headline: React.CSSProperties = {
-  fontSize: 26,
+  fontSize: TYPE.title,
   fontWeight: 950,
   letterSpacing: -0.5,
   color: T.TEXT,

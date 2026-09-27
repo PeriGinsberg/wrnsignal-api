@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { SPACE, TYPE } from "../../../../../../lib/theme/surfaces"
 import { useRouter } from "next/navigation"
 import { T, card, eyebrow } from "../../../../../../lib/dashboard-theme"
 import { DismissSignalButton, useDismissSignal } from "../../../DismissSignalButton"
@@ -178,11 +179,11 @@ export function NeedsAttentionSection({ authFetch, clientId, refreshKey }: Props
   return (
     <section style={{ ...card, padding: 22, marginBottom: 24 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: 10 }}>
+        <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: TYPE.label }}>
           NEEDS YOUR ATTENTION
         </div>
         {totalCount > 0 && (
-          <span style={{ fontSize: 11, color: T.DIM }}>
+          <span style={{ fontSize: TYPE.micro, color: T.DIM }}>
             {totalCount} {totalCount === 1 ? "item" : "items"}
           </span>
         )}
@@ -190,21 +191,21 @@ export function NeedsAttentionSection({ authFetch, clientId, refreshKey }: Props
 
       {error && (
         <div style={{ padding: 10, background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)", borderRadius: 8, marginBottom: 10 }}>
-          <span style={{ fontSize: 12, color: "#f87171" }}>Couldn&apos;t load: {error}</span>
+          <span style={{ fontSize: TYPE.secondary, color: "#f87171" }}>Couldn&apos;t load: {error}</span>
         </div>
       )}
 
       {loading && !hasContent ? (
-        <p style={{ color: T.DIM, fontSize: 13 }}>Loading…</p>
+        <p style={{ color: T.DIM, fontSize: TYPE.secondary }}>Loading…</p>
       ) : !hasContent ? (
-        <p style={{ color: T.MUTED, fontSize: 13, fontStyle: "italic" }}>No open tasks.</p>
+        <p style={{ color: T.MUTED, fontSize: TYPE.secondary, fontStyle: "italic" }}>No open tasks.</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           {/* ── Tasks (top per Q2 design lock). The data has been coach_tasks
               since 2026-09-26; the label caught up on 2026-09-25. ── */}
           {actionItems.length > 0 && (
             <div>
-              <div style={{ ...eyebrow, color: T.DIM, fontSize: 9, marginBottom: 8 }}>
+              <div style={{ ...eyebrow, color: T.DIM, fontSize: TYPE.micro, marginBottom: 8 }}>
                 TASKS
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -240,7 +241,7 @@ export function NeedsAttentionSection({ authFetch, clientId, refreshKey }: Props
                           style={{
                             background: badge.bg,
                             color: badge.color,
-                            fontSize: 9,
+                            fontSize: TYPE.micro,
                             fontWeight: 900,
                             letterSpacing: 0.8,
                             textTransform: "uppercase",
@@ -254,7 +255,7 @@ export function NeedsAttentionSection({ authFetch, clientId, refreshKey }: Props
                         )}
                         <span
                           style={{
-                            fontSize: 13,
+                            fontSize: TYPE.secondary,
                             color: T.TEXT,
                             lineHeight: 1.5,
                             display: "-webkit-box",
@@ -276,7 +277,7 @@ export function NeedsAttentionSection({ authFetch, clientId, refreshKey }: Props
           {/* ── Engagement Signals (system-detected R1-R6) ── */}
           {engagementSignals.length > 0 && (
             <div>
-              <div style={{ ...eyebrow, color: T.DIM, fontSize: 9, marginBottom: 8 }}>
+              <div style={{ ...eyebrow, color: T.DIM, fontSize: TYPE.micro, marginBottom: 8 }}>
                 ENGAGEMENT SIGNALS
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -328,14 +329,14 @@ function NeedsAttentionSignalRow({
       }}
     >
       <span style={{
-        fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase",
+        fontSize: TYPE.micro, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase",
         color: RULE_COLOR[item.kind], background: `${RULE_COLOR[item.kind]}1f`,
         padding: "3px 8px", borderRadius: 6, flexShrink: 0,
       }}>
         {RULE_LABEL[item.kind]}
       </span>
-      <span style={{ fontSize: 13, color: T.TEXT, flex: 1 }}>{item.message}</span>
-      <span style={{ fontSize: 11, color: T.DIM, flexShrink: 0 }}>{item.days_elapsed}d</span>
+      <span style={{ fontSize: TYPE.secondary, color: T.TEXT, flex: 1 }}>{item.message}</span>
+      <span style={{ fontSize: TYPE.micro, color: T.DIM, flexShrink: 0 }}>{item.days_elapsed}d</span>
       <DismissSignalButton
         onClick={() => onDismiss(item)}
         visible={hovered}

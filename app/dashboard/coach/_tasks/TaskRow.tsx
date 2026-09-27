@@ -11,6 +11,7 @@
 
 import type { CSSProperties } from "react"
 import { T } from "../../../../lib/dashboard-theme"
+import { SPACE, TYPE } from "../../../../lib/theme/surfaces"
 import { isDueToday, isOverdue, type Task } from "../../../../lib/tasks/model"
 import { formatDue } from "./taskClient"
 
@@ -32,8 +33,16 @@ export function TaskRowStyles() {
         gap: 12px;
       }
       .tsk-grid--condensed { grid-template-columns: ${TASK_GRID_COLUMNS_CONDENSED}; }
-      .tsk-head { border-bottom: 1px solid ${T.BORDER_SOFT}; padding: 0 14px 8px 14px; }
-      .tsk-row { padding: 12px 14px; border-radius: 10px; background: ${T.CARD}; }
+      .tsk-head { border-bottom: 1px solid ${T.BORDER_SOFT}; padding: 0 ${SPACE.cell}px 10px ${SPACE.cell}px; }
+      /* ~52px, the density GoHighLevel's Tasks table uses. A row a coach reads
+         all day needs the height as much as it needs the type size. */
+      .tsk-row {
+        min-height: ${SPACE.row}px;
+        padding: 8px ${SPACE.cell}px;
+        border-radius: 10px;
+        background: ${T.CARD};
+      }
+      .tsk-grid--condensed .tsk-row, .tsk-row.tsk-grid--condensed { min-height: ${SPACE.rowCondensed}px; }
       .tsk-row + .tsk-row { margin-top: 8px; }
       .tsk-cell-label { display: none; }
 
@@ -46,7 +55,7 @@ export function TaskRowStyles() {
           grid-template-columns: 28px minmax(0, 1fr);
           row-gap: 8px;
         }
-        .tsk-row { padding: 14px; }
+        .tsk-row { padding: 14px; min-height: 0; }
         .tsk-cell {
           grid-column: 2;
           display: flex;
@@ -55,7 +64,7 @@ export function TaskRowStyles() {
         }
         .tsk-cell-label {
           display: inline;
-          font-size: 10px;
+          font-size: ${TYPE.label}px;
           letter-spacing: 0.08em;
           text-transform: uppercase;
           color: ${T.TASK_HEADER};
@@ -76,7 +85,7 @@ export function TaskRowHeader({ condensed = false }: { condensed?: boolean }) {
     <div className={`tsk-grid tsk-head${condensed ? " tsk-grid--condensed" : ""}`}>
       {labels.map((h, i) => (
         <div key={i} style={{
-          fontSize: 10,
+          fontSize: TYPE.label,
           letterSpacing: "0.08em",
           textTransform: "uppercase",
           color: T.TASK_HEADER,
@@ -135,7 +144,7 @@ function Avatar({ name, title }: { name: string; title?: string }) {
         background: `rgba(${r},${g},${b},0.18)`,
         border: `1px solid rgba(${r},${g},${b},0.55)`,
         color: `rgb(${r},${g},${b})`,
-        fontSize: 10, fontWeight: 700,
+        fontSize: TYPE.micro, fontWeight: 700,
         display: "inline-flex", alignItems: "center", justifyContent: "center",
       }}
     >
@@ -168,7 +177,7 @@ function Person({ name, label, fullName, href }: {
     <>
       <Avatar name={fullName || name} title={fullName || name} />
       <span style={{
-        color: T.MUTED, fontSize: 12,
+        color: T.MUTED, fontSize: TYPE.secondary,
         overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
       }}>
         {name}
@@ -220,7 +229,7 @@ function DueCell({ task }: { task: Task }) {
     <span style={{
       display: "inline-block",
       padding: "3px 9px", borderRadius: 999,
-      background: bg, color, fontSize: 11, fontWeight: 700,
+      background: bg, color, fontSize: TYPE.secondary, fontWeight: 700,
       whiteSpace: "nowrap",
     }}>
       {late ? "Overdue" : text}
@@ -230,8 +239,8 @@ function DueCell({ task }: { task: Task }) {
 
 function StatusPill({ task }: { task: Task }) {
   const base: CSSProperties = {
-    display: "inline-block", padding: "3px 10px", borderRadius: 999,
-    fontSize: 11, fontWeight: 700, whiteSpace: "nowrap",
+    display: "inline-block", padding: "4px 11px", borderRadius: 999,
+    fontSize: TYPE.micro, fontWeight: 700, whiteSpace: "nowrap",
   }
   if (task.status === "done") {
     return <span style={{ ...base, background: "rgba(0,179,179,0.18)", color: T.TASK_DONE }}>Done</span>
@@ -343,13 +352,13 @@ export function TaskRow(props: TaskRowProps) {
         onChange={(e) => props.onToggleDone(task, e.target.checked)}
         aria-label={done ? `Reopen "${task.title}"` : `Mark "${task.title}" done`}
         title={done ? "Reopen this task" : "Mark done"}
-        style={{ cursor: "pointer", accentColor: T.TASK_DONE, width: 16, height: 16 }}
+        style={{ cursor: "pointer", accentColor: T.TASK_DONE, width: 18, height: 18 }}
       />
       )}
 
       <div className="tsk-cell" style={{ minWidth: 0, display: "block" }}>
         <div style={{
-          fontSize: 14,
+          fontSize: TYPE.body,
           color: done ? T.MUTED : T.TEXT,
           textDecoration: done ? "line-through" : "none",
           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
@@ -358,7 +367,7 @@ export function TaskRow(props: TaskRowProps) {
         </div>
         {snippet && (
           <div style={{
-            fontSize: 12, color: T.DIM, marginTop: 2,
+            fontSize: TYPE.secondary, color: T.MUTED, marginTop: 3,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>
             {snippet}
@@ -414,8 +423,9 @@ export function TaskRow(props: TaskRowProps) {
               onClick={() => props.onDecide!(task, "approve")}
               disabled={props.busy}
               style={{
-                padding: "5px 11px", borderRadius: 7, fontSize: 12, fontWeight: 800, cursor: "pointer",
-                border: "none", background: T.TASK_DONE, color: T.INK_ON_ACCENT, marginRight: 4,
+                minHeight: SPACE.control, padding: "0 16px", borderRadius: 8,
+                fontSize: TYPE.control, fontWeight: 800, cursor: "pointer",
+                border: "none", background: T.TASK_DONE, color: T.INK_ON_ACCENT, marginRight: 6,
                 opacity: props.busy ? 0.6 : 1,
               }}
             >Approve</button>
@@ -425,9 +435,10 @@ export function TaskRow(props: TaskRowProps) {
               onClick={() => props.onDecide!(task, "request_changes")}
               disabled={props.busy}
               style={{
-                padding: "5px 11px", borderRadius: 7, fontSize: 12, fontWeight: 800, cursor: "pointer",
+                minHeight: SPACE.control, padding: "0 16px", borderRadius: 8,
+                fontSize: TYPE.control, fontWeight: 800, cursor: "pointer",
                 border: `1px solid ${T.BORDER_SOFT}`, background: "transparent", color: T.MUTED,
-                marginRight: 6, opacity: props.busy ? 0.6 : 1,
+                marginRight: 8, opacity: props.busy ? 0.6 : 1,
               }}
             >Request changes</button>
           )}

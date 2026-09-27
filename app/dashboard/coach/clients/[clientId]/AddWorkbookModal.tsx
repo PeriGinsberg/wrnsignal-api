@@ -12,6 +12,7 @@
 // coach-only blocks are a toggle away.
 
 import React, { useEffect, useMemo, useState } from "react"
+import { SPACE, TYPE } from "../../../../../lib/theme/surfaces"
 import { applyTemplate, stripCoachOnly, type WorkbookContent } from "../../../../../lib/workbook/content"
 import { SectionBlocks, SectionHeader, type FieldApi } from "../../../../../components/workbook/Blocks"
 import { wbFetch } from "../../../../../components/workbook/api"
@@ -169,7 +170,7 @@ export function AddWorkbookModal({
                       {on && <span className="wb-tag ok">Selected</span>}
                     </div>
                     <span className="wb-p" style={{ margin: 0 }}>{t.description}</span>
-                    <span className="wb-muted" style={{ fontSize: 14 }}>
+                    <span className="wb-muted" style={{ fontSize: TYPE.body }}>
                       {t.sections} section{t.sections === 1 ? "" : "s"}, {t.fields} write-in{t.fields === 1 ? "" : "s"}
                     </span>
                   </button>
@@ -197,7 +198,7 @@ export function AddWorkbookModal({
 
               <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                 <input type="checkbox" checked={showCoachOnly} onChange={(e) => setShowCoachOnly(e.target.checked)} />
-                <span className="wb-muted" style={{ fontSize: 14 }}>
+                <span className="wb-muted" style={{ fontSize: TYPE.body }}>
                   Show your coach-only notes. The client never sees these.
                 </span>
               </label>
@@ -210,7 +211,7 @@ export function AddWorkbookModal({
                   {i < shown.sections.length - 1 && <div className="wb-rule" />}
                 </div>
               ))}
-              <p className="wb-muted" style={{ fontSize: 14 }}>
+              <p className="wb-muted" style={{ fontSize: TYPE.body }}>
                 The 1-hour summary is built from their answers, so there is nothing to preview there yet.
               </p>
             </div>

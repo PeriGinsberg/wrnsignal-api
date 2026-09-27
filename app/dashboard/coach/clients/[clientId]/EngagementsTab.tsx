@@ -20,6 +20,7 @@
 // NotesTab / PackagesTab).
 
 import { useCallback, useEffect, useState } from "react"
+import { SPACE, TYPE } from "../../../../../lib/theme/surfaces"
 import { T, btnPrimary, btnSecondary } from "../../../../../lib/dashboard-theme"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
 import { NoteVisibilityIcon } from "../../NoteVisibilityIcon"
@@ -485,10 +486,10 @@ export function EngagementsTab({
 
   // Guard: no relationship resolved → benign empty, not an error.
   if (!coachClientId) {
-    return <p style={{ fontSize: 13, color: T.DIM, margin: 0 }}>No engagement workspace for this client yet.</p>
+    return <p style={{ fontSize: TYPE.secondary, color: T.DIM, margin: 0 }}>No engagement workspace for this client yet.</p>
   }
   if (loading) {
-    return <p style={{ fontSize: 13, color: T.MUTED, margin: 0 }}>Loading engagements…</p>
+    return <p style={{ fontSize: TYPE.secondary, color: T.MUTED, margin: 0 }}>Loading engagements…</p>
   }
   if (loadError) {
     return (
@@ -501,7 +502,7 @@ export function EngagementsTab({
 
   return (
     <div>
-      <p style={{ fontSize: 13, color: T.MUTED, margin: "0 0 16px" }}>
+      <p style={{ fontSize: TYPE.secondary, color: T.MUTED, margin: "0 0 16px" }}>
         Packages attached to {clientName}. Each is a frozen copy — editing your catalog won&apos;t
         change what&apos;s here.
       </p>
@@ -509,7 +510,7 @@ export function EngagementsTab({
       {actionError && <div style={{ marginBottom: 16 }}><Banner kind="error">{actionError}</Banner></div>}
 
       {items.length === 0 ? (
-        <p style={{ fontSize: 13, color: T.DIM, margin: "0 0 16px" }}>
+        <p style={{ fontSize: TYPE.secondary, color: T.DIM, margin: "0 0 16px" }}>
           No packages attached yet — attach one below to set up this client&apos;s deliverables.
         </p>
       ) : (
@@ -547,15 +548,15 @@ export function EngagementsTab({
         ) : (
           <div style={{ borderRadius: 12, border: `1px solid ${T.BORDER_SOFT}`, background: T.GLASS, padding: 12 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>
+              <div style={{ fontSize: TYPE.micro, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>
                 Choose a package to attach
               </div>
               <button style={smallBtn} onClick={() => setPickerOpen(false)}>Cancel</button>
             </div>
             {catalogLoading ? (
-              <p style={{ fontSize: 12, color: T.MUTED, margin: 0 }}>Loading your packages…</p>
+              <p style={{ fontSize: TYPE.secondary, color: T.MUTED, margin: 0 }}>Loading your packages…</p>
             ) : catalog.length === 0 ? (
-              <p style={{ fontSize: 12, color: T.DIM, margin: 0 }}>
+              <p style={{ fontSize: TYPE.secondary, color: T.DIM, margin: 0 }}>
                 No packages yet — build one in Services → Packages first.
               </p>
             ) : (
@@ -571,13 +572,13 @@ export function EngagementsTab({
                       }}
                     >
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <span style={{ fontSize: 13, color: T.TEXT, fontWeight: 600 }}>{p.name}</span>
-                        <span style={{ fontSize: 12, color: T.MUTED, marginLeft: 8 }}>
+                        <span style={{ fontSize: TYPE.secondary, color: T.TEXT, fontWeight: 600 }}>{p.name}</span>
+                        <span style={{ fontSize: TYPE.secondary, color: T.MUTED, marginLeft: 8 }}>
                           {count} deliverable{count === 1 ? "" : "s"} · {fmtMoney(p.pricing?.total ?? 0)}
                         </span>
                       </div>
                       <button
-                        style={{ ...btnPrimary, padding: "7px 14px", fontSize: 12, opacity: attachingId ? 0.6 : 1 }}
+                        style={{ ...btnPrimary, padding: "7px 14px", fontSize: TYPE.secondary, opacity: attachingId ? 0.6 : 1 }}
                         disabled={!!attachingId}
                         onClick={() => void attach(p.id)}
                       >
@@ -640,20 +641,20 @@ function EngagementCard({
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-            <span style={{ fontSize: 15, color: T.TEXT, fontWeight: 700 }}>{e.name}</span>
-            <span style={{ fontSize: 14, color: T.TEXT, fontWeight: 800 }}>{fmtMoney(e.pricing.total)}</span>
+            <span style={{ fontSize: TYPE.body, color: T.TEXT, fontWeight: 700 }}>{e.name}</span>
+            <span style={{ fontSize: TYPE.body, color: T.TEXT, fontWeight: 800 }}>{fmtMoney(e.pricing.total)}</span>
             {/* Colored proposal-status pill — the at-a-glance lifecycle state. */}
-            <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: pm.color, background: pm.bg, border: `1px solid ${pm.border}`, borderRadius: 999, padding: "2px 9px", whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: TYPE.label, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: pm.color, background: pm.bg, border: `1px solid ${pm.border}`, borderRadius: 999, padding: "2px 9px", whiteSpace: "nowrap" }}>
               {pm.label}
             </span>
             {/* One per client: flagging this clears any other, server-side. */}
             <ProofProjectToggle on={e.is_proof_project} busy={proposalBusy} onToggle={onSetProofProject} />
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 5, fontSize: 12, color: T.MUTED }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 5, fontSize: TYPE.secondary, color: T.MUTED }}>
             {chips.map((c, i) => <span key={i}>{c}</span>)}
           </div>
           {/* Frozen-copy affordance + attached date, one quiet line. */}
-          <div style={{ fontSize: 11, color: T.DIM, marginTop: 6 }}>Snapshot taken {fmtDate(e.attached_at)}</div>
+          <div style={{ fontSize: TYPE.micro, color: T.DIM, marginTop: 6 }}>Snapshot taken {fmtDate(e.attached_at)}</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
           <button style={smallBtn} onClick={onToggle}>{expanded ? "Hide" : "View"}</button>
@@ -669,7 +670,7 @@ function EngagementCard({
 
       {/* Proposal-status control — free-set any of the four. */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: T.DIM }}>Proposal</span>
+        <span style={{ fontSize: TYPE.label, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: T.DIM }}>Proposal</span>
         <div style={{ display: "inline-flex", borderRadius: 8, border: `1px solid ${T.BORDER_SOFT}`, overflow: "hidden", opacity: proposalBusy ? 0.6 : 1 }}>
           {PROPOSAL_ORDER.map((st, i) => {
             const active = e.proposal_status === st
@@ -692,7 +693,7 @@ function EngagementCard({
                   border: "none",
                   borderLeft: i === 0 ? "none" : `1px solid ${isHover ? T.BORDER : T.BORDER_SOFT}`,
                   padding: "6px 12px",
-                  fontSize: 11, fontWeight: 800,
+                  fontSize: TYPE.micro, fontWeight: 800,
                   // Pointer on every stage (active too) so the control reads as
                   // interactive; default only while a PATCH is in flight.
                   cursor: proposalBusy ? "default" : "pointer",
@@ -709,7 +710,7 @@ function EngagementCard({
 
       {/* Prospect-page nudge near an approved proposal — informational, NOT a convert trigger. */}
       {showConvertNudge && e.proposal_status === "approved" && (
-        <div style={{ fontSize: 11, color: T.DIM, marginTop: 8, fontStyle: "italic" }}>
+        <div style={{ fontSize: TYPE.micro, color: T.DIM, marginTop: 8, fontStyle: "italic" }}>
           Approved — convert this prospect from the Pipeline above when you&apos;re ready.
         </div>
       )}
@@ -717,7 +718,7 @@ function EngagementCard({
       {expanded && (
         <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.BORDER_SOFT}`, display: "flex", flexDirection: "column", gap: 10 }}>
           {e.deliverables.length === 0 ? (
-            <p style={{ fontSize: 12, color: T.DIM, margin: 0 }}>This package had no deliverables.</p>
+            <p style={{ fontSize: TYPE.secondary, color: T.DIM, margin: 0 }}>This package had no deliverables.</p>
           ) : (
             e.deliverables.map((d) => (
               <DeliverableBlock
@@ -771,10 +772,10 @@ function DeliverableBlock({
       <div style={{ flex: 1, minWidth: 0, padding: "10px 12px" }}>
         <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
           {/* Deliverable name = primary/bright tier. */}
-          <span style={{ fontSize: 13, color: T.TEXT, fontWeight: 700 }}>{d.name}</span>
-          <span style={{ fontSize: 12, color: d.fee === null ? T.DIM : T.MUTED, fontWeight: 600 }}>{fmtFee(d.fee)}</span>
+          <span style={{ fontSize: TYPE.secondary, color: T.TEXT, fontWeight: 700 }}>{d.name}</span>
+          <span style={{ fontSize: TYPE.secondary, color: d.fee === null ? T.DIM : T.MUTED, fontWeight: 600 }}>{fmtFee(d.fee)}</span>
           {d.category && (
-            <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase", color: T.WRN_ORANGE, background: "rgba(254,176,106,0.10)", border: `1px solid ${T.NAV_ACTIVE_BORDER}`, borderRadius: 6, padding: "1px 6px" }}>
+            <span style={{ fontSize: TYPE.micro, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase", color: T.WRN_ORANGE, background: "rgba(254,176,106,0.10)", border: `1px solid ${T.NAV_ACTIVE_BORDER}`, borderRadius: 6, padding: "1px 6px" }}>
               {d.category}
             </span>
           )}
@@ -783,7 +784,7 @@ function DeliverableBlock({
             onClick={() => setEditing((v) => !v)}
             style={{
               marginLeft: "auto", background: "none", border: "none", padding: 0,
-              color: editing ? T.WRN_ORANGE : T.DIM, fontSize: 11, fontWeight: 700,
+              color: editing ? T.WRN_ORANGE : T.DIM, fontSize: TYPE.micro, fontWeight: 700,
               cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
             }}
           >
@@ -838,7 +839,7 @@ function DeliverableBlock({
                   borderTop: i === 0 ? "none" : `1px solid ${T.BORDER_SOFT}`, // hairline dividers
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, fontSize: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, fontSize: TYPE.secondary }}>
                   {/* Activity name = secondary/muted tier (a step below the deliverable). */}
                   <span style={{ color: T.MUTED }}>{a.name}</span>
                   <span style={{ color: T.DIM }}>· {OWNER_LABEL[a.owner] ?? a.owner}</span>
@@ -846,7 +847,7 @@ function DeliverableBlock({
                     <span
                       title="Completing this unlocks the client's speaking point"
                       style={{
-                        fontSize: 9, fontWeight: 900, letterSpacing: 0.6, textTransform: "uppercase",
+                        fontSize: TYPE.micro, fontWeight: 900, letterSpacing: 0.6, textTransform: "uppercase",
                         color: T.WRN_ORANGE, border: `1px solid ${T.NAV_ACTIVE_BORDER}`,
                         background: "rgba(254,176,106,0.10)", borderRadius: 5, padding: "1px 5px",
                       }}
@@ -903,7 +904,7 @@ function ActivityDueDateControl({
         border: `1px solid ${T.BORDER_SOFT}`,
         borderRadius: 7,
         padding: "3px 7px",
-        fontSize: 11,
+        fontSize: TYPE.micro,
         fontWeight: 700,
         colorScheme: "dark", // dark native calendar/spinners on the dark surface
         opacity: busy ? 0.6 : 1,
@@ -948,7 +949,7 @@ function ActivityStatusControl({
               border: "none",
               borderLeft: i === 0 ? "none" : `1px solid ${isHover ? T.BORDER : T.BORDER_SOFT}`,
               padding: "4px 9px",
-              fontSize: 9, fontWeight: 800, letterSpacing: 0.3, textTransform: "uppercase",
+              fontSize: TYPE.micro, fontWeight: 800, letterSpacing: 0.3, textTransform: "uppercase",
               cursor: busy ? "default" : "pointer",
               whiteSpace: "nowrap",
               transition: "background 130ms ease, color 130ms ease, border-color 130ms ease",
@@ -1095,19 +1096,19 @@ function ActivityNotes({ notesBase }: { notesBase: string }) {
       <button
         type="button"
         onClick={toggleOpen}
-        style={{ background: "transparent", border: "none", color: T.WRN_BLUE, cursor: "pointer", fontSize: 11, fontWeight: 700, padding: 0 }}
+        style={{ background: "transparent", border: "none", color: T.WRN_BLUE, cursor: "pointer", fontSize: TYPE.micro, fontWeight: 700, padding: 0 }}
       >
         {open ? "Hide notes" : loaded ? `Notes (${notes.length})` : "Notes"}
       </button>
 
       {open && (
         <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
-          {error && <div style={{ fontSize: 11, color: T.ERROR }}>{error}</div>}
+          {error && <div style={{ fontSize: TYPE.micro, color: T.ERROR }}>{error}</div>}
           {loading ? (
-            <div style={{ fontSize: 11, color: T.MUTED }}>Loading…</div>
+            <div style={{ fontSize: TYPE.micro, color: T.MUTED }}>Loading…</div>
           ) : (
             <>
-              {notes.length === 0 && <div style={{ fontSize: 11, color: T.DIM }}>No notes yet.</div>}
+              {notes.length === 0 && <div style={{ fontSize: TYPE.micro, color: T.DIM }}>No notes yet.</div>}
               {notes.map((n) => {
                 const busy = busyId === n.id
                 return (
@@ -1124,7 +1125,7 @@ function ActivityNotes({ notesBase }: { notesBase: string }) {
                       </div>
                     ) : (
                       <>
-                        <div style={{ fontSize: 13, color: T.TEXT, whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: 1.45 }}>{n.body}</div>
+                        <div style={{ fontSize: TYPE.secondary, color: T.TEXT, whiteSpace: "pre-wrap", wordBreak: "break-word", lineHeight: 1.45 }}>{n.body}</div>
                         <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
                           <button
                             type="button" disabled={busy} onClick={() => void toggle(n.id, "visible_to_client")}
@@ -1179,16 +1180,16 @@ function ActivityNotes({ notesBase }: { notesBase: string }) {
 const noteToggle: React.CSSProperties = {
   display: "inline-flex", alignItems: "center", gap: 5,
   background: "transparent", border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 7,
-  padding: "3px 8px", fontSize: 11, fontWeight: 800, cursor: "pointer",
+  padding: "3px 8px", fontSize: TYPE.micro, fontWeight: 800, cursor: "pointer",
 }
 const noteTextBtn: React.CSSProperties = {
   background: "transparent", border: "none", color: T.MUTED,
-  cursor: "pointer", fontSize: 11, fontWeight: 700, padding: 0,
+  cursor: "pointer", fontSize: TYPE.micro, fontWeight: 700, padding: 0,
 }
 const noteTextarea: React.CSSProperties = {
   width: "100%", boxSizing: "border-box", background: T.NAV_DEFAULT_BG, color: T.TEXT,
   border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 8, padding: "6px 8px",
-  fontSize: 13, lineHeight: 1.45, resize: "vertical", fontFamily: "inherit",
+  fontSize: TYPE.secondary, lineHeight: 1.45, resize: "vertical", fontFamily: "inherit",
 }
 
 const smallBtn: React.CSSProperties = {
@@ -1197,7 +1198,7 @@ const smallBtn: React.CSSProperties = {
   color: T.MUTED,
   borderRadius: 8,
   cursor: "pointer",
-  fontSize: 12,
+  fontSize: TYPE.secondary,
   fontWeight: 700,
   padding: "6px 10px",
 }
@@ -1210,7 +1211,7 @@ function Banner({ kind, children }: { kind: "error" | "success" | "info"; childr
       ? { color: T.SUCCESS, bg: T.SUCCESS_BG, border: "rgba(74,222,128,0.30)" }
       : { color: T.WRN_BLUE, bg: "rgba(81,173,229,0.10)", border: "rgba(81,173,229,0.30)" }
   return (
-    <div style={{ fontSize: 12, color: palette.color, background: palette.bg, border: `1px solid ${palette.border}`, borderRadius: 10, padding: "10px 12px" }}>
+    <div style={{ fontSize: TYPE.secondary, color: palette.color, background: palette.bg, border: `1px solid ${palette.border}`, borderRadius: 10, padding: "10px 12px" }}>
       {children}
     </div>
   )

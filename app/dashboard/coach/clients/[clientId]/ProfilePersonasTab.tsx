@@ -13,6 +13,7 @@
 //   • Persona resume body: explicit Save button (large blob, autosave is risky)
 
 import React, { useEffect, useMemo, useRef, useState } from "react"
+import { SPACE, TYPE } from "../../../../../lib/theme/surfaces"
 import { T, input, textarea, btnPrimary, btnSecondary, card, eyebrow, label, selectDarkInk, selectDarkOption } from "../../../../../lib/dashboard-theme"
 import { JOB_TYPE_OPTIONS, normalizeJobType } from "../../../../../lib/jobType"
 import { SavingSpinner } from "../../SavingSpinner"
@@ -108,7 +109,7 @@ function SaveIndicator({ state }: { state: SaveState }) {
   if (state === "idle") return null
   const text = state === "saving" ? "Saving…" : state === "saved" ? "Saved" : "Error — retry"
   const color = state === "error" ? T.ERROR : state === "saved" ? "#4ade80" : T.DIM
-  return <span style={{ fontSize: 11, color, marginLeft: 8 }}>{text}</span>
+  return <span style={{ fontSize: TYPE.micro, color, marginLeft: 8 }}>{text}</span>
 }
 
 function FieldRow({ labelText, children }: { labelText: string; children: React.ReactNode }) {
@@ -125,8 +126,8 @@ function FieldRow({ labelText, children }: { labelText: string; children: React.
 function ReadOnlyRow({ labelText, value }: { labelText: string; value: string | null }) {
   return (
     <div>
-      <div style={{ ...eyebrow, fontSize: 9, color: T.DIM, marginBottom: 3 }}>{labelText.toUpperCase()}</div>
-      <div style={{ fontSize: 13, color: value ? T.TEXT : T.DIM }}>{value || "—"}</div>
+      <div style={{ ...eyebrow, fontSize: TYPE.micro, color: T.DIM, marginBottom: 3 }}>{labelText.toUpperCase()}</div>
+      <div style={{ fontSize: TYPE.secondary, color: value ? T.TEXT : T.DIM }}>{value || "—"}</div>
     </div>
   )
 }
@@ -439,7 +440,7 @@ export default function ProfilePersonasTab({
               value={drafts.name}
               onChange={(e) => { setDrafts((d) => ({ ...d, name: e.target.value })); if (nameError) setNameError(null) }}
             />
-            {nameError && <div style={{ fontSize: 12, color: T.ERROR, marginTop: 4 }}>{nameError}</div>}
+            {nameError && <div style={{ fontSize: TYPE.secondary, color: T.ERROR, marginTop: 4 }}>{nameError}</div>}
           </FieldRow>
           <ReadOnlyRow labelText="Email" value={profile.email} />
         </div>
@@ -459,7 +460,7 @@ export default function ProfilePersonasTab({
                         type="button"
                         onClick={() => toggleJobType(opt)}
                         style={{
-                          fontSize: 11, fontWeight: 900, padding: "6px 12px", borderRadius: 8, cursor: "pointer",
+                          fontSize: TYPE.micro, fontWeight: 900, padding: "6px 12px", borderRadius: 8, cursor: "pointer",
                           border: active ? `1px solid ${T.WRN_BLUE}` : `1px solid ${T.BORDER_SOFT}`,
                           background: active ? "rgba(81,173,229,0.15)" : "rgba(255,255,255,0.04)",
                           color: active ? T.WRN_BLUE : T.DIM, fontFamily: "inherit",
@@ -595,15 +596,15 @@ export default function ProfilePersonasTab({
             type="button"
             onClick={saveProfile}
             disabled={!isDirty || profileSaveState === "saving"}
-            style={{ ...btnPrimary, fontSize: 12, padding: "9px 20px", opacity: (!isDirty || profileSaveState === "saving") ? 0.5 : 1 }}
+            style={{ ...btnPrimary, fontSize: TYPE.secondary, padding: "9px 20px", opacity: (!isDirty || profileSaveState === "saving") ? 0.5 : 1 }}
           >
             {profileSaveState === "saving" ? "Saving…" : isDirty ? "Save changes" : "Saved"}
           </button>
           {profileSaveState === "error" && (
-            <span style={{ fontSize: 12, color: T.ERROR }}>Couldn&apos;t save — try again</span>
+            <span style={{ fontSize: TYPE.secondary, color: T.ERROR }}>Couldn&apos;t save — try again</span>
           )}
           {profileSaveState !== "error" && isDirty && (
-            <span style={{ fontSize: 12, color: T.WRN_ORANGE }}>Unsaved changes</span>
+            <span style={{ fontSize: TYPE.secondary, color: T.WRN_ORANGE }}>Unsaved changes</span>
           )}
         </div>
       </div>
@@ -619,7 +620,7 @@ export default function ProfilePersonasTab({
         {!addOpen && (
           <button
             onClick={() => { setAddOpen(true); setCreateError(null) }}
-            style={{ ...btnSecondary, fontSize: 12, padding: "8px 14px", borderRadius: 10, color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)" }}
+            style={{ ...btnSecondary, fontSize: TYPE.secondary, padding: "8px 14px", borderRadius: 10, color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)" }}
           >
             + Add Persona
           </button>
@@ -629,7 +630,7 @@ export default function ProfilePersonasTab({
       {/* Add persona form */}
       {addOpen && (
         <div style={{ ...card, padding: 24, marginBottom: 16 }}>
-          <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: 9, marginBottom: 14 }}>NEW PERSONA</div>
+          <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: TYPE.micro, marginBottom: 14 }}>NEW PERSONA</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <FieldRow labelText="Persona Name">
               <input
@@ -664,7 +665,7 @@ export default function ProfilePersonasTab({
                       }
                     }}
                     style={{
-                      padding: "7px 16px", fontSize: 12, border: "none", cursor: "pointer",
+                      padding: "7px 16px", fontSize: TYPE.secondary, border: "none", cursor: "pointer",
                       background: resumeTab === t ? "rgba(254,176,106,0.10)" : "rgba(255,255,255,0.03)",
                       color: resumeTab === t ? T.WRN_ORANGE : T.MUTED,
                       fontWeight: 900, letterSpacing: 0.5,
@@ -703,28 +704,28 @@ export default function ProfilePersonasTab({
                     style={{ display: "none" }}
                   />
                   {uploading && (
-                    <p style={{ fontSize: 11, color: T.DIM, marginTop: 6, display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    <p style={{ fontSize: TYPE.micro, color: T.DIM, marginTop: 6, display: "inline-flex", alignItems: "center", gap: 6 }}>
                       <SavingSpinner size={10} />
                       Extracting...
                     </p>
                   )}
-                  {uploadMsg && <p style={{ fontSize: 11, color: uploadMsg === "Resume extracted" ? "#4ade80" : T.ERROR, marginTop: 6 }}>{uploadMsg}</p>}
+                  {uploadMsg && <p style={{ fontSize: TYPE.micro, color: uploadMsg === "Resume extracted" ? "#4ade80" : T.ERROR, marginTop: 6 }}>{uploadMsg}</p>}
                   {newResume && (
-                    <p style={{ fontSize: 11, color: T.DIM, marginTop: 6 }}>{newResume.length.toLocaleString()} characters extracted</p>
+                    <p style={{ fontSize: TYPE.micro, color: T.DIM, marginTop: 6 }}>{newResume.length.toLocaleString()} characters extracted</p>
                   )}
                 </div>
               )}
             </div>
 
             {createError && (
-              <p style={{ fontSize: 12, color: T.ERROR }}>{createError}</p>
+              <p style={{ fontSize: TYPE.secondary, color: T.ERROR }}>{createError}</p>
             )}
 
             <div style={{ display: "flex", gap: 10 }}>
               <button
                 onClick={createPersona}
                 disabled={creating || !newName.trim()}
-                style={{ ...btnPrimary, fontSize: 12, padding: "8px 18px", opacity: creating || !newName.trim() ? 0.5 : 1 }}
+                style={{ ...btnPrimary, fontSize: TYPE.secondary, padding: "8px 18px", opacity: creating || !newName.trim() ? 0.5 : 1 }}
               >
                 {creating ? "Creating…" : "Create Persona"}
               </button>
@@ -737,7 +738,7 @@ export default function ProfilePersonasTab({
                   setCreateError(null)
                   setResumeTab("paste")
                 }}
-                style={{ ...btnSecondary, fontSize: 12, padding: "8px 14px" }}
+                style={{ ...btnSecondary, fontSize: TYPE.secondary, padding: "8px 14px" }}
               >
                 Cancel
               </button>
@@ -749,7 +750,7 @@ export default function ProfilePersonasTab({
       {/* Active personas */}
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {sortedPersonas.active.length === 0 && !addOpen && (
-          <p style={{ color: T.MUTED, fontSize: 13 }}>No personas yet. Click + Add Persona to create one.</p>
+          <p style={{ color: T.MUTED, fontSize: TYPE.secondary }}>No personas yet. Click + Add Persona to create one.</p>
         )}
         {sortedPersonas.active.map((p) => (
           <PersonaCard
@@ -777,7 +778,7 @@ export default function ProfilePersonasTab({
           {sortedPersonas.archived.length >= 3 ? (
             <button
               onClick={() => setShowArchived((s) => !s)}
-              style={{ background: "none", border: "none", color: T.DIM, fontSize: 12, fontWeight: 900, cursor: "pointer", padding: 0, marginBottom: 10 }}
+              style={{ background: "none", border: "none", color: T.DIM, fontSize: TYPE.secondary, fontWeight: 900, cursor: "pointer", padding: 0, marginBottom: 10 }}
             >
               {showArchived ? "▼" : "▶"} Show archived ({sortedPersonas.archived.length})
             </button>
@@ -831,7 +832,7 @@ function PersonaCard(props: {
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <input
           type="text"
-          style={{ ...input, height: 32, fontSize: 14, fontWeight: 900, padding: "4px 10px", flex: "0 1 320px" } as React.CSSProperties}
+          style={{ ...input, height: 32, fontSize: TYPE.body, fontWeight: 900, padding: "4px 10px", flex: "0 1 320px" } as React.CSSProperties}
           value={draftName}
           onChange={(e) => setDraftName(e.target.value)}
           onBlur={() => {
@@ -842,17 +843,17 @@ function PersonaCard(props: {
         />
         {p.is_default && (
           <span style={{
-            fontSize: 9, fontWeight: 900, letterSpacing: 1.5, textTransform: "uppercase",
+            fontSize: TYPE.micro, fontWeight: 900, letterSpacing: 1.5, textTransform: "uppercase",
             color: T.WRN_ORANGE, background: "rgba(254,176,106,0.12)", padding: "3px 8px", borderRadius: 6,
           }}>
             Primary
           </span>
         )}
         <SaveIndicator state={saveState} />
-        <span style={{ fontSize: 11, color: T.DIM, marginLeft: "auto" }}>v{p.persona_version}</span>
+        <span style={{ fontSize: TYPE.micro, color: T.DIM, marginLeft: "auto" }}>v{p.persona_version}</span>
       </div>
 
-      <p style={{ fontSize: 12, color: T.MUTED, marginTop: 10, lineHeight: "18px", whiteSpace: "pre-wrap" }}>
+      <p style={{ fontSize: TYPE.secondary, color: T.MUTED, marginTop: 10, lineHeight: "18px", whiteSpace: "pre-wrap" }}>
         {p.resume_text
           ? (p.resume_text.length > 200 ? p.resume_text.slice(0, 200) + "…" : p.resume_text)
           : <span style={{ color: T.DIM, fontStyle: "italic" }}>No resume text yet</span>}
@@ -862,21 +863,21 @@ function PersonaCard(props: {
         <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
           <button
             onClick={props.onOpenResumeEdit}
-            style={{ ...btnSecondary, fontSize: 11, padding: "6px 12px", borderRadius: 8, color: T.WRN_BLUE, borderColor: "rgba(81,173,229,0.3)" }}
+            style={{ ...btnSecondary, fontSize: TYPE.micro, padding: "6px 12px", borderRadius: 8, color: T.WRN_BLUE, borderColor: "rgba(81,173,229,0.3)" }}
           >
             Edit Resume
           </button>
           {!p.is_default && (
             <button
               onClick={() => props.onSetPrimary()}
-              style={{ ...btnSecondary, fontSize: 11, padding: "6px 12px", borderRadius: 8 }}
+              style={{ ...btnSecondary, fontSize: TYPE.micro, padding: "6px 12px", borderRadius: 8 }}
             >
               Set as Primary
             </button>
           )}
           <button
             onClick={() => props.onArchive()}
-            style={{ ...btnSecondary, fontSize: 11, padding: "6px 12px", borderRadius: 8, color: T.DIM }}
+            style={{ ...btnSecondary, fontSize: TYPE.micro, padding: "6px 12px", borderRadius: 8, color: T.DIM }}
           >
             Archive
           </button>
@@ -888,7 +889,7 @@ function PersonaCard(props: {
           <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
             <span style={{ ...label, color: T.WRN_BLUE }}>RESUME BODY</span>
             {resumeMsg && (
-              <span style={{ fontSize: 11, color: resumeMsg === "Saved" ? "#4ade80" : T.DIM, marginLeft: 8 }}>
+              <span style={{ fontSize: TYPE.micro, color: resumeMsg === "Saved" ? "#4ade80" : T.DIM, marginLeft: 8 }}>
                 {resumeMsg}
               </span>
             )}
@@ -902,7 +903,7 @@ function PersonaCard(props: {
             <button
               onClick={props.onResumeSave}
               disabled={resumeSaving}
-              style={{ ...btnPrimary, fontSize: 12, padding: "8px 18px", opacity: resumeSaving ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
+              style={{ ...btnPrimary, fontSize: TYPE.secondary, padding: "8px 18px", opacity: resumeSaving ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
             >
               {resumeSaving && <SavingSpinner />}
               {resumeSaving ? "Saving…" : "Save Resume"}
@@ -910,7 +911,7 @@ function PersonaCard(props: {
             <button
               onClick={props.onResumeCancel}
               disabled={resumeSaving}
-              style={{ ...btnSecondary, fontSize: 12, padding: "8px 14px", opacity: resumeSaving ? 0.5 : 1 }}
+              style={{ ...btnSecondary, fontSize: TYPE.secondary, padding: "8px 14px", opacity: resumeSaving ? 0.5 : 1 }}
             >
               Cancel
             </button>
@@ -935,9 +936,9 @@ function ArchivedPersonaCard({
   return (
     <div style={{ ...card, padding: 18 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 14, fontWeight: 900, color: T.MUTED }}>{p.name}</span>
+        <span style={{ fontSize: TYPE.body, fontWeight: 900, color: T.MUTED }}>{p.name}</span>
         <span style={{
-          fontSize: 9, fontWeight: 900, letterSpacing: 1.5, textTransform: "uppercase",
+          fontSize: TYPE.micro, fontWeight: 900, letterSpacing: 1.5, textTransform: "uppercase",
           color: T.DIM, background: "rgba(255,255,255,0.04)", padding: "3px 8px", borderRadius: 6,
         }}>
           Archived
@@ -945,13 +946,13 @@ function ArchivedPersonaCard({
         <SaveIndicator state={saveState} />
         <button
           onClick={() => onRestore()}
-          style={{ ...btnSecondary, fontSize: 11, padding: "5px 10px", borderRadius: 8, marginLeft: "auto", color: T.WRN_BLUE, borderColor: "rgba(81,173,229,0.3)" }}
+          style={{ ...btnSecondary, fontSize: TYPE.micro, padding: "5px 10px", borderRadius: 8, marginLeft: "auto", color: T.WRN_BLUE, borderColor: "rgba(81,173,229,0.3)" }}
         >
           Restore
         </button>
       </div>
       {p.resume_text && (
-        <p style={{ fontSize: 11, color: T.DIM, marginTop: 8, fontStyle: "italic" }}>
+        <p style={{ fontSize: TYPE.micro, color: T.DIM, marginTop: 8, fontStyle: "italic" }}>
           {p.resume_text.length > 120 ? p.resume_text.slice(0, 120) + "…" : p.resume_text}
         </p>
       )}

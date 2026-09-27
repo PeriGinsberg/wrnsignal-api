@@ -24,6 +24,9 @@ import {
   COACH_ROW_TRANSITION,
 } from "../coachRowHover"
 import AddProspectModal from "./AddProspectModal"
+import { SPACE, TYPE } from "../../../../lib/theme/surfaces"
+import { selectDark, selectDarkOption } from "../../../../lib/dashboard-theme"
+import { DEFAULT_SORT, SORT_OPTIONS, applyListControls, type FilterGroup, type SortKey } from "../../../../lib/coach/listControls"
 
 // ── Constants (duplicated per inline pattern) ──
 
@@ -38,6 +41,9 @@ const PROSPECT_STATUS_LABEL: Record<ProspectStatus, string> = {
   lost: "Lost",
   won: "Won",
 }
+// Derived from the labels above rather than typed twice, so the filter can
+// never offer a status the pill has no wording for.
+const PROSPECT_STATUS_VALUES = Object.keys(PROSPECT_STATUS_LABEL) as ProspectStatus[]
 // Selected colors kept in sync with the detail page (prospects/[id]/page.tsx):
 // Active green, Inactive amber "on hold", Lost red, Won teal.
 const PROSPECT_STATUS_STYLE: Record<ProspectStatus, { bg: string; color: string; border: string }> = {
@@ -150,15 +156,15 @@ function Avatar({ name, email }: { name: string | null; email: string | null }) 
   return (
     <div
       style={{
-        width: 28,
-        height: 28,
+        width: 34,
+        height: 34,
         borderRadius: "50%",
         background: palette.bg,
         color: palette.text,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: 11,
+        fontSize: TYPE.secondary,
         fontWeight: 900,
         letterSpacing: 0.3,
         flexShrink: 0,
@@ -177,9 +183,9 @@ function SourceCategoryBadge({ category }: { category: SourceCategory | null }) 
       style={{
         background: s.bg,
         color: s.color,
-        fontSize: 9,
+        fontSize: TYPE.micro,
         fontWeight: 900,
-        letterSpacing: 1,
+        letterSpacing: "0.06em",
         textTransform: "uppercase",
         padding: "3px 8px",
         borderRadius: 6,
@@ -197,7 +203,7 @@ function StageLabel({ stageKey, labelByKey }: { stageKey: string | null; labelBy
   const text = (stageKey && labelByKey[stageKey]) || "Not started"
   const started = !!stageKey && !!labelByKey[stageKey]
   return (
-    <span style={{ fontSize: 12, color: started ? T.TEXT : T.DIM, fontWeight: started ? 700 : 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "block" }}>
+    <span style={{ fontSize: TYPE.secondary, color: started ? T.TEXT : T.MUTED, fontWeight: started ? 700 : 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "block" }}>
       {text}
     </span>
   )
@@ -214,10 +220,10 @@ function StatusPill({ status }: { status: ProspectStatus | null }) {
         background: st.bg,
         color: st.color,
         border: `1px solid ${st.border}`,
-        fontSize: 10,
+        fontSize: TYPE.micro,
         fontWeight: 800,
         letterSpacing: 0.3,
-        padding: "3px 10px",
+        padding: "4px 11px",
         borderRadius: 999,
         whiteSpace: "nowrap",
       }}
@@ -245,7 +251,8 @@ function ProspectRow({
         display: "flex",
         alignItems: "center",
         gap: 14,
-        padding: "12px 14px",
+        minHeight: SPACE.row,
+        padding: `0 ${SPACE.cell}px`,
         background: COACH_ROW_DEFAULT_BG,
         border: `1px solid ${T.BORDER_SOFT}`,
         borderRadius: 10,
@@ -259,13 +266,13 @@ function ProspectRow({
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <span
             style={{
-              fontSize: 14,
+              fontSize: TYPE.body,
               fontWeight: 700,
               color: T.TEXT,
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
-              maxWidth: 200,
+              maxWidth: 240,
             }}
           >
             {prospect.name || "Unnamed"}
@@ -283,11 +290,11 @@ function ProspectRow({
         <StatusPill status={prospect.prospect_status} />
       </div>
 
-      <div style={{ flexShrink: 0, minWidth: 160, fontSize: 12, color: T.DIM, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+      <div style={{ flexShrink: 0, minWidth: 180, fontSize: TYPE.secondary, color: T.MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
         {prospect.invited_email || ""}
       </div>
 
-      <div style={{ flexShrink: 0, minWidth: 90, textAlign: "right", fontSize: 11, color: T.DIM }}>
+      <div style={{ flexShrink: 0, minWidth: 96, textAlign: "right", fontSize: TYPE.secondary, color: T.MUTED }}>
         {timeAgo(prospect.last_activity_at)}
       </div>
 
@@ -295,9 +302,10 @@ function ProspectRow({
         onClick={(e) => { e.stopPropagation(); onOpen() }}
         style={{
           ...btnSecondary,
-          fontSize: 12,
+          fontSize: TYPE.control,
           fontWeight: 700,
-          padding: "7px 14px",
+          minHeight: SPACE.control,
+          padding: "0 18px",
           borderRadius: 8,
           color: T.WRN_ORANGE,
           borderColor: "rgba(254,176,106,0.3)",
@@ -322,6 +330,24 @@ export default function ProspectsListPage() {
   const [forbidden, setForbidden] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
   const hasLoadedOnceRef = useRef(false)
+
+  // THE SAME CONTROLS AS MY CLIENTS, from the same module. Two rosters that
+  // sort differently are two rosters a coach has to learn separately.
+  const [search, setSearch] = useState("")
+  const [sort, setSort] = useState<SortKey>(DEFAULT_SORT)
+  const [statusFilter, setStatusFilter] = useState<string>("active")
+
+  const filterGroups: FilterGroup[] = useMemo(() => [{
+    id: "status",
+    label: "Status",
+    values: PROSPECT_STATUS_VALUES as unknown as string[],
+    all: "all",
+    initial: "active",
+    // A NULL prospect_status is the implicit "active" default: the create
+    // path does not set one, so treating null as unmatched would hide every
+    // prospect added since the column was introduced.
+    matches: (row: any, sel: string) => (row.prospect_status ?? "active") === sel,
+  }], [])
 
   const load = useCallback(async () => {
     const silent = hasLoadedOnceRef.current
@@ -361,8 +387,18 @@ export default function ProspectsListPage() {
     return () => { cancelled = true }
   }, [])
 
-  // Server sort is authoritative; no client re-sort.
-  const list = useMemo(() => prospects || [], [prospects])
+  // The server used to be authoritative on order. It no longer is: a coach
+  // who picked A to Z means A to Z, and a server sort quietly overriding a
+  // control the coach just used is the kind of thing that reads as a bug.
+  const list = useMemo(() => {
+    if (!prospects) return []
+    return applyListControls(prospects as any, {
+      search,
+      sort,
+      groups: filterGroups,
+      selected: { status: statusFilter },
+    }) as unknown as Prospect[]
+  }, [prospects, search, sort, statusFilter, filterGroups])
 
   if (loading) return <LoadingShell />
 
@@ -370,7 +406,7 @@ export default function ProspectsListPage() {
     return (
       <div style={{ ...card, padding: 40, maxWidth: 480, textAlign: "center" }}>
         <div style={{ ...eyebrow, color: T.ERROR, marginBottom: 12 }}>ACCESS DENIED</div>
-        <p style={{ color: T.TEXT, fontSize: 15, fontWeight: 900 }}>Coach access required</p>
+        <p style={{ color: T.TEXT, fontSize: TYPE.subheading, fontWeight: 800 }}>Coach access required</p>
       </div>
     )
   }
@@ -381,10 +417,10 @@ export default function ProspectsListPage() {
 
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20, gap: 16, flexWrap: "wrap" }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 500, letterSpacing: -0.5, color: T.TEXT, margin: 0 }}>
-            Prospects <span style={{ color: T.DIM, fontWeight: 400, fontSize: 18 }}>({list.length})</span>
+          <h1 style={{ fontSize: TYPE.title, fontWeight: 800, letterSpacing: "-0.01em", color: T.TEXT, margin: 0 }}>
+            Prospects <span style={{ color: T.MUTED, fontWeight: 600, fontSize: TYPE.subheading }}>({list.length})</span>
           </h1>
-          <p style={{ fontSize: 13, color: T.MUTED, marginTop: 8, maxWidth: 540 }}>
+          <p style={{ fontSize: TYPE.secondary, color: T.MUTED, marginTop: 8, maxWidth: 560 }}>
             Track potential clients through your sales pipeline. Convert them to Active when they sign on.
           </p>
         </div>
@@ -394,8 +430,9 @@ export default function ProspectsListPage() {
             background: T.WRN_ORANGE,
             color: "#04060F",
             borderRadius: 10,
-            padding: "8px 16px",
-            fontSize: 13,
+            minHeight: SPACE.control,
+            padding: "0 20px",
+            fontSize: TYPE.control,
             fontWeight: 800,
             cursor: "pointer",
             border: "none",
@@ -407,10 +444,83 @@ export default function ProspectsListPage() {
         </button>
       </div>
 
+      {/* Search and sort, then status. Same order and same components as My
+          Clients: a coach should not have to learn this screen separately. */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by name or email"
+          aria-label="Search prospects by name or email"
+          style={{
+            flex: "1 1 280px", minWidth: 0, height: SPACE.control, padding: "0 14px",
+            fontSize: TYPE.control, fontFamily: "inherit", borderRadius: 10,
+            border: `1px solid ${T.BORDER}`, background: T.GLASS, color: T.TEXT, outline: "none",
+          }}
+        />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            aria-label="Clear search"
+            style={{
+              height: SPACE.control, padding: "0 14px", borderRadius: 10,
+              border: `1px solid ${T.BORDER_SOFT}`, background: "transparent",
+              color: T.MUTED, fontSize: TYPE.control, fontWeight: 700,
+              cursor: "pointer", fontFamily: "inherit",
+            }}
+          >Clear</button>
+        )}
+        <label style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <span style={{
+            fontSize: TYPE.label, fontWeight: 800, letterSpacing: "0.08em",
+            textTransform: "uppercase", color: T.MUTED,
+          }}>Sort</span>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortKey)}
+            style={{ ...selectDark, height: SPACE.control, fontSize: TYPE.control, width: "auto", minWidth: 160 }}
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.key} value={o.key} style={selectDarkOption}>{o.label}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap", alignItems: "center" }}>
+        <span style={{
+          fontSize: TYPE.label, fontWeight: 800, letterSpacing: "0.08em",
+          textTransform: "uppercase", color: T.MUTED, marginRight: 2,
+        }}>Status</span>
+        {[...PROSPECT_STATUS_VALUES, "all"].map((opt) => {
+          const selected = opt === statusFilter
+          return (
+            <button
+              key={opt}
+              onClick={() => setStatusFilter(opt)}
+              aria-pressed={selected}
+              style={{
+                background: selected ? "rgba(254,176,106,0.10)" : T.NAV_DEFAULT_BG,
+                border: `1px solid ${selected ? "rgba(254,176,106,0.30)" : T.BORDER_SOFT}`,
+                color: selected ? "#FEB06A" : T.MUTED,
+                fontSize: TYPE.control, fontWeight: 700, minHeight: SPACE.control,
+                padding: "0 18px", borderRadius: 999, cursor: "pointer", fontFamily: "inherit",
+              }}
+            >
+              {opt === "all" ? "All" : PROSPECT_STATUS_LABEL[opt as ProspectStatus]}
+            </button>
+          )
+        })}
+      </div>
+
       <div style={{ ...card, padding: 20 }}>
         {list.length === 0 ? (
-          <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>
-            No prospects yet — click &ldquo;+ Add Prospect&rdquo; above to capture your first one.
+          <p style={{ color: T.MUTED, fontSize: TYPE.body, margin: 0 }}>
+            {search.trim()
+              ? `No prospect matches "${search.trim()}".`
+              : (prospects?.length ?? 0) > 0
+                ? `No ${PROSPECT_STATUS_LABEL[statusFilter as ProspectStatus] ?? ""} prospects.`
+                : "No prospects yet. Use + Add Prospect above to capture your first one."}
           </p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

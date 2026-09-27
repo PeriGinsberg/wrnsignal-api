@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { SPACE, TYPE } from "../../../../../lib/theme/surfaces"
 import {
   T,
   textarea,
@@ -201,7 +202,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
             key={f.value || "all"}
             onClick={() => setFilter(f.value)}
             style={{
-              fontSize: 11,
+              fontSize: TYPE.micro,
               fontWeight: 900,
               padding: "6px 14px",
               borderRadius: 8,
@@ -220,14 +221,14 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
 
       {error && (
         <div style={{ marginBottom: 14, padding: 12, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 10 }}>
-          <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{error}</span>
+          <span style={{ fontSize: TYPE.secondary, color: "#f87171", fontWeight: 700 }}>{error}</span>
         </div>
       )}
 
       {loading ? (
-        <p style={{ color: T.MUTED, fontSize: 13 }}>Loading…</p>
+        <p style={{ color: T.MUTED, fontSize: TYPE.secondary }}>Loading…</p>
       ) : notes.length === 0 ? (
-        <p style={{ color: T.MUTED, fontSize: 13 }}>
+        <p style={{ color: T.MUTED, fontSize: TYPE.secondary }}>
           {filter ? `No ${(TYPE_LABEL[filter as NoteType] ?? "note").toLowerCase()} notes` : "No notes yet"}
         </p>
       ) : (
@@ -276,7 +277,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
                     style={{
                       background: typeBadge.bg,
                       color: typeBadge.color,
-                      fontSize: 10,
+                      fontSize: TYPE.label,
                       fontWeight: 900,
                       letterSpacing: 0.8,
                       textTransform: "uppercase",
@@ -291,7 +292,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
                       style={{
                         background: priorityBadge.bg,
                         color: priorityBadge.color,
-                        fontSize: 10,
+                        fontSize: TYPE.label,
                         fontWeight: 900,
                         letterSpacing: 0.8,
                         textTransform: "uppercase",
@@ -303,12 +304,12 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
                     </span>
                   )}
                   {isCompleted && (
-                    <span style={{ fontSize: 11, color: T.SUCCESS, fontWeight: 700 }}>
+                    <span style={{ fontSize: TYPE.micro, color: T.SUCCESS, fontWeight: 700 }}>
                       ✓ Completed {new Date(n.completed_at!).toLocaleDateString()}
                     </span>
                   )}
                   {createdLabel && (
-                    <span style={{ fontSize: 11, color: T.DIM, marginLeft: "auto" }}>
+                    <span style={{ fontSize: TYPE.micro, color: T.DIM, marginLeft: "auto" }}>
                       {createdLabel}
                       {wasEdited ? " · edited" : ""}
                     </span>
@@ -327,7 +328,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
                           type="button"
                           onClick={() => setEditType(opt.value)}
                           style={{
-                            fontSize: 10,
+                            fontSize: TYPE.label,
                             fontWeight: 900,
                             padding: "4px 10px",
                             borderRadius: 6,
@@ -357,7 +358,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
                               type="button"
                               onClick={() => setEditPriority(opt.value)}
                               style={{
-                                fontSize: 10,
+                                fontSize: TYPE.label,
                                 fontWeight: 900,
                                 padding: "4px 10px",
                                 borderRadius: 6,
@@ -376,7 +377,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
                       </div>
                     )}
                     <textarea
-                      style={{ ...textarea, minHeight: 100, fontSize: 13 }}
+                      style={{ ...textarea, minHeight: 100, fontSize: TYPE.secondary }}
                       value={editBody}
                       onChange={(e) => setEditBody(e.target.value)}
                     />
@@ -386,7 +387,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
                         disabled={savingEdit || editBody.trim().length === 0}
                         style={{
                           ...btnPrimary,
-                          fontSize: 11,
+                          fontSize: TYPE.micro,
                           padding: "6px 14px",
                           opacity: savingEdit || editBody.trim().length === 0 ? 0.5 : 1,
                           display: "inline-flex",
@@ -400,7 +401,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
                       <button
                         onClick={cancelEdit}
                         disabled={savingEdit}
-                        style={{ ...btnSecondary, fontSize: 11, padding: "6px 12px" }}
+                        style={{ ...btnSecondary, fontSize: TYPE.micro, padding: "6px 12px" }}
                       >
                         Cancel
                       </button>
@@ -410,7 +411,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
                   <>
                     <p
                       style={{
-                        fontSize: 13,
+                        fontSize: TYPE.secondary,
                         color: T.TEXT,
                         lineHeight: "20px",
                         whiteSpace: "pre-wrap",
@@ -427,7 +428,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
                           background: "none",
                           border: `1px solid ${T.BORDER_SOFT}`,
                           color: T.MUTED,
-                          fontSize: 11,
+                          fontSize: TYPE.micro,
                           fontWeight: 900,
                           borderRadius: 6,
                           padding: "4px 12px",
@@ -443,7 +444,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
                           background: "none",
                           border: `1px solid ${T.BORDER_SOFT}`,
                           color: T.DIM,
-                          fontSize: 11,
+                          fontSize: TYPE.micro,
                           fontWeight: 900,
                           borderRadius: 6,
                           padding: "4px 12px",

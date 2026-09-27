@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { SPACE, TYPE } from "../../../../../lib/theme/surfaces"
 import {
   T,
   textarea,
@@ -152,7 +153,7 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
           }}
         >
           <div>
-            <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: 9, marginBottom: 4 }}>NEW NOTE</div>
+            <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: TYPE.micro, marginBottom: 4 }}>NEW NOTE</div>
             <div style={{ fontSize: 18, fontWeight: 950, color: T.TEXT, letterSpacing: -0.3 }}>
               Add a note
             </div>
@@ -199,7 +200,7 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
                   type="button"
                   onClick={() => setType(opt.value)}
                   style={{
-                    fontSize: 11,
+                    fontSize: TYPE.micro,
                     fontWeight: 900,
                     padding: "6px 12px",
                     borderRadius: 8,
@@ -247,7 +248,7 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
                       type="button"
                       onClick={() => setPriority(opt.value)}
                       style={{
-                        fontSize: 11,
+                        fontSize: TYPE.micro,
                         fontWeight: 900,
                         padding: "6px 12px",
                         borderRadius: 8,
@@ -264,7 +265,7 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
                   )
                 })}
               </div>
-              <p style={{ fontSize: 10, color: T.DIM, marginTop: 4 }}>
+              <p style={{ fontSize: TYPE.label, color: T.DIM, marginTop: 4 }}>
                 Feeds the Needs Attention list on the dashboard
               </p>
             </div>
@@ -274,7 +275,7 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
             <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>NOTE</span>
             <textarea
               ref={textareaRef}
-              style={{ ...textarea, minHeight: 220, fontSize: 13 }}
+              style={{ ...textarea, minHeight: 220, fontSize: TYPE.secondary }}
               placeholder="What did you want to capture?"
               value={body}
               onChange={(e) => setBody(e.target.value)}
@@ -285,12 +286,12 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
                 }
               }}
             />
-            <p style={{ fontSize: 10, color: T.DIM, marginTop: 4 }}>⌘/Ctrl + Enter to save</p>
+            <p style={{ fontSize: TYPE.label, color: T.DIM, marginTop: 4 }}>⌘/Ctrl + Enter to save</p>
           </div>
 
           {error && (
             <div style={{ padding: 10, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8 }}>
-              <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{error}</span>
+              <span style={{ fontSize: TYPE.secondary, color: "#f87171", fontWeight: 700 }}>{error}</span>
             </div>
           )}
         </div>
@@ -308,7 +309,7 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
             type="button"
             onClick={onClose}
             disabled={saving}
-            style={{ ...btnSecondary, fontSize: 12, padding: "10px 16px", opacity: saving ? 0.5 : 1 }}
+            style={{ ...btnSecondary, fontSize: TYPE.secondary, padding: "10px 16px", opacity: saving ? 0.5 : 1 }}
           >
             Cancel
           </button>
@@ -318,7 +319,7 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
             disabled={saving || body.trim().length === 0}
             style={{
               ...btnPrimary,
-              fontSize: 12,
+              fontSize: TYPE.secondary,
               padding: "10px 18px",
               opacity: saving || body.trim().length === 0 ? 0.5 : 1,
               display: "inline-flex",

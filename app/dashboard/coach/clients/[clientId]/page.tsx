@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useMemo, useState, useCallback } from "react"
+import { SPACE, TYPE } from "../../../../../lib/theme/surfaces"
 import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
 import {
@@ -127,7 +128,7 @@ function Badge({ text, style: s }: { text: string; style: { bg: string; color: s
   return (
     <span style={{
       background: s.bg, color: s.color,
-      fontSize: 10, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase",
+      fontSize: TYPE.label, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase",
       padding: "3px 10px", borderRadius: 999, whiteSpace: "nowrap",
     }}>
       {text}
@@ -218,7 +219,7 @@ function buildClientInfoGroups(cap: Capture | null, profile: ClientProfile): Inf
 
   const sourceStyle = c.source_category ? (SOURCE_STYLE[c.source_category] ?? SOURCE_STYLE.other) : SOURCE_STYLE.other
   const sourceBadge = c.source_category ? (
-    <span style={{ display: "inline-block", background: sourceStyle.bg, color: sourceStyle.color, fontSize: 11, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase", padding: "3px 10px", borderRadius: 999 }}>
+    <span style={{ display: "inline-block", background: sourceStyle.bg, color: sourceStyle.color, fontSize: TYPE.micro, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase", padding: "3px 10px", borderRadius: 999 }}>
       {SOURCE_LABEL[c.source_category] ?? c.source_category}
     </span>
   ) : null
@@ -740,7 +741,7 @@ export default function CoachClientPage() {
 
   if (loading) return <LoadingShell />
 
-  if (error) return <p style={{ color: T.ERROR, fontSize: 13 }}>{error}</p>
+  if (error) return <p style={{ color: T.ERROR, fontSize: TYPE.secondary }}>{error}</p>
 
   return (
     <div>
@@ -766,7 +767,7 @@ export default function CoachClientPage() {
           <a
             href={href}
             style={{
-              fontSize: 13,
+              fontSize: TYPE.secondary,
               fontWeight: 600,
               color: "#2CA58D",
               textDecoration: "none",
@@ -826,7 +827,7 @@ export default function CoachClientPage() {
             key={t.id}
             onClick={() => setTab(t.id)}
             style={{
-              fontSize: 12, fontWeight: 900, padding: "8px 16px", borderRadius: 10, cursor: "pointer",
+              fontSize: TYPE.secondary, fontWeight: 900, padding: "8px 16px", borderRadius: 10, cursor: "pointer",
               border: tab === t.id ? `1px solid rgba(254,176,106,0.35)` : `1px solid ${T.BORDER_SOFT}`,
               background: tab === t.id ? "rgba(254,176,106,0.08)" : "rgba(255,255,255,0.04)",
               color: tab === t.id ? T.WRN_ORANGE : T.MUTED,
@@ -861,7 +862,7 @@ export default function CoachClientPage() {
         <a
           href={`/dashboard/network?client_profile_id=${encodeURIComponent(clientId)}`}
           style={{
-            fontSize: 12, fontWeight: 900, padding: "8px 16px", borderRadius: 10,
+            fontSize: TYPE.secondary, fontWeight: 900, padding: "8px 16px", borderRadius: 10,
             border: `1px solid ${T.BORDER_SOFT}`,
             background: "rgba(255,255,255,0.04)",
             color: T.MUTED,
@@ -906,10 +907,10 @@ export default function CoachClientPage() {
               <div style={{ ...eyebrow, color: T.WRN_ORANGE }}>
                 FROM YOU — COACH RECOMMENDATIONS {coachRecs.length > 0 && <span style={{ color: T.DIM, fontWeight: 700 }}>({coachRecs.length})</span>}
               </div>
-              <span style={{ fontSize: 12, color: T.DIM }}>{recsExpanded ? "▲" : "▼"}</span>
+              <span style={{ fontSize: TYPE.secondary, color: T.DIM }}>{recsExpanded ? "▲" : "▼"}</span>
             </div>
             {!recsExpanded ? null : coachRecs.length === 0 ? (
-              <p style={{ color: T.MUTED, fontSize: 13 }}>No recommendations sent yet. Use the "Source a Job" tab to find and send jobs.</p>
+              <p style={{ color: T.MUTED, fontSize: TYPE.secondary }}>No recommendations sent yet. Use the "Source a Job" tab to find and send jobs.</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {coachRecs.map((rec) => {
@@ -923,8 +924,8 @@ export default function CoachClientPage() {
                     <div key={rec.id} style={{ ...card, padding: 20 }}>
                       {/* Company + title + verdict */}
                       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
-                        <span style={{ fontSize: 15, fontWeight: 950, color: T.TEXT }}>{rec.company}</span>
-                        <span style={{ fontSize: 13, color: T.MUTED }}>— {rec.title}</span>
+                        <span style={{ fontSize: TYPE.body, fontWeight: 950, color: T.TEXT }}>{rec.company}</span>
+                        <span style={{ fontSize: TYPE.secondary, color: T.MUTED }}>— {rec.title}</span>
                         {rec.verdict && (
                           <Badge text={rec.verdict} style={DECISION_STYLE[rec.verdict] || { bg: "rgba(255,255,255,0.08)", color: T.MUTED }} />
                         )}
@@ -933,14 +934,14 @@ export default function CoachClientPage() {
                       {/* Sent date + priority pill */}
                       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                         {sentDate && (
-                          <span style={{ fontSize: 12, color: T.MUTED }}>
-                            <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: T.DIM, marginRight: 6 }}>SENT</span>
+                          <span style={{ fontSize: TYPE.secondary, color: T.MUTED }}>
+                            <span style={{ fontSize: TYPE.micro, fontWeight: 900, letterSpacing: 1, color: T.DIM, marginRight: 6 }}>SENT</span>
                             {sentDate}
                           </span>
                         )}
                         {priorityLabel && (
                           <span style={{
-                            fontSize: 9, fontWeight: 900, padding: "2px 8px", borderRadius: 99, letterSpacing: 0.5,
+                            fontSize: TYPE.micro, fontWeight: 900, padding: "2px 8px", borderRadius: 99, letterSpacing: 0.5,
                             ...(PRIORITY_STYLE[rec.priority || ""] || PRIORITY_STYLE.normal),
                           }}>
                             {priorityLabel}
@@ -951,15 +952,15 @@ export default function CoachClientPage() {
                       {/* Inline edit form */}
                       {editingRecId === rec.id ? (
                         <div style={{ marginBottom: 8, padding: 14, background: "rgba(255,255,255,0.03)", borderRadius: 10, border: `1px solid ${T.BORDER_SOFT}` }}>
-                          <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: 9, marginBottom: 10 }}>EDIT RECOMMENDATION</div>
+                          <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: TYPE.micro, marginBottom: 10 }}>EDIT RECOMMENDATION</div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                             <div>
-                              <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4, fontSize: 9 }}>COACHING NOTE</span>
+                              <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4, fontSize: TYPE.micro }}>COACHING NOTE</span>
                               <textarea style={{ ...textarea, minHeight: 60 }} value={editRecNote} onChange={(e) => setEditRecNote(e.target.value)} placeholder="Your coaching note..." />
                             </div>
                             <div style={{ display: "flex", gap: 12 }}>
                               <div style={{ flex: 1 }}>
-                                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4, fontSize: 9 }}>PRIORITY</span>
+                                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4, fontSize: TYPE.micro }}>PRIORITY</span>
                                 <select style={{ ...input, ...selectDarkInk, height: 38 }} value={editRecPriority} onChange={(e) => setEditRecPriority(e.target.value)}>
                                   <option value="urgent" style={selectDarkOption}>Urgent</option>
                                   <option value="this_week" style={selectDarkOption}>This Week</option>
@@ -968,7 +969,7 @@ export default function CoachClientPage() {
                                 </select>
                               </div>
                               <div style={{ flex: 1 }}>
-                                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4, fontSize: 9 }}>ACTION</span>
+                                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4, fontSize: TYPE.micro }}>ACTION</span>
                                 <select style={{ ...input, ...selectDarkInk, height: 38 }} value={editRecAction} onChange={(e) => setEditRecAction(e.target.value)}>
                                   <option value="apply" style={selectDarkOption}>Apply</option>
                                   <option value="research_first" style={selectDarkOption}>Research First</option>
@@ -979,7 +980,7 @@ export default function CoachClientPage() {
                                 </select>
                               </div>
                               <div style={{ flex: 1 }}>
-                                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4, fontSize: 9 }}>APPLY BY</span>
+                                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4, fontSize: TYPE.micro }}>APPLY BY</span>
                                 <input type="date" style={{ ...input, height: 38, colorScheme: "dark" } as React.CSSProperties} value={editRecApplyBy} onChange={(e) => setEditRecApplyBy(e.target.value)} />
                               </div>
                             </div>
@@ -1004,7 +1005,7 @@ export default function CoachClientPage() {
                                 } catch {}
                                 setSavingRec(false)
                               }}
-                              style={{ ...btnPrimary, fontSize: 12, padding: "8px 18px", opacity: savingRec ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
+                              style={{ ...btnPrimary, fontSize: TYPE.secondary, padding: "8px 18px", opacity: savingRec ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
                             >
                               {savingRec && <SavingSpinner />}
                               {savingRec ? "Saving..." : "Save Changes"}
@@ -1012,7 +1013,7 @@ export default function CoachClientPage() {
                             <button
                               onClick={() => setEditingRecId(null)}
                               disabled={savingRec}
-                              style={{ ...btnSecondary, fontSize: 12, padding: "8px 14px", opacity: savingRec ? 0.5 : 1 }}
+                              style={{ ...btnSecondary, fontSize: TYPE.secondary, padding: "8px 14px", opacity: savingRec ? 0.5 : 1 }}
                             >
                               Cancel
                             </button>
@@ -1023,7 +1024,7 @@ export default function CoachClientPage() {
                           {/* Coaching note (read-only) */}
                           {rec.coaching_note && (
                             <div style={{ marginBottom: 8 }}>
-                              <p style={{ fontSize: 12, color: T.MUTED, lineHeight: "18px" }}>
+                              <p style={{ fontSize: TYPE.secondary, color: T.MUTED, lineHeight: "18px" }}>
                                 <span style={{ color: T.WRN_ORANGE, fontWeight: 900 }}>Note: </span>
                                 {rec.coaching_note}
                               </p>
@@ -1033,17 +1034,17 @@ export default function CoachClientPage() {
                           {/* Client status + apply by */}
                           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 8 }}>
                             {rec.client_status && (
-                              <span style={{ fontSize: 11, color: T.DIM }}>
+                              <span style={{ fontSize: TYPE.micro, color: T.DIM }}>
                                 Client: <span style={{ color: T.TEXT, fontWeight: 700 }}>{describeClientStatus(rec.client_status)}</span>
                               </span>
                             )}
                             {rec.apply_by && (
-                              <span style={{ fontSize: 11, color: T.DIM }}>
+                              <span style={{ fontSize: TYPE.micro, color: T.DIM }}>
                                 Apply by: <span style={{ color: T.WRN_ORANGE, fontWeight: 700 }}>{rec.apply_by}</span>
                               </span>
                             )}
                             {rec.recommended_action && (
-                              <span style={{ fontSize: 11, color: T.DIM }}>
+                              <span style={{ fontSize: TYPE.micro, color: T.DIM }}>
                                 Action: <span style={{ color: T.TEXT, fontWeight: 700 }}>{rec.recommended_action.replace(/_/g, " ")}</span>
                               </span>
                             )}
@@ -1058,7 +1059,7 @@ export default function CoachClientPage() {
                               setEditRecAction(rec.recommended_action || "apply")
                               setEditRecApplyBy(rec.apply_by || "")
                             }}
-                            style={{ background: "none", border: `1px solid ${T.BORDER_SOFT}`, color: T.MUTED, fontSize: 11, fontWeight: 900, borderRadius: 6, padding: "4px 12px", cursor: "pointer" }}
+                            style={{ background: "none", border: `1px solid ${T.BORDER_SOFT}`, color: T.MUTED, fontSize: TYPE.micro, fontWeight: 900, borderRadius: 6, padding: "4px 12px", cursor: "pointer" }}
                           >
                             Edit
                           </button>
@@ -1076,7 +1077,7 @@ export default function CoachClientPage() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
               <div style={{ ...eyebrow, color: T.WRN_BLUE }}>THEIR APPLICATIONS</div>
               {statusFilter !== "all" && (
-                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: TYPE.micro }}>
                   <span style={{ color: T.DIM }}>Filtered:</span>
                   <span
                     style={{
@@ -1098,7 +1099,7 @@ export default function CoachClientPage() {
                       background: "none",
                       border: "none",
                       color: T.WRN_ORANGE,
-                      fontSize: 11,
+                      fontSize: TYPE.micro,
                       fontWeight: 700,
                       cursor: "pointer",
                       padding: 0,
@@ -1111,7 +1112,7 @@ export default function CoachClientPage() {
               )}
             </div>
             {filteredApps.length === 0 ? (
-              <p style={{ color: T.MUTED, fontSize: 13 }}>
+              <p style={{ color: T.MUTED, fontSize: TYPE.secondary }}>
                 {statusFilter === "all"
                   ? "No applications tracked yet."
                   : `No ${statusFilter.replace(/_/g, " ")} applications.`}
@@ -1141,8 +1142,8 @@ export default function CoachClientPage() {
                         }}
                         style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", cursor: "pointer", userSelect: "none" }}
                       >
-                        <span style={{ fontSize: 14, fontWeight: 950, color: T.TEXT }}>{app.company_name}</span>
-                        <span style={{ fontSize: 13, color: T.MUTED }}>— {app.job_title}</span>
+                        <span style={{ fontSize: TYPE.body, fontWeight: 950, color: T.TEXT }}>{app.company_name}</span>
+                        <span style={{ fontSize: TYPE.secondary, color: T.MUTED }}>— {app.job_title}</span>
                         <ApplicationStatusEditPill
                           value={app.application_status}
                           getToken={getToken}
@@ -1166,9 +1167,9 @@ export default function CoachClientPage() {
                           <Badge text={app.signal_decision} style={DECISION_STYLE[app.signal_decision] || { bg: "rgba(255,255,255,0.08)", color: T.MUTED }} />
                         )}
                         {app.signal_score !== null && (
-                          <span style={{ fontSize: 11, color: T.DIM }}>Score: {app.signal_score}</span>
+                          <span style={{ fontSize: TYPE.micro, color: T.DIM }}>Score: {app.signal_score}</span>
                         )}
-                        <span style={{ marginLeft: "auto", fontSize: 12, color: T.DIM }}>{isOpen ? "▲" : "▼"}</span>
+                        <span style={{ marginLeft: "auto", fontSize: TYPE.secondary, color: T.DIM }}>{isOpen ? "▲" : "▼"}</span>
                       </div>
 
                       {/* Expanded content */}
@@ -1181,7 +1182,7 @@ export default function CoachClientPage() {
                               {app.has_jobfit && (
                                 <button
                                   onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("jobfit"); setJobPanelOpen(true) }}
-                                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.WRN_BLUE, textDecoration: "underline" }}
+                                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: TYPE.secondary, fontWeight: 700, color: T.WRN_BLUE, textDecoration: "underline" }}
                                 >
                                   Full Jobfit
                                 </button>
@@ -1189,7 +1190,7 @@ export default function CoachClientPage() {
                               {app.has_cover_letter && (
                                 <button
                                   onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("coverletter"); setJobPanelOpen(true) }}
-                                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: 12, fontWeight: 700, color: T.WRN_TEAL, textDecoration: "underline" }}
+                                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: TYPE.secondary, fontWeight: 700, color: T.WRN_TEAL, textDecoration: "underline" }}
                                 >
                                   Cover Letter
                                 </button>
@@ -1197,7 +1198,7 @@ export default function CoachClientPage() {
                             </div>
                           )}
                           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
-                            <div style={{ fontSize: 12, color: T.DIM }}>
+                            <div style={{ fontSize: TYPE.secondary, color: T.DIM }}>
                               <span style={{ color: T.MUTED, fontWeight: 700 }}>URL: </span>
                               {app.job_url
                                 ? <a href={app.job_url} target="_blank" rel="noopener noreferrer" style={{ color: T.WRN_BLUE, textDecoration: "underline" }}>{app.job_url}</a>
@@ -1205,7 +1206,7 @@ export default function CoachClientPage() {
                               }
                             </div>
                             {app.created_at && (
-                              <div style={{ fontSize: 12, color: T.DIM }}>
+                              <div style={{ fontSize: TYPE.secondary, color: T.DIM }}>
                                 <span style={{ color: T.MUTED, fontWeight: 700 }}>Date: </span>
                                 {new Date(app.created_at).toLocaleDateString()}
                               </div>
@@ -1220,14 +1221,14 @@ export default function CoachClientPage() {
                           {app.job_description && (
                             <div style={{ marginBottom: 12, background: "rgba(255,255,255,0.03)", borderRadius: 10, padding: "12px 14px", border: `1px solid ${T.BORDER_SOFT}` }}>
                               <div onClick={() => setJdOpenIds((prev) => { const next = new Set(prev); next.has(app.id) ? next.delete(app.id) : next.add(app.id); return next })} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
-                                <span style={{ ...eyebrow, fontSize: 9, color: T.DIM }}>JOB DESCRIPTION</span>
-                                <span style={{ fontSize: 12, color: T.DIM }}>{jdOpenIds.has(app.id) ? "▲" : "▼"}</span>
+                                <span style={{ ...eyebrow, fontSize: TYPE.micro, color: T.DIM }}>JOB DESCRIPTION</span>
+                                <span style={{ fontSize: TYPE.secondary, color: T.DIM }}>{jdOpenIds.has(app.id) ? "▲" : "▼"}</span>
                               </div>
-                              <p style={{ fontSize: 11, color: T.DIM, margin: "4px 0 0" }}>
+                              <p style={{ fontSize: TYPE.micro, color: T.DIM, margin: "4px 0 0" }}>
                                 Saved from when this job was scored, so you can reread it even if the original posting comes down.
                               </p>
                               {jdOpenIds.has(app.id) && (
-                                <div style={{ marginTop: 10, fontSize: 12, color: T.MUTED, lineHeight: "18px", whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: 360, overflowY: "auto" }}>
+                                <div style={{ marginTop: 10, fontSize: TYPE.secondary, color: T.MUTED, lineHeight: "18px", whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: 360, overflowY: "auto" }}>
                                   {app.job_description}
                                 </div>
                               )}
@@ -1237,9 +1238,9 @@ export default function CoachClientPage() {
                           {/* Existing annotations */}
                           {app.coach_annotations?.length > 0 && (
                             <div style={{ marginBottom: 12 }}>
-                              <div style={{ ...eyebrow, fontSize: 9, color: T.DIM, marginBottom: 6 }}>YOUR NOTES</div>
+                              <div style={{ ...eyebrow, fontSize: TYPE.micro, color: T.DIM, marginBottom: 6 }}>YOUR NOTES</div>
                               {app.coach_annotations.map((ann: any, i: number) => (
-                                <p key={i} style={{ fontSize: 12, color: T.MUTED, lineHeight: "18px", marginBottom: 4, paddingLeft: 8, borderLeft: `2px solid ${T.WRN_ORANGE}40`, display: "flex", alignItems: "flex-start", gap: 6 }}>
+                                <p key={i} style={{ fontSize: TYPE.secondary, color: T.MUTED, lineHeight: "18px", marginBottom: 4, paddingLeft: 8, borderLeft: `2px solid ${T.WRN_ORANGE}40`, display: "flex", alignItems: "flex-start", gap: 6 }}>
                                   <span style={{ marginTop: 3 }}>
                                     <NoteVisibilityIcon visible={ann.visible_to_client !== false} />
                                   </span>
@@ -1258,7 +1259,7 @@ export default function CoachClientPage() {
                                 setAnnotationPriority("info")
                                 setAnnotationVisible(true)
                               }}
-                              style={{ ...btnSecondary, fontSize: 11, padding: "6px 14px", borderRadius: 8, color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)" }}
+                              style={{ ...btnSecondary, fontSize: TYPE.micro, padding: "6px 14px", borderRadius: 8, color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)" }}
                             >
                               + Add coaching note
                             </button>
@@ -1278,14 +1279,14 @@ export default function CoachClientPage() {
                                 }}
                               >
                               <div>
-                                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5, fontSize: 9 }}>PRIORITY</span>
+                                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5, fontSize: TYPE.micro }}>PRIORITY</span>
                                 <div style={{ display: "flex", gap: 6 }}>
                                   {(["urgent", "important", "info", "positive"] as const).map((p) => (
                                     <button
                                       key={p}
                                       onClick={() => setAnnotationPriority(p)}
                                       style={{
-                                        fontSize: 10, fontWeight: 900, padding: "4px 10px", borderRadius: 6, cursor: "pointer",
+                                        fontSize: TYPE.label, fontWeight: 900, padding: "4px 10px", borderRadius: 6, cursor: "pointer",
                                         textTransform: "uppercase", letterSpacing: 0.6,
                                         border: annotationPriority === p ? `1px solid ${T.WRN_ORANGE}50` : `1px solid ${T.BORDER_SOFT}`,
                                         background: annotationPriority === p ? "rgba(254,176,106,0.1)" : "rgba(255,255,255,0.03)",
@@ -1298,12 +1299,12 @@ export default function CoachClientPage() {
                                 </div>
                               </div>
                               <textarea
-                                style={{ ...textarea, minHeight: 60, fontSize: 12 }}
+                                style={{ ...textarea, minHeight: 60, fontSize: TYPE.secondary }}
                                 placeholder="Coaching note..."
                                 value={annotationNote}
                                 onChange={(e) => setAnnotationNote(e.target.value)}
                               />
-                              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: T.MUTED, cursor: "pointer" }}>
+                              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: TYPE.secondary, color: T.MUTED, cursor: "pointer" }}>
                                 <input
                                   type="checkbox"
                                   checked={annotationVisible}
@@ -1341,7 +1342,7 @@ export default function CoachClientPage() {
                                     }
                                   }}
                                   disabled={annotationSaving || !annotationNote.trim()}
-                                  style={{ ...btnPrimary, fontSize: 11, padding: "6px 14px", background: "#FEB06A", color: "#04060F", opacity: annotationSaving || !annotationNote.trim() ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
+                                  style={{ ...btnPrimary, fontSize: TYPE.micro, padding: "6px 14px", background: "#FEB06A", color: "#04060F", opacity: annotationSaving || !annotationNote.trim() ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
                                 >
                                   {annotationSaving && <SavingSpinner size={10} />}
                                   {annotationSaving ? "Saving..." : "Save Note"}
@@ -1349,7 +1350,7 @@ export default function CoachClientPage() {
                                 <button
                                   onClick={() => setAnnotatingAppId(null)}
                                   disabled={annotationSaving}
-                                  style={{ ...btnSecondary, fontSize: 11, padding: "6px 12px", opacity: annotationSaving ? 0.5 : 1 }}
+                                  style={{ ...btnSecondary, fontSize: TYPE.micro, padding: "6px 12px", opacity: annotationSaving ? 0.5 : 1 }}
                                 >
                                   Cancel
                                 </button>
@@ -1377,7 +1378,7 @@ export default function CoachClientPage() {
               style={{
                 ...card, padding: "12px 16px", marginBottom: 16,
                 borderColor: T.ORANGE_BORDER, background: T.WARNING_BG,
-                fontSize: 13, color: T.TEXT,
+                fontSize: TYPE.secondary, color: T.TEXT,
               }}
             >
               From a lane result — title, company and link are filled in.{" "}
@@ -1391,7 +1392,7 @@ export default function CoachClientPage() {
                   </a>
                 </>
               )}
-              <div style={{ color: T.DIM, fontSize: 12, marginTop: 6 }}>
+              <div style={{ color: T.DIM, fontSize: TYPE.secondary, marginTop: 6 }}>
                 This job stays in the lane queue until you send it to the client.
               </div>
             </div>
@@ -1414,14 +1415,14 @@ export default function CoachClientPage() {
                 )}
                 <div style={{
                   width: 24, height: 24, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 11, fontWeight: 900,
+                  fontSize: TYPE.micro, fontWeight: 900,
                   background: step.done ? T.WRN_ORANGE : "rgba(255,255,255,0.08)",
                   color: step.done ? "#04060F" : T.DIM,
                   flexShrink: 0,
                 }}>
                   {step.done ? "✓" : step.n}
                 </div>
-                <span style={{ fontSize: 10, fontWeight: 700, color: step.done ? T.WRN_ORANGE : T.DIM, whiteSpace: "nowrap" }}>{step.label}</span>
+                <span style={{ fontSize: TYPE.label, fontWeight: 700, color: step.done ? T.WRN_ORANGE : T.DIM, whiteSpace: "nowrap" }}>{step.label}</span>
               </React.Fragment>
             ))}
           </div>
@@ -1430,7 +1431,7 @@ export default function CoachClientPage() {
           <div style={{ marginBottom: 24 }}>
             {/* URL fetch block */}
             <div style={{ ...card, padding: 24, marginBottom: 20 }}>
-              <div style={{ ...eyebrow, color: T.WRN_BLUE, fontSize: 9, marginBottom: 10 }}>FETCH FROM URL</div>
+              <div style={{ ...eyebrow, color: T.WRN_BLUE, fontSize: TYPE.micro, marginBottom: 10 }}>FETCH FROM URL</div>
               <div style={{ display: "flex", gap: 10 }}>
                 <input
                   type="url"
@@ -1448,13 +1449,13 @@ export default function CoachClientPage() {
                 <button
                   onClick={fetchUrl}
                   disabled={fetchingUrl || !sourceUrl.trim()}
-                  style={{ ...btnSecondary, fontSize: 12, padding: "0 18px", whiteSpace: "nowrap", opacity: fetchingUrl ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
+                  style={{ ...btnSecondary, fontSize: TYPE.secondary, padding: "0 18px", whiteSpace: "nowrap", opacity: fetchingUrl ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
                 >
                   {fetchingUrl && <SavingSpinner />}
                   {fetchingUrl ? "Fetching..." : "Fetch JD"}
                 </button>
               </div>
-              <p style={{ fontSize: 11, color: T.DIM, marginTop: 8 }}>
+              <p style={{ fontSize: TYPE.micro, color: T.DIM, marginTop: 8 }}>
                 LinkedIn, Greenhouse, Lever, Workday, and most ATS URLs supported
               </p>
             </div>
@@ -1477,24 +1478,24 @@ export default function CoachClientPage() {
                 }}
               >
                 <div style={{ ...card, padding: 28, maxWidth: 460, width: "100%", textAlign: "center" }}>
-                  <div style={{ ...eyebrow, color: "#FBBF24", fontSize: 9, marginBottom: 10 }}>LINKEDIN</div>
+                  <div style={{ ...eyebrow, color: "#FBBF24", fontSize: TYPE.micro, marginBottom: 10 }}>LINKEDIN</div>
                   <div style={{ fontSize: 18, fontWeight: 900, color: T.TEXT, marginBottom: 12 }}>
                     We couldn't read this job posting
                   </div>
-                  <p style={{ fontSize: 13, color: T.MUTED, lineHeight: "20px", marginBottom: 20, textAlign: "left" }}>
+                  <p style={{ fontSize: TYPE.secondary, color: T.MUTED, lineHeight: "20px", marginBottom: 20, textAlign: "left" }}>
                     LinkedIn blocks automated access to job postings. To continue, open the
                     posting, copy the full job description, and paste it below.
                   </p>
                   <div style={{ display: "flex", gap: 10 }}>
                     <button
                       onClick={() => { window.open(sourceUrl.trim(), "_blank"); setShowBlockedPopup(false) }}
-                      style={{ ...btnPrimary, flex: 1, fontSize: 13, padding: "11px 16px" }}
+                      style={{ ...btnPrimary, flex: 1, fontSize: TYPE.secondary, padding: "11px 16px" }}
                     >
                       Open Job Posting
                     </button>
                     <button
                       onClick={() => setShowBlockedPopup(false)}
-                      style={{ ...btnSecondary, flex: 1, fontSize: 13, padding: "11px 16px" }}
+                      style={{ ...btnSecondary, flex: 1, fontSize: TYPE.secondary, padding: "11px 16px" }}
                     >
                       Close
                     </button>
@@ -1509,8 +1510,8 @@ export default function CoachClientPage() {
                 background: "rgba(253,186,40,0.08)", border: "1px solid rgba(253,186,40,0.3)",
                 borderRadius: 14, padding: 20, marginBottom: 20,
               }}>
-                <div style={{ ...eyebrow, color: "#FBBF24", fontSize: 9, marginBottom: 8 }}>LINKEDIN — PASTE MANUALLY</div>
-                <p style={{ fontSize: 12, color: T.MUTED, marginBottom: 12, lineHeight: "18px" }}>
+                <div style={{ ...eyebrow, color: "#FBBF24", fontSize: TYPE.micro, marginBottom: 8 }}>LINKEDIN — PASTE MANUALLY</div>
+                <p style={{ fontSize: TYPE.secondary, color: T.MUTED, marginBottom: 12, lineHeight: "18px" }}>
                   LinkedIn blocks automated access. Open the job posting in your browser, select all the text (Ctrl+A / Cmd+A), copy it, and paste it below.
                 </p>
                 <textarea
@@ -1529,7 +1530,7 @@ export default function CoachClientPage() {
                 <button
                   onClick={parseLinkedInPaste}
                   disabled={fetchingUrl || !linkedInPasteText.trim()}
-                  style={{ ...btnSecondary, fontSize: 12, padding: "8px 18px", opacity: fetchingUrl || !linkedInPasteText.trim() ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
+                  style={{ ...btnSecondary, fontSize: TYPE.secondary, padding: "8px 18px", opacity: fetchingUrl || !linkedInPasteText.trim() ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
                 >
                   {fetchingUrl && <SavingSpinner />}
                   {fetchingUrl ? "Parsing..." : "Parse Text →"}
@@ -1540,12 +1541,12 @@ export default function CoachClientPage() {
             {/* Error from fetch/parse */}
             {runError && (
               <div style={{ marginBottom: 14, padding: 12, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 10 }}>
-                <span style={{ fontSize: 13, color: "#f87171", fontWeight: 700 }}>{runError}</span>
+                <span style={{ fontSize: TYPE.secondary, color: "#f87171", fontWeight: 700 }}>{runError}</span>
               </div>
             )}
 
             {/* Manual entry */}
-            <div style={{ ...eyebrow, color: T.DIM, fontSize: 9, textAlign: "center", marginBottom: 16 }}>OR ENTER MANUALLY</div>
+            <div style={{ ...eyebrow, color: T.DIM, fontSize: TYPE.micro, textAlign: "center", marginBottom: 16 }}>OR ENTER MANUALLY</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
                 <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>COMPANY</span>
@@ -1558,7 +1559,7 @@ export default function CoachClientPage() {
               <div>
                 <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>JOB APPLICATION URL</span>
                 <input type="url" style={input} placeholder="https://... (link where client should apply)" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} />
-                <p style={{ fontSize: 11, color: T.DIM, marginTop: 4 }}>This link will appear on the client's tracker so they can apply directly</p>
+                <p style={{ fontSize: TYPE.micro, color: T.DIM, marginTop: 4 }}>This link will appear on the client's tracker so they can apply directly</p>
               </div>
               <div>
                 <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>JOB DESCRIPTION</span>
@@ -1575,7 +1576,7 @@ export default function CoachClientPage() {
           {/* STEP 2 — Persona + Run Analysis (visible once JD has content) */}
           {sourceJD.length > 50 && (
             <div style={{ ...card, padding: 24, marginBottom: 20 }}>
-              <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: 9, marginBottom: 14 }}>STEP 2 — SELECT PERSONA & RUN</div>
+              <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: TYPE.micro, marginBottom: 14 }}>STEP 2 — SELECT PERSONA & RUN</div>
 
               {clientPersonas.filter(p => !p.archived_at).length > 0 && (
                 <div style={{ marginBottom: 18 }}>
@@ -1596,9 +1597,9 @@ export default function CoachClientPage() {
                           onChange={() => setSelectedPersona(p.id)}
                           style={{ accentColor: T.WRN_ORANGE }}
                         />
-                        <span style={{ fontSize: 13, fontWeight: 900, color: selectedPersona === p.id ? T.WRN_ORANGE : T.TEXT }}>
+                        <span style={{ fontSize: TYPE.secondary, fontWeight: 900, color: selectedPersona === p.id ? T.WRN_ORANGE : T.TEXT }}>
                           {p.name}
-                          {p.is_default && <span style={{ fontSize: 10, color: T.DIM, marginLeft: 6 }}>default</span>}
+                          {p.is_default && <span style={{ fontSize: TYPE.label, color: T.DIM, marginLeft: 6 }}>default</span>}
                         </span>
                       </label>
                     ))}
@@ -1608,7 +1609,7 @@ export default function CoachClientPage() {
 
               {runError && (
                 <div style={{ marginBottom: 14, padding: 12, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 10 }}>
-                  <span style={{ fontSize: 13, color: "#f87171", fontWeight: 700 }}>{runError}</span>
+                  <span style={{ fontSize: TYPE.secondary, color: "#f87171", fontWeight: 700 }}>{runError}</span>
                 </div>
               )}
 
@@ -1630,7 +1631,7 @@ export default function CoachClientPage() {
           {/* STEP 3 — Results (visible once runResult is set) */}
           {runResult !== null && (
             <div style={{ ...card, padding: 24, marginBottom: 20 }}>
-              <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: 9, marginBottom: 14 }}>STEP 3 — REVIEW RESULTS</div>
+              <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: TYPE.micro, marginBottom: 14 }}>STEP 3 — REVIEW RESULTS</div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
                 {runResult.decision && (
@@ -1640,7 +1641,7 @@ export default function CoachClientPage() {
                   />
                 )}
                 {runResult.score !== undefined && (
-                  <span style={{ fontSize: 14, color: T.DIM }}>Score: <span style={{ color: T.TEXT, fontWeight: 900 }}>{runResult.score}</span></span>
+                  <span style={{ fontSize: TYPE.body, color: T.DIM }}>Score: <span style={{ color: T.TEXT, fontWeight: 900 }}>{runResult.score}</span></span>
                 )}
               </div>
 
@@ -1655,10 +1656,10 @@ export default function CoachClientPage() {
                 }}>
                   <div style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>⚡</div>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,0.95)", marginBottom: 3 }}>
+                    <div style={{ fontSize: TYPE.body, fontWeight: 800, color: "rgba(255,255,255,0.95)", marginBottom: 3 }}>
                       Read this before you apply.
                     </div>
-                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", lineHeight: "18px" }}>
+                    <div style={{ fontSize: TYPE.secondary, color: "rgba(255,255,255,0.45)", lineHeight: "18px" }}>
                       Your strengths tell you what to lead with. Your risks tell you what to address.
                       This is how you stand out — most applicants never do this work.
                     </div>
@@ -1693,13 +1694,13 @@ export default function CoachClientPage() {
                             width: 32, height: 32, borderRadius: 10, flexShrink: 0,
                             background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.35)",
                             display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: 15, color: "#4ade80",
+                            fontSize: TYPE.body, color: "#4ade80",
                           }}>✦</div>
                           <div>
-                            <div style={{ fontSize: 14, fontWeight: 800, color: "#4ade80" }}>
+                            <div style={{ fontSize: TYPE.body, fontWeight: 800, color: "#4ade80" }}>
                               {isPass ? "Strengths to Remember" : "Why You Are Competitive"}
                             </div>
-                            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                            <div style={{ fontSize: TYPE.micro, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
                               Lead with these in your application
                             </div>
                           </div>
@@ -1714,16 +1715,16 @@ export default function CoachClientPage() {
                                   width: 22, height: 22, borderRadius: "50%",
                                   background: "rgba(74,222,128,0.15)", border: "1.5px solid rgba(74,222,128,0.50)",
                                   display: "flex", alignItems: "center", justifyContent: "center",
-                                  flexShrink: 0, marginTop: 2, fontSize: 11, color: "#4ade80", fontWeight: 900,
+                                  flexShrink: 0, marginTop: 2, fontSize: TYPE.micro, color: "#4ade80", fontWeight: 900,
                                 }}>✓</div>
                                 <div style={{ flex: 1 }}>
                                   {keyword && (
                                     <div style={{
-                                      fontSize: 10, fontWeight: 900, letterSpacing: "1.4px",
+                                      fontSize: TYPE.label, fontWeight: 900, letterSpacing: "1.4px",
                                       textTransform: "uppercase" as const, color: "#4ade80", marginBottom: 4,
                                     }}>{keyword} |</div>
                                   )}
-                                  <div style={{ fontSize: 13, lineHeight: "19px", color: "rgba(255,255,255,0.82)", fontWeight: 400 }}>
+                                  <div style={{ fontSize: TYPE.secondary, lineHeight: "19px", color: "rgba(255,255,255,0.82)", fontWeight: 400 }}>
                                     {bullet}
                                   </div>
                                 </div>
@@ -1749,13 +1750,13 @@ export default function CoachClientPage() {
                             width: 32, height: 32, borderRadius: 10, flexShrink: 0,
                             background: "rgba(248,113,113,0.15)", border: "1px solid rgba(248,113,113,0.35)",
                             display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: 15, color: "#f87171",
+                            fontSize: TYPE.body, color: "#f87171",
                           }}>⚠</div>
                           <div>
-                            <div style={{ fontSize: 14, fontWeight: 800, color: "#f87171" }}>
+                            <div style={{ fontSize: TYPE.body, fontWeight: 800, color: "#f87171" }}>
                               {isPass ? "Why This Is a Pass" : "Your Risks"}
                             </div>
-                            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                            <div style={{ fontSize: TYPE.micro, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
                               Address these before you apply
                             </div>
                           </div>
@@ -1767,9 +1768,9 @@ export default function CoachClientPage() {
                                 width: 22, height: 22, borderRadius: "50%",
                                 background: "rgba(248,113,113,0.15)", border: "1.5px solid rgba(248,113,113,0.50)",
                                 display: "flex", alignItems: "center", justifyContent: "center",
-                                flexShrink: 0, marginTop: 2, fontSize: 11, color: "#f87171", fontWeight: 900,
+                                flexShrink: 0, marginTop: 2, fontSize: TYPE.micro, color: "#f87171", fontWeight: 900,
                               }}>!</div>
-                              <div style={{ fontSize: 13, lineHeight: "19px", color: "rgba(255,255,255,0.82)", fontWeight: 400, flex: 1 }}>
+                              <div style={{ fontSize: TYPE.secondary, lineHeight: "19px", color: "rgba(255,255,255,0.82)", fontWeight: 400, flex: 1 }}>
                                 {bullet}
                               </div>
                             </div>
@@ -1782,7 +1783,7 @@ export default function CoachClientPage() {
               })()}
 
               {(runResult.decision === "Pass") && (
-                <p style={{ fontSize: 12, color: T.DIM, marginBottom: 16, fontStyle: "italic" }}>
+                <p style={{ fontSize: TYPE.secondary, color: T.DIM, marginBottom: 16, fontStyle: "italic" }}>
                   Score suggests low fit. Send anyway?
                 </p>
               )}
@@ -1796,7 +1797,7 @@ export default function CoachClientPage() {
                 </button>
                 <button
                   onClick={clearSourceForm}
-                  style={{ fontSize: 12, color: T.DIM, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: "8px 4px" }}
+                  style={{ fontSize: TYPE.secondary, color: T.DIM, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: "8px 4px" }}
                 >
                   Discard
                 </button>
@@ -1807,11 +1808,11 @@ export default function CoachClientPage() {
           {/* STEP 4 — Annotation (visible once showAnnotation is true) */}
           {showAnnotation && (
             <div style={{ ...card, padding: 24, marginBottom: 20 }}>
-              <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: 9, marginBottom: 16 }}>STEP 4 — COACHING ANNOTATION</div>
+              <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: TYPE.micro, marginBottom: 16 }}>STEP 4 — COACHING ANNOTATION</div>
 
               {sendSuccess ? (
                 <div style={{ padding: 16, background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 10 }}>
-                  <span style={{ color: "#4ade80", fontWeight: 900, fontSize: 13 }}>
+                  <span style={{ color: "#4ade80", fontWeight: 900, fontSize: TYPE.secondary }}>
                     Sent to {clientProfile?.name || "client"}'s dashboard. Clearing form...
                   </span>
                 </div>
@@ -1830,7 +1831,7 @@ export default function CoachClientPage() {
                           key={p.val}
                           onClick={() => setAnnPriority(p.val)}
                           style={{
-                            fontSize: 11, fontWeight: 900, padding: "6px 14px", borderRadius: 8, cursor: "pointer",
+                            fontSize: TYPE.micro, fontWeight: 900, padding: "6px 14px", borderRadius: 8, cursor: "pointer",
                             textTransform: "uppercase", letterSpacing: 0.8,
                             border: annPriority === p.val ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
                             background: annPriority === p.val ? "rgba(254,176,106,0.1)" : "rgba(255,255,255,0.04)",
@@ -1857,7 +1858,7 @@ export default function CoachClientPage() {
                           key={a.val}
                           onClick={() => setAnnAction(a.val)}
                           style={{
-                            fontSize: 11, fontWeight: 900, padding: "6px 14px", borderRadius: 8, cursor: "pointer",
+                            fontSize: TYPE.micro, fontWeight: 900, padding: "6px 14px", borderRadius: 8, cursor: "pointer",
                             textTransform: "uppercase", letterSpacing: 0.8,
                             border: annAction === a.val ? `1px solid rgba(81,173,229,0.4)` : `1px solid ${T.BORDER_SOFT}`,
                             background: annAction === a.val ? "rgba(81,173,229,0.1)" : "rgba(255,255,255,0.04)",
@@ -1884,7 +1885,7 @@ export default function CoachClientPage() {
                       onChange={(e) => setAnnNote(e.target.value)}
                     />
                     {annNote.trim().length > 0 && annNote.trim().length < 20 && (
-                      <p style={{ fontSize: 11, color: T.ERROR, marginTop: 4 }}>{20 - annNote.trim().length} more characters needed</p>
+                      <p style={{ fontSize: TYPE.micro, color: T.ERROR, marginTop: 4 }}>{20 - annNote.trim().length} more characters needed</p>
                     )}
                   </div>
 
@@ -1900,7 +1901,7 @@ export default function CoachClientPage() {
 
                   {runError && (
                     <div style={{ padding: 12, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 10 }}>
-                      <span style={{ fontSize: 13, color: "#f87171", fontWeight: 700 }}>{runError}</span>
+                      <span style={{ fontSize: TYPE.secondary, color: "#f87171", fontWeight: 700 }}>{runError}</span>
                     </div>
                   )}
 
@@ -1931,7 +1932,7 @@ export default function CoachClientPage() {
         <div>
           <div style={{ marginBottom: 18 }}>
             <div style={{ ...eyebrow, color: T.MUTED, marginBottom: 6 }}>Search lanes</div>
-            <p style={{ fontSize: 13, color: T.MUTED, margin: 0 }}>
+            <p style={{ fontSize: TYPE.secondary, color: T.MUTED, margin: 0 }}>
               Standing searches for {clientProfile?.name || "this client"}, run nightly. Score takes a job to
               Source a Job to be scored against their profile; it stays in the queue here until you send it.
             </p>

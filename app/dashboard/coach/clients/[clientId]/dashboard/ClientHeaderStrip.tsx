@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { SPACE, TYPE } from "../../../../../../lib/theme/surfaces"
 import { useRouter } from "next/navigation"
 import { T, eyebrow } from "../../../../../../lib/dashboard-theme"
 import { Avatar } from "./Avatar"
@@ -107,7 +108,7 @@ export function ClientHeaderStrip({
       <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0, flex: 1 }}>
         <Avatar name={profile.name} email={profile.email} size={56} />
         <div style={{ minWidth: 0 }}>
-          <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: 9, marginBottom: 4 }}>
+          <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: TYPE.micro, marginBottom: 4 }}>
             COACHING SESSION
           </div>
           <div
@@ -130,7 +131,7 @@ export function ClientHeaderStrip({
               size="md"
             />
             {engagementStart && (
-              <span style={{ fontSize: 11, color: T.DIM }}>
+              <span style={{ fontSize: TYPE.micro, color: T.DIM }}>
                 Client since {engagementStart}
               </span>
             )}
@@ -164,7 +165,7 @@ export function ClientHeaderStrip({
               background: "rgba(255,255,255,0.04)",
               border: `1px solid ${T.BORDER_SOFT}`,
               color: T.MUTED,
-              fontSize: 14,
+              fontSize: TYPE.body,
               fontWeight: 900,
               borderRadius: 10,
               padding: "8px 12px",
@@ -205,7 +206,7 @@ export function ClientHeaderStrip({
                     background: "none",
                     border: "none",
                     color: "#f87171",
-                    fontSize: 12,
+                    fontSize: TYPE.secondary,
                     fontWeight: 700,
                     width: "100%",
                     textAlign: "left",
@@ -222,7 +223,7 @@ export function ClientHeaderStrip({
         </div>
         </div>
         {inviteError && (
-          <span style={{ color: "#f87171", fontSize: 11, fontWeight: 700, maxWidth: 260, textAlign: "right" }}>
+          <span style={{ color: "#f87171", fontSize: TYPE.micro, fontWeight: 700, maxWidth: 260, textAlign: "right" }}>
             {inviteError}
           </span>
         )}
@@ -244,7 +245,7 @@ function InvitePill({ invitedDate }: { invitedDate: string | null }) {
         background: s.bg,
         color: s.color,
         border: s.border,
-        fontSize: 11,
+        fontSize: TYPE.micro,
         fontWeight: 900,
         padding: "4px 11px",
         borderRadius: 999,
@@ -290,7 +291,7 @@ function ActionButton({
       title={title}
       style={{
         ...styles,
-        fontSize: 12,
+        fontSize: TYPE.secondary,
         fontWeight: 900,
         borderRadius: 10,
         padding: "8px 14px",

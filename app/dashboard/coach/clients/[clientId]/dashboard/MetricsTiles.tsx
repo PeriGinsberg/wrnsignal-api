@@ -15,6 +15,7 @@
 // Job Tracker tab with a status filter pre-applied, same UX as before.
 
 import { T, card, eyebrow } from "../../../../../../lib/dashboard-theme"
+import { SPACE, TYPE } from "../../../../../../lib/theme/surfaces"
 import { type MetricsWindow, windowSubtitle } from "../../../MetricsWindowToggle"
 
 export type ClientDashboardMetrics = {
@@ -83,13 +84,13 @@ export function MetricsTiles({ metrics, metricsWindow, onTileClick }: Props) {
             }}
             aria-label={`${def.label}: ${value} (${subtitle})`}
           >
-            <div style={{ ...eyebrow, color: T.DIM, fontSize: 9, marginBottom: 6 }}>
+            <div style={{ ...eyebrow, color: T.DIM, fontSize: TYPE.micro, marginBottom: 6 }}>
               {def.label}
             </div>
             <div style={{ fontSize: 32, fontWeight: 950, color: def.color, lineHeight: 1.1, letterSpacing: -1 }}>
               {value}
             </div>
-            <div style={{ fontSize: 10, color: T.DIM, fontWeight: 600, marginTop: 4 }}>
+            <div style={{ fontSize: TYPE.label, color: T.DIM, fontWeight: 600, marginTop: 4 }}>
               {subtitle}
             </div>
           </button>

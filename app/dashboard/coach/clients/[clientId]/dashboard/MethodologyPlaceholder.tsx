@@ -1,6 +1,7 @@
 "use client"
 
 import { T, card, eyebrow } from "../../../../../../lib/dashboard-theme"
+import { SPACE, TYPE } from "../../../../../../lib/theme/surfaces"
 
 // Section 2 — Engagement methodology (placeholder).
 // Previews the eventual feature shape: phase pills + progress bar +
@@ -24,7 +25,7 @@ export function MethodologyPlaceholder() {
           right: 14,
           background: "rgba(254,176,106,0.10)",
           color: T.WRN_ORANGE,
-          fontSize: 9,
+          fontSize: TYPE.micro,
           fontWeight: 900,
           letterSpacing: 0.8,
           textTransform: "uppercase",
@@ -36,10 +37,10 @@ export function MethodologyPlaceholder() {
         Coming Soon
       </span>
 
-      <div style={{ ...eyebrow, color: T.DIM, fontSize: 10, marginBottom: 6 }}>
+      <div style={{ ...eyebrow, color: T.DIM, fontSize: TYPE.label, marginBottom: 6 }}>
         ENGAGEMENT METHODOLOGY
       </div>
-      <div style={{ fontSize: 13, color: T.MUTED, marginBottom: 18, maxWidth: 540, lineHeight: 1.5 }}>
+      <div style={{ fontSize: TYPE.secondary, color: T.MUTED, marginBottom: 18, maxWidth: 540, lineHeight: 1.5 }}>
         Methodology tracking coming soon — will display engagement phases and milestone progress.
       </div>
 
@@ -78,7 +79,7 @@ export function MethodologyPlaceholder() {
               style={{
                 padding: "6px 12px",
                 borderRadius: 8,
-                fontSize: 11,
+                fontSize: TYPE.micro,
                 fontWeight: 900,
                 letterSpacing: 0.4,
                 border: isCurrent
@@ -96,7 +97,7 @@ export function MethodologyPlaceholder() {
               }}
             >
               <span>{p.name}</span>
-              <span style={{ marginLeft: 8, fontSize: 9, opacity: 0.7 }}>{p.weeks}</span>
+              <span style={{ marginLeft: 8, fontSize: TYPE.micro, opacity: 0.7 }}>{p.weeks}</span>
             </div>
           )
         })}

@@ -19,6 +19,7 @@
 // deliverable with twenty tasks is a planning problem, not a UI one.
 
 import { useState } from "react"
+import { SPACE, TYPE } from "../../../../../lib/theme/surfaces"
 import { T, btnPrimary, btnSecondary, selectDarkInk, selectDarkOption } from "../../../../../lib/dashboard-theme"
 
 const OWNERS = ["coach", "client", "both"] as const
@@ -45,7 +46,7 @@ const input: React.CSSProperties = {
   borderRadius: 7,
   color: T.TEXT,
   padding: "5px 8px",
-  fontSize: 12,
+  fontSize: TYPE.secondary,
   fontFamily: "inherit",
   minWidth: 0,
 }
@@ -57,7 +58,7 @@ const iconBtn: React.CSSProperties = {
   color: T.MUTED,
   width: 24,
   height: 24,
-  fontSize: 12,
+  fontSize: TYPE.secondary,
   lineHeight: 1,
   cursor: "pointer",
   fontFamily: "inherit",
@@ -101,17 +102,17 @@ export function ConfirmGate({
         border: "1px solid rgba(255,120,120,0.35)",
       }}
     >
-      <div style={{ fontSize: 12, lineHeight: "17px", color: T.TEXT }}>{message}</div>
+      <div style={{ fontSize: TYPE.secondary, lineHeight: "17px", color: T.TEXT }}>{message}</div>
       <div style={{ display: "flex", gap: 8, marginTop: 9 }}>
         <button
           type="button"
           onClick={onConfirm}
           disabled={busy}
-          style={{ ...btnPrimary, padding: "5px 12px", fontSize: 12, background: T.ERROR, color: T.INK_ON_ERROR, opacity: busy ? 0.6 : 1 }}
+          style={{ ...btnPrimary, padding: "5px 12px", fontSize: TYPE.secondary, background: T.ERROR, color: T.INK_ON_ERROR, opacity: busy ? 0.6 : 1 }}
         >
           {busy ? "Working…" : confirmLabel}
         </button>
-        <button type="button" onClick={onCancel} disabled={busy} style={{ ...btnSecondary, padding: "5px 12px", fontSize: 12 }}>
+        <button type="button" onClick={onCancel} disabled={busy} style={{ ...btnSecondary, padding: "5px 12px", fontSize: TYPE.secondary }}>
           Cancel
         </button>
       </div>
@@ -195,7 +196,7 @@ export function ActivityEditRow({
             ...iconBtn,
             width: "auto",
             padding: "0 8px",
-            fontSize: 10,
+            fontSize: TYPE.label,
             fontWeight: 900,
             letterSpacing: 0.6,
             color: a.is_signoff ? T.INK_ON_ACCENT : T.DIM,
@@ -269,7 +270,7 @@ export function AddActivityRow({ busy, onAdd }: {
         {OWNERS.map((o) => <option key={o} value={o} style={selectDarkOption}>{OWNER_LABEL[o]}</option>)}
       </select>
       <button type="button" onClick={() => void submit()} disabled={busy || !name.trim()}
-        style={{ ...btnSecondary, padding: "5px 12px", fontSize: 12, opacity: busy || !name.trim() ? 0.5 : 1 }}>
+        style={{ ...btnSecondary, padding: "5px 12px", fontSize: TYPE.secondary, opacity: busy || !name.trim() ? 0.5 : 1 }}>
         Add
       </button>
     </div>
@@ -301,7 +302,7 @@ export function DeliverableProse({
 
   return (
     <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${T.BORDER_SOFT}` }}>
-      <label style={{ display: "block", fontSize: 10, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.WRN_ORANGE }}>
+      <label style={{ display: "block", fontSize: TYPE.label, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.WRN_ORANGE }}>
         Speaking point
       </label>
       {/* The placeholder teaches the convention the column cannot enforce: this
@@ -316,7 +317,7 @@ export function DeliverableProse({
         style={{ ...area, marginTop: 5 }}
       />
 
-      <label style={{ display: "block", marginTop: 9, fontSize: 10, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.MUTED }}>
+      <label style={{ display: "block", marginTop: 9, fontSize: TYPE.label, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.MUTED }}>
         Why this matters
       </label>
       <textarea
@@ -333,11 +334,11 @@ export function DeliverableProse({
           type="button"
           disabled={busy || !dirty}
           onClick={() => void onSave({ speaking_point: sp.trim() || null, why_this_matters: why.trim() || null })}
-          style={{ ...btnSecondary, padding: "5px 12px", fontSize: 12, opacity: busy || !dirty ? 0.5 : 1 }}
+          style={{ ...btnSecondary, padding: "5px 12px", fontSize: TYPE.secondary, opacity: busy || !dirty ? 0.5 : 1 }}
         >
           {busy ? "Saving…" : "Save"}
         </button>
-        <span style={{ fontSize: 11, color: T.DIM }}>
+        <span style={{ fontSize: TYPE.micro, color: T.DIM }}>
           Hidden from the client until this deliverable is signed off.
         </span>
       </div>

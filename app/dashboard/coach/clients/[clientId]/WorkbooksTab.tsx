@@ -9,6 +9,7 @@
 // releases them all at once. "Reviewed" is the coach's own marker only.
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
+import { SPACE, TYPE } from "../../../../../lib/theme/surfaces"
 import {
   GENERAL_SECTION_ID, SCENARIO_PARTS, STAR_PARTS, answerText, stripCoachOnly,
   type Block, type Section, type WorkbookContent,
@@ -90,7 +91,7 @@ export function WorkbooksTab({ clientId, clientName }: { clientId: string; clien
                 <span className={`wb-tag ${w.status === "with_coach" ? "review" : w.status === "draft" ? "draft" : "sent"}`}>{STATUS_LABEL[w.status]}</span>
               </span>
             </div>
-            <span className="wb-muted" style={{ fontSize: 14 }}>
+            <span className="wb-muted" style={{ fontSize: TYPE.body }}>
               {w.homework_completed_at && `Homework completed ${fmtWhen(w.homework_completed_at)}. `}
               {w.last_to_coach
                 ? `Last sent to you ${fmtWhen(w.last_to_coach.sent_at)}${w.last_to_coach.item_count ? `, ${w.last_to_coach.item_count} open question${w.last_to_coach.item_count === 1 ? "" : "s"}` : ""}`
@@ -207,8 +208,8 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
     <div style={{ background: "var(--navy)", color: "#fff", padding: "16px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <button type="button" className="wb-btn" style={{ borderColor: "#fff", color: "#fff" }} onClick={onBack}>&larr; Workbooks</button>
-        <span style={{ fontSize: 14, fontWeight: 600 }}>{c.client.full_name}</span>
-        <span style={{ fontSize: 14, opacity: 0.8 }}>{[c.title, c.interview?.company, c.interview?.role].filter(Boolean).join(", ")}</span>
+        <span style={{ fontSize: TYPE.body, fontWeight: 600 }}>{c.client.full_name}</span>
+        <span style={{ fontSize: TYPE.body, opacity: 0.8 }}>{[c.title, c.interview?.company, c.interview?.role].filter(Boolean).join(", ")}</span>
       </div>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         {(["review", "as_client", "summary"] as const).map((m) => (
@@ -226,11 +227,11 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
     <div className="wb-card" style={{ gap: 12 }}>
       <span className="wb-eyebrow-ink">{d.workbook.status === "draft" ? "Not shared yet" : STATUS_LABEL[d.workbook.status]}</span>
       {lastToCoach && (
-        <span style={{ fontSize: 14 }}>
+        <span style={{ fontSize: TYPE.body }}>
           {first} sent it {fmtWhen(lastToCoach.sent_at)}{lastToCoach.item_count ? ` with ${lastToCoach.item_count} open question${lastToCoach.item_count === 1 ? "" : "s"}` : ""}.
         </span>
       )}
-      <span className="wb-muted" style={{ fontSize: 14 }}>
+      <span className="wb-muted" style={{ fontSize: TYPE.body }}>
         {drafts.length} unsent note{drafts.length === 1 ? "" : "s"}. {first} sees nothing you write until you send.
       </span>
       <button type="button" className="wb-btn wb-btn-solid" style={{ minHeight: 52 }} disabled={sending} onClick={send}>
@@ -258,7 +259,7 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
         <div className="wb-shell">
           <SectionNav c={c} idx={idx} setIdx={setIdx} status={(x) => sectionStatus(x)} general={false} />
           <main className="wb-main" style={{ paddingTop: 40 }}>
-            <p className="wb-callout paleblue" style={{ margin: 0, padding: "14px 18px", fontSize: 15 }}>
+            <p className="wb-callout paleblue" style={{ margin: 0, padding: "14px 18px", fontSize: TYPE.body }}>
               What {first} sees, read-only. Coach-only notes are hidden. Your unsent notes are not shown.
             </p>
             <SectionHeader section={s} total={clientView.sections.length} />
@@ -308,7 +309,7 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
                       <h2 className="wb-serif" style={{ margin: "12px 0 0", fontSize: 24, fontWeight: 600 }}>{it.group}</h2>
                     )}
                     <div style={{ display: "flex", flexDirection: "column", gap: 14, padding: "20px 24px", background: "#fff", border: selected ? "2px solid var(--blue)" : "1px solid var(--border)" }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: "#2E4260" }}>{it.label}</span>
+                      <span style={{ fontSize: TYPE.secondary, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase", color: "#2E4260" }}>{it.label}</span>
                       {text
                         ? <p className="wb-serif" style={{ margin: 0, fontSize: 20, lineHeight: 1.45, whiteSpace: "pre-wrap" }}>{text}</p>
                         : <p className="wb-muted" style={{ margin: 0, fontStyle: "italic" }}>No answer yet</p>}
@@ -317,7 +318,7 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
                         {!isPickKey(c, it.key) && (
                           <button type="button" className="wb-btn" onClick={() => setAnchor({ sectionId: section.id, fieldKey: it.key, label: it.label, kind: "coach_suggestion" })}>Suggest an edit</button>
                         )}
-                        {count && <span style={{ fontSize: 14, color: "var(--teal-ink)", fontWeight: 600 }}>{count}</span>}
+                        {count && <span style={{ fontSize: TYPE.body, color: "var(--teal-ink)", fontWeight: 600 }}>{count}</span>}
                       </div>
                     </div>
                   </React.Fragment>
@@ -328,7 +329,7 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
                 <button type="button" className="wb-btn" onClick={() => setAnchor({ sectionId: section.id, fieldKey: null, label: `Section: ${section.title}` })}>
                   Comment on this whole section
                 </button>
-                {countFor(section.id, null) && <span style={{ fontSize: 14, color: "var(--teal-ink)", fontWeight: 600 }}>{countFor(section.id, null)}</span>}
+                {countFor(section.id, null) && <span style={{ fontSize: TYPE.body, color: "var(--teal-ink)", fontWeight: 600 }}>{countFor(section.id, null)}</span>}
               </div>
             </>
           ) : (
@@ -352,7 +353,7 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
                 comments={comments} current={anchor.fieldKey ? values[anchor.fieldKey] : undefined}
                 isPick={!!anchor.fieldKey && isPickKey(c, anchor.fieldKey)}
                 onChange={load} />
-            : <div className="wb-card-soft"><span className="wb-muted" style={{ fontSize: 15 }}>Choose Comment or Suggest an edit on an answer to write feedback for {first}.</span></div>}
+            : <div className="wb-card-soft"><span className="wb-muted" style={{ fontSize: TYPE.body }}>Choose Comment or Suggest an edit on an answer to write feedback for {first}.</span></div>}
         </aside>
       </div>
     </WorkbookFrame>
@@ -379,7 +380,7 @@ function SectionNav(props: {
                 style={{ width: "100%", textAlign: "left", font: "inherit", color: "inherit", cursor: "pointer", border: 0, borderBottom: "1px solid #EEF1F5", background: i === props.idx ? "var(--peach)" : "transparent", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 6, minHeight: 44 }}>
                 <span style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
                   <span className="wb-serif" style={{ fontWeight: 700, color: "var(--orange)", width: 22 }}>{String(s.number).padStart(2, "0")}</span>
-                  <span style={{ fontSize: 15 }}>{s.title}</span>
+                  <span style={{ fontSize: TYPE.body }}>{s.title}</span>
                   {s.mode === "homework" && <span className="wb-tag review">Homework</span>}
                 </span>
                 <span className={`wb-tag ${st.cls}`} style={{ alignSelf: "flex-start" }}>{st.label}</span>
@@ -391,7 +392,7 @@ function SectionNav(props: {
           <li>
             <button type="button" onClick={() => props.setIdx(c.sections.length)} aria-current={props.idx === c.sections.length ? "true" : undefined}
               style={{ width: "100%", textAlign: "left", font: "inherit", color: "inherit", cursor: "pointer", border: 0, background: props.idx === c.sections.length ? "var(--peach)" : "transparent", padding: "12px 14px", minHeight: 44, display: "flex", flexDirection: "column", gap: 6 }}>
-              <span style={{ fontSize: 15, fontWeight: 600 }}>General questions</span>
+              <span style={{ fontSize: TYPE.body, fontWeight: 600 }}>General questions</span>
               {!!props.generalOpen && <span className="wb-tag review" style={{ alignSelf: "flex-start" }}>{props.generalOpen} to answer</span>}
             </button>
           </li>
@@ -447,16 +448,16 @@ function FeedbackPanel(props: {
     return (
       <div key={x.id} className="wb-card-soft">
         <div className="wb-card-head">
-          <span className="wb-eyebrow-ink" style={{ fontSize: 12 }}>{who}</span>
+          <span className="wb-eyebrow-ink" style={{ fontSize: TYPE.secondary }}>{who}</span>
           <span className={`wb-tag ${draft ? "draft" : x.author_role === "client" ? "review" : "sent"}`}>
             {draft ? "Unsent" : x.author_role === "client" ? "From client" : "Sent"}
           </span>
         </div>
         {x.kind === "coach_suggestion" && (
-          <p style={{ margin: 0, fontSize: 16, lineHeight: 1.55 }}>
+          <p style={{ margin: 0, fontSize: TYPE.body, lineHeight: 1.55 }}>
             <span className="wb-mark">{answerText(x.suggested_value)}</span>
             {x.suggestion_status && x.suggestion_status !== "pending" && (
-              <span className="wb-muted" style={{ display: "block", fontSize: 14, marginTop: 6 }}>
+              <span className="wb-muted" style={{ display: "block", fontSize: TYPE.body, marginTop: 6 }}>
                 {x.suggestion_status === "accepted" ? `${first} used this wording` : `${first} kept their own`}
               </span>
             )}
@@ -470,7 +471,7 @@ function FeedbackPanel(props: {
               <button type="button" className="wb-btn" onClick={() => setEditingId(null)}>Cancel</button>
             </div>
           </>
-        ) : (x.body && <p style={{ margin: 0, fontSize: 16, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{x.body}</p>)}
+        ) : (x.body && <p style={{ margin: 0, fontSize: TYPE.body, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{x.body}</p>)}
         {draft && x.author_role === "coach" && editingId !== x.id && (
           <div className="wb-actions">
             <button type="button" className="wb-link" onClick={() => { setEditingId(x.id); setEditBody(x.body) }}>Edit</button>
@@ -481,7 +482,7 @@ function FeedbackPanel(props: {
         {x.kind === "client_question" && x.released_at && !answered && (
           answering === x.id ? (
             <>
-              <label className="wb-eyebrow-ink" htmlFor={`ans-${x.id}`} style={{ fontSize: 12 }}>Your answer</label>
+              <label className="wb-eyebrow-ink" htmlFor={`ans-${x.id}`} style={{ fontSize: TYPE.secondary }}>Your answer</label>
               <textarea id={`ans-${x.id}`} className="wb-textarea-box" rows={3} value={answer} onChange={(e) => setAnswer(e.target.value)} />
               <div className="wb-actions">
                 <button type="button" className="wb-btn wb-btn-solid" disabled={busy || !answer.trim()}
@@ -503,7 +504,7 @@ function FeedbackPanel(props: {
         <span className="wb-eyebrow-ink">Your feedback on</span>
         <span className="wb-serif" style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.3 }}>{anchor.label}</span>
 
-        {general && <span className="wb-muted" style={{ fontSize: 15 }}>Answer each question below. Answers go to {first} when you send the workbook back.</span>}
+        {general && <span className="wb-muted" style={{ fontSize: TYPE.body }}>Answer each question below. Answers go to {first} when you send the workbook back.</span>}
 
         {!general && anchor.fieldKey && !props.isPick && (
           <div className="wb-actions" role="radiogroup" aria-label="Feedback type">
@@ -517,21 +518,21 @@ function FeedbackPanel(props: {
 
         {general ? null : kind === "coach_suggestion" && anchor.fieldKey ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <label htmlFor="wb-suggest" style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: "var(--muted)" }}>SUGGESTED EDIT</label>
+            <label htmlFor="wb-suggest" style={{ fontSize: TYPE.secondary, fontWeight: 700, letterSpacing: ".12em", color: "var(--muted)" }}>SUGGESTED EDIT</label>
             <textarea id="wb-suggest" className="wb-textarea-box" rows={4} value={suggested} onChange={(e) => setSuggested(e.target.value)} />
             {suggested.trim() && suggested !== currentText && (
-              <p style={{ margin: 0, fontSize: 16, lineHeight: 1.55 }}>
+              <p style={{ margin: 0, fontSize: TYPE.body, lineHeight: 1.55 }}>
                 {currentText && <><span className="wb-strike">{currentText}</span>{" "}</>}
                 <span className="wb-mark">{suggested}</span>
               </p>
             )}
-            <label htmlFor="wb-suggest-note" style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: "var(--muted)" }}>WHY (OPTIONAL)</label>
+            <label htmlFor="wb-suggest-note" style={{ fontSize: TYPE.secondary, fontWeight: 700, letterSpacing: ".12em", color: "var(--muted)" }}>WHY (OPTIONAL)</label>
             <textarea id="wb-suggest-note" className="wb-textarea-box" rows={2} value={body} onChange={(e) => setBody(e.target.value)} />
-            <span className="wb-muted" style={{ fontSize: 13 }}>{first} can use it or keep their own.</span>
+            <span className="wb-muted" style={{ fontSize: TYPE.secondary }}>{first} can use it or keep their own.</span>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <label htmlFor="wb-comment" style={{ fontSize: 12, fontWeight: 700, letterSpacing: ".12em", color: "var(--muted)" }}>COMMENT</label>
+            <label htmlFor="wb-comment" style={{ fontSize: TYPE.secondary, fontWeight: 700, letterSpacing: ".12em", color: "var(--muted)" }}>COMMENT</label>
             <textarea id="wb-comment" className="wb-textarea-box" rows={4} placeholder={`Write a note to ${first}`} value={body} onChange={(e) => setBody(e.target.value)} />
           </div>
         )}
@@ -548,7 +549,7 @@ function FeedbackPanel(props: {
             Add to {first}&rsquo;s workbook
           </button>
         )}
-        {!general && <span className="wb-muted" style={{ fontSize: 13 }}>Saved as unsent. {first} sees it when you send the workbook back.</span>}
+        {!general && <span className="wb-muted" style={{ fontSize: TYPE.secondary }}>Saved as unsent. {first} sees it when you send the workbook back.</span>}
       </div>
       {top.map(item)}
     </div>

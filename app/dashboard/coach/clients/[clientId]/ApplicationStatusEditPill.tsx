@@ -14,6 +14,7 @@
 // the 6 standard values to transition the app forward.
 
 import { useEffect, useRef, useState } from "react"
+import { SPACE, TYPE } from "../../../../../lib/theme/surfaces"
 import {
   APP_STATUSES,
   APP_STATUS_STYLE,
@@ -116,7 +117,7 @@ export function ApplicationStatusEditPill({
         style={{
           background: currentStyle.bg,
           color: currentStyle.color,
-          fontSize: 10,
+          fontSize: TYPE.label,
           fontWeight: 900,
           padding: "3px 10px",
           borderRadius: 999,
@@ -136,7 +137,7 @@ export function ApplicationStatusEditPill({
             position: "absolute",
             top: "calc(100% + 4px)",
             left: 0,
-            fontSize: 10,
+            fontSize: TYPE.label,
             color: "#f87171",
             whiteSpace: "nowrap",
             zIndex: 49,
@@ -181,7 +182,7 @@ export function ApplicationStatusEditPill({
                   textAlign: "left",
                   fontFamily: "inherit",
                   color: "rgba(255,255,255,0.92)",
-                  fontSize: 12,
+                  fontSize: TYPE.secondary,
                   fontWeight: isCurrent ? 900 : 700,
                   opacity: isCurrent ? 1 : 0.85,
                 }}

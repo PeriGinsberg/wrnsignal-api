@@ -13,6 +13,7 @@
 // EngagementsTab / NotesTab).
 
 import { useCallback, useEffect, useState } from "react"
+import { SPACE, TYPE } from "../../../../../lib/theme/surfaces"
 import { T, btnSecondary } from "../../../../../lib/dashboard-theme"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
 import type { CoachClientEventType } from "../../../../../lib/coach/clientEventTypes"
@@ -200,15 +201,15 @@ export function HistoryTab({ coachClientId }: { coachClientId: string | null }) 
   useEffect(() => { void load() }, [load])
 
   if (!coachClientId) {
-    return <p style={{ fontSize: 13, color: T.DIM, margin: 0 }}>No activity logged yet.</p>
+    return <p style={{ fontSize: TYPE.secondary, color: T.DIM, margin: 0 }}>No activity logged yet.</p>
   }
   if (loading) {
-    return <p style={{ fontSize: 13, color: T.MUTED, margin: 0 }}>Loading history…</p>
+    return <p style={{ fontSize: TYPE.secondary, color: T.MUTED, margin: 0 }}>Loading history…</p>
   }
   if (loadError) {
     return (
       <div>
-        <div style={{ fontSize: 12, color: T.ERROR, background: T.ERROR_BG, border: "1px solid rgba(255,120,120,0.30)", borderRadius: 10, padding: "10px 12px" }}>
+        <div style={{ fontSize: TYPE.secondary, color: T.ERROR, background: T.ERROR_BG, border: "1px solid rgba(255,120,120,0.30)", borderRadius: 10, padding: "10px 12px" }}>
           {loadError}
         </div>
         <button style={{ ...btnSecondary, marginTop: 12 }} onClick={() => void load()}>Retry</button>
@@ -216,7 +217,7 @@ export function HistoryTab({ coachClientId }: { coachClientId: string | null }) 
     )
   }
   if (events.length === 0) {
-    return <p style={{ fontSize: 13, color: T.DIM, margin: 0 }}>No activity logged yet.</p>
+    return <p style={{ fontSize: TYPE.secondary, color: T.DIM, margin: 0 }}>No activity logged yet.</p>
   }
 
   return (
@@ -233,8 +234,8 @@ export function HistoryTab({ coachClientId }: { coachClientId: string | null }) 
           {/* Quiet timeline marker */}
           <span aria-hidden style={{ marginTop: 6, width: 6, height: 6, borderRadius: 999, background: T.DIM, flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, color: T.TEXT }}>{describe(e)}</div>
-            <div style={{ fontSize: 11, color: T.DIM, marginTop: 2 }} title={`${exactTime(e.created_at)} · ${relTime(e.created_at)}`}>
+            <div style={{ fontSize: TYPE.secondary, color: T.TEXT }}>{describe(e)}</div>
+            <div style={{ fontSize: TYPE.micro, color: T.DIM, marginTop: 2 }} title={`${exactTime(e.created_at)} · ${relTime(e.created_at)}`}>
               {stamp(e.created_at)} · {actorLabel(e)}
             </div>
           </div>

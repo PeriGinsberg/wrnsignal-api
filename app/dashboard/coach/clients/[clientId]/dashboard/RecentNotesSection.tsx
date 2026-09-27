@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { SPACE, TYPE } from "../../../../../../lib/theme/surfaces"
 import { T, card, eyebrow } from "../../../../../../lib/dashboard-theme"
 
 type NoteType = "session_recap" | "action_item" | "other"
@@ -109,7 +110,7 @@ export function RecentNotesSection({ authFetch, clientId, refreshKey, onNavigate
   return (
     <section style={{ ...card, padding: 22, marginBottom: 24 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <div style={{ ...eyebrow, color: T.WRN_BLUE, fontSize: 10 }}>RECENT NOTES</div>
+        <div style={{ ...eyebrow, color: T.WRN_BLUE, fontSize: TYPE.label }}>RECENT NOTES</div>
         {notes.length > 0 && (
           <button
             onClick={onNavigateToNotesTab}
@@ -117,7 +118,7 @@ export function RecentNotesSection({ authFetch, clientId, refreshKey, onNavigate
               background: "none",
               border: "none",
               color: T.WRN_BLUE,
-              fontSize: 11,
+              fontSize: TYPE.micro,
               fontWeight: 700,
               cursor: "pointer",
               padding: 0,
@@ -130,14 +131,14 @@ export function RecentNotesSection({ authFetch, clientId, refreshKey, onNavigate
 
       {error && (
         <div style={{ padding: 10, background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)", borderRadius: 8, marginBottom: 10 }}>
-          <span style={{ fontSize: 12, color: "#f87171" }}>Couldn&apos;t load: {error}</span>
+          <span style={{ fontSize: TYPE.secondary, color: "#f87171" }}>Couldn&apos;t load: {error}</span>
         </div>
       )}
 
       {loading && notes.length === 0 ? (
-        <p style={{ color: T.DIM, fontSize: 13 }}>Loading…</p>
+        <p style={{ color: T.DIM, fontSize: TYPE.secondary }}>Loading…</p>
       ) : notes.length === 0 ? (
-        <p style={{ color: T.MUTED, fontSize: 13, fontStyle: "italic" }}>No notes yet</p>
+        <p style={{ color: T.MUTED, fontSize: TYPE.secondary, fontStyle: "italic" }}>No notes yet</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {notes.map((n) => {
@@ -169,7 +170,7 @@ export function RecentNotesSection({ authFetch, clientId, refreshKey, onNavigate
                     style={{
                       background: typeBadge.bg,
                       color: typeBadge.color,
-                      fontSize: 9,
+                      fontSize: TYPE.micro,
                       fontWeight: 900,
                       letterSpacing: 0.8,
                       textTransform: "uppercase",
@@ -184,7 +185,7 @@ export function RecentNotesSection({ authFetch, clientId, refreshKey, onNavigate
                       style={{
                         background: priorityBadge.bg,
                         color: priorityBadge.color,
-                        fontSize: 9,
+                        fontSize: TYPE.micro,
                         fontWeight: 900,
                         letterSpacing: 0.8,
                         textTransform: "uppercase",
@@ -196,17 +197,17 @@ export function RecentNotesSection({ authFetch, clientId, refreshKey, onNavigate
                     </span>
                   )}
                   {isComplete && (
-                    <span style={{ fontSize: 10, color: "#4ade80", fontWeight: 700 }}>
+                    <span style={{ fontSize: TYPE.label, color: "#4ade80", fontWeight: 700 }}>
                       ✓ Complete
                     </span>
                   )}
-                  <span style={{ fontSize: 11, color: T.DIM, marginLeft: "auto" }}>
+                  <span style={{ fontSize: TYPE.micro, color: T.DIM, marginLeft: "auto" }}>
                     {created}
                   </span>
                 </div>
                 <div
                   style={{
-                    fontSize: 13,
+                    fontSize: TYPE.secondary,
                     color: T.TEXT,
                     lineHeight: 1.5,
                     display: "-webkit-box",
@@ -225,7 +226,7 @@ export function RecentNotesSection({ authFetch, clientId, refreshKey, onNavigate
                       display: "inline-flex",
                       alignItems: "center",
                       gap: 6,
-                      fontSize: 11,
+                      fontSize: TYPE.micro,
                       color: T.MUTED,
                       cursor: "pointer",
                       width: "fit-content",

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { SPACE, TYPE } from "../../../../../../lib/theme/surfaces"
 import { T, eyebrow } from "../../../../../../lib/dashboard-theme"
 
 type ActivityItem = {
@@ -70,7 +71,7 @@ export function SinceLastVisitStrip({ authFetch, clientId }: Props) {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-        <div style={{ ...eyebrow, color: T.WRN_BLUE, fontSize: 9 }}>
+        <div style={{ ...eyebrow, color: T.WRN_BLUE, fontSize: TYPE.micro }}>
           {baselineDate ? `Since your last visit on ${baselineDate}` : "Since your last visit"}
         </div>
         <button
@@ -80,7 +81,7 @@ export function SinceLastVisitStrip({ authFetch, clientId }: Props) {
             background: "none",
             border: "none",
             color: T.DIM,
-            fontSize: 16,
+            fontSize: TYPE.body,
             cursor: "pointer",
             padding: 2,
             lineHeight: 1,
@@ -91,7 +92,7 @@ export function SinceLastVisitStrip({ authFetch, clientId }: Props) {
       </div>
       <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 4 }}>
         {activity.map((a, i) => (
-          <li key={i} style={{ fontSize: 13, color: T.TEXT, lineHeight: 1.5, paddingLeft: 16, position: "relative" }}>
+          <li key={i} style={{ fontSize: TYPE.secondary, color: T.TEXT, lineHeight: 1.5, paddingLeft: 16, position: "relative" }}>
             <span
               style={{
                 position: "absolute",
@@ -108,7 +109,7 @@ export function SinceLastVisitStrip({ authFetch, clientId }: Props) {
         ))}
       </ul>
       {hidden > 0 && (
-        <div style={{ fontSize: 11, color: T.DIM, marginTop: 6, paddingLeft: 16 }}>
+        <div style={{ fontSize: TYPE.micro, color: T.DIM, marginTop: 6, paddingLeft: 16 }}>
           + {hidden} more {hidden === 1 ? "update" : "updates"}
         </div>
       )}
