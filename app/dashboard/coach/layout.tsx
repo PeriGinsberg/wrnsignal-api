@@ -38,7 +38,7 @@ export default function CoachLayout({ children }: { children: ReactNode }) {
 
       <div
         style={{
-          color: light ? "#08203F" : "#51ADE5",
+          color: T.INK_LINK,
           fontSize: TYPE.title,
           fontWeight: 800,
           letterSpacing: -0.3,

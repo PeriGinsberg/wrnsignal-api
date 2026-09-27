@@ -116,7 +116,7 @@ function FieldRow({ labelText, children }: { labelText: string; children: React.
   return (
     <div>
       <div style={{ marginBottom: 5 }}>
-        <span style={{ ...label, color: T.WRN_BLUE }}>{labelText.toUpperCase()}</span>
+        <span style={{ ...label, color: T.INK_LINK }}>{labelText.toUpperCase()}</span>
       </div>
       {children}
     </div>
@@ -425,7 +425,7 @@ export default function ProfilePersonasTab({
 
   return (
     <div>
-      <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 16 }}>CLIENT PROFILE & PERSONAS</div>
+      <div style={{ ...eyebrow, color: T.INK_EMPHASIS, marginBottom: 16 }}>CLIENT PROFILE & PERSONAS</div>
 
       {/* ── PROFILE ── */}
       <div style={{ ...card, padding: 24, marginBottom: 28 }}>
@@ -463,7 +463,7 @@ export default function ProfilePersonasTab({
                           fontSize: TYPE.micro, fontWeight: 900, padding: "6px 12px", borderRadius: 8, cursor: "pointer",
                           border: active ? `1px solid ${T.WRN_BLUE}` : `1px solid ${T.BORDER_SOFT}`,
                           background: active ? "rgba(81,173,229,0.15)" : T.GLASS,
-                          color: active ? T.WRN_BLUE : T.DIM, fontFamily: "inherit",
+                          color: active ? T.INK_LINK : T.DIM, fontFamily: "inherit",
                         }}
                       >
                         {opt}
@@ -604,14 +604,14 @@ export default function ProfilePersonasTab({
             <span style={{ fontSize: TYPE.secondary, color: T.ERROR }}>Couldn&apos;t save — try again</span>
           )}
           {profileSaveState !== "error" && isDirty && (
-            <span style={{ fontSize: TYPE.secondary, color: T.WRN_ORANGE }}>Unsaved changes</span>
+            <span style={{ fontSize: TYPE.secondary, color: T.INK_EMPHASIS }}>Unsaved changes</span>
           )}
         </div>
       </div>
 
       {/* ── PERSONAS ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <div style={{ ...eyebrow, color: T.WRN_BLUE }}>
+        <div style={{ ...eyebrow, color: T.INK_LINK }}>
           PERSONAS{" "}
           <span style={{ color: T.DIM, fontWeight: 700 }}>
             ({sortedPersonas.active.length} active{sortedPersonas.archived.length > 0 ? `, ${sortedPersonas.archived.length} archived` : ""})
@@ -620,7 +620,7 @@ export default function ProfilePersonasTab({
         {!addOpen && (
           <button
             onClick={() => { setAddOpen(true); setCreateError(null) }}
-            style={{ ...btnSecondary, fontSize: TYPE.secondary, padding: "8px 14px", borderRadius: 10, color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)" }}
+            style={{ ...btnSecondary, fontSize: TYPE.secondary, padding: "8px 14px", borderRadius: 10, color: T.INK_EMPHASIS, borderColor: "rgba(254,176,106,0.3)" }}
           >
             + Add Persona
           </button>
@@ -630,7 +630,7 @@ export default function ProfilePersonasTab({
       {/* Add persona form */}
       {addOpen && (
         <div style={{ ...card, padding: 24, marginBottom: 16 }}>
-          <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: TYPE.micro, marginBottom: 14 }}>NEW PERSONA</div>
+          <div style={{ ...eyebrow, color: T.INK_EMPHASIS, fontSize: TYPE.micro, marginBottom: 14 }}>NEW PERSONA</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <FieldRow labelText="Persona Name">
               <input
@@ -643,7 +643,7 @@ export default function ProfilePersonasTab({
             </FieldRow>
 
             <div>
-              <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 8 }}>RESUME</span>
+              <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 8 }}>RESUME</span>
               <div style={{
                 display: "inline-flex", border: `1px solid ${T.BORDER_SOFT}`,
                 borderRadius: 8, overflow: "hidden", marginBottom: 12,
@@ -667,7 +667,7 @@ export default function ProfilePersonasTab({
                     style={{
                       padding: "7px 16px", fontSize: TYPE.secondary, border: "none", cursor: "pointer",
                       background: resumeTab === t ? "rgba(254,176,106,0.10)" : T.GLASS,
-                      color: resumeTab === t ? T.WRN_ORANGE : T.MUTED,
+                      color: resumeTab === t ? T.INK_EMPHASIS : T.MUTED,
                       fontWeight: 900, letterSpacing: 0.5,
                     }}
                   >
@@ -844,7 +844,7 @@ function PersonaCard(props: {
         {p.is_default && (
           <span style={{
             fontSize: TYPE.micro, fontWeight: 900, letterSpacing: 1.5, textTransform: "uppercase",
-            color: T.WRN_ORANGE, background: "rgba(254,176,106,0.12)", padding: "3px 8px", borderRadius: 6,
+            color: T.INK_EMPHASIS, background: "rgba(254,176,106,0.12)", padding: "3px 8px", borderRadius: 6,
           }}>
             Primary
           </span>
@@ -863,7 +863,7 @@ function PersonaCard(props: {
         <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
           <button
             onClick={props.onOpenResumeEdit}
-            style={{ ...btnSecondary, fontSize: TYPE.micro, padding: "6px 12px", borderRadius: 8, color: T.WRN_BLUE, borderColor: "rgba(81,173,229,0.3)" }}
+            style={{ ...btnSecondary, fontSize: TYPE.micro, padding: "6px 12px", borderRadius: 8, color: T.INK_LINK, borderColor: "rgba(81,173,229,0.3)" }}
           >
             Edit Resume
           </button>
@@ -887,7 +887,7 @@ function PersonaCard(props: {
       {isEditingResume && (
         <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.BORDER_SOFT}` }}>
           <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
-            <span style={{ ...label, color: T.WRN_BLUE }}>RESUME BODY</span>
+            <span style={{ ...label, color: T.INK_LINK }}>RESUME BODY</span>
             {resumeMsg && (
               <span style={{ fontSize: TYPE.micro, color: resumeMsg === "Saved" ? "#4ade80" : T.DIM, marginLeft: 8 }}>
                 {resumeMsg}
@@ -946,7 +946,7 @@ function ArchivedPersonaCard({
         <SaveIndicator state={saveState} />
         <button
           onClick={() => onRestore()}
-          style={{ ...btnSecondary, fontSize: TYPE.micro, padding: "5px 10px", borderRadius: 8, marginLeft: "auto", color: T.WRN_BLUE, borderColor: "rgba(81,173,229,0.3)" }}
+          style={{ ...btnSecondary, fontSize: TYPE.micro, padding: "5px 10px", borderRadius: 8, marginLeft: "auto", color: T.INK_LINK, borderColor: "rgba(81,173,229,0.3)" }}
         >
           Restore
         </button>

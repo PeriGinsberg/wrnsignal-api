@@ -149,7 +149,7 @@ export default function ApplicationsRecentPage() {
         {status !== "all" && (
           <div style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 8,
             background: "rgba(254,176,106,0.10)", border: "1px solid rgba(254,176,106,0.30)",
-            color: T.WRN_ORANGE, borderRadius: 999, padding: "5px 12px", fontSize: 12, fontWeight: 700,
+            color: T.INK_EMPHASIS, borderRadius: 999, padding: "5px 12px", fontSize: 12, fontWeight: 700,
           }}>
             <span>Filtered: {CHIP_LABELS[status]}</span>
             <button
@@ -157,7 +157,7 @@ export default function ApplicationsRecentPage() {
               aria-label="Show all applications"
               title="Show all applications"
               style={{
-                background: "none", border: "none", color: T.WRN_ORANGE,
+                background: "none", border: "none", color: T.INK_EMPHASIS,
                 fontSize: 14, fontWeight: 900, cursor: "pointer",
                 padding: 0, lineHeight: 1, fontFamily: "inherit",
               }}

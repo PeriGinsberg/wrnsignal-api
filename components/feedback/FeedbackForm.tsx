@@ -70,7 +70,7 @@ const chipStyle = (active: boolean, accent: { border: string; bg: string; color:
   color: active ? accent.color : T.DIM,
 })
 
-const ORANGE_ACCENT = { border: "rgba(254,176,106,0.4)", bg: "rgba(254,176,106,0.1)", color: T.WRN_ORANGE }
+const ORANGE_ACCENT = { border: "rgba(254,176,106,0.4)", bg: "rgba(254,176,106,0.1)", color: T.INK_EMPHASIS }
 
 export function FeedbackForm({ onSubmit, submitting, error, onCancel }: Props) {
   const [type, setType] = useState<FeedbackType | null>(null)
@@ -133,7 +133,7 @@ export function FeedbackForm({ onSubmit, submitting, error, onCancel }: Props) {
         }}
       >
         <div>
-          <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 8 }}>TYPE</span>
+          <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 8 }}>TYPE</span>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {TYPE_OPTIONS.map((opt) => (
               <button
@@ -150,7 +150,7 @@ export function FeedbackForm({ onSubmit, submitting, error, onCancel }: Props) {
 
         {type === "issue_bug" && (
           <div>
-            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 8 }}>SEVERITY</span>
+            <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 8 }}>SEVERITY</span>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {SEVERITY_OPTIONS.map((opt) => (
                 <button
@@ -167,7 +167,7 @@ export function FeedbackForm({ onSubmit, submitting, error, onCancel }: Props) {
         )}
 
         <div>
-          <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+          <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>
             WHAT HAPPENED / WHAT WOULD YOU LIKE?
           </span>
           <textarea

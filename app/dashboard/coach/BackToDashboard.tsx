@@ -33,7 +33,7 @@ export function BackToDashboard() {
         display: "inline-block",
         fontSize: 13,
         fontWeight: 600,
-        color: T.WRN_TEAL,
+        color: T.INK_EMPHASIS,
         textDecoration: hovered ? "underline" : "none",
         marginBottom: 18,
         letterSpacing: 0.2,

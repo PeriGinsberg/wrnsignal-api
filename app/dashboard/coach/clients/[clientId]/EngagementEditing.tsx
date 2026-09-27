@@ -302,7 +302,7 @@ export function DeliverableProse({
 
   return (
     <div style={{ marginTop: 10, paddingTop: 10, borderTop: `1px solid ${T.BORDER_SOFT}` }}>
-      <label style={{ display: "block", fontSize: TYPE.label, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.WRN_ORANGE }}>
+      <label style={{ display: "block", fontSize: TYPE.label, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.INK_EMPHASIS }}>
         Speaking point
       </label>
       {/* The placeholder teaches the convention the column cannot enforce: this

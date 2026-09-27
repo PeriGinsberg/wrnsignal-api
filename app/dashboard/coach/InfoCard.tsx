@@ -80,7 +80,7 @@ function ClampedValue({ lines, children }: { lines: number; children: ReactNode 
           onClick={() => setExpanded((v) => !v)}
           style={{
             background: "none", border: "none", padding: "2px 0 0 0",
-            color: T.WRN_BLUE, fontSize: TYPE.secondary, fontWeight: 700,
+            color: T.INK_LINK, fontSize: TYPE.secondary, fontWeight: 700,
             cursor: "pointer", fontFamily: "inherit",
           }}
         >
@@ -119,7 +119,7 @@ export function InfoCard({
                 padding: "12px 14px",
               }}
             >
-              <div style={{ ...eyebrow, fontSize: TYPE.label, color: T.WRN_BLUE, marginBottom: 8 }}>{g.title}</div>
+              <div style={{ ...eyebrow, fontSize: TYPE.label, color: T.INK_LINK, marginBottom: 8 }}>{g.title}</div>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 {shown.map((r, i) => (
                   <div

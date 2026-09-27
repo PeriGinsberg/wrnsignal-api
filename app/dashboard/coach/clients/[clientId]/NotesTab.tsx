@@ -33,8 +33,8 @@ const TYPE_LABEL: Record<NoteType, string> = {
 }
 
 const TYPE_BADGE_STYLE: Record<NoteType, { bg: string; color: string }> = {
-  session_recap: { bg: "rgba(81,173,229,0.12)", color: T.WRN_BLUE },
-  action_item: { bg: "rgba(254,176,106,0.12)", color: T.WRN_ORANGE },
+  session_recap: { bg: "rgba(81,173,229,0.12)", color: T.INK_LINK },
+  action_item: { bg: "rgba(254,176,106,0.12)", color: T.INK_EMPHASIS },
   other: { bg: T.BORDER_SOFT, color: T.MUTED },
 }
 
@@ -46,8 +46,8 @@ const PRIORITY_LABEL: Record<NotePriority, string> = {
 
 const PRIORITY_BADGE_STYLE: Record<NotePriority, { bg: string; color: string }> = {
   urgent: { bg: "rgba(248,113,113,0.15)", color: "#f87171" },
-  this_week: { bg: "rgba(254,176,106,0.15)", color: T.WRN_ORANGE },
-  when_ready: { bg: "rgba(81,173,229,0.12)", color: T.WRN_BLUE },
+  this_week: { bg: "rgba(254,176,106,0.15)", color: T.INK_EMPHASIS },
+  when_ready: { bg: "rgba(81,173,229,0.12)", color: T.INK_LINK },
 }
 
 const DEFAULT_ACTION_ITEM_PRIORITY: NotePriority = "this_week"
@@ -192,7 +192,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
 
   return (
     <div>
-      <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 16 }}>
+      <div style={{ ...eyebrow, color: T.INK_EMPHASIS, marginBottom: 16 }}>
         NOTES{titleSuffix}
       </div>
 
@@ -211,7 +211,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
               letterSpacing: 0.6,
               border: filter === f.value ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
               background: filter === f.value ? "rgba(254,176,106,0.1)" : T.GLASS,
-              color: filter === f.value ? T.WRN_ORANGE : T.DIM,
+              color: filter === f.value ? T.INK_EMPHASIS : T.DIM,
             }}
           >
             {f.label}
@@ -337,7 +337,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
                             letterSpacing: 0.5,
                             border: editType === opt.value ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
                             background: editType === opt.value ? "rgba(254,176,106,0.1)" : T.GLASS,
-                            color: editType === opt.value ? T.WRN_ORANGE : T.DIM,
+                            color: editType === opt.value ? T.INK_EMPHASIS : T.DIM,
                           }}
                         >
                           {opt.label}
@@ -348,8 +348,8 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
                         {[
                           { value: "urgent" as const, label: "Urgent", color: "#f87171", border: "rgba(248,113,113,0.4)", bg: "rgba(248,113,113,0.1)" },
-                          { value: "this_week" as const, label: "This Week", color: T.WRN_ORANGE, border: "rgba(254,176,106,0.4)", bg: "rgba(254,176,106,0.1)" },
-                          { value: "when_ready" as const, label: "When Ready", color: T.WRN_BLUE, border: "rgba(81,173,229,0.4)", bg: "rgba(81,173,229,0.1)" },
+                          { value: "this_week" as const, label: "This Week", color: T.INK_EMPHASIS, border: "rgba(254,176,106,0.4)", bg: "rgba(254,176,106,0.1)" },
+                          { value: "when_ready" as const, label: "When Ready", color: T.INK_LINK, border: "rgba(81,173,229,0.4)", bg: "rgba(81,173,229,0.1)" },
                         ].map((opt) => {
                           const active = editPriority === opt.value
                           return (

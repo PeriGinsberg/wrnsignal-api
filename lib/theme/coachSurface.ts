@@ -120,15 +120,21 @@ export const LIGHT_COACH_VARS: Record<string, string> = {
   // surfaces.ts LIGHT measures 5.9.
   ERROR: "#C0322F",
   SUCCESS: "#1B7A72",
-  // WRN_ORANGE sets text in a dozen places on the dark ground. On white it
-  // measures 1.8, so the TOKEN takes the darkened ink and the brand orange
-  // stays on SECTION_ACTION_ITEMS and TASK_OVERDUE, which draw rules and
-  // chips rather than words.
-  WRN_ORANGE: "#8A3D00",
-  // Same rule, same reason: #51ADE5 is 2.2 on white.
-  WRN_BLUE: "#00569A",
-  WRN_TEAL: "#00757A",
-  GOLD: "#8A6410",
+  // THE ACCENTS STAY ACCENTS AND NEVER SET TEXT.
+  //
+  // These were briefly darkened so they could carry a word: #FF6B00 became
+  // #8A3D00, which is brown. A darkened brand colour is not the brand colour,
+  // and a greeting in brown is not emphasis, it is a mistake that looks
+  // deliberate. They take their brand values here and draw rules, chips,
+  // icons and eyebrows; INK_EMPHASIS and INK_LINK carry the words.
+  WRN_ORANGE: "#FF6B00",
+  WRN_BLUE: "#009BFF",
+  WRN_TEAL: "#00B3B3",
+  GOLD: "#D4A444",
+
+  // Navy, the highest-contrast pairing either theme has.
+  "ink-emphasis": "#08203F",
+  "ink-link": "#08203F",
   // TASK_OPEN was near-white ice, an outline on navy. On white it needs to be
   // the ink, not the tint.
   TASK_OPEN: "#00757A",

@@ -281,7 +281,7 @@ export default function MyClientsFullPage() {
         {filter && (
           <div style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 8,
             background: "rgba(254,176,106,0.10)", border: "1px solid rgba(254,176,106,0.30)",
-            color: T.WRN_ORANGE, borderRadius: 999, padding: "5px 12px", fontSize: 12, fontWeight: 700,
+            color: T.INK_EMPHASIS, borderRadius: 999, padding: "5px 12px", fontSize: 12, fontWeight: 700,
           }}>
             <span>Filtered: {FILTER_LABELS[filter]}</span>
             <button
@@ -289,7 +289,7 @@ export default function MyClientsFullPage() {
               aria-label="Clear filter"
               title="Clear filter"
               style={{
-                background: "none", border: "none", color: T.WRN_ORANGE,
+                background: "none", border: "none", color: T.INK_EMPHASIS,
                 fontSize: 14, fontWeight: 900, cursor: "pointer",
                 padding: 0, lineHeight: 1, fontFamily: "inherit",
               }}
@@ -372,7 +372,7 @@ export default function MyClientsFullPage() {
               style={{
                 background: selected ? "rgba(254,176,106,0.10)" : T.NAV_DEFAULT_BG,
                 border: `1px solid ${selected ? "rgba(254,176,106,0.30)" : T.BORDER_SOFT}`,
-                color: selected ? T.WRN_ORANGE : T.MUTED,
+                color: selected ? T.INK_EMPHASIS : T.MUTED,
                 fontSize: TYPE.control,
                 fontWeight: 700,
                 minHeight: SPACE.control,
@@ -489,14 +489,14 @@ export default function MyClientsFullPage() {
                     </div>
                     <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
                       <MiniCell label="Apps"  value={c.stats.applications} />
-                      <MiniCell label="Intvw" value={c.stats.interviewing} color={c.stats.interviewing > 0 ? T.WRN_BLUE : undefined} />
+                      <MiniCell label="Intvw" value={c.stats.interviewing} color={c.stats.interviewing > 0 ? T.INK_LINK : undefined} />
                       <MiniCell label="Rate"  value={`${c.stats.interview_rate}%`} />
                       <MiniCell label="Rej"   value={c.stats.rejected} />
                       <MiniCell label="Off"   value={c.stats.offers} color={c.stats.offers > 0 ? T.SUCCESS : undefined} />
                     </div>
                     <div style={{ flexShrink: 0, minWidth: 110, textAlign: "right" }}>
                       {updates > 0 ? (
-                        <span style={{ fontSize: 11, fontWeight: 700, color: T.WRN_ORANGE }}>{updates} new</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: T.INK_EMPHASIS }}>{updates} new</span>
                       ) : (
                         <span style={{ fontSize: 11, color: T.DIM }}>No changes</span>
                       )}
@@ -510,7 +510,7 @@ export default function MyClientsFullPage() {
                             ? "rgba(74,222,128,0.15)"
                             : "rgba(255,149,0,0.15)",
                           border: `1px solid ${inviteSent ? "rgba(74,222,128,0.3)" : "rgba(255,149,0,0.3)"}`,
-                          color: inviteSent ? T.SUCCESS : "#FF9500",
+                          color: inviteSent ? T.SUCCESS : T.INK_EMPHASIS,
                           fontSize: 12,
                           fontWeight: 700,
                           padding: "6px 12px",
@@ -530,7 +530,7 @@ export default function MyClientsFullPage() {
                       style={{
                         ...btnSecondary,
                         fontSize: 12, fontWeight: 700, padding: "7px 14px", borderRadius: 8,
-                        color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)",
+                        color: T.INK_EMPHASIS, borderColor: "rgba(254,176,106,0.3)",
                         flexShrink: 0,
                       }}
                     >

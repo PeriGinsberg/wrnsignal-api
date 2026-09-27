@@ -24,8 +24,8 @@ const TYPE_LABEL: Record<NoteType, string> = {
 }
 
 const TYPE_BADGE: Record<NoteType, { bg: string; color: string }> = {
-  session_recap: { bg: "rgba(81,173,229,0.12)", color: T.WRN_BLUE },
-  action_item: { bg: "rgba(254,176,106,0.12)", color: T.WRN_ORANGE },
+  session_recap: { bg: "rgba(81,173,229,0.12)", color: T.INK_LINK },
+  action_item: { bg: "rgba(254,176,106,0.12)", color: T.INK_EMPHASIS },
   other: { bg: T.BORDER_SOFT, color: T.MUTED },
 }
 
@@ -37,8 +37,8 @@ const PRIORITY_LABEL: Record<Priority, string> = {
 
 const PRIORITY_BADGE: Record<Priority, { bg: string; color: string }> = {
   urgent: { bg: "rgba(248,113,113,0.15)", color: "#f87171" },
-  this_week: { bg: "rgba(254,176,106,0.15)", color: T.WRN_ORANGE },
-  when_ready: { bg: "rgba(81,173,229,0.12)", color: T.WRN_BLUE },
+  this_week: { bg: "rgba(254,176,106,0.15)", color: T.INK_EMPHASIS },
+  when_ready: { bg: "rgba(81,173,229,0.12)", color: T.INK_LINK },
 }
 
 const RECENT_LIMIT = 3
@@ -110,14 +110,14 @@ export function RecentNotesSection({ authFetch, clientId, refreshKey, onNavigate
   return (
     <section style={{ ...card, padding: 22, marginBottom: 24 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <div style={{ ...eyebrow, color: T.WRN_BLUE, fontSize: TYPE.label }}>RECENT NOTES</div>
+        <div style={{ ...eyebrow, color: T.INK_LINK, fontSize: TYPE.label }}>RECENT NOTES</div>
         {notes.length > 0 && (
           <button
             onClick={onNavigateToNotesTab}
             style={{
               background: "none",
               border: "none",
-              color: T.WRN_BLUE,
+              color: T.INK_LINK,
               fontSize: TYPE.micro,
               fontWeight: 700,
               cursor: "pointer",

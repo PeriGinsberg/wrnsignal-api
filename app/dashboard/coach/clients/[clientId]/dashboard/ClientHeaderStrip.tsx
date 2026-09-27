@@ -108,7 +108,7 @@ export function ClientHeaderStrip({
       <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 0, flex: 1 }}>
         <Avatar name={profile.name} email={profile.email} size={56} />
         <div style={{ minWidth: 0 }}>
-          <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: TYPE.micro, marginBottom: 4 }}>
+          <div style={{ ...eyebrow, color: T.INK_EMPHASIS, fontSize: TYPE.micro, marginBottom: 4 }}>
             COACHING SESSION
           </div>
           <div
@@ -237,8 +237,8 @@ export function ClientHeaderStrip({
 // been sent; subdued teal "Invited {date}" once it has.
 function InvitePill({ invitedDate }: { invitedDate: string | null }) {
   const s = invitedDate
-    ? { bg: "rgba(45,165,141,0.15)", color: T.WRN_TEAL, border: "1px solid rgba(45,165,141,0.3)" }
-    : { bg: "rgba(255,149,0,0.15)", color: "#FF9500", border: "1px solid rgba(255,149,0,0.3)" }
+    ? { bg: "rgba(45,165,141,0.15)", color: T.INK_EMPHASIS, border: "1px solid rgba(45,165,141,0.3)" }
+    : { bg: "rgba(255,149,0,0.15)", color: T.INK_EMPHASIS, border: "1px solid rgba(255,149,0,0.3)" }
   return (
     <span
       style={{
@@ -277,7 +277,7 @@ function ActionButton({
       ? {
           background: "rgba(254,176,106,0.10)",
           border: "1px solid rgba(254,176,106,0.35)",
-          color: T.WRN_ORANGE,
+          color: T.INK_EMPHASIS,
         }
       : {
           background: T.GLASS,

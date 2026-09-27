@@ -460,7 +460,7 @@ export function TodaysSchedule({ isCalendarBetaEnabled }: TodaysScheduleProps) {
             onClick={() => setExpanded((v) => !v)}
             style={{
               marginTop: 16, background: "none", border: "none", padding: 0,
-              fontSize: 12, fontWeight: 700, color: T.WRN_BLUE, cursor: "pointer",
+              fontSize: 12, fontWeight: 700, color: T.INK_LINK, cursor: "pointer",
               fontFamily: "inherit",
             }}
           >

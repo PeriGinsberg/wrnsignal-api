@@ -377,7 +377,7 @@ function Row({
             ) : (
               <span style={{ fontSize: 14, color: T.TEXT, fontWeight: 600 }}>{category.name}</span>
             )}
-            {!editing && category.is_custom && <Tag color={T.WRN_BLUE}>custom</Tag>}
+            {!editing && category.is_custom && <Tag color={T.INK_LINK}>custom</Tag>}
           </div>
 
           {!editing && (
@@ -470,7 +470,7 @@ function Banner({ kind, children }: { kind: "error" | "success" | "info"; childr
       ? { color: T.ERROR, bg: T.ERROR_BG, border: "rgba(255,120,120,0.30)" }
       : kind === "success"
       ? { color: T.SUCCESS, bg: T.SUCCESS_BG, border: "rgba(74,222,128,0.30)" }
-      : { color: T.WRN_BLUE, bg: "rgba(81,173,229,0.10)", border: "rgba(81,173,229,0.30)" }
+      : { color: T.INK_LINK, bg: "rgba(81,173,229,0.10)", border: "rgba(81,173,229,0.30)" }
   return (
     <div style={{ fontSize: 12, color: palette.color, background: palette.bg, border: `1px solid ${palette.border}`, borderRadius: 10, padding: "10px 12px" }}>
       {children}

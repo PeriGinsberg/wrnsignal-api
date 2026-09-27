@@ -665,7 +665,7 @@ function LinkRow({
           href={doc.url}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ fontSize: TYPE.body, color: T.WRN_BLUE, fontWeight: 600, textDecoration: "none", wordBreak: "break-word" }}
+          style={{ fontSize: TYPE.body, color: T.INK_LINK, fontWeight: 600, textDecoration: "none", wordBreak: "break-word" }}
         >
           {doc.title}
         </a>
@@ -836,7 +836,7 @@ function Banner({ kind, children }: { kind: "error" | "success" | "info"; childr
       ? { color: T.ERROR, bg: T.ERROR_BG, border: "rgba(255,120,120,0.30)" }
       : kind === "success"
       ? { color: T.SUCCESS, bg: T.SUCCESS_BG, border: "rgba(74,222,128,0.30)" }
-      : { color: T.WRN_BLUE, bg: "rgba(81,173,229,0.10)", border: "rgba(81,173,229,0.30)" }
+      : { color: T.INK_LINK, bg: "rgba(81,173,229,0.10)", border: "rgba(81,173,229,0.30)" }
   return (
     <div style={{ fontSize: TYPE.secondary, color: palette.color, background: palette.bg, border: `1px solid ${palette.border}`, borderRadius: 10, padding: "10px 12px" }}>
       {children}

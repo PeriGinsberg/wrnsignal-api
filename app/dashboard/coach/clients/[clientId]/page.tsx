@@ -113,14 +113,14 @@ async function authFetch(url: string, opts: RequestInit = {}) {
 
 const PRIORITY_STYLE: Record<string, { bg: string; color: string }> = {
   urgent: { bg: "rgba(248,113,113,0.15)", color: "#f87171" },
-  high: { bg: "rgba(254,176,106,0.15)", color: T.WRN_ORANGE },
-  normal: { bg: "rgba(81,173,229,0.12)", color: T.WRN_BLUE },
+  high: { bg: "rgba(254,176,106,0.15)", color: T.INK_EMPHASIS },
+  normal: { bg: "rgba(81,173,229,0.12)", color: T.INK_LINK },
 }
 
 const DECISION_STYLE: Record<string, { bg: string; color: string }> = {
   "Priority Apply": { bg: "rgba(15,214,104,0.15)", color: "#0FD668" },
   Apply: { bg: "rgba(74,222,128,0.12)", color: T.SUCCESS },
-  Review: { bg: "rgba(212,164,68,0.15)", color: T.GOLD },
+  Review: { bg: "rgba(212,164,68,0.15)", color: T.INK_EMPHASIS },
   Pass: { bg: "rgba(232,112,112,0.12)", color: "#E87070" },
 }
 
@@ -171,9 +171,9 @@ const SOURCE_LABEL: Record<string, string> = {
   personal_contact: "Personal Contact", other: "Other",
 }
 const SOURCE_STYLE: Record<string, { bg: string; color: string }> = {
-  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.WRN_BLUE },
+  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK },
   social_media:     { bg: "rgba(167,139,250,0.18)", color: "#C8B6F8" },
-  website:          { bg: "rgba(45,165,141,0.15)",  color: T.WRN_TEAL },
+  website:          { bg: "rgba(45,165,141,0.15)",  color: T.INK_EMPHASIS },
   personal_contact: { bg: "rgba(74,222,128,0.15)",  color: T.SUCCESS },
   other:            { bg: T.BORDER_SOFT, color: T.MUTED },
 }
@@ -227,7 +227,7 @@ function buildClientInfoGroups(cap: Capture | null, profile: ClientProfile): Inf
     <a href={`tel:${phone}`} style={{ color: T.TEXT, textDecoration: "none" }}>{phone}</a>
   ) : null
   const linkedinVal = linkedin ? (
-    <a href={linkedin} target="_blank" rel="noopener noreferrer" style={{ color: T.WRN_BLUE, textDecoration: "none" }}>{linkedin}</a>
+    <a href={linkedin} target="_blank" rel="noopener noreferrer" style={{ color: T.INK_LINK, textDecoration: "none" }}>{linkedin}</a>
   ) : null
 
   return [
@@ -772,7 +772,7 @@ export default function CoachClientPage() {
             style={{
               fontSize: TYPE.secondary,
               fontWeight: 600,
-              color: T.WRN_TEAL,
+              color: T.INK_EMPHASIS,
               textDecoration: "none",
               display: "inline-block",
               marginBottom: 18,
@@ -833,7 +833,7 @@ export default function CoachClientPage() {
               fontSize: TYPE.secondary, fontWeight: 900, padding: "8px 16px", borderRadius: 10, cursor: "pointer",
               border: tab === t.id ? `1px solid rgba(254,176,106,0.35)` : `1px solid ${T.BORDER_SOFT}`,
               background: tab === t.id ? "rgba(254,176,106,0.08)" : T.GLASS,
-              color: tab === t.id ? T.WRN_ORANGE : T.MUTED,
+              color: tab === t.id ? T.INK_EMPHASIS : T.MUTED,
               transition: "background 120ms ease, color 120ms ease, border-color 120ms ease",
             }}
             onMouseEnter={(e) => {
@@ -907,7 +907,7 @@ export default function CoachClientPage() {
               onClick={() => setRecsExpanded(!recsExpanded)}
               style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", marginBottom: recsExpanded ? 12 : 0 }}
             >
-              <div style={{ ...eyebrow, color: T.WRN_ORANGE }}>
+              <div style={{ ...eyebrow, color: T.INK_EMPHASIS }}>
                 FROM YOU — COACH RECOMMENDATIONS {coachRecs.length > 0 && <span style={{ color: T.DIM, fontWeight: 700 }}>({coachRecs.length})</span>}
               </div>
               <span style={{ fontSize: TYPE.secondary, color: T.DIM }}>{recsExpanded ? "▲" : "▼"}</span>
@@ -955,15 +955,15 @@ export default function CoachClientPage() {
                       {/* Inline edit form */}
                       {editingRecId === rec.id ? (
                         <div style={{ marginBottom: 8, padding: 14, background: T.GLASS, borderRadius: 10, border: `1px solid ${T.BORDER_SOFT}` }}>
-                          <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: TYPE.micro, marginBottom: 10 }}>EDIT RECOMMENDATION</div>
+                          <div style={{ ...eyebrow, color: T.INK_EMPHASIS, fontSize: TYPE.micro, marginBottom: 10 }}>EDIT RECOMMENDATION</div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                             <div>
-                              <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4, fontSize: TYPE.micro }}>COACHING NOTE</span>
+                              <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 4, fontSize: TYPE.micro }}>COACHING NOTE</span>
                               <textarea style={{ ...textarea, minHeight: 60 }} value={editRecNote} onChange={(e) => setEditRecNote(e.target.value)} placeholder="Your coaching note..." />
                             </div>
                             <div style={{ display: "flex", gap: 12 }}>
                               <div style={{ flex: 1 }}>
-                                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4, fontSize: TYPE.micro }}>PRIORITY</span>
+                                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 4, fontSize: TYPE.micro }}>PRIORITY</span>
                                 <select style={{ ...input, ...selectDarkInk, height: 38 }} value={editRecPriority} onChange={(e) => setEditRecPriority(e.target.value)}>
                                   <option value="urgent" style={selectDarkOption}>Urgent</option>
                                   <option value="this_week" style={selectDarkOption}>This Week</option>
@@ -972,7 +972,7 @@ export default function CoachClientPage() {
                                 </select>
                               </div>
                               <div style={{ flex: 1 }}>
-                                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4, fontSize: TYPE.micro }}>ACTION</span>
+                                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 4, fontSize: TYPE.micro }}>ACTION</span>
                                 <select style={{ ...input, ...selectDarkInk, height: 38 }} value={editRecAction} onChange={(e) => setEditRecAction(e.target.value)}>
                                   <option value="apply" style={selectDarkOption}>Apply</option>
                                   <option value="research_first" style={selectDarkOption}>Research First</option>
@@ -983,7 +983,7 @@ export default function CoachClientPage() {
                                 </select>
                               </div>
                               <div style={{ flex: 1 }}>
-                                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 4, fontSize: TYPE.micro }}>APPLY BY</span>
+                                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 4, fontSize: TYPE.micro }}>APPLY BY</span>
                                 <input type="date" style={{ ...input, height: 38, colorScheme: "dark" } as React.CSSProperties} value={editRecApplyBy} onChange={(e) => setEditRecApplyBy(e.target.value)} />
                               </div>
                             </div>
@@ -1028,7 +1028,7 @@ export default function CoachClientPage() {
                           {rec.coaching_note && (
                             <div style={{ marginBottom: 8 }}>
                               <p style={{ fontSize: TYPE.secondary, color: T.MUTED, lineHeight: "18px" }}>
-                                <span style={{ color: T.WRN_ORANGE, fontWeight: 900 }}>Note: </span>
+                                <span style={{ color: T.INK_EMPHASIS, fontWeight: 900 }}>Note: </span>
                                 {rec.coaching_note}
                               </p>
                             </div>
@@ -1043,7 +1043,7 @@ export default function CoachClientPage() {
                             )}
                             {rec.apply_by && (
                               <span style={{ fontSize: TYPE.micro, color: T.DIM }}>
-                                Apply by: <span style={{ color: T.WRN_ORANGE, fontWeight: 700 }}>{rec.apply_by}</span>
+                                Apply by: <span style={{ color: T.INK_EMPHASIS, fontWeight: 700 }}>{rec.apply_by}</span>
                               </span>
                             )}
                             {rec.recommended_action && (
@@ -1078,7 +1078,7 @@ export default function CoachClientPage() {
           {/* Section B: Their Applications */}
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
-              <div style={{ ...eyebrow, color: T.WRN_BLUE }}>THEIR APPLICATIONS</div>
+              <div style={{ ...eyebrow, color: T.INK_LINK }}>THEIR APPLICATIONS</div>
               {statusFilter !== "all" && (
                 <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: TYPE.micro }}>
                   <span style={{ color: T.DIM }}>Filtered:</span>
@@ -1086,7 +1086,7 @@ export default function CoachClientPage() {
                     style={{
                       background: "rgba(254,176,106,0.10)",
                       border: "1px solid rgba(254,176,106,0.35)",
-                      color: T.WRN_ORANGE,
+                      color: T.INK_EMPHASIS,
                       fontWeight: 900,
                       letterSpacing: 0.6,
                       textTransform: "uppercase",
@@ -1101,7 +1101,7 @@ export default function CoachClientPage() {
                     style={{
                       background: "none",
                       border: "none",
-                      color: T.WRN_ORANGE,
+                      color: T.INK_EMPHASIS,
                       fontSize: TYPE.micro,
                       fontWeight: 700,
                       cursor: "pointer",
@@ -1185,7 +1185,7 @@ export default function CoachClientPage() {
                               {app.has_jobfit && (
                                 <button
                                   onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("jobfit"); setJobPanelOpen(true) }}
-                                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: TYPE.secondary, fontWeight: 700, color: T.WRN_BLUE, textDecoration: "underline" }}
+                                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: TYPE.secondary, fontWeight: 700, color: T.INK_LINK, textDecoration: "underline" }}
                                 >
                                   Full Jobfit
                                 </button>
@@ -1193,7 +1193,7 @@ export default function CoachClientPage() {
                               {app.has_cover_letter && (
                                 <button
                                   onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("coverletter"); setJobPanelOpen(true) }}
-                                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: TYPE.secondary, fontWeight: 700, color: T.WRN_TEAL, textDecoration: "underline" }}
+                                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: TYPE.secondary, fontWeight: 700, color: T.INK_EMPHASIS, textDecoration: "underline" }}
                                 >
                                   Cover Letter
                                 </button>
@@ -1204,7 +1204,7 @@ export default function CoachClientPage() {
                             <div style={{ fontSize: TYPE.secondary, color: T.DIM }}>
                               <span style={{ color: T.MUTED, fontWeight: 700 }}>URL: </span>
                               {app.job_url
-                                ? <a href={app.job_url} target="_blank" rel="noopener noreferrer" style={{ color: T.WRN_BLUE, textDecoration: "underline" }}>{app.job_url}</a>
+                                ? <a href={app.job_url} target="_blank" rel="noopener noreferrer" style={{ color: T.INK_LINK, textDecoration: "underline" }}>{app.job_url}</a>
                                 : <span style={{ color: T.DIM }}>No URL saved</span>
                               }
                             </div>
@@ -1262,7 +1262,7 @@ export default function CoachClientPage() {
                                 setAnnotationPriority("info")
                                 setAnnotationVisible(true)
                               }}
-                              style={{ ...btnSecondary, fontSize: TYPE.micro, padding: "6px 14px", borderRadius: 8, color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)" }}
+                              style={{ ...btnSecondary, fontSize: TYPE.micro, padding: "6px 14px", borderRadius: 8, color: T.INK_EMPHASIS, borderColor: "rgba(254,176,106,0.3)" }}
                             >
                               + Add coaching note
                             </button>
@@ -1282,7 +1282,7 @@ export default function CoachClientPage() {
                                 }}
                               >
                               <div>
-                                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5, fontSize: TYPE.micro }}>PRIORITY</span>
+                                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 5, fontSize: TYPE.micro }}>PRIORITY</span>
                                 <div style={{ display: "flex", gap: 6 }}>
                                   {(["urgent", "important", "info", "positive"] as const).map((p) => (
                                     <button
@@ -1293,7 +1293,7 @@ export default function CoachClientPage() {
                                         textTransform: "uppercase", letterSpacing: 0.6,
                                         border: annotationPriority === p ? `1px solid ${T.WRN_ORANGE}50` : `1px solid ${T.BORDER_SOFT}`,
                                         background: annotationPriority === p ? "rgba(254,176,106,0.1)" : T.GLASS,
-                                        color: annotationPriority === p ? T.WRN_ORANGE : T.DIM,
+                                        color: annotationPriority === p ? T.INK_EMPHASIS : T.DIM,
                                       }}
                                     >
                                       {p}
@@ -1374,7 +1374,7 @@ export default function CoachClientPage() {
       {/* TAB 2 — Source a Job */}
       {tab === "source" && (
         <div style={{ maxWidth: 700 }}>
-          <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 16 }}>SOURCE A JOB FOR {clientProfile?.name?.toUpperCase() || "CLIENT"}</div>
+          <div style={{ ...eyebrow, color: T.INK_EMPHASIS, marginBottom: 16 }}>SOURCE A JOB FOR {clientProfile?.name?.toUpperCase() || "CLIENT"}</div>
 
           {laneResultId && (
             <div
@@ -1390,7 +1390,7 @@ export default function CoachClientPage() {
               {sourceUrl && (
                 <>
                   {" "}
-                  <a href={sourceUrl} target="_blank" rel="noopener noreferrer" style={{ color: T.WRN_BLUE, fontWeight: 800 }}>
+                  <a href={sourceUrl} target="_blank" rel="noopener noreferrer" style={{ color: T.INK_LINK, fontWeight: 800 }}>
                     Open posting ↗
                   </a>
                 </>
@@ -1425,7 +1425,7 @@ export default function CoachClientPage() {
                 }}>
                   {step.done ? "✓" : step.n}
                 </div>
-                <span style={{ fontSize: TYPE.label, fontWeight: 700, color: step.done ? T.WRN_ORANGE : T.DIM, whiteSpace: "nowrap" }}>{step.label}</span>
+                <span style={{ fontSize: TYPE.label, fontWeight: 700, color: step.done ? T.INK_EMPHASIS : T.DIM, whiteSpace: "nowrap" }}>{step.label}</span>
               </React.Fragment>
             ))}
           </div>
@@ -1434,7 +1434,7 @@ export default function CoachClientPage() {
           <div style={{ marginBottom: 24 }}>
             {/* URL fetch block */}
             <div style={{ ...card, padding: 24, marginBottom: 20 }}>
-              <div style={{ ...eyebrow, color: T.WRN_BLUE, fontSize: TYPE.micro, marginBottom: 10 }}>FETCH FROM URL</div>
+              <div style={{ ...eyebrow, color: T.INK_LINK, fontSize: TYPE.micro, marginBottom: 10 }}>FETCH FROM URL</div>
               <div style={{ display: "flex", gap: 10 }}>
                 <input
                   type="url"
@@ -1552,20 +1552,20 @@ export default function CoachClientPage() {
             <div style={{ ...eyebrow, color: T.DIM, fontSize: TYPE.micro, textAlign: "center", marginBottom: 16 }}>OR ENTER MANUALLY</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <div>
-                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>COMPANY</span>
+                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 5 }}>COMPANY</span>
                 <input type="text" style={input} placeholder="Company name" value={sourceCompany} onChange={(e) => setSourceCompany(e.target.value)} />
               </div>
               <div>
-                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>JOB TITLE</span>
+                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 5 }}>JOB TITLE</span>
                 <input type="text" style={input} placeholder="Job title" value={sourceTitle} onChange={(e) => setSourceTitle(e.target.value)} />
               </div>
               <div>
-                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>JOB APPLICATION URL</span>
+                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 5 }}>JOB APPLICATION URL</span>
                 <input type="url" style={input} placeholder="https://... (link where client should apply)" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} />
                 <p style={{ fontSize: TYPE.micro, color: T.DIM, marginTop: 4 }}>This link will appear on the client's tracker so they can apply directly</p>
               </div>
               <div>
-                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>JOB DESCRIPTION</span>
+                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 5 }}>JOB DESCRIPTION</span>
                 <textarea
                   style={{ ...textarea, minHeight: 200 }}
                   placeholder="Paste the full job description here..."
@@ -1579,11 +1579,11 @@ export default function CoachClientPage() {
           {/* STEP 2 — Persona + Run Analysis (visible once JD has content) */}
           {sourceJD.length > 50 && (
             <div style={{ ...card, padding: 24, marginBottom: 20 }}>
-              <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: TYPE.micro, marginBottom: 14 }}>STEP 2 — SELECT PERSONA & RUN</div>
+              <div style={{ ...eyebrow, color: T.INK_EMPHASIS, fontSize: TYPE.micro, marginBottom: 14 }}>STEP 2 — SELECT PERSONA & RUN</div>
 
               {clientPersonas.filter(p => !p.archived_at).length > 0 && (
                 <div style={{ marginBottom: 18 }}>
-                  <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 10 }}>CLIENT PERSONA</span>
+                  <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 10 }}>CLIENT PERSONA</span>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     {clientPersonas.filter(p => !p.archived_at).map((p) => (
                       <label key={p.id} style={{
@@ -1600,7 +1600,7 @@ export default function CoachClientPage() {
                           onChange={() => setSelectedPersona(p.id)}
                           style={{ accentColor: T.WRN_ORANGE }}
                         />
-                        <span style={{ fontSize: TYPE.secondary, fontWeight: 900, color: selectedPersona === p.id ? T.WRN_ORANGE : T.TEXT }}>
+                        <span style={{ fontSize: TYPE.secondary, fontWeight: 900, color: selectedPersona === p.id ? T.INK_EMPHASIS : T.TEXT }}>
                           {p.name}
                           {p.is_default && <span style={{ fontSize: TYPE.label, color: T.DIM, marginLeft: 6 }}>default</span>}
                         </span>
@@ -1634,7 +1634,7 @@ export default function CoachClientPage() {
           {/* STEP 3 — Results (visible once runResult is set) */}
           {runResult !== null && (
             <div style={{ ...card, padding: 24, marginBottom: 20 }}>
-              <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: TYPE.micro, marginBottom: 14 }}>STEP 3 — REVIEW RESULTS</div>
+              <div style={{ ...eyebrow, color: T.INK_EMPHASIS, fontSize: TYPE.micro, marginBottom: 14 }}>STEP 3 — REVIEW RESULTS</div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: 16 }}>
                 {runResult.decision && (
@@ -1811,7 +1811,7 @@ export default function CoachClientPage() {
           {/* STEP 4 — Annotation (visible once showAnnotation is true) */}
           {showAnnotation && (
             <div style={{ ...card, padding: 24, marginBottom: 20 }}>
-              <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: TYPE.micro, marginBottom: 16 }}>STEP 4 — COACHING ANNOTATION</div>
+              <div style={{ ...eyebrow, color: T.INK_EMPHASIS, fontSize: TYPE.micro, marginBottom: 16 }}>STEP 4 — COACHING ANNOTATION</div>
 
               {sendSuccess ? (
                 <div style={{ padding: 16, background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 10 }}>
@@ -1822,7 +1822,7 @@ export default function CoachClientPage() {
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                   <div>
-                    <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 8 }}>PRIORITY</span>
+                    <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 8 }}>PRIORITY</span>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       {[
                         { val: "urgent", label: "Urgent" },
@@ -1838,7 +1838,7 @@ export default function CoachClientPage() {
                             textTransform: "uppercase", letterSpacing: 0.8,
                             border: annPriority === p.val ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
                             background: annPriority === p.val ? "rgba(254,176,106,0.1)" : T.GLASS,
-                            color: annPriority === p.val ? T.WRN_ORANGE : T.DIM,
+                            color: annPriority === p.val ? T.INK_EMPHASIS : T.DIM,
                           }}
                         >
                           {p.label}
@@ -1848,7 +1848,7 @@ export default function CoachClientPage() {
                   </div>
 
                   <div>
-                    <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 8 }}>RECOMMENDED ACTION</span>
+                    <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 8 }}>RECOMMENDED ACTION</span>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                       {[
                         { val: "apply", label: "Apply" },
@@ -1865,7 +1865,7 @@ export default function CoachClientPage() {
                             textTransform: "uppercase", letterSpacing: 0.8,
                             border: annAction === a.val ? `1px solid rgba(81,173,229,0.4)` : `1px solid ${T.BORDER_SOFT}`,
                             background: annAction === a.val ? "rgba(81,173,229,0.1)" : T.GLASS,
-                            color: annAction === a.val ? T.WRN_BLUE : T.DIM,
+                            color: annAction === a.val ? T.INK_LINK : T.DIM,
                           }}
                         >
                           {a.label}
@@ -1875,7 +1875,7 @@ export default function CoachClientPage() {
                   </div>
 
                   <div>
-                    <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>
+                    <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 5 }}>
                       COACHING NOTE{" "}
                       <span style={{ color: annNote.trim().length > 0 && annNote.trim().length < 20 ? T.ERROR : T.DIM, fontWeight: 400 }}>
                         (required, min 20 chars — {annNote.trim().length} entered)
@@ -1893,7 +1893,7 @@ export default function CoachClientPage() {
                   </div>
 
                   <div>
-                    <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>APPLY-BY DATE <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span></span>
+                    <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 5 }}>APPLY-BY DATE <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span></span>
                     <input
                       type="date"
                       style={{ ...input, colorScheme: "dark" }}

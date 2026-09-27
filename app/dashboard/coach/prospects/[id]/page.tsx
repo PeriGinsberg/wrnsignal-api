@@ -87,9 +87,9 @@ const SOURCE_LABEL: Record<SourceCategory, string> = {
 }
 
 const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string; border: string }> = {
-  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.WRN_BLUE, border: "rgba(81,173,229,0.40)" },
+  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK, border: "rgba(81,173,229,0.40)" },
   social_media:     { bg: "rgba(167,139,250,0.18)", color: "#C8B6F8", border: "rgba(167,139,250,0.40)" },
-  website:          { bg: "rgba(45,165,141,0.15)",  color: T.WRN_TEAL, border: "rgba(45,165,141,0.40)" },
+  website:          { bg: "rgba(45,165,141,0.15)",  color: T.INK_EMPHASIS, border: "rgba(45,165,141,0.40)" },
   personal_contact: { bg: "rgba(74,222,128,0.15)",  color: T.SUCCESS, border: "rgba(74,222,128,0.40)" },
   other:            { bg: T.BORDER_SOFT, color: T.MUTED, border: T.BORDER },
 }
@@ -116,8 +116,8 @@ const NOTE_TYPE_LABEL: Record<NoteType, string> = {
 }
 
 const NOTE_TYPE_BADGE: Record<NoteType, { bg: string; color: string }> = {
-  session_recap: { bg: "rgba(81,173,229,0.12)",  color: T.WRN_BLUE },
-  action_item:   { bg: "rgba(254,176,106,0.12)", color: T.WRN_ORANGE },
+  session_recap: { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK },
+  action_item:   { bg: "rgba(254,176,106,0.12)", color: T.INK_EMPHASIS },
   other:         { bg: T.BORDER_SOFT, color: T.MUTED },
 }
 
@@ -129,8 +129,8 @@ const NOTE_PRIORITY_LABEL: Record<NotePriority, string> = {
 
 const NOTE_PRIORITY_BADGE: Record<NotePriority, { bg: string; color: string; border: string }> = {
   urgent:     { bg: "rgba(248,113,113,0.15)", color: "#f87171", border: "rgba(248,113,113,0.4)" },
-  this_week:  { bg: "rgba(254,176,106,0.15)", color: T.WRN_ORANGE, border: "rgba(254,176,106,0.4)" },
-  when_ready: { bg: "rgba(81,173,229,0.12)",  color: T.WRN_BLUE, border: "rgba(81,173,229,0.4)" },
+  this_week:  { bg: "rgba(254,176,106,0.15)", color: T.INK_EMPHASIS, border: "rgba(254,176,106,0.4)" },
+  when_ready: { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK, border: "rgba(81,173,229,0.4)" },
 }
 
 const DEFAULT_NOTE_TYPE: NoteType = "session_recap"
@@ -182,7 +182,7 @@ const PROSPECT_STATUS_LABEL: Record<ProspectStatus, string> = {
 // selected-fill styles; non-selected pills render muted (see the control).
 const PROSPECT_STATUS_STYLE: Record<ProspectStatus, { bg: string; color: string; border: string }> = {
   active:   { bg: "rgba(74,222,128,0.18)",  color: T.SUCCESS, border: "rgba(74,222,128,0.50)" },
-  inactive: { bg: "rgba(254,176,106,0.18)", color: T.WRN_ORANGE, border: "rgba(254,176,106,0.50)" },
+  inactive: { bg: "rgba(254,176,106,0.18)", color: T.INK_EMPHASIS, border: "rgba(254,176,106,0.50)" },
   lost:     { bg: "rgba(248,113,113,0.20)", color: "#f87171", border: "rgba(248,113,113,0.55)" },
 }
 
@@ -377,10 +377,11 @@ function StageTracker({
             // Current is always reached (furthest-reached pointer); highlight it
             // in orange, other reached nodes in green, unreached muted — and an
             // unreached node brightens on hover to signal it's clickable.
-            const circleColor = isCurrent ? T.WRN_ORANGE : reached ? T.SUCCESS : isHover ? T.TEXT : T.DIM
+            const circleColor = isCurrent ? T.INK_EMPHASIS : reached ? T.SUCCESS : isHover ? T.TEXT : T.DIM
             const circleBorder = isCurrent ? T.WRN_ORANGE : reached ? "rgba(74,222,128,0.5)" : isHover ? T.MUTED : T.BORDER
             const circleBg = isCurrent ? T.NAV_ACTIVE_BG : reached ? "rgba(74,222,128,0.18)" : isHover ? T.GLASS : "transparent"
-            const labelColor = isCurrent ? T.WRN_ORANGE : reached ? T.TEXT : isHover ? T.TEXT : T.MUTED
+            // The current stage keeps its orange ring; the WORD under it is navy.
+            const labelColor = isCurrent ? T.INK_EMPHASIS : reached ? T.TEXT : isHover ? T.TEXT : T.MUTED
             return (
               <Fragment key={s.stage_key}>
                 {/* Connector to the previous node — filled green once this node
@@ -441,7 +442,7 @@ function StageTracker({
                     {s.label}
                   </span>
                   {s.is_custom && (
-                    <span style={{ fontSize: 8, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.WRN_BLUE, border: `1px solid ${T.WRN_BLUE}`, borderRadius: 5, padding: "0 4px" }}>
+                    <span style={{ fontSize: 8, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.INK_LINK, border: `1px solid ${T.WRN_BLUE}`, borderRadius: 5, padding: "0 4px" }}>
                       custom
                     </span>
                   )}
@@ -653,7 +654,7 @@ function ProspectInfoBlock({
       </a>
     ) : dash
     const linkedinVal = prospect.linkedin_url ? (
-      <a href={prospect.linkedin_url} target="_blank" rel="noopener noreferrer" style={{ color: T.WRN_BLUE, textDecoration: "none" }}>
+      <a href={prospect.linkedin_url} target="_blank" rel="noopener noreferrer" style={{ color: T.INK_LINK, textDecoration: "none" }}>
         {prospect.linkedin_url}
       </a>
     ) : dash
@@ -719,7 +720,7 @@ function ProspectInfoBlock({
   // as a function returns the elements directly, so React reconciles in place.
   const field = (k: DraftStringKey, labelText: string, opts?: { placeholder?: string; type?: string }) => (
     <div>
-      <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>{labelText}</span>
+      <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>{labelText}</span>
       <input type={opts?.type ?? "text"} style={input} value={draft[k]} onChange={(e) => set(k, e.target.value)} placeholder={opts?.placeholder} />
     </div>
   )
@@ -732,7 +733,7 @@ function ProspectInfoBlock({
     <div style={{ display: "flex", flexDirection: "column", gap: 14, opacity: saving ? 0.5 : 1, pointerEvents: saving ? "none" : "auto", transition: "opacity 120ms ease" }}>
       {/* Source */}
       <div>
-        <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 8 }}>SOURCE</span>
+        <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 8 }}>SOURCE</span>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {SOURCE_CATEGORIES.map((cat) => {
             const active = draft.source_category === cat
@@ -757,7 +758,7 @@ function ProspectInfoBlock({
         </div>
       </div>
       <div>
-        <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>SOURCE DETAIL</span>
+        <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>SOURCE DETAIL</span>
         <textarea style={{ ...textarea, minHeight: 60 }} value={draft.source_detail} onChange={(e) => set("source_detail", e.target.value)} placeholder="e.g. Met at conference, intro from Sarah" maxLength={500} />
       </div>
 
@@ -781,7 +782,7 @@ function ProspectInfoBlock({
       <div style={groupHdr}>EDUCATION</div>
       <div style={editGroupStyle}>
         <div>
-          <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>STATUS</span>
+          <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>STATUS</span>
           <select style={{ ...input, ...selectDarkInk }} value={draft.education_status} onChange={(e) => set("education_status", e.target.value)}>
             {EDUCATION_OPTIONS.map((o) => <option key={o.value} value={o.value} style={selectDarkOption}>{o.label}</option>)}
           </select>
@@ -789,7 +790,7 @@ function ProspectInfoBlock({
         {field("university", "UNIVERSITY")}
         {field("field_of_study", "FIELD OF STUDY")}
         <div>
-          <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>GRAD DATE</span>
+          <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>GRAD DATE</span>
           <input type="date" style={{ ...input, cursor: "pointer", colorScheme: "dark" }} value={draft.grad_date} onChange={(e) => set("grad_date", e.target.value)} />
         </div>
       </div>
@@ -801,7 +802,7 @@ function ProspectInfoBlock({
         {field("target_locations", "TARGET LOCATIONS")}
         {field("timeline", "TIMELINE", { placeholder: "e.g. 3-6 months" })}
         <div>
-          <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>JOB TYPE</span>
+          <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>JOB TYPE</span>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {JOB_TYPE_OPTIONS.map((opt) => {
               const active = jobTypeSelected.has(opt)
@@ -814,7 +815,7 @@ function ProspectInfoBlock({
                     fontSize: 11, fontWeight: 900, padding: "6px 12px", borderRadius: 8, cursor: "pointer",
                     border: active ? `1px solid ${T.WRN_BLUE}` : `1px solid ${T.BORDER_SOFT}`,
                     background: active ? "rgba(81,173,229,0.15)" : T.GLASS,
-                    color: active ? T.WRN_BLUE : T.DIM, fontFamily: "inherit",
+                    color: active ? T.INK_LINK : T.DIM, fontFamily: "inherit",
                   }}
                 >
                   {opt}
@@ -833,7 +834,7 @@ function ProspectInfoBlock({
           checked={draft.is_returning}
           onChange={(e) => setDraft((d) => ({ ...d, is_returning: e.target.checked }))}
         />
-        <span style={{ ...label, color: T.WRN_BLUE }}>RETURN CUSTOMER</span>
+        <span style={{ ...label, color: T.INK_LINK }}>RETURN CUSTOMER</span>
       </label>
 
       {error && (
@@ -894,7 +895,7 @@ function TypeChipPicker({
               letterSpacing: 0.6,
               border: active ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
               background: active ? "rgba(254,176,106,0.1)" : T.GLASS,
-              color: active ? T.WRN_ORANGE : T.DIM,
+              color: active ? T.INK_EMPHASIS : T.DIM,
               fontFamily: "inherit",
             }}
           >
@@ -1129,7 +1130,7 @@ function ProspectNotesSection({
         fontWeight: 700,
         padding: "6px 12px",
         borderRadius: 8,
-        color: T.WRN_ORANGE,
+        color: T.INK_EMPHASIS,
         borderColor: "rgba(254,176,106,0.3)",
       }}
     >
@@ -1157,7 +1158,7 @@ function ProspectNotesSection({
                 letterSpacing: 0.6,
                 border: active ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
                 background: active ? "rgba(254,176,106,0.1)" : T.GLASS,
-                color: active ? T.WRN_ORANGE : T.DIM,
+                color: active ? T.INK_EMPHASIS : T.DIM,
                 fontFamily: "inherit",
               }}
             >
@@ -1185,12 +1186,12 @@ function ProspectNotesSection({
           }}
         >
           <div>
-            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6, fontSize: 9 }}>TYPE</span>
+            <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6, fontSize: 9 }}>TYPE</span>
             <TypeChipPicker value={draftType} onChange={setDraftType} />
           </div>
           {draftType === "action_item" && (
             <div>
-              <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6, fontSize: 9 }}>PRIORITY</span>
+              <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6, fontSize: 9 }}>PRIORITY</span>
               <PriorityChipPicker value={draftPriority} onChange={setDraftPriority} />
             </div>
           )}
@@ -1717,7 +1718,7 @@ export default function ProspectDetailPage() {
         style={{
           fontSize: 13,
           fontWeight: 600,
-          color: T.WRN_TEAL,
+          color: T.INK_EMPHASIS,
           textDecoration: "none",
           display: "inline-block",
           marginBottom: 18,

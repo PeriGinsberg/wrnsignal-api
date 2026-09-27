@@ -67,9 +67,9 @@ const SOURCE_LABEL: Record<SourceCategory, string> = {
 }
 
 const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string }> = {
-  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.WRN_BLUE },
+  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK },
   social_media:     { bg: "rgba(167,139,250,0.18)", color: "#C8B6F8" },
-  website:          { bg: "rgba(45,165,141,0.15)",  color: T.WRN_TEAL },
+  website:          { bg: "rgba(45,165,141,0.15)",  color: T.INK_EMPHASIS },
   personal_contact: { bg: "rgba(74,222,128,0.15)",  color: T.SUCCESS },
   other:            { bg: T.BORDER_SOFT, color: T.MUTED },
 }
@@ -92,8 +92,8 @@ const NOTE_TYPE_LABEL: Record<NoteType, string> = {
 }
 
 const NOTE_TYPE_BADGE: Record<NoteType, { bg: string; color: string }> = {
-  session_recap: { bg: "rgba(81,173,229,0.12)",  color: T.WRN_BLUE },
-  action_item:   { bg: "rgba(254,176,106,0.12)", color: T.WRN_ORANGE },
+  session_recap: { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK },
+  action_item:   { bg: "rgba(254,176,106,0.12)", color: T.INK_EMPHASIS },
   other:         { bg: T.BORDER_SOFT, color: T.MUTED },
 }
 
@@ -105,8 +105,8 @@ const NOTE_PRIORITY_LABEL: Record<NotePriority, string> = {
 
 const NOTE_PRIORITY_BADGE: Record<NotePriority, { bg: string; color: string; border: string }> = {
   urgent:     { bg: "rgba(248,113,113,0.15)", color: "#f87171", border: "rgba(248,113,113,0.4)" },
-  this_week:  { bg: "rgba(254,176,106,0.15)", color: T.WRN_ORANGE, border: "rgba(254,176,106,0.4)" },
-  when_ready: { bg: "rgba(81,173,229,0.12)",  color: T.WRN_BLUE, border: "rgba(81,173,229,0.4)" },
+  this_week:  { bg: "rgba(254,176,106,0.15)", color: T.INK_EMPHASIS, border: "rgba(254,176,106,0.4)" },
+  when_ready: { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK, border: "rgba(81,173,229,0.4)" },
 }
 
 const DEFAULT_NOTE_TYPE: NoteType = "session_recap"
@@ -271,7 +271,7 @@ function Section({
 function InfoRow({ label: rowLabel, value }: { label: string; value: React.ReactNode }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <span style={{ ...label, color: T.WRN_BLUE, fontSize: 10 }}>{rowLabel}</span>
+      <span style={{ ...label, color: T.INK_LINK, fontSize: 10 }}>{rowLabel}</span>
       <span style={{ fontSize: 13, color: T.TEXT }}>{value}</span>
     </div>
   )
@@ -448,7 +448,7 @@ function ClientNotesSection({
         fontWeight: 700,
         padding: "6px 12px",
         borderRadius: 8,
-        color: T.WRN_ORANGE,
+        color: T.INK_EMPHASIS,
         borderColor: "rgba(254,176,106,0.3)",
       }}
     >
@@ -475,7 +475,7 @@ function ClientNotesSection({
                 letterSpacing: 0.6,
                 border: active ? "1px solid rgba(254,176,106,0.4)" : `1px solid ${T.BORDER_SOFT}`,
                 background: active ? "rgba(254,176,106,0.1)" : T.GLASS,
-                color: active ? T.WRN_ORANGE : T.DIM,
+                color: active ? T.INK_EMPHASIS : T.DIM,
                 fontFamily: "inherit",
               }}
             >
@@ -502,7 +502,7 @@ function ClientNotesSection({
           }}
         >
           <div>
-            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6, fontSize: 9 }}>TYPE</span>
+            <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6, fontSize: 9 }}>TYPE</span>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {NOTE_TYPES.map((t) => {
                 const active = draftType === t
@@ -521,7 +521,7 @@ function ClientNotesSection({
                       letterSpacing: 0.6,
                       border: active ? "1px solid rgba(254,176,106,0.4)" : `1px solid ${T.BORDER_SOFT}`,
                       background: active ? "rgba(254,176,106,0.1)" : T.GLASS,
-                      color: active ? T.WRN_ORANGE : T.DIM,
+                      color: active ? T.INK_EMPHASIS : T.DIM,
                       fontFamily: "inherit",
                     }}
                   >
@@ -533,7 +533,7 @@ function ClientNotesSection({
           </div>
           {draftType === "action_item" && (
             <div>
-              <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6, fontSize: 9 }}>PRIORITY</span>
+              <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6, fontSize: 9 }}>PRIORITY</span>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {NOTE_PRIORITIES.map((p) => {
                   const active = draftPriority === p
@@ -716,7 +716,7 @@ function ClientNotesSection({
                                 letterSpacing: 0.6,
                                 border: active ? "1px solid rgba(254,176,106,0.4)" : `1px solid ${T.BORDER_SOFT}`,
                                 background: active ? "rgba(254,176,106,0.1)" : T.GLASS,
-                                color: active ? T.WRN_ORANGE : T.DIM,
+                                color: active ? T.INK_EMPHASIS : T.DIM,
                                 fontFamily: "inherit",
                               }}
                             >
@@ -1005,7 +1005,7 @@ export default function CoachClientPostConversionPage() {
         style={{
           fontSize: 13,
           fontWeight: 600,
-          color: T.WRN_TEAL,
+          color: T.INK_EMPHASIS,
           textDecoration: "none",
           display: "inline-block",
           marginBottom: 18,
@@ -1040,7 +1040,7 @@ export default function CoachClientPostConversionPage() {
           <span
             style={{
               background: "rgba(255,149,0,0.15)",
-              color: "#FF9500",
+              color: T.INK_EMPHASIS,
               border: "1px solid rgba(255,149,0,0.3)",
               fontSize: 11,
               fontWeight: 900,

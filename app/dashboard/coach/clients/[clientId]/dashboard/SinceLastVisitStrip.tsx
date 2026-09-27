@@ -71,7 +71,7 @@ export function SinceLastVisitStrip({ authFetch, clientId }: Props) {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-        <div style={{ ...eyebrow, color: T.WRN_BLUE, fontSize: TYPE.micro }}>
+        <div style={{ ...eyebrow, color: T.INK_LINK, fontSize: TYPE.micro }}>
           {baselineDate ? `Since your last visit on ${baselineDate}` : "Since your last visit"}
         </div>
         <button

@@ -124,6 +124,22 @@ export const T = {
   ROW_HOVER: "var(--sig-row-hover, rgba(255,255,255,0.055))",    // transient, follows the pointer
   ROW_FLASH: "var(--sig-row-flash, rgba(81,173,229,0.28))",      // just-changed; loudest, wins over all
 
+  // ── INK THAT WANTS TO STAND OUT ─────────────────────────────────────────
+  //
+  // Separate from the brand accents above, and that separation is the whole
+  // point. On the dark ground a heading in orange or a link in blue reads
+  // well. On white the same hues measure 1.8 and 2.2, so they have to darken,
+  // and a darkened brand colour is not the brand colour: #FF6B00 darkened far
+  // enough to carry a word comes out brown.
+  //
+  // So the accents stay accents and never set text, and text that wants
+  // emphasis takes these. Navy on light, which is the highest-contrast pairing
+  // either theme has; the original hue on dark, so nothing changes there.
+  /** A heading, a greeting, a numeral, a figure worth looking at. */
+  INK_EMPHASIS: "var(--sig-ink-emphasis, #FEB06A)",
+  /** Interactive text: a link, a tab, a control label. */
+  INK_LINK: "var(--sig-ink-link, #51ADE5)",
+
   GRAD_PRIMARY: "var(--sig-grad-primary, linear-gradient(90deg, #FEB06A, #51ADE5))",
   GRAD_PROFILE: "var(--sig-grad-profile, linear-gradient(90deg, #51ADE5, #218C8C, #FEB06A))",
   GRAD_PERSONA: "var(--sig-grad-persona, linear-gradient(90deg, #FEB06A, #f97316, #51ADE5))",

@@ -24,7 +24,7 @@ export function MethodologyPlaceholder() {
           top: 14,
           right: 14,
           background: "rgba(254,176,106,0.10)",
-          color: T.WRN_ORANGE,
+          color: T.INK_EMPHASIS,
           fontSize: TYPE.micro,
           fontWeight: 900,
           letterSpacing: 0.8,
@@ -93,7 +93,7 @@ export function MethodologyPlaceholder() {
                 // light ground it measured 1.18:1, which is a label nobody
                 // can read at all rather than one that recedes.
                 color: isCurrent
-                  ? T.WRN_ORANGE
+                  ? T.INK_EMPHASIS
                   : isPast
                   ? T.DIM
                   : T.MUTED,

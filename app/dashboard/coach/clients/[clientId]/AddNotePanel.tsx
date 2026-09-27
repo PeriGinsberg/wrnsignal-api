@@ -153,7 +153,7 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
           }}
         >
           <div>
-            <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: TYPE.micro, marginBottom: 4 }}>NEW NOTE</div>
+            <div style={{ ...eyebrow, color: T.INK_EMPHASIS, fontSize: TYPE.micro, marginBottom: 4 }}>NEW NOTE</div>
             <div style={{ fontSize: 18, fontWeight: 950, color: T.TEXT, letterSpacing: -0.3 }}>
               Add a note
             </div>
@@ -192,7 +192,7 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
           }}
         >
           <div>
-            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 8 }}>TYPE</span>
+            <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 8 }}>TYPE</span>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {TYPE_OPTIONS.map((opt) => (
                 <button
@@ -209,7 +209,7 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
                     letterSpacing: 0.6,
                     border: type === opt.value ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
                     background: type === opt.value ? "rgba(254,176,106,0.1)" : T.GLASS,
-                    color: type === opt.value ? T.WRN_ORANGE : T.DIM,
+                    color: type === opt.value ? T.INK_EMPHASIS : T.DIM,
                   }}
                 >
                   {opt.label}
@@ -220,7 +220,7 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
 
           {type === "action_item" && (
             <div>
-              <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 8 }}>PRIORITY</span>
+              <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 8 }}>PRIORITY</span>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {PRIORITY_OPTIONS.map((opt) => {
                   const active = priority === opt.value
@@ -240,8 +240,8 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
                     opt.value === "urgent"
                       ? "#f87171"
                       : opt.value === "this_week"
-                      ? T.WRN_ORANGE
-                      : T.WRN_BLUE
+                      ? T.INK_EMPHASIS
+                      : T.INK_LINK
                   return (
                     <button
                       key={opt.value}
@@ -272,7 +272,7 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
           )}
 
           <div>
-            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>NOTE</span>
+            <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>NOTE</span>
             <textarea
               ref={textareaRef}
               style={{ ...textarea, minHeight: 220, fontSize: TYPE.secondary }}

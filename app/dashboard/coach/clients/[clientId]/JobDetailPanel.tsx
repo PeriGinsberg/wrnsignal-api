@@ -52,7 +52,7 @@ function decisionTint(decision: string | null): { bg: string; color: string } {
   const d = (decision || "").toLowerCase()
   if (d.includes("pass")) return { bg: T.SUCCESS_BG, color: T.SUCCESS }
   if (d.includes("fail") || d.includes("no")) return { bg: T.ERROR_BG, color: T.ERROR }
-  return { bg: T.WARNING_BG, color: T.WRN_ORANGE }
+  return { bg: T.WARNING_BG, color: T.INK_EMPHASIS }
 }
 function fmtDate(iso: string): string {
   const d = new Date(iso)
@@ -254,7 +254,7 @@ function NotesBlock({ artifactType, notes, loading, onSave }: {
       />
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
         <VisibilityChip active={visibility === "private"} label="Private" color={T.DIM} disabled={saving || confirming} onClick={() => setVisibility("private")} />
-        <VisibilityChip active={visibility === "shared"} label="Shared" color={T.WRN_TEAL} disabled={saving || confirming} onClick={() => setVisibility("shared")} />
+        <VisibilityChip active={visibility === "shared"} label="Shared" color={T.INK_EMPHASIS} disabled={saving || confirming} onClick={() => setVisibility("shared")} />
         <button
           type="button"
           onClick={onSaveClick}
@@ -392,7 +392,7 @@ export function JobDetailPanel({ open, onClose, clientProfileId, applicationId, 
       >
         <div style={{ padding: "20px 24px 16px", borderBottom: `1px solid ${T.BORDER_SOFT}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <div style={{ ...eyebrow, color: T.WRN_ORANGE, fontSize: TYPE.micro, marginBottom: 4 }}>JOB DETAIL</div>
+            <div style={{ ...eyebrow, color: T.INK_EMPHASIS, fontSize: TYPE.micro, marginBottom: 4 }}>JOB DETAIL</div>
             <div style={{ fontSize: 18, fontWeight: 950, color: T.TEXT, letterSpacing: -0.3 }}>Full analysis</div>
           </div>
           <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", color: T.MUTED, fontSize: 20, cursor: "pointer", padding: 4 }}>×</button>
@@ -408,7 +408,7 @@ export function JobDetailPanel({ open, onClose, clientProfileId, applicationId, 
           )}
           {!loading && !error && data && (
             <>
-              <Collapsible title="FULL JOBFIT" accent={T.WRN_BLUE} open={jobfitOpen} onToggle={() => setJobfitOpen((o) => !o)}>
+              <Collapsible title="FULL JOBFIT" accent={T.INK_LINK} open={jobfitOpen} onToggle={() => setJobfitOpen((o) => !o)}>
                 <JobfitSection jobfit={data.jobfit} />
                 <NotesBlock
                   artifactType="jobfit"
@@ -417,7 +417,7 @@ export function JobDetailPanel({ open, onClose, clientProfileId, applicationId, 
                   onSave={saveNote}
                 />
               </Collapsible>
-              <Collapsible title="COVER LETTER" accent={T.WRN_TEAL} open={coverOpen} onToggle={() => setCoverOpen((o) => !o)}>
+              <Collapsible title="COVER LETTER" accent={T.INK_EMPHASIS} open={coverOpen} onToggle={() => setCoverOpen((o) => !o)}>
                 <CoverLetterSection coverLetter={data.coverLetter} />
                 <NotesBlock
                   artifactType="coverletter"

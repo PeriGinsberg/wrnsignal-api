@@ -142,12 +142,12 @@ const RULE_LABEL: Record<ActionItem["kind"], string> = {
   poor_fit_no_rec: "Low-fit app",
 }
 const RULE_COLOR: Record<ActionItem["kind"], string> = {
-  no_login: T.WRN_ORANGE,
-  rec_pending_review: T.WRN_BLUE,
+  no_login: T.INK_EMPHASIS,
+  rec_pending_review: T.INK_LINK,
   moved_interviewing: T.WRN_PINK,
   moved_rejected: T.ERROR,
   offer_no_followup: T.SUCCESS,
-  poor_fit_no_rec: T.GOLD,
+  poor_fit_no_rec: T.INK_EMPHASIS,
 }
 
 // Avatar palette — 5 colors, dark-theme adapted (translucent bg + brighter text).
@@ -396,9 +396,9 @@ function Section({
 function HeaderStrip({ firstName }: { firstName: string }) {
   return (
     <div style={{ marginBottom: 20 }}>
-      <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 4 }}>{todayLabel().toUpperCase()}</div>
+      <div style={{ ...eyebrow, color: T.INK_EMPHASIS, marginBottom: 4 }}>{todayLabel().toUpperCase()}</div>
       <h1 style={{ fontSize: 24, fontWeight: 500, letterSpacing: -0.5, color: T.TEXT, margin: 0 }}>
-        Welcome back, <span style={{ color: T.WRN_ORANGE, fontWeight: 700 }}>{firstName}</span>
+        Welcome back, <span style={{ color: T.INK_EMPHASIS, fontWeight: 700 }}>{firstName}</span>
       </h1>
     </div>
   )
@@ -586,7 +586,7 @@ function EngagementSignalsSection({ items, onItemClick, onShowAll, noBottomMargi
             <button
               onClick={onShowAll}
               style={{
-                background: "none", border: "none", color: T.WRN_ORANGE,
+                background: "none", border: "none", color: T.INK_EMPHASIS,
                 fontSize: 12, fontWeight: 700, cursor: "pointer",
                 padding: "8px 0 0", textAlign: "left", marginTop: 4,
               }}
@@ -661,7 +661,7 @@ function ClientRow({
 
       <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
         <MiniCell label="Apps"  value={client.stats.applications} />
-        <MiniCell label="Intvw" value={client.stats.interviewing} color={client.stats.interviewing > 0 ? T.WRN_BLUE : undefined} />
+        <MiniCell label="Intvw" value={client.stats.interviewing} color={client.stats.interviewing > 0 ? T.INK_LINK : undefined} />
         <MiniCell label="Rate"  value={`${client.stats.interview_rate}%`} />
         <MiniCell label="Rej"   value={client.stats.rejected} />
         <MiniCell label="Off"   value={client.stats.offers} color={client.stats.offers > 0 ? T.SUCCESS : undefined} />
@@ -669,7 +669,7 @@ function ClientRow({
 
       <div style={{ flexShrink: 0, minWidth: 110, textAlign: "right" }}>
         {updates > 0 ? (
-          <span style={{ fontSize: 11, fontWeight: 700, color: T.WRN_ORANGE }}>{updates} new</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: T.INK_EMPHASIS }}>{updates} new</span>
         ) : (
           <span style={{ fontSize: 11, color: T.DIM }}>No changes</span>
         )}
@@ -680,7 +680,7 @@ function ClientRow({
         style={{
           ...btnSecondary,
           fontSize: 12, fontWeight: 700, padding: "7px 14px", borderRadius: 8,
-          color: T.WRN_ORANGE, borderColor: "rgba(254,176,106,0.3)",
+          color: T.INK_EMPHASIS, borderColor: "rgba(254,176,106,0.3)",
           flexShrink: 0,
         }}
       >
@@ -766,7 +766,7 @@ function MyClientsSection({
             <button
               onClick={onShowAll}
               style={{
-                background: "none", border: "none", color: T.WRN_ORANGE,
+                background: "none", border: "none", color: T.INK_EMPHASIS,
                 fontSize: 12, fontWeight: 700, cursor: "pointer",
                 padding: "8px 0 0", textAlign: "left", marginTop: 4,
               }}
@@ -786,7 +786,7 @@ function MyClientsSection({
 
 function PhaseProgressChip({ phases }: { phases: Record<PhaseKey, PhasePair> }) {
   const n = countCheckedPhases(phases)
-  const color = n > 0 ? T.WRN_BLUE : T.DIM
+  const color = n > 0 ? T.INK_LINK : T.DIM
   return (
     <span style={{ fontSize: 11, color, fontWeight: 700, whiteSpace: "nowrap" }}>
       {n} / 7 phases
@@ -911,7 +911,7 @@ function MyProspectsSection({
               style={{
                 background: "none",
                 border: "none",
-                color: T.WRN_ORANGE,
+                color: T.INK_EMPHASIS,
                 fontSize: 12,
                 fontWeight: 700,
                 cursor: "pointer",
@@ -1011,11 +1011,11 @@ export default function CoachHomePage() {
     return [
       { label: "Active prospects", value: m.activeProspects, color: "var(--sig-pill-prospect-ink-on-card, #F4A261)",
         href: "/dashboard/coach/prospects" },
-      { label: "Active clients", value: m.activeClients, color: T.WRN_TEAL,
+      { label: "Active clients", value: m.activeClients, color: T.INK_EMPHASIS,
         href: "/dashboard/coach/clients?filter=active" },
       { label: "Total applications", value: m.totalApplications, subtitle: sub,
         href: "/dashboard/coach/applications-recent?status=all" },
-      { label: "Total interviewing", value: m.totalInterviewing, color: T.WRN_BLUE, subtitle: sub,
+      { label: "Total interviewing", value: m.totalInterviewing, color: T.INK_LINK, subtitle: sub,
         href: "/dashboard/coach/applications-recent?status=interviewing" },
       { label: "Total offers", value: m.totalOffers, color: T.SUCCESS, subtitle: sub,
         href: "/dashboard/coach/applications-recent?status=offer" },
@@ -1179,7 +1179,7 @@ export default function CoachHomePage() {
                 <div style={{ ...eyebrow, color: T.SUCCESS, marginBottom: 12 }}>INVITE SENT</div>
                 <p style={{ fontSize: 15, fontWeight: 900, color: T.TEXT }}>Invitation delivered</p>
                 <p style={{ fontSize: 13, color: T.MUTED, marginTop: 8, lineHeight: "20px" }}>
-                  An invite was sent to <span style={{ color: T.WRN_BLUE }}>{inviteEmail}</span>.
+                  An invite was sent to <span style={{ color: T.INK_LINK }}>{inviteEmail}</span>.
                   They&apos;ll receive a link to accept and connect their account to your coaching dashboard.
                 </p>
                 <button
@@ -1191,7 +1191,7 @@ export default function CoachHomePage() {
               </div>
             ) : (
               <div>
-                <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 16 }}>INVITE A CLIENT</div>
+                <div style={{ ...eyebrow, color: T.INK_EMPHASIS, marginBottom: 16 }}>INVITE A CLIENT</div>
                 <div
                   style={{
                     display: "flex",
@@ -1203,7 +1203,7 @@ export default function CoachHomePage() {
                   }}
                 >
                   <div>
-                    <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>CLIENT EMAIL</span>
+                    <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 5 }}>CLIENT EMAIL</span>
                     <input
                       type="email"
                       style={input}
@@ -1213,7 +1213,7 @@ export default function CoachHomePage() {
                     />
                   </div>
                   <div>
-                    <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 8 }}>ACCESS LEVEL</span>
+                    <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 8 }}>ACCESS LEVEL</span>
                     <div style={{ display: "flex", gap: 10 }}>
                       {["full", "view"].map((level) => (
                         <label key={level} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
@@ -1233,7 +1233,7 @@ export default function CoachHomePage() {
                     </div>
                   </div>
                   <div>
-                    <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 5 }}>PERSONAL NOTE <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span></span>
+                    <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 5 }}>PERSONAL NOTE <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span></span>
                     <textarea
                       style={{ ...textarea, minHeight: 80 }}
                       placeholder="Add a personal message to include with the invite..."

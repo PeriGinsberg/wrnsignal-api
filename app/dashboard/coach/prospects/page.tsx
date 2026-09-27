@@ -48,9 +48,9 @@ const PROSPECT_STATUS_VALUES = Object.keys(PROSPECT_STATUS_LABEL) as ProspectSta
 // Active green, Inactive amber "on hold", Lost red, Won teal.
 const PROSPECT_STATUS_STYLE: Record<ProspectStatus, { bg: string; color: string; border: string }> = {
   active:   { bg: "rgba(74,222,128,0.18)",  color: T.SUCCESS, border: "rgba(74,222,128,0.50)" },
-  inactive: { bg: "rgba(254,176,106,0.18)", color: T.WRN_ORANGE, border: "rgba(254,176,106,0.50)" },
+  inactive: { bg: "rgba(254,176,106,0.18)", color: T.INK_EMPHASIS, border: "rgba(254,176,106,0.50)" },
   lost:     { bg: "rgba(248,113,113,0.20)", color: "#f87171", border: "rgba(248,113,113,0.55)" },
-  won:      { bg: "rgba(45,165,141,0.18)",  color: T.WRN_TEAL, border: "rgba(45,165,141,0.45)" },
+  won:      { bg: "rgba(45,165,141,0.18)",  color: T.INK_EMPHASIS, border: "rgba(45,165,141,0.45)" },
 }
 
 const SOURCE_CATEGORIES = [
@@ -71,9 +71,9 @@ const SOURCE_LABEL: Record<SourceCategory, string> = {
 }
 
 const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string }> = {
-  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.WRN_BLUE },
+  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK },
   social_media:     { bg: "rgba(167,139,250,0.18)", color: "#C8B6F8" },
-  website:          { bg: "rgba(45,165,141,0.15)",  color: T.WRN_TEAL },
+  website:          { bg: "rgba(45,165,141,0.15)",  color: T.INK_EMPHASIS },
   personal_contact: { bg: "rgba(74,222,128,0.15)",  color: T.SUCCESS },
   other:            { bg: T.BORDER_SOFT, color: T.MUTED },
 }
@@ -310,7 +310,7 @@ function ProspectRow({
           minHeight: SPACE.control,
           padding: "0 18px",
           borderRadius: 8,
-          color: T.WRN_ORANGE,
+          color: T.INK_EMPHASIS,
           borderColor: "rgba(254,176,106,0.3)",
           flexShrink: 0,
         }}
@@ -505,7 +505,7 @@ export default function ProspectsListPage() {
               style={{
                 background: selected ? "rgba(254,176,106,0.10)" : T.NAV_DEFAULT_BG,
                 border: `1px solid ${selected ? "rgba(254,176,106,0.30)" : T.BORDER_SOFT}`,
-                color: selected ? "#FEB06A" : T.MUTED,
+                color: selected ? T.INK_EMPHASIS : T.MUTED,
                 fontSize: TYPE.control, fontWeight: 700, minHeight: SPACE.control,
                 padding: "0 18px", borderRadius: 999, cursor: "pointer", fontFamily: "inherit",
               }}

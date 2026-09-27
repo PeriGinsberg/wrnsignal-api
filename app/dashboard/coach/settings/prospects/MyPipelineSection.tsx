@@ -394,7 +394,7 @@ function StageRow({
             <ArrowBtn dir="down" disabled={!canMoveDown || editing} onClick={onDown} />
           </>
         ) : (
-          <span aria-hidden style={{ fontSize: 12, color: T.WRN_TEAL, textAlign: "center" }}>🔒</span>
+          <span aria-hidden style={{ fontSize: 12, color: T.INK_EMPHASIS, textAlign: "center" }}>🔒</span>
         )}
       </div>
 
@@ -426,8 +426,8 @@ function StageRow({
             {stage.label}
           </span>
         )}
-        {!editing && stage.is_custom && <Tag color={T.WRN_BLUE}>custom</Tag>}
-        {!editing && terminal && <Tag color={T.WRN_TEAL}>always last</Tag>}
+        {!editing && stage.is_custom && <Tag color={T.INK_LINK}>custom</Tag>}
+        {!editing && terminal && <Tag color={T.INK_EMPHASIS}>always last</Tag>}
       </div>
 
       {/* Edit / delete controls (none for terminal) */}
@@ -444,7 +444,7 @@ function StageRow({
 
       {/* Active toggle (terminal shows a static, non-interactive marker) */}
       {terminal ? (
-        <span style={{ fontSize: 11, color: T.WRN_TEAL, fontWeight: 800, whiteSpace: "nowrap" }}>
+        <span style={{ fontSize: 11, color: T.INK_EMPHASIS, fontWeight: 800, whiteSpace: "nowrap" }}>
           Convert
         </span>
       ) : (
@@ -542,7 +542,7 @@ function Banner({ kind, children }: { kind: "error" | "success" | "info"; childr
       ? { color: T.ERROR, bg: T.ERROR_BG, border: "rgba(255,120,120,0.30)" }
       : kind === "success"
       ? { color: T.SUCCESS, bg: T.SUCCESS_BG, border: "rgba(74,222,128,0.30)" }
-      : { color: T.WRN_BLUE, bg: "rgba(81,173,229,0.10)", border: "rgba(81,173,229,0.30)" }
+      : { color: T.INK_LINK, bg: "rgba(81,173,229,0.10)", border: "rgba(81,173,229,0.30)" }
   return (
     <div
       style={{

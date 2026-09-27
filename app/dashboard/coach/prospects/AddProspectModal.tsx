@@ -65,9 +65,9 @@ const EDUCATION_OPTIONS: { value: "in_school" | "graduated" | "na"; label: strin
 // personal_contact uses T.SUCCESS green to avoid CTA-collision with
 // T.WRN_ORANGE; "personal warmth" semantics fit a green tone.
 const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string; border: string }> = {
-  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.WRN_BLUE, border: "rgba(81,173,229,0.40)" },
+  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK, border: "rgba(81,173,229,0.40)" },
   social_media:     { bg: "rgba(167,139,250,0.18)", color: "#C8B6F8", border: "rgba(167,139,250,0.40)" },
-  website:          { bg: "rgba(45,165,141,0.15)",  color: T.WRN_TEAL, border: "rgba(45,165,141,0.40)" },
+  website:          { bg: "rgba(45,165,141,0.15)",  color: T.INK_EMPHASIS, border: "rgba(45,165,141,0.40)" },
   personal_contact: { bg: "rgba(74,222,128,0.15)",  color: T.SUCCESS, border: "rgba(74,222,128,0.40)" },
   other:            { bg: T.BORDER_SOFT, color: T.MUTED, border: T.BORDER },
 }
@@ -240,7 +240,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
             borderRadius: "18px 18px 0 0",
           }}
         />
-        <div style={{ ...eyebrow, color: T.WRN_ORANGE, marginBottom: 18 }}>ADD A PROSPECT</div>
+        <div style={{ ...eyebrow, color: T.INK_EMPHASIS, marginBottom: 18 }}>ADD A PROSPECT</div>
 
         {/* Form fields wrapper — dims during submit (matches Coach
             Home InviteModal + ClientDetail annotate pattern). */}
@@ -256,7 +256,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
         >
           {/* Name */}
           <div>
-            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>NAME</span>
+            <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>NAME</span>
             <input
               type="text"
               style={input}
@@ -272,7 +272,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
 
           {/* Source category */}
           <div>
-            <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 8 }}>SOURCE</span>
+            <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 8 }}>SOURCE</span>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {SOURCE_CATEGORIES.map((cat) => {
                 const active = sourceCategory === cat
@@ -315,7 +315,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
               alignSelf: "flex-start",
               background: "none",
               border: "none",
-              color: T.WRN_BLUE,
+              color: T.INK_LINK,
               fontSize: 12,
               fontWeight: 800,
               cursor: "pointer",
@@ -330,7 +330,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
               {/* Invited email (optional) */}
               <div>
-                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>
                   INVITED EMAIL <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
                 </span>
                 <input
@@ -348,7 +348,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
 
               {/* Phone number (optional) */}
               <div>
-                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>
                   PHONE NUMBER <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
                 </span>
                 <input
@@ -365,7 +365,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
 
               {/* LinkedIn (optional) */}
               <div>
-                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>
                   LINKEDIN <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
                 </span>
                 <input
@@ -382,7 +382,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
 
               {/* Target roles (optional) */}
               <div>
-                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>
                   TARGET ROLES <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
                 </span>
                 <input
@@ -399,7 +399,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
 
               {/* Education status (optional) → conditionally reveals University + Grad date */}
               <div>
-                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>
                   EDUCATION STATUS <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
                 </span>
                 <select
@@ -421,7 +421,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
                 <>
                   {/* University (optional) */}
                   <div>
-                    <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+                    <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>
                       UNIVERSITY <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
                     </span>
                     <input
@@ -438,7 +438,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
 
                   {/* Grad date (optional) — native date input handles empty/partial */}
                   <div>
-                    <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+                    <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>
                       GRAD DATE <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
                     </span>
                     <input
@@ -456,7 +456,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
 
               {/* Source detail (optional) */}
               <div>
-                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>
                   SOURCE DETAIL <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
                 </span>
                 <textarea
@@ -473,7 +473,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
 
               {/* Initial note (optional) */}
               <div>
-                <span style={{ ...label, color: T.WRN_BLUE, display: "block", marginBottom: 6 }}>
+                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>
                   INITIAL NOTE <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
                 </span>
                 <textarea

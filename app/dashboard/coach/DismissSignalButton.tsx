@@ -142,7 +142,7 @@ export function SignalUndoToast({
             style={{
               background: "rgba(81,173,229,0.15)",
               border: "1px solid rgba(81,173,229,0.35)",
-              color: T.WRN_BLUE,
+              color: T.INK_LINK,
               borderRadius: 6,
               padding: "4px 12px",
               fontSize: 12,
