@@ -9,28 +9,45 @@
 // App Router nested-layout inheritance — no per-page wiring needed. The
 // parent app/dashboard/layout.tsx still provides the global sidebar nav.
 //
-// Also replaces the previous orange "COACHES CENTER" eyebrow that was
-// rendered inline on /clients and /required-actions — those eyebrows
-// were removed in the same commit. The Beta banner does the same
-// "this-is-the-coaches-center" job with the addition of pilot framing.
+// ── THE THEME SEAM ────────────────────────────────────────────────────────
 //
-// Color: WRN Bright Blue #51ADE5 (matches lib/dashboard-theme.ts
-// `T.WRN_BLUE`, the brand bright-blue used in dashboard gradients).
-// Brand "Authority" Navy #1F3A5F was the original spec but fails
-// WCAG large-text contrast at 1.27:1 against the dark theme
-// background T.BG #13294A. #51ADE5 tests at 5.86:1 — passes
-// WCAG AA normal-text (4.5:1) and AAA large-text (4.5:1).
-// See TC-617 for the contrast assertion.
+// This is also where the Coaches Center decides which palette it is on. Every
+// token in `T` is a CSS variable with its dark value as the fallback (see
+// lib/theme/coachSurface.ts), so setting --sig-* on this wrapper flips the
+// whole subtree and setting nothing leaves it exactly as it was.
+//
+// COACH_SURFACE is the switch. It is "dark" today: the mechanism ships before
+// the repaint, so the change that turns the lights on is one word rather than
+// a diff across sixty files, and turning them back off is the same word.
+//
+// Banner colour: on dark it is WRN Bright Blue #51ADE5 (5.86:1 on T.BG
+// #13294A, passing AA normal text; brand navy #1F3A5F was the original spec
+// and fails at 1.27:1). On light it takes the structural navy, which is the
+// highest-contrast pairing either theme has. See TC-617.
 
 import type { ReactNode } from "react"
+import { COACH_SURFACE, lightCoachSurfaceCss } from "@/lib/theme/coachSurface"
+import { TYPE } from "@/lib/theme/surfaces"
+
+
+const SURFACE_ATTR = "light"
 
 export default function CoachLayout({ children }: { children: ReactNode }) {
+  const light = COACH_SURFACE === "light"
   return (
-    <div>
+    <div
+      data-coach-surface={light ? SURFACE_ATTR : "dark"}
+      style={light ? { background: "var(--sig-bg)", minHeight: "100%" } : undefined}
+    >
+      {/* Emitted unconditionally. The rule only bites on a subtree carrying the
+          attribute, and shipping it always means flipping COACH_SURFACE is the
+          only edit a repaint needs. */}
+      <style>{lightCoachSurfaceCss(`[data-coach-surface="${SURFACE_ATTR}"]`)}</style>
+
       <div
         style={{
-          color: "#51ADE5",
-          fontSize: 28,
+          color: light ? "#08203F" : "#51ADE5",
+          fontSize: TYPE.title,
           fontWeight: 800,
           letterSpacing: -0.3,
           marginBottom: 24,
