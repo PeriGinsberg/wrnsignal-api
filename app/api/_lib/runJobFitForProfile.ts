@@ -40,6 +40,7 @@ import { runJobFit, detectorFlagsForPath } from "./jobfitEvaluator"
 import { mapClientProfileToOverrides } from "./jobfitProfileAdapter"
 import { enforceClientFacingRules } from "../jobfit/enforceClientFacingRules"
 import type { StructuredProfileSignals } from "../jobfit/signals"
+import { isolatePosting, type IsolatedPosting } from "@/lib/jobs/isolatePosting"
 
 const MISSING = "__MISSING__"
 
@@ -96,6 +97,15 @@ export type RunJobFitForProfileResult = {
   gate_triggered: any
   score_breakdown: any
   location_constraint: any
+
+  /**
+   * What was actually scored, and how sure we are it was the posting.
+   *
+   * Returned so a caller can SHOW it. A score computed from a page paste and a
+   * score computed from the posting are different numbers, and the coach has
+   * no way to tell them apart from the result alone.
+   */
+  isolation: IsolatedPosting
 
   // V5 outputs (undefined when V5 fell back to V4)
   why?: string[]
@@ -309,6 +319,8 @@ export async function runJobFitForProfile(params: {
   userId?: string
   supabase: SupabaseClient
   preassembled?: AssembledProfile
+  /** An isolation the caller already ran and, usually, already showed a human. */
+  preIsolated?: IsolatedPosting
 }): Promise<RunJobFitForProfileResult> {
   const {
     clientProfileId,
@@ -326,6 +338,21 @@ export async function runJobFitForProfile(params: {
   if (!jobTitle) throw new Error("runJobFitForProfile: jobTitle is required")
   if (!companyName) throw new Error("runJobFitForProfile: companyName is required")
 
+  // ── Isolate the posting BEFORE anything reads it ──────────────────
+  //
+  // HERE, AND NOT IN EACH CALLER. This function is the single entry for coach
+  // Source a Job, client-facing JobFit and the trial path, so isolating here is
+  // what makes the fix cover all three rather than the one where the bug was
+  // reported. A caller that has already isolated (the coach confirm step) sets
+  // `preIsolated` so the work is not repeated and a human decision is not
+  // silently overridden.
+  //
+  // Everything downstream reads `scoredText`: the fingerprint too, so a page
+  // paste and a clean paste of the same posting now share a cache entry
+  // instead of being two different jobs.
+  const isolation = params.preIsolated ?? isolatePosting(jobText)
+  const scoredText = isolation.text || jobText
+
   const assembled =
     params.preassembled ??
     (await assembleProfileForScoring({
@@ -335,7 +362,7 @@ export async function runJobFitForProfile(params: {
     }))
 
   const { fingerprint_hash, fingerprint_code } = computeJobFitFingerprint({
-    jobText,
+    jobText: scoredText,
     clientProfileId,
     effectiveProfileText: assembled.effectiveProfileText,
     profileOverrides: assembled.profileOverrides,
@@ -344,7 +371,9 @@ export async function runJobFitForProfile(params: {
   // ── Run scoring engine ────────────────────────────────────────────
   const raw = (await runJobFit({
     profileText: assembled.effectiveProfileText,
-    jobText,
+    jobText: scoredText,
+    // Already isolated above; hand it down so the engine does not redo it.
+    preIsolated: isolation,
     profileOverrides: assembled.profileOverrides,
     userJobTitle: jobTitle || undefined,
     userCompanyName: companyName || undefined,
@@ -367,7 +396,20 @@ export async function runJobFitForProfile(params: {
     const v5 = await generateBulletsV5({
       ...raw,
       profile_text: assembled.effectiveProfileText,
-      job_text: jobText,
+      // THE ISOLATED TEXT, and this line is the whole reported bug.
+      //
+      // The deterministic engine never misread the BMO posting: yearsRequired
+      // came back 0 from the full page, and the words "2+ years" and "private
+      // banking" appear NOWHERE in that paste. Those claims were written by
+      // this generator, which was being handed the raw page: twelve other
+      // Corporate Banking Analyst listings, BMO's "Hiring & headcount" blurb,
+      // and a footer reading "Sales Solutions". Given that, it wrote about a
+      // sales role with a tenure floor, fluently and wrongly.
+      //
+      // Passing scoredText was missed on the first pass because the scoring
+      // call sites were the obvious ones. The generator is the layer the coach
+      // actually READS, so it mattered most.
+      job_text: scoredText,
     })
     raw.why = v5.why
     raw.risk = v5.risk
@@ -422,6 +464,7 @@ export async function runJobFitForProfile(params: {
     gate_triggered: cleaned.gate_triggered,
     score_breakdown: cleaned.score_breakdown,
     location_constraint: cleaned.location_constraint,
+    isolation,
 
     why: cleaned.why,
     risk: cleaned.risk,

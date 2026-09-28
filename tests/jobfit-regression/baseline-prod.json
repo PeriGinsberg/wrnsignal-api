@@ -4549,7 +4549,7 @@
     "id": "prod-04691f04-5350-4bd3-aeef-76425000be15",
     "label": "prod 04691f04 — 2026 Summer Associate (Intern) @ BRG (2026-04-14)",
     "decision": "Apply",
-    "score": 87,
+    "score": 78,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -4568,6 +4568,14 @@
         "strength": 7,
         "label": "tableau tool usage",
         "requiredness": "core"
+      },
+      {
+        "id": "28b7eb577f6fb67c",
+        "key": "analysis_reporting",
+        "kind": "execution",
+        "strength": 6,
+        "label": "analysis, reporting, and measurement work",
+        "requiredness": "supporting"
       },
       {
         "id": "2b2d6b999e323bb5",
@@ -4592,14 +4600,6 @@
         "strength": 7,
         "label": "sql tool usage",
         "requiredness": "core"
-      },
-      {
-        "id": "4b5c798c575e71dd",
-        "key": "analysis_reporting",
-        "kind": "execution",
-        "strength": 6,
-        "label": "analysis, reporting, and measurement work",
-        "requiredness": "supporting"
       },
       {
         "id": "4eda7ee6f1644871",
@@ -5203,6 +5203,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_FAMILY_MISMATCH",
+        "severity": "medium",
+        "weight": -12
+      },
+      {
         "code": "RISK_FINANCIAL_MODELING",
         "severity": "medium",
         "weight": -6
@@ -5252,22 +5257,20 @@
         "isContentExecutionHeavy": false,
         "isContract": false,
         "isGovernment": false,
-        "isHourly": true,
+        "isHourly": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": true,
         "jobArchetype": "analytical",
-        "jobFamily": "Consulting",
+        "jobFamily": "Operations",
         "jobIndustry": null,
         "jobTitle": "2026 Summer Associate (Intern)",
         "location": {
-          "city": "New York City",
+          "city": "Boston",
           "constrained": false,
           "mode": "hybrid"
         },
-        "preferredTools": [
-          "word"
-        ],
+        "preferredTools": [],
         "requiredTools": [
           "python",
           "r",
@@ -5358,8 +5361,8 @@
           "note": "10"
         }
       ],
-      "raw_score": 87,
-      "clamped_score": 87
+      "raw_score": 78,
+      "clamped_score": 78
     }
   },
   "prod-048e77d0-db99-45bf-84f9-cd2912959089": {
@@ -108069,18 +108072,10 @@
     "id": "prod-4f5021d7-dfe2-417b-b7ed-bc7a3138f480",
     "label": "prod 4f5021d7 — Social Media Coordinator @ Roar Media (2026-05-27)",
     "decision": "Apply",
-    "score": 83,
+    "score": 89,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
-      {
-        "id": "2b6804e17bfa89f6",
-        "key": "content_execution",
-        "kind": "function",
-        "strength": 5,
-        "label": "content and channel execution",
-        "requiredness": "supporting"
-      },
       {
         "id": "3758e8f0d10950b3",
         "key": "canva",
@@ -108095,6 +108090,14 @@
         "kind": "function",
         "strength": 5,
         "label": "communications, writing, and messaging work",
+        "requiredness": "core"
+      },
+      {
+        "id": "600e7eabc2ccc7d1",
+        "key": "content_execution",
+        "kind": "function",
+        "strength": 5,
+        "label": "content and channel execution",
         "requiredness": "core"
       },
       {
@@ -108725,8 +108728,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 79,
+        "weight": 104,
+        "coverageScore": 83,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108734,8 +108737,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 96,
-        "coverageScore": 78,
+        "weight": 102,
+        "coverageScore": 82,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108743,8 +108746,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 97,
-        "coverageScore": 79,
+        "weight": 103,
+        "coverageScore": 83,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108752,8 +108755,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 80,
+        "weight": 104,
+        "coverageScore": 84,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108761,8 +108764,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 55,
+        "weight": 84,
+        "coverageScore": 59,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108770,8 +108773,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 97,
-        "coverageScore": 79,
+        "weight": 103,
+        "coverageScore": 83,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108779,8 +108782,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 55,
+        "weight": 84,
+        "coverageScore": 59,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108788,8 +108791,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 80,
+        "weight": 104,
+        "coverageScore": 84,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108797,8 +108800,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 80,
+        "weight": 105,
+        "coverageScore": 84,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108806,8 +108809,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 56,
+        "weight": 84,
+        "coverageScore": 60,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108815,8 +108818,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 79,
-        "coverageScore": 57,
+        "weight": 85,
+        "coverageScore": 61,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108824,8 +108827,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 77,
-        "coverageScore": 55,
+        "weight": 83,
+        "coverageScore": 59,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108833,8 +108836,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 79,
+        "weight": 104,
+        "coverageScore": 83,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108842,8 +108845,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 55,
+        "weight": 84,
+        "coverageScore": 59,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108851,8 +108854,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 97,
-        "coverageScore": 78,
+        "weight": 103,
+        "coverageScore": 82,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108860,8 +108863,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 97,
-        "coverageScore": 79,
+        "weight": 103,
+        "coverageScore": 83,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108869,8 +108872,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 56,
+        "weight": 84,
+        "coverageScore": 60,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108878,8 +108881,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 79,
-        "coverageScore": 57,
+        "weight": 85,
+        "coverageScore": 61,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108887,8 +108890,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 79,
-        "coverageScore": 57,
+        "weight": 85,
+        "coverageScore": 61,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108896,8 +108899,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 79,
+        "weight": 104,
+        "coverageScore": 83,
         "match_kind": "function",
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
@@ -108961,7 +108964,7 @@
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 99,
+        "weight": 105,
         "match_strength": "direct",
         "match_key": "content_execution"
       },
@@ -108980,19 +108983,9 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_HOURLY",
-        "severity": "medium",
-        "weight": -1.6
-      },
-      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.100000000000001
-      },
-      {
-        "code": "RISK_MISSING_TOOLS",
-        "severity": "medium",
-        "weight": -4
       }
     ],
     "scalars": {
@@ -109008,7 +109001,6 @@
         "financeSubFamily": null,
         "flaggableTools": [
           "canva",
-          "crm",
           "illustrator",
           "indesign",
           "photoshop"
@@ -109024,7 +109016,7 @@
         "isContentExecutionHeavy": true,
         "isContract": false,
         "isGovernment": false,
-        "isHourly": true,
+        "isHourly": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
@@ -109033,13 +109025,12 @@
         "jobIndustry": null,
         "jobTitle": "Social Media Coordinator",
         "location": {
-          "city": "New York City",
+          "city": "Miami",
           "constrained": false,
           "mode": "hybrid"
         },
         "preferredTools": [
           "canva",
-          "crm",
           "illustrator",
           "indesign",
           "photoshop"
@@ -109137,12 +109128,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -14,
-          "note": "13.700000000000001"
+          "points": -8,
+          "note": "8.100000000000001"
         }
       ],
-      "raw_score": 83,
-      "clamped_score": 83
+      "raw_score": 89,
+      "clamped_score": 89
     }
   },
   "prod-508f0754-71a8-40f0-9169-72e0290c2ef6": {
@@ -119134,7 +119125,7 @@
     "id": "prod-577cea92-bbe9-4726-88bb-208fcc5e1805",
     "label": "prod 577cea92 — Leasing Professional - The Sagamore @ Greystar (2026-06-08)",
     "decision": "Pass",
-    "score": 47,
+    "score": 43,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -119169,14 +119160,6 @@
         "strength": 8,
         "label": "prospecting, outreach, and pipeline management",
         "requiredness": "core"
-      },
-      {
-        "id": "f7d7396f4b6c07b4",
-        "key": "operations_execution",
-        "kind": "execution",
-        "strength": 4,
-        "label": "operations, process, and workflow execution",
-        "requiredness": "supporting"
       }
     ],
     "profile_evidence_units": [
@@ -119322,42 +119305,6 @@
         "match_key": "communications_writing",
         "job_unit_key": "communications_writing",
         "profile_unit_id": "a7694b81f5705671"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 75,
-        "coverageScore": 54,
-        "match_kind": "execution",
-        "match_key": "operations_execution",
-        "job_unit_key": "operations_execution",
-        "profile_unit_id": "265ee7b7acffcf04"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 75,
-        "coverageScore": 54,
-        "match_kind": "execution",
-        "match_key": "operations_execution",
-        "job_unit_key": "operations_execution",
-        "profile_unit_id": "358684e8170fc901"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 77,
-        "coverageScore": 56,
-        "match_kind": "execution",
-        "match_key": "operations_execution",
-        "job_unit_key": "operations_execution",
-        "profile_unit_id": "53795e8211565d92"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 75,
-        "coverageScore": 54,
-        "match_kind": "execution",
-        "match_key": "operations_execution",
-        "job_unit_key": "operations_execution",
-        "profile_unit_id": "a7694b81f5705671"
       }
     ],
     "why_codes": [
@@ -119372,12 +119319,6 @@
         "weight": 79,
         "match_strength": "adjacent",
         "match_key": "communications_writing"
-      },
-      {
-        "code": "WHY_EXECUTION_PROOF",
-        "weight": 75,
-        "match_strength": "adjacent",
-        "match_key": "operations_execution"
       }
     ],
     "risk_codes": [
@@ -119407,7 +119348,6 @@
         "function_tags": [
           "brand_marketing",
           "communications_pr",
-          "operations_general",
           "premed_clinical",
           "sales_bd"
         ],
@@ -119419,14 +119359,14 @@
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
-        "jobArchetype": "mixed",
-        "jobFamily": "HR",
+        "jobArchetype": "unclear",
+        "jobFamily": "Marketing",
         "jobIndustry": null,
         "jobTitle": "Leasing Professional - The Sagamore",
         "location": {
           "city": "New York City",
           "constrained": false,
-          "mode": "hybrid"
+          "mode": "in_person"
         },
         "preferredTools": [],
         "requiredTools": [],
@@ -119519,8 +119459,8 @@
           "note": "7.800000000000001"
         }
       ],
-      "raw_score": 47,
-      "clamped_score": 47
+      "raw_score": 43,
+      "clamped_score": 43
     }
   },
   "prod-585975ef-cb66-4fdf-8d1d-2ddb1b645aef": {
@@ -219690,7 +219630,7 @@
     "id": "prod-a3dcb7b4-5fbf-4a04-abe5-172691a204f7",
     "label": "prod a3dcb7b4 — 2026 Summer Associate (Intern) @ BRG (2026-04-14)",
     "decision": "Apply",
-    "score": 87,
+    "score": 78,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -219709,6 +219649,14 @@
         "strength": 7,
         "label": "tableau tool usage",
         "requiredness": "core"
+      },
+      {
+        "id": "28b7eb577f6fb67c",
+        "key": "analysis_reporting",
+        "kind": "execution",
+        "strength": 6,
+        "label": "analysis, reporting, and measurement work",
+        "requiredness": "supporting"
       },
       {
         "id": "2b2d6b999e323bb5",
@@ -219733,14 +219681,6 @@
         "strength": 7,
         "label": "sql tool usage",
         "requiredness": "core"
-      },
-      {
-        "id": "4b5c798c575e71dd",
-        "key": "analysis_reporting",
-        "kind": "execution",
-        "strength": 6,
-        "label": "analysis, reporting, and measurement work",
-        "requiredness": "supporting"
       },
       {
         "id": "4eda7ee6f1644871",
@@ -220344,6 +220284,11 @@
     ],
     "risk_codes": [
       {
+        "code": "RISK_FAMILY_MISMATCH",
+        "severity": "medium",
+        "weight": -12
+      },
+      {
         "code": "RISK_FINANCIAL_MODELING",
         "severity": "medium",
         "weight": -6
@@ -220393,12 +220338,12 @@
         "isContentExecutionHeavy": false,
         "isContract": false,
         "isGovernment": false,
-        "isHourly": true,
+        "isHourly": false,
         "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": true,
         "jobArchetype": "analytical",
-        "jobFamily": "Consulting",
+        "jobFamily": "Operations",
         "jobIndustry": null,
         "jobTitle": "2026 Summer Associate (Intern)",
         "location": {
@@ -220497,8 +220442,8 @@
           "note": "10"
         }
       ],
-      "raw_score": 87,
-      "clamped_score": 87
+      "raw_score": 78,
+      "clamped_score": 78
     }
   },
   "prod-a476263c-6fc4-438c-87a6-598b5b23e80c": {
@@ -269563,7 +269508,7 @@
         "jobIndustry": null,
         "jobTitle": "Intern, Strategy & Corporate Development",
         "location": {
-          "city": "New York City",
+          "city": null,
           "constrained": true,
           "mode": "remote"
         },
@@ -315957,8 +315902,8 @@
     "schema_version": 2,
     "id": "prod-e555f2ed-a9ee-41bb-8a70-8165d87a1a2c",
     "label": "prod e555f2ed — Macy's 2026 Summer Internship - Corporate Strategy @ Macy's (2026-04-14)",
-    "decision": "Apply",
-    "score": 93,
+    "decision": "Priority Apply",
+    "score": 97,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -316486,13 +316431,7 @@
         "match_key": "sql"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_MISSING_TOOLS",
-        "severity": "medium",
-        "weight": -4
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -316505,8 +316444,6 @@
         "detectedDomain": null,
         "financeSubFamily": null,
         "flaggableTools": [
-          "crm",
-          "salesforce",
           "sql"
         ],
         "function_tags": [
@@ -316523,7 +316460,7 @@
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
-        "jobFamily": "HR",
+        "jobFamily": "Consulting",
         "jobIndustry": null,
         "jobTitle": "Macy's 2026 Summer Internship - Corporate Strategy",
         "location": {
@@ -316532,10 +316469,8 @@
           "mode": "hybrid"
         },
         "preferredTools": [
-          "crm",
           "excel",
           "powerpoint",
-          "salesforce",
           "sql",
           "word"
         ],
@@ -316606,26 +316541,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -4,
-          "note": "4"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 93,
-      "clamped_score": 93
+      "raw_score": 97,
+      "clamped_score": 97
     }
   },
   "prod-e577b5f6-e2c6-4b75-91f7-e7fe60eafa68": {

@@ -8,6 +8,7 @@ import {
   runJobFitForProfile,
 } from "../../_lib/runJobFitForProfile"
 import { resolveDelegation } from "@/lib/collab/delegation"
+import { isolatePosting, type IsolatedPosting } from "@/lib/jobs/isolatePosting"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -147,6 +148,38 @@ export async function POST(req: NextRequest) {
       supabase,
     })
 
+    // ── Isolate the posting, and ASK when we are not sure ─────────────
+    //
+    // Scoring a pasted page scores whatever else was on it. When the posting
+    // can be bounded confidently we just use it; when the text clearly came
+    // off a job board but no posting heading could be found, we stop and show
+    // the coach what we would score rather than guessing. A wrong score that
+    // looks confident is worse than a question.
+    //
+    // `confirmed_job_text` is the coach's answer: score exactly this, and do
+    // not isolate it again.
+    const confirmedText = String(body.confirmed_job_text || "").trim()
+    const isolation: IsolatedPosting = confirmedText
+      ? {
+          text: confirmedText, confidence: "high", looksLikePage: false,
+          removedChars: 0, reason: "Confirmed by the coach.", source: "none",
+        }
+      : isolatePosting(jobDescription)
+
+    if (!confirmedText && isolation.confidence === "low" && isolation.looksLikePage) {
+      return withCorsJson(req, {
+        ok: true,
+        needs_confirmation: true,
+        isolation: {
+          text: isolation.text,
+          confidence: isolation.confidence,
+          removed_chars: isolation.removedChars,
+          reason: isolation.reason,
+          source: isolation.source,
+        },
+      })
+    }
+
     // Determine fullAnalysis: use cached if provided, otherwise run the
     // full shared JobFit pipeline (identical to /api/jobfit output).
     let fullAnalysis: any
@@ -158,12 +191,13 @@ export async function POST(req: NextRequest) {
       const result = await runJobFitForProfile({
         clientProfileId,
         personaId,
-        jobText: jobDescription,
+        jobText: isolation.text || jobDescription,
         jobTitle,
         companyName,
         jobUrl: body.job_url || null,
         supabase,
         preassembled: assembled,
+        preIsolated: isolation,
       })
 
       fullAnalysis = {
@@ -192,7 +226,18 @@ export async function POST(req: NextRequest) {
 
     // Dry run: return analysis result without creating any DB rows
     if (dryRun) {
-      return withCorsJson(req, { ok: true, dry_run: true, jobfit: fullAnalysis })
+      return withCorsJson(req, {
+        ok: true, dry_run: true, jobfit: fullAnalysis,
+        // Shown above the results so the coach can see WHAT was scored when
+        // the paste carried more than the posting.
+        isolation: {
+          confidence: isolation.confidence,
+          removed_chars: isolation.removedChars,
+          reason: isolation.reason,
+          source: isolation.source,
+          looks_like_page: isolation.looksLikePage,
+        },
+      })
     }
 
     // Look up coach_client_id (required NOT NULL FK on coach_job_recommendations)

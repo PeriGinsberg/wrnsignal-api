@@ -595,9 +595,14 @@ export default function CoachClientPage() {
     setRunError('')
   }
 
-  async function runDryAnalysis() {
+  // Set when the server could not separate the posting from a pasted page.
+  // Holds the text it WOULD score, so the coach can read it before deciding.
+  const [needsConfirm, setNeedsConfirm] = useState<{ text: string; reason: string } | null>(null)
+
+  async function runDryAnalysis(confirmedText?: string) {
     if (!sourceJD.trim() || !selectedPersona) return
     setRunning(true); setRunResult(null); setRunError(''); setSendSuccess(false); setShowAnnotation(false)
+    if (!confirmedText) setNeedsConfirm(null)
     try {
       const res = await authFetch("/api/coach/recommend-job", {
         method: "POST",
@@ -609,10 +614,20 @@ export default function CoachClientPage() {
           job_description: sourceJD,
           job_url: sourceUrl || null,
           dry_run: true,
+          ...(confirmedText ? { confirmed_job_text: confirmedText } : {}),
         }),
       })
       const j = await res.json()
+      // NOT SCORED YET. The paste looked like a web page and the posting could
+      // not be bounded inside it, so the server stopped and sent back what it
+      // WOULD score. Guessing here is how a confident wrong answer gets made.
+      if (res.ok && j.needs_confirmation) {
+        setNeedsConfirm({ text: j.isolation?.text ?? sourceJD, reason: j.isolation?.reason ?? "" })
+        setRunning(false)
+        return
+      }
       if (res.ok) {
+        setNeedsConfirm(null)
         setRunResult(j.jobfit || j)
         const decision = j.jobfit?.decision || j.decision || ''
         if (decision === 'Priority Apply') { setAnnPriority('urgent'); setAnnAction('apply'); setAnnNote('Strong fit — apply immediately. This aligns well with your background.') }
@@ -1620,7 +1635,7 @@ export default function CoachClientPage() {
               )}
 
               <button
-                onClick={runDryAnalysis}
+                onClick={() => void runDryAnalysis()}
                 disabled={running || !selectedPersona}
                 style={{
                   ...btnPrimary, fontWeight: 900,
@@ -1631,6 +1646,59 @@ export default function CoachClientPage() {
                 {running && <SavingSpinner />}
                 {running ? "Running SIGNAL Analysis..." : "Run SIGNAL Analysis →"}
               </button>
+            </div>
+          )}
+
+          {/* CONFIRM — only when the posting could not be found in the paste.
+              Deliberately between running and results: nothing has been scored
+              at this point, and the coach is being asked to look before it is. */}
+          {needsConfirm && (
+            <div style={{ ...card, padding: 24, marginBottom: 20, borderLeft: `3px solid ${T.WRN_ORANGE}` }}>
+              <div style={{ ...eyebrow, color: T.INK_EMPHASIS, fontSize: TYPE.micro, marginBottom: 10 }}>
+                CHECK THIS BEFORE SCORING
+              </div>
+              <p style={{ fontSize: TYPE.body, color: T.TEXT, margin: "0 0 6px 0", fontWeight: 700 }}>
+                This looks like a pasted web page rather than a job posting.
+              </p>
+              <p style={{ fontSize: TYPE.secondary, color: T.MUTED, margin: "0 0 14px 0", lineHeight: "20px" }}>
+                {needsConfirm.reason} Scoring a whole page scores whatever else was on it, including
+                other jobs in the sidebar. Here is the text that would be scored.
+              </p>
+              <div style={{
+                background: T.GLASS, border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 10,
+                padding: "12px 14px", maxHeight: 260, overflowY: "auto", marginBottom: 14,
+                fontSize: TYPE.secondary, color: T.TEXT, lineHeight: "20px",
+                whiteSpace: "pre-wrap", overflowWrap: "anywhere",
+              }}>
+                {needsConfirm.text}
+              </div>
+              <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                <button
+                  onClick={() => void runDryAnalysis(needsConfirm.text)}
+                  style={{ ...btnPrimary, fontWeight: 900 }}
+                >
+                  Score this →
+                </button>
+                <button
+                  onClick={() => { const t = sourceJD; setNeedsConfirm(null); void runDryAnalysis(t) }}
+                  style={{
+                    padding: "9px 16px", borderRadius: 8, fontSize: TYPE.control, fontWeight: 800,
+                    cursor: "pointer", border: `1px solid ${T.BORDER}`, background: "transparent",
+                    color: T.TEXT,
+                  }}
+                >
+                  Score my whole paste instead
+                </button>
+                <button
+                  onClick={() => setNeedsConfirm(null)}
+                  style={{
+                    fontSize: TYPE.secondary, color: T.MUTED, background: "none", border: "none",
+                    cursor: "pointer", textDecoration: "underline", padding: "8px 4px",
+                  }}
+                >
+                  Edit the paste
+                </button>
+              </div>
             </div>
           )}
 

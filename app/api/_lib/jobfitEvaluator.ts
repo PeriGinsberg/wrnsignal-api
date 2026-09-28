@@ -37,6 +37,7 @@ import { renderBulletsV4, RENDERER_V4_STAMP } from "../jobfit/deterministicBulle
 import { extractJobSignalsLLM } from "../jobfit/extractJobSignalsLLM"
 import { llmJobExtractionToSignals } from "../jobfit/llmJobSignalsAdapter"
 import type { ExtractionCache } from "../jobfit/extractionCache"
+import { isolatePosting, type IsolatedPosting } from "@/lib/jobs/isolatePosting"
 
 export const JOBFIT_EVAL_WRAPPER_STAMP =
   "JOBFIT_EVAL_WRAPPER_STAMP__2026_03_07__DIRECT_DETERMINISTIC_ORCHESTRATOR__B"
@@ -166,6 +167,12 @@ export async function runJobFit(args: {
   // read by the span-grounded LLM extractor (frozen cache in the harness); when
   // omitted, the deterministic regex extractor is used (fail-open / prod today).
   resumeExtractor?: { cache: ResumeExtractCache; allowLive: boolean }
+  /**
+   * An isolation the caller already ran, usually because it showed the result
+   * to a human first. Supplied so a confirmed decision is not recomputed and
+   * silently overridden.
+   */
+  preIsolated?: IsolatedPosting
 }): Promise<
   EvalOutput & {
     icon: string
@@ -173,6 +180,21 @@ export async function runJobFit(args: {
     engine_trace?: { matches: WhyEvidenceMatch[]; coverage: RequirementCoverage[] }
   }
 > {
+  // ── Isolate the posting from pasted page chrome ───────────────────
+  //
+  // THE CHOKEPOINT, and deliberately here rather than one level up. Every
+  // scoring caller reaches this function: coach Source a Job, client-facing
+  // JobFit, both trial routes, and the regression harness. Putting it in
+  // runJobFitForProfile covered the routes but left the harness scoring
+  // different text from production, which is the one place the difference
+  // must never exist.
+  //
+  // A clean job description is returned untouched, which is why the 68 core
+  // and 628 prod regression cases are unaffected by it.
+  const isolation = args.preIsolated ?? isolatePosting(args.jobText || "")
+  const jobText = isolation.text || args.jobText || ""
+  args = { ...args, jobText }
+
   // Pass the user-provided title INTO extraction so title-based family
   // detectors (jobTitleIsSoftware, jobTitleIsCyberSecurity, jobTitleIsHR,
   // etc.) can see it. Without this, short or company-heavy JDs whose
