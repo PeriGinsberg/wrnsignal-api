@@ -54,7 +54,7 @@ const PRIORITY_LABEL: Record<Priority, string> = {
 }
 
 const PRIORITY_BADGE: Record<Priority, { bg: string; color: string }> = {
-  urgent: { bg: "rgba(248,113,113,0.15)", color: "#f87171" },
+  urgent: { bg: "rgba(248,113,113,0.15)", color: T.ERROR },
   this_week: { bg: "rgba(254,176,106,0.15)", color: T.INK_EMPHASIS },
   when_ready: { bg: "rgba(81,173,229,0.12)", color: T.INK_LINK },
   // Never rendered: a row with no priority shows no badge. Present so the
@@ -191,7 +191,7 @@ export function NeedsAttentionSection({ authFetch, clientId, refreshKey }: Props
 
       {error && (
         <div style={{ padding: 10, background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.22)", borderRadius: 8, marginBottom: 10 }}>
-          <span style={{ fontSize: TYPE.secondary, color: "#f87171" }}>Couldn&apos;t load: {error}</span>
+          <span style={{ fontSize: TYPE.secondary, color: T.ERROR }}>Couldn&apos;t load: {error}</span>
         </div>
       )}
 

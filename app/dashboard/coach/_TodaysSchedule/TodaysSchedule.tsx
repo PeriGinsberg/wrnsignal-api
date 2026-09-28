@@ -276,7 +276,7 @@ export function TodaysSchedule({ isCalendarBetaEnabled }: TodaysScheduleProps) {
         background: "rgba(248,113,113,0.10)",
         border: "1px solid rgba(248,113,113,0.35)",
         fontSize: 12,
-        color: "#fca5a5",
+        color: T.ERROR,
       }}
     >
       {errorBanner}

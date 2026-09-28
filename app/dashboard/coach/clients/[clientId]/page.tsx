@@ -112,16 +112,16 @@ async function authFetch(url: string, opts: RequestInit = {}) {
 }
 
 const PRIORITY_STYLE: Record<string, { bg: string; color: string }> = {
-  urgent: { bg: "rgba(248,113,113,0.15)", color: "#f87171" },
+  urgent: { bg: "rgba(248,113,113,0.15)", color: T.ERROR },
   high: { bg: "rgba(254,176,106,0.15)", color: T.INK_EMPHASIS },
   normal: { bg: "rgba(81,173,229,0.12)", color: T.INK_LINK },
 }
 
 const DECISION_STYLE: Record<string, { bg: string; color: string }> = {
-  "Priority Apply": { bg: "rgba(15,214,104,0.15)", color: "#0FD668" },
+  "Priority Apply": { bg: "rgba(15,214,104,0.15)", color: T.SUCCESS },
   Apply: { bg: "rgba(0,179,179,0.12)", color: T.SUCCESS },
   Review: { bg: "rgba(212,164,68,0.15)", color: T.INK_EMPHASIS },
-  Pass: { bg: "rgba(232,112,112,0.12)", color: "#E87070" },
+  Pass: { bg: "rgba(232,112,112,0.12)", color: T.ERROR },
 }
 
 function Badge({ text, style: s }: { text: string; style: { bg: string; color: string } }) {
@@ -1481,7 +1481,7 @@ export default function CoachClientPage() {
                 }}
               >
                 <div style={{ ...card, padding: 28, maxWidth: 460, width: "100%", textAlign: "center" }}>
-                  <div style={{ ...eyebrow, color: "#FBBF24", fontSize: TYPE.micro, marginBottom: 10 }}>LINKEDIN</div>
+                  <div style={{ ...eyebrow, color: T.INK_EMPHASIS, fontSize: TYPE.micro, marginBottom: 10 }}>LINKEDIN</div>
                   <div style={{ fontSize: 18, fontWeight: 900, color: T.TEXT, marginBottom: 12 }}>
                     We couldn't read this job posting
                   </div>
@@ -1513,7 +1513,7 @@ export default function CoachClientPage() {
                 background: "rgba(253,186,40,0.08)", border: "1px solid rgba(253,186,40,0.3)",
                 borderRadius: 14, padding: 20, marginBottom: 20,
               }}>
-                <div style={{ ...eyebrow, color: "#FBBF24", fontSize: TYPE.micro, marginBottom: 8 }}>LINKEDIN — PASTE MANUALLY</div>
+                <div style={{ ...eyebrow, color: T.INK_EMPHASIS, fontSize: TYPE.micro, marginBottom: 8 }}>LINKEDIN: PASTE MANUALLY</div>
                 <p style={{ fontSize: TYPE.secondary, color: T.MUTED, marginBottom: 12, lineHeight: "18px" }}>
                   LinkedIn blocks automated access. Open the job posting in your browser, select all the text (Ctrl+A / Cmd+A), copy it, and paste it below.
                 </p>
@@ -1544,7 +1544,7 @@ export default function CoachClientPage() {
             {/* Error from fetch/parse */}
             {runError && (
               <div style={{ marginBottom: 14, padding: 12, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 10 }}>
-                <span style={{ fontSize: TYPE.secondary, color: "#f87171", fontWeight: 700 }}>{runError}</span>
+                <span style={{ fontSize: TYPE.secondary, color: T.ERROR, fontWeight: 700 }}>{runError}</span>
               </div>
             )}
 
@@ -1612,7 +1612,7 @@ export default function CoachClientPage() {
 
               {runError && (
                 <div style={{ marginBottom: 14, padding: 12, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 10 }}>
-                  <span style={{ fontSize: TYPE.secondary, color: "#f87171", fontWeight: 700 }}>{runError}</span>
+                  <span style={{ fontSize: TYPE.secondary, color: T.ERROR, fontWeight: 700 }}>{runError}</span>
                 </div>
               )}
 
@@ -1753,10 +1753,10 @@ export default function CoachClientPage() {
                             width: 32, height: 32, borderRadius: 10, flexShrink: 0,
                             background: "rgba(248,113,113,0.15)", border: "1px solid rgba(248,113,113,0.35)",
                             display: "flex", alignItems: "center", justifyContent: "center",
-                            fontSize: TYPE.body, color: "#f87171",
+                            fontSize: TYPE.body, color: T.ERROR,
                           }}>⚠</div>
                           <div>
-                            <div style={{ fontSize: TYPE.body, fontWeight: 800, color: "#f87171" }}>
+                            <div style={{ fontSize: TYPE.body, fontWeight: 800, color: T.ERROR }}>
                               {isPass ? "Why This Is a Pass" : "Your Risks"}
                             </div>
                             <div style={{ fontSize: TYPE.micro, color: T.DIM, marginTop: 2 }}>
@@ -1771,7 +1771,7 @@ export default function CoachClientPage() {
                                 width: 22, height: 22, borderRadius: "50%",
                                 background: "rgba(248,113,113,0.15)", border: "1.5px solid rgba(248,113,113,0.50)",
                                 display: "flex", alignItems: "center", justifyContent: "center",
-                                flexShrink: 0, marginTop: 2, fontSize: TYPE.micro, color: "#f87171", fontWeight: 900,
+                                flexShrink: 0, marginTop: 2, fontSize: TYPE.micro, color: T.ERROR, fontWeight: 900,
                               }}>!</div>
                               <div style={{ fontSize: TYPE.secondary, lineHeight: "19px", color: T.TEXT, fontWeight: 400, flex: 1 }}>
                                 {bullet}
@@ -1904,7 +1904,7 @@ export default function CoachClientPage() {
 
                   {runError && (
                     <div style={{ padding: 12, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 10 }}>
-                      <span style={{ fontSize: TYPE.secondary, color: "#f87171", fontWeight: 700 }}>{runError}</span>
+                      <span style={{ fontSize: TYPE.secondary, color: T.ERROR, fontWeight: 700 }}>{runError}</span>
                     </div>
                   )}
 

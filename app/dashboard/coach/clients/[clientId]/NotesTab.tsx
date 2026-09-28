@@ -45,7 +45,7 @@ const PRIORITY_LABEL: Record<NotePriority, string> = {
 }
 
 const PRIORITY_BADGE_STYLE: Record<NotePriority, { bg: string; color: string }> = {
-  urgent: { bg: "rgba(248,113,113,0.15)", color: "#f87171" },
+  urgent: { bg: "rgba(248,113,113,0.15)", color: T.ERROR },
   this_week: { bg: "rgba(254,176,106,0.15)", color: T.INK_EMPHASIS },
   when_ready: { bg: "rgba(81,173,229,0.12)", color: T.INK_LINK },
 }
@@ -221,7 +221,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
 
       {error && (
         <div style={{ marginBottom: 14, padding: 12, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 10 }}>
-          <span style={{ fontSize: TYPE.secondary, color: "#f87171", fontWeight: 700 }}>{error}</span>
+          <span style={{ fontSize: TYPE.secondary, color: T.ERROR, fontWeight: 700 }}>{error}</span>
         </div>
       )}
 
@@ -347,7 +347,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
                     {editType === "action_item" && (
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
                         {[
-                          { value: "urgent" as const, label: "Urgent", color: "#f87171", border: "rgba(248,113,113,0.4)", bg: "rgba(248,113,113,0.1)" },
+                          { value: "urgent" as const, label: "Urgent", color: T.ERROR, border: "rgba(248,113,113,0.4)", bg: "rgba(248,113,113,0.1)" },
                           { value: "this_week" as const, label: "This Week", color: T.INK_EMPHASIS, border: "rgba(254,176,106,0.4)", bg: "rgba(254,176,106,0.1)" },
                           { value: "when_ready" as const, label: "When Ready", color: T.INK_LINK, border: "rgba(81,173,229,0.4)", bg: "rgba(81,173,229,0.1)" },
                         ].map((opt) => {

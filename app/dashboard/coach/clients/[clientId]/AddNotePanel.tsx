@@ -291,7 +291,7 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
 
           {error && (
             <div style={{ padding: 10, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8 }}>
-              <span style={{ fontSize: TYPE.secondary, color: "#f87171", fontWeight: 700 }}>{error}</span>
+              <span style={{ fontSize: TYPE.secondary, color: T.ERROR, fontWeight: 700 }}>{error}</span>
             </div>
           )}
         </div>

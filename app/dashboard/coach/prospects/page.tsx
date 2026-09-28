@@ -49,7 +49,7 @@ const PROSPECT_STATUS_VALUES = Object.keys(PROSPECT_STATUS_LABEL) as ProspectSta
 const PROSPECT_STATUS_STYLE: Record<ProspectStatus, { bg: string; color: string; border: string }> = {
   active:   { bg: "rgba(0,179,179,0.18)",  color: T.SUCCESS, border: "rgba(0,179,179,0.50)" },
   inactive: { bg: "rgba(254,176,106,0.18)", color: T.INK_EMPHASIS, border: "rgba(254,176,106,0.50)" },
-  lost:     { bg: "rgba(248,113,113,0.20)", color: "#f87171", border: "rgba(248,113,113,0.55)" },
+  lost:     { bg: "rgba(248,113,113,0.20)", color: T.ERROR, border: "rgba(248,113,113,0.55)" },
   won:      { bg: "rgba(45,165,141,0.18)",  color: T.INK_EMPHASIS, border: "rgba(45,165,141,0.45)" },
 }
 

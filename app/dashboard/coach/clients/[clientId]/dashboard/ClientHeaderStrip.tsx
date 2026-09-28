@@ -205,7 +205,7 @@ export function ClientHeaderStrip({
                   style={{
                     background: "none",
                     border: "none",
-                    color: "#f87171",
+                    color: T.ERROR,
                     fontSize: TYPE.secondary,
                     fontWeight: 700,
                     width: "100%",
@@ -223,7 +223,7 @@ export function ClientHeaderStrip({
         </div>
         </div>
         {inviteError && (
-          <span style={{ color: "#f87171", fontSize: TYPE.micro, fontWeight: 700, maxWidth: 260, textAlign: "right" }}>
+          <span style={{ color: T.ERROR, fontSize: TYPE.micro, fontWeight: 700, maxWidth: 260, textAlign: "right" }}>
             {inviteError}
           </span>
         )}

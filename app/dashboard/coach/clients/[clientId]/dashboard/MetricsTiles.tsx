@@ -42,7 +42,7 @@ const TILE_DEFS: readonly TileDef[] = [
   { key: "totalJobs",  label: "Total Jobs",  color: T.TEXT, filterStatus: "all",          windowed: false },
   { key: "interviews", label: "Interviews",  color: T.WRN_PINK,                filterStatus: "interviewing", windowed: true },
   { key: "offers",     label: "Offers",      color: T.SUCCESS,                filterStatus: "offer",        windowed: true },
-  { key: "rejected",   label: "Rejected",    color: "#E87070",                filterStatus: "rejected",     windowed: true },
+  { key: "rejected",   label: "Rejected",    color: T.ERROR,                filterStatus: "rejected",     windowed: true },
 ] as const
 
 type Props = {

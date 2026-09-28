@@ -541,7 +541,7 @@ export default function MyClientsFullPage() {
                     <div
                       style={{
                         fontSize: 12,
-                        color: "#f87171",
+                        color: T.ERROR,
                         fontWeight: 600,
                         paddingLeft: 14,
                         paddingRight: 14,

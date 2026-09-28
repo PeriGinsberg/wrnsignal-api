@@ -104,7 +104,7 @@ const NOTE_PRIORITY_LABEL: Record<NotePriority, string> = {
 }
 
 const NOTE_PRIORITY_BADGE: Record<NotePriority, { bg: string; color: string; border: string }> = {
-  urgent:     { bg: "rgba(248,113,113,0.15)", color: "#f87171", border: "rgba(248,113,113,0.4)" },
+  urgent:     { bg: "rgba(248,113,113,0.15)", color: T.ERROR, border: "rgba(248,113,113,0.4)" },
   this_week:  { bg: "rgba(254,176,106,0.15)", color: T.INK_EMPHASIS, border: "rgba(254,176,106,0.4)" },
   when_ready: { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK, border: "rgba(81,173,229,0.4)" },
 }
@@ -573,7 +573,7 @@ function ClientNotesSection({
           />
           {addError && (
             <div style={{ padding: 8, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8 }}>
-              <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{addError}</span>
+              <span style={{ fontSize: 12, color: T.ERROR, fontWeight: 700 }}>{addError}</span>
             </div>
           )}
           <div style={{ display: "flex", gap: 8 }}>
@@ -602,7 +602,7 @@ function ClientNotesSection({
 
       {rowError && (
         <div style={{ marginBottom: 12, padding: 10, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8 }}>
-          <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{rowError}</span>
+          <span style={{ fontSize: 12, color: T.ERROR, fontWeight: 700 }}>{rowError}</span>
         </div>
       )}
 
@@ -765,7 +765,7 @@ function ClientNotesSection({
                     />
                     {editError && (
                       <div style={{ padding: 8, marginTop: 8, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8 }}>
-                        <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{editError}</span>
+                        <span style={{ fontSize: 12, color: T.ERROR, fontWeight: 700 }}>{editError}</span>
                       </div>
                     )}
                     <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
@@ -1110,7 +1110,7 @@ export default function CoachClientPostConversionPage() {
                   </span>
                 </div>
                 {!inviteResult?.email_sent && (
-                  <p style={{ fontSize: 12, color: "#FBBF24", margin: 0 }}>
+                  <p style={{ fontSize: 12, color: T.INK_EMPHASIS, margin: 0 }}>
                     Account created but the email delivery failed — please reach
                     out to {firstName} directly with their sign-in link.
                   </p>
@@ -1192,7 +1192,7 @@ export default function CoachClientPostConversionPage() {
                       borderRadius: 8,
                     }}
                   >
-                    <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{setupError}</span>
+                    <span style={{ fontSize: 12, color: T.ERROR, fontWeight: 700 }}>{setupError}</span>
                   </div>
                 )}
                 {inviteError && (
@@ -1205,7 +1205,7 @@ export default function CoachClientPostConversionPage() {
                       borderRadius: 8,
                     }}
                   >
-                    <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{inviteError}</span>
+                    <span style={{ fontSize: 12, color: T.ERROR, fontWeight: 700 }}>{inviteError}</span>
                   </div>
                 )}
               </>

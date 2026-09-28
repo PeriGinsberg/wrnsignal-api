@@ -266,7 +266,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
               autoFocus
             />
             {errors.name && (
-              <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.name}</div>
+              <div style={{ fontSize: 12, color: T.ERROR, marginTop: 4, fontWeight: 700 }}>{errors.name}</div>
             )}
           </div>
 
@@ -302,7 +302,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
               })}
             </div>
             {errors.source_category && (
-              <div style={{ fontSize: 12, color: "#f87171", marginTop: 6, fontWeight: 700 }}>{errors.source_category}</div>
+              <div style={{ fontSize: 12, color: T.ERROR, marginTop: 6, fontWeight: 700 }}>{errors.source_category}</div>
             )}
           </div>
 
@@ -342,7 +342,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
                 />
                 <p style={{ fontSize: 11, color: T.DIM, marginTop: 4 }}>Used later when you send a SIGNAL invite</p>
                 {errors.invited_email && (
-                  <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.invited_email}</div>
+                  <div style={{ fontSize: 12, color: T.ERROR, marginTop: 4, fontWeight: 700 }}>{errors.invited_email}</div>
                 )}
               </div>
 
@@ -359,7 +359,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
                   onChange={(e) => { setPhone(e.target.value); if (errors.phone) setErrors({ ...errors, phone: undefined }) }}
                 />
                 {errors.phone && (
-                  <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.phone}</div>
+                  <div style={{ fontSize: 12, color: T.ERROR, marginTop: 4, fontWeight: 700 }}>{errors.phone}</div>
                 )}
               </div>
 
@@ -376,7 +376,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
                   onChange={(e) => { setLinkedinUrl(e.target.value); if (errors.linkedin_url) setErrors({ ...errors, linkedin_url: undefined }) }}
                 />
                 {errors.linkedin_url && (
-                  <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.linkedin_url}</div>
+                  <div style={{ fontSize: 12, color: T.ERROR, marginTop: 4, fontWeight: 700 }}>{errors.linkedin_url}</div>
                 )}
               </div>
 
@@ -393,7 +393,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
                   onChange={(e) => { setTargetRoles(e.target.value); if (errors.target_roles) setErrors({ ...errors, target_roles: undefined }) }}
                 />
                 {errors.target_roles && (
-                  <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.target_roles}</div>
+                  <div style={{ fontSize: 12, color: T.ERROR, marginTop: 4, fontWeight: 700 }}>{errors.target_roles}</div>
                 )}
               </div>
 
@@ -413,7 +413,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
                   ))}
                 </select>
                 {errors.education_status && (
-                  <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.education_status}</div>
+                  <div style={{ fontSize: 12, color: T.ERROR, marginTop: 4, fontWeight: 700 }}>{errors.education_status}</div>
                 )}
               </div>
 
@@ -432,7 +432,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
                       onChange={(e) => { setUniversity(e.target.value); if (errors.university) setErrors({ ...errors, university: undefined }) }}
                     />
                     {errors.university && (
-                      <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.university}</div>
+                      <div style={{ fontSize: 12, color: T.ERROR, marginTop: 4, fontWeight: 700 }}>{errors.university}</div>
                     )}
                   </div>
 
@@ -448,7 +448,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
                       onChange={(e) => { setGradDate(e.target.value); if (errors.grad_date) setErrors({ ...errors, grad_date: undefined }) }}
                     />
                     {errors.grad_date && (
-                      <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.grad_date}</div>
+                      <div style={{ fontSize: 12, color: T.ERROR, marginTop: 4, fontWeight: 700 }}>{errors.grad_date}</div>
                     )}
                   </div>
                 </>
@@ -467,7 +467,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
                   maxLength={500}
                 />
                 {errors.source_detail && (
-                  <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.source_detail}</div>
+                  <div style={{ fontSize: 12, color: T.ERROR, marginTop: 4, fontWeight: 700 }}>{errors.source_detail}</div>
                 )}
               </div>
 
@@ -484,7 +484,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
                   maxLength={5000}
                 />
                 {errors.initial_note && (
-                  <div style={{ fontSize: 12, color: "#f87171", marginTop: 4, fontWeight: 700 }}>{errors.initial_note}</div>
+                  <div style={{ fontSize: 12, color: T.ERROR, marginTop: 4, fontWeight: 700 }}>{errors.initial_note}</div>
                 )}
               </div>
             </div>
@@ -501,7 +501,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
               borderRadius: 10,
             }}
           >
-            <span style={{ fontSize: 13, color: "#f87171", fontWeight: 700 }}>{generalError}</span>
+            <span style={{ fontSize: 13, color: T.ERROR, fontWeight: 700 }}>{generalError}</span>
           </div>
         )}
 

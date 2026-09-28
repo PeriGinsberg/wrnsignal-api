@@ -128,7 +128,7 @@ const NOTE_PRIORITY_LABEL: Record<NotePriority, string> = {
 }
 
 const NOTE_PRIORITY_BADGE: Record<NotePriority, { bg: string; color: string; border: string }> = {
-  urgent:     { bg: "rgba(248,113,113,0.15)", color: "#f87171", border: "rgba(248,113,113,0.4)" },
+  urgent:     { bg: "rgba(248,113,113,0.15)", color: T.ERROR, border: "rgba(248,113,113,0.4)" },
   this_week:  { bg: "rgba(254,176,106,0.15)", color: T.INK_EMPHASIS, border: "rgba(254,176,106,0.4)" },
   when_ready: { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK, border: "rgba(81,173,229,0.4)" },
 }
@@ -183,7 +183,7 @@ const PROSPECT_STATUS_LABEL: Record<ProspectStatus, string> = {
 const PROSPECT_STATUS_STYLE: Record<ProspectStatus, { bg: string; color: string; border: string }> = {
   active:   { bg: "rgba(0,179,179,0.18)",  color: T.SUCCESS, border: "rgba(0,179,179,0.50)" },
   inactive: { bg: "rgba(254,176,106,0.18)", color: T.INK_EMPHASIS, border: "rgba(254,176,106,0.50)" },
-  lost:     { bg: "rgba(248,113,113,0.20)", color: "#f87171", border: "rgba(248,113,113,0.55)" },
+  lost:     { bg: "rgba(248,113,113,0.20)", color: T.ERROR, border: "rgba(248,113,113,0.55)" },
 }
 
 type Prospect = {
@@ -839,7 +839,7 @@ function ProspectInfoBlock({
 
       {error && (
         <div style={{ padding: 10, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8 }}>
-          <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{error}</span>
+          <span style={{ fontSize: 12, color: T.ERROR, fontWeight: 700 }}>{error}</span>
         </div>
       )}
       <div style={{ display: "flex", gap: 8 }}>
@@ -1204,7 +1204,7 @@ function ProspectNotesSection({
           />
           {addError && (
             <div style={{ padding: 8, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8 }}>
-              <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{addError}</span>
+              <span style={{ fontSize: 12, color: T.ERROR, fontWeight: 700 }}>{addError}</span>
             </div>
           )}
           <div style={{ display: "flex", gap: 8 }}>
@@ -1233,7 +1233,7 @@ function ProspectNotesSection({
 
       {rowError && (
         <div style={{ marginBottom: 12, padding: 10, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8 }}>
-          <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{rowError}</span>
+          <span style={{ fontSize: 12, color: T.ERROR, fontWeight: 700 }}>{rowError}</span>
         </div>
       )}
 
@@ -1345,7 +1345,7 @@ function ProspectNotesSection({
                     />
                     {editError && (
                       <div style={{ padding: 8, marginTop: 8, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8 }}>
-                        <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{editError}</span>
+                        <span style={{ fontSize: 12, color: T.ERROR, fontWeight: 700 }}>{editError}</span>
                       </div>
                     )}
                     <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
@@ -1868,7 +1868,7 @@ export default function ProspectDetailPage() {
             marginBottom: 16,
           }}
         >
-          <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{nameError}</span>
+          <span style={{ fontSize: 12, color: T.ERROR, fontWeight: 700 }}>{nameError}</span>
         </div>
       )}
 
@@ -1883,7 +1883,7 @@ export default function ProspectDetailPage() {
             marginBottom: 16,
           }}
         >
-          <span style={{ fontSize: 12, color: "#f87171", fontWeight: 700 }}>{stageError}</span>
+          <span style={{ fontSize: 12, color: T.ERROR, fontWeight: 700 }}>{stageError}</span>
         </div>
       )}
 

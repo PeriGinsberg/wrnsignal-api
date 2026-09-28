@@ -139,7 +139,7 @@ export function ApplicationStatusEditPill({
             top: "calc(100% + 4px)",
             left: 0,
             fontSize: TYPE.label,
-            color: "#f87171",
+            color: T.ERROR,
             whiteSpace: "nowrap",
             zIndex: 49,
           }}
