@@ -54,6 +54,11 @@ export const COACH_CLIENT_EVENT_TYPES = [
   // without "to whom", which is the question asked when a client says they
   // never got it.
   "client_email_sent",
+
+  // Practice rounds. Separate from workbooks by design, but the History tab is
+  // one timeline for the relationship, so they belong on it.
+  "practice_round_sent",
+  "practice_round_submitted",
 ] as const
 
 export type CoachClientEventType = (typeof COACH_CLIENT_EVENT_TYPES)[number]

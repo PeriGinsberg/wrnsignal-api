@@ -77,6 +77,15 @@ export const LABELS: Record<CoachClientEventType, (e: CoachClientEvent) => strin
     e.context?.session ? `Session ${e.context.session} homework marked complete` : "Homework marked complete",
   homework_webhook_failed: () => "Homework notification to GoHighLevel failed",
 
+  practice_round_sent: (e) => {
+    const n = Number(e.context?.questions ?? 0)
+    return n > 0 ? `Practice round sent, ${n} question${n === 1 ? "" : "s"}` : "Practice round sent"
+  },
+  practice_round_submitted: (e) => {
+    const n = Number(e.context?.questions ?? 0)
+    return n > 0 ? `Practice round recorded, ${n} answer${n === 1 ? "" : "s"}` : "Practice round recorded"
+  },
+
   campaign_brief_submitted: (e) =>
     e.context?.name ? `Campaign brief submitted: ${e.context.name}` : "Campaign brief submitted",
   // The title is the task. Without it the line says an unnamed something

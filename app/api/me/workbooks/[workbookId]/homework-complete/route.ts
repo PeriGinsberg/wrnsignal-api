@@ -18,6 +18,8 @@ import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { workbookError } from "../../../../_lib/workbookError"
 import { logCoachClientEvent } from "../../../../_lib/coachClientEvents"
 import { clientWorkbookScope, rpcError } from "@/lib/workbook/server"
+import { raiseCoachTask } from "@/lib/practice/server"
+import { getSupabaseAdmin } from "../../../../_lib/coachAuth"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -69,6 +71,38 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ wor
         actorProfileId: actorId,
         context: { title: r.title, session },
       })
+    }
+
+    // ── Ask the coach to build a practice round ───────────────────────
+    //
+    // A REAL TASK, not a coach_client_notes action_item. needs-attention
+    // stopped counting those on 2026-09-26, so the note this RPC still writes
+    // does not reach the coach's queue; this is what actually surfaces.
+    //
+    // Fired once, with the completion, and never retried: a duplicate reminder
+    // is worse than a late one, and the coach can always start a round by hand.
+    if (r.fired && r.coach_client_id) {
+      const admin = getSupabaseAdmin()
+      // The RPC does not return these and changing its signature would mean a
+      // production migration for a staging feature, so they are read here.
+      const { data: cc } = await admin
+        .from("coach_clients")
+        .select("client_profile_id, coach_profile_id")
+        .eq("id", r.coach_client_id)
+        .maybeSingle()
+      if (cc?.client_profile_id && cc?.coach_profile_id) {
+        const first = (r.first_name ?? "your client").trim()
+        await raiseCoachTask(admin, {
+          coachClientId: r.coach_client_id,
+          clientProfileId: cc.client_profile_id,
+          assigneeProfileId: cc.coach_profile_id,
+          title: `Build a practice round for ${first}`,
+          description:
+            `${first} finished the Session ${session} homework. Pick a few questions and send them to record.
+` +
+            `/dashboard/coach/clients/${cc.client_profile_id}/practice`,
+        })
+      }
     }
 
     let webhook: "sent" | "skipped" | "not_configured" | "failed" = r.fired ? "not_configured" : "skipped"
