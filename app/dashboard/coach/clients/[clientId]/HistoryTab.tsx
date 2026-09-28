@@ -81,6 +81,10 @@ export const LABELS: Record<CoachClientEventType, (e: CoachClientEvent) => strin
     const n = Number(e.context?.questions ?? 0)
     return n > 0 ? `Practice round sent, ${n} question${n === 1 ? "" : "s"}` : "Practice round sent"
   },
+  practice_feedback_sent: (e) => {
+    const n = Number(e.context?.questions ?? 0)
+    return n > 0 ? `Practice feedback sent on ${n} answer${n === 1 ? "" : "s"}` : "Practice feedback sent"
+  },
   practice_round_submitted: (e) => {
     const n = Number(e.context?.questions ?? 0)
     return n > 0 ? `Practice round recorded, ${n} answer${n === 1 ? "" : "s"}` : "Practice round recorded"

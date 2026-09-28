@@ -40,3 +40,31 @@ export async function sendPracticeRoundEmail(args: {
     },
   })
 }
+
+export const PRACTICE_FEEDBACK_TEMPLATE = "practice-feedback-ready"
+
+/**
+ * "Your coach left feedback on your practice round."
+ *
+ * The feedback ITSELF is not in the email. It is written per question and sits
+ * under the answer it is about, which is the only place it reads correctly;
+ * flattening it into a mail would strip the thing that makes it useful. The
+ * email is a nudge with a link.
+ */
+export async function sendPracticeFeedbackEmail(args: {
+  to: string
+  firstName: string
+  coachName: string
+  roundTitle: string
+}) {
+  return sendToClient({
+    to: args.to,
+    templateAlias: PRACTICE_FEEDBACK_TEMPLATE,
+    model: {
+      first_name: args.firstName,
+      coach_name: args.coachName,
+      round_title: args.roundTitle,
+      practice_url: `${(process.env.APP_BASE_URL || "https://wrnsignal-api.vercel.app").replace(/\/+$/, "")}/dashboard/coaching-hub`,
+    },
+  })
+}

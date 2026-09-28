@@ -29,7 +29,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clie
 
     const { data: rounds, error } = await db
       .from("practice_rounds")
-      .select("id, title, status, created_at, sent_at, submitted_at")
+      .select("id, title, status, created_at, sent_at, submitted_at, feedback_sent_at")
       .eq("client_profile_id", scope.subjectId)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })

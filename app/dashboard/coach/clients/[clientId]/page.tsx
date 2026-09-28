@@ -46,6 +46,7 @@ import { HistoryTab } from "./HistoryTab"
 import { WorkbooksTab } from "./WorkbooksTab"
 import { JobDetailPanel, type PanelSection } from "./JobDetailPanel"
 import { describeClientStatus } from "@/lib/coachRecommendations"
+import { PracticeTab } from "./PracticeTab"
 
 // 5-tab layout per Phase 2 Commit 2.4. The previous "history" (Analyses
 // History) tab was removed entirely — its surface no longer ships in the
@@ -53,7 +54,7 @@ import { describeClientStatus } from "@/lib/coachRecommendations"
 // retained (data is preserved; only the surface is gone).
 // "engagements" added for the attached-package snapshots (Client Engagement UI).
 // "history" added for the read-only event timeline (Client Event Log UI).
-type Tab = "dashboard" | "tracker" | "source" | "lanes" | "notes" | "tasks" | "analysis" | "engagements" | "workbooks" | "library" | "history"
+type Tab = "dashboard" | "tracker" | "source" | "lanes" | "notes" | "tasks" | "analysis" | "engagements" | "workbooks" | "practice" | "library" | "history"
 
 // Status filter buckets exposed to Job Tracker tab via URL ?status= param
 // or in-app tile click. "all" = no filter.
@@ -696,6 +697,7 @@ export default function CoachClientPage() {
     { id: "analysis", label: "Profile & Personas" },
     { id: "engagements", label: "Engagements" },
     { id: "workbooks", label: "Workbooks" },
+    { id: "practice", label: "Practice" },
     { id: "library", label: "Library" },
     { id: "history", label: "History" },
   ]
@@ -2091,6 +2093,12 @@ export default function CoachClientPage() {
           clientName={clientProfile?.name || clientProfile?.email || "this client"}
         />
       )}
+
+      {/* Practice — recorded answers and the written feedback on them.
+          Next to Workbooks because they are the two things a coach sets and a
+          client comes back to, but a separate tab because a practice round is
+          a short exchange rather than a document. */}
+      {tab === "practice" && <PracticeTab clientId={clientId} />}
 
       {/* TAB 6 — Library (per-client document links) */}
       {tab === "library" && (

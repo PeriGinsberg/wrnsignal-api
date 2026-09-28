@@ -7,7 +7,7 @@
 
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
-import { clientPracticeScope, loadRound, raiseCoachTask, NotFoundError } from "@/lib/practice/server"
+import { clientPracticeScope, loadRound, raiseCoachTask, signTakes, NotFoundError } from "@/lib/practice/server"
 import { ANSWER_SECONDS, isComplete, latestTakes } from "@/lib/practice/model"
 import { logCoachClientEvent } from "../../../_lib/coachClientEvents"
 
@@ -34,6 +34,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ roun
     const { data: coach } = await db
       .from("client_profiles").select("name").eq("id", round.coach_profile_id).maybeSingle()
 
+    // PLAYBACK, BUT ONLY ONCE THE FEEDBACK IS IN. Watching yourself back is
+    // the point of reading "what to fix", and before that it is just a way to
+    // wince. Signed only in that state, which also keeps the number of live
+    // URLs down while a round is still being recorded.
+    const urls = round.feedback_sent_at
+      ? await signTakes(db, [...newest.values()])
+      : {}
+
     return withCorsJson(req, {
       ok: true,
       round: {
@@ -43,12 +51,20 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ roun
         submitted_at: round.submitted_at,
         coach_name: String(coach?.name ?? "").trim().split(/\s+/)[0] || "Your coach",
         seconds: ANSWER_SECONDS,
+        // FEEDBACK ONLY ONCE RELEASED. The columns fill while the coach is
+        // still typing, so the gate is feedback_sent_at and it is applied here
+        // rather than trusted to the client not to render a draft.
+        feedback_sent_at: round.feedback_sent_at ?? null,
+        overall: round.feedback_sent_at ? round.fb_overall ?? null : null,
         questions: round.questions.map((q) => ({
           id: q.id,
           position: q.position,
           text: q.text,
           answered: newest.has(q.id),
           takes: takes.filter((t) => t.question_id === q.id).length,
+          works: round.feedback_sent_at ? q.fb_works ?? null : null,
+          fix: round.feedback_sent_at ? q.fb_fix ?? null : null,
+          url: (() => { const t = newest.get(q.id); return t ? urls[t.id] ?? null : null })(),
         })),
       },
       complete: isComplete(round.questions, takes),
@@ -66,7 +82,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ rou
     const body = await req.json().catch(() => null)
     const action = String(body?.action ?? "")
 
-    if (round.status === "submitted") {
+    if (round.status === "submitted" || round.status === "feedback_sent") {
       return withCorsJson(req, { ok: false, error: "You have already submitted this round" }, 409)
     }
 

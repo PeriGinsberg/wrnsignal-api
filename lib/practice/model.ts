@@ -2,7 +2,7 @@
 //
 // What a practice round is, and the rules that do not belong to any one route.
 
-export const PRACTICE_STATUSES = ["draft", "sent", "submitted"] as const
+export const PRACTICE_STATUSES = ["draft", "sent", "submitted", "feedback_sent"] as const
 export type PracticeStatus = (typeof PRACTICE_STATUSES)[number]
 
 /**
@@ -24,12 +24,17 @@ export const MIN_QUESTIONS = 1
 export const MAX_QUESTIONS = 6
 
 export const MAX_QUESTION_CHARS = 400
+/** A feedback box is a paragraph, not an essay. */
+export const MAX_FEEDBACK_CHARS = 4000
 
 export type PracticeQuestion = {
   id: string
   position: number
   text: string
   source: "bank" | "custom"
+  /** Coach feedback. Draft until the round's feedback_sent_at is set. */
+  fb_works?: string | null
+  fb_fix?: string | null
 }
 
 export type PracticeTake = {
@@ -51,6 +56,8 @@ export type PracticeRound = {
   created_at: string
   sent_at: string | null
   submitted_at: string | null
+  fb_overall?: string | null
+  feedback_sent_at?: string | null
   questions: PracticeQuestion[]
 }
 
@@ -109,4 +116,24 @@ export function latestTakes(takes: PracticeTake[]): Map<string, PracticeTake> {
 export function isComplete(questions: PracticeQuestion[], takes: PracticeTake[]): boolean {
   const answered = latestTakes(takes)
   return questions.length > 0 && questions.every((q) => answered.has(q.id))
+}
+
+/** What the coach has actually written, ignoring empty boxes. */
+export function hasFeedback(
+  round: Pick<PracticeRound, "fb_overall" | "questions">,
+): boolean {
+  if ((round.fb_overall ?? "").trim()) return true
+  return round.questions.some((q) => (q.fb_works ?? "").trim() || (q.fb_fix ?? "").trim())
+}
+
+/**
+ * Feedback text, trimmed, capped, and empty-as-null.
+ *
+ * Null rather than "" so a box the coach cleared reads the same as one they
+ * never opened, which is what the client-facing render keys off.
+ */
+export function cleanFeedback(v: unknown): string | null {
+  const t = String(v ?? "").trim()
+  if (!t) return null
+  return t.slice(0, MAX_FEEDBACK_CHARS)
 }

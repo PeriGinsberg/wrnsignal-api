@@ -23,7 +23,7 @@ export class NotFoundError extends Error {
 }
 
 export const ROUND_COLUMNS =
-  "id, coach_client_id, client_profile_id, coach_profile_id, title, status, created_at, sent_at, submitted_at"
+  "id, coach_client_id, client_profile_id, coach_profile_id, title, status, created_at, sent_at, submitted_at, fb_overall, feedback_sent_at"
 
 /**
  * A coach acting on one client, full access only.
@@ -98,7 +98,7 @@ export async function loadRound(
 
   const { data: qs, error: qErr } = await db
     .from("practice_questions")
-    .select("id, position, text, source")
+    .select("id, position, text, source, fb_works, fb_fix")
     .eq("round_id", roundId)
     .order("position", { ascending: true })
   if (qErr) throw new Error(`load questions: ${qErr.message}`)

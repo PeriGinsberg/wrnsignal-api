@@ -59,6 +59,7 @@ export const COACH_CLIENT_EVENT_TYPES = [
   // one timeline for the relationship, so they belong on it.
   "practice_round_sent",
   "practice_round_submitted",
+  "practice_feedback_sent",
 ] as const
 
 export type CoachClientEventType = (typeof COACH_CLIENT_EVENT_TYPES)[number]

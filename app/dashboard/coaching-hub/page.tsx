@@ -30,6 +30,7 @@ import {
 } from "../../../lib/theme/surfaces"
 import { SectionState } from "./SectionState"
 import { ActivityStatus } from "./ActivityStatus"
+import { PracticeEntry } from "./PracticeEntry"
 
 type SharedDoc = { id: string; title: string; url: string }
 type DocGroup = { category_id: string | null; name: string; documents: SharedDoc[] }
@@ -245,6 +246,7 @@ export default function CoachingHubPage() {
             the page. Renders nothing at all unless a proof project exists. */}
         <ProofProjectEntry />
         <WorkbooksEntry />
+        <PracticeEntry />
         <MyPlanSection
           groups={groups}
           loading={loading}

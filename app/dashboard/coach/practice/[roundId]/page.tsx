@@ -7,7 +7,7 @@
 // want. Draft shows the builder. Sent shows what was asked and that nothing
 // has come back. Submitted shows the answers.
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
 import { questionBank } from "@/lib/practice/questionBank"
@@ -15,7 +15,10 @@ import { MAX_QUESTIONS } from "@/lib/practice/model"
 import { T } from "@/lib/dashboard-theme"
 import { TYPE } from "@/lib/theme/surfaces"
 
-type Q = { id: string; position: number; text: string; source: "bank" | "custom" }
+type Q = {
+  id: string; position: number; text: string; source: "bank" | "custom"
+  fb_works?: string | null; fb_fix?: string | null
+}
 type Answer = {
   question_id: string
   take_id: string | null
@@ -28,7 +31,9 @@ type Answer = {
 type Round = {
   id: string
   title: string
-  status: "draft" | "sent" | "submitted"
+  status: "draft" | "sent" | "submitted" | "feedback_sent"
+  fb_overall?: string | null
+  feedback_sent_at?: string | null
   client_profile_id: string
   sent_at: string | null
   submitted_at: string | null
@@ -44,7 +49,14 @@ export default function CoachPracticeRoundPage() {
   const [answers, setAnswers] = useState<Answer[]>([])
   const [draft, setDraft] = useState<{ text: string; source: "bank" | "custom" }[]>([])
   const [custom, setCustom] = useState("")
-  const [busy, setBusy] = useState<null | "save" | "send">(null)
+  const [busy, setBusy] = useState<null | "save" | "send" | "feedback">(null)
+  // Feedback lives here while it is being typed. Keyed by question id, plus
+  // the overall note, so a re-render from the autosave never disturbs the box
+  // the coach has a cursor in.
+  const [fb, setFb] = useState<Record<string, { works: string; fix: string }>>({})
+  const [overall, setOverall] = useState("")
+  const [savedAt, setSavedAt] = useState<string>("")
+  const dirty = useRef(false)
   const [msg, setMsg] = useState("")
   const [err, setErr] = useState("")
   const [loading, setLoading] = useState(true)
@@ -70,6 +82,16 @@ export default function CoachPracticeRoundPage() {
       setRound(j.round)
       setAnswers(j.answers ?? [])
       setDraft(j.round.questions.map((q: Q) => ({ text: q.text, source: q.source })))
+      // Only seed the boxes once. Re-seeding on every reload would throw away
+      // whatever the coach has typed since.
+      if (!dirty.current) {
+        const seeded: Record<string, { works: string; fix: string }> = {}
+        for (const q of j.round.questions as Q[]) {
+          seeded[q.id] = { works: q.fb_works ?? "", fix: q.fb_fix ?? "" }
+        }
+        setFb(seeded)
+        setOverall(j.round.fb_overall ?? "")
+      }
       setErr("")
     }
     setLoading(false)
@@ -125,6 +147,66 @@ export default function CoachPracticeRoundPage() {
     setBusy(null)
   }, [authFetch, draft, load, roundId])
 
+  // ── Autosave ─────────────────────────────────────────────────────
+  //
+  // Debounced, not per-keystroke: a coach writing a paragraph would otherwise
+  // fire a request per character. 1200ms is long enough to be one request per
+  // thought and short enough that a closed laptop loses at most a sentence.
+  useEffect(() => {
+    if (!dirty.current) return
+    if (!round || round.feedback_sent_at) return
+    const t = setTimeout(() => {
+      void (async () => {
+        const res = await authFetch(`/api/coach/practice-rounds/${roundId}/feedback`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            overall,
+            answers: Object.entries(fb).map(([question_id, v]) => ({ question_id, ...v })),
+          }),
+        })
+        const j = await res.json().catch(() => null)
+        if (res.ok && j?.ok) setSavedAt(new Date().toLocaleTimeString())
+      })()
+    }, 1200)
+    return () => clearTimeout(t)
+  }, [fb, overall, authFetch, roundId, round])
+
+  const setWorks = (id: string, v: string) => {
+    dirty.current = true
+    setFb((f) => ({ ...f, [id]: { works: v, fix: f[id]?.fix ?? "" } }))
+  }
+  const setFix = (id: string, v: string) => {
+    dirty.current = true
+    setFb((f) => ({ ...f, [id]: { works: f[id]?.works ?? "", fix: v } }))
+  }
+
+  const sendFeedback = useCallback(async () => {
+    setBusy("feedback"); setMsg(""); setErr("")
+    // Flush the draft first, so what is released is what is on screen rather
+    // than whatever the debounce last managed to save.
+    const saved = await authFetch(`/api/coach/practice-rounds/${roundId}/feedback`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        overall,
+        answers: Object.entries(fb).map(([question_id, v]) => ({ question_id, ...v })),
+      }),
+    })
+    const sj = await saved.json().catch(() => null)
+    if (!saved.ok || !sj?.ok) { setErr(sj?.error ?? "Could not save the feedback."); setBusy(null); return }
+
+    const res = await authFetch(`/api/coach/practice-rounds/${roundId}/feedback`, { method: "POST" })
+    const j = await res.json().catch(() => null)
+    if (!res.ok || !j?.ok) setErr(j?.error ?? "Could not send the feedback.")
+    else {
+      dirty.current = false
+      setMsg(j.emailed
+        ? "Feedback sent. They have an email and it is on their Coaching Hub."
+        : `Feedback released, but the email did not go out: ${j.error ?? "unknown error"}`)
+      await load()
+    }
+    setBusy(null)
+  }, [authFetch, fb, load, overall, roundId])
+
   if (loading) return <Wrap><p style={pMuted}>Loading...</p></Wrap>
   if (!round) return <Wrap><p style={{ ...pMuted, color: T.ERROR }}>{err}</p></Wrap>
 
@@ -177,8 +259,28 @@ export default function CoachPracticeRoundPage() {
                     </div>
                   </div>
                 )}
-                {!a?.url && round.status === "submitted" && (
+                {!a?.url && (round.status === "submitted" || round.status === "feedback_sent") && (
                   <p style={{ ...pMuted, marginTop: 6 }}>No recording for this question.</p>
+                )}
+
+                {/* ── Feedback, under the answer it is about ───────────── */}
+                {saved && (round.status === "submitted" || round.status === "feedback_sent") && (
+                  <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
+                    <FbBox
+                      label="What works"
+                      placeholder="The part they should keep doing."
+                      value={fb[saved.id]?.works ?? ""}
+                      readOnly={!!round.feedback_sent_at}
+                      onChange={(v) => setWorks(saved.id, v)}
+                    />
+                    <FbBox
+                      label="What to fix"
+                      placeholder="The one change that would make the biggest difference."
+                      value={fb[saved.id]?.fix ?? ""}
+                      readOnly={!!round.feedback_sent_at}
+                      onChange={(v) => setFix(saved.id, v)}
+                    />
+                  </div>
                 )}
               </div>
               {editable && (
@@ -254,6 +356,37 @@ export default function CoachPracticeRoundPage() {
         </>
       )}
 
+      {(round.status === "submitted" || round.status === "feedback_sent") && (
+        <section style={card}>
+          <h2 style={h2}>Overall note</h2>
+          <p style={{ ...pMuted, marginTop: 0 }}>Optional. One thing to carry into the next round.</p>
+          <FbBox
+            label=""
+            placeholder="Anything that applies across all of their answers."
+            value={overall}
+            readOnly={!!round.feedback_sent_at}
+            onChange={(v) => { dirty.current = true; setOverall(v) }}
+          />
+
+          {round.feedback_sent_at ? (
+            <p style={{ ...pMuted, marginTop: 14, marginBottom: 0, color: T.SUCCESS, fontWeight: 700 }}>
+              Feedback sent {new Date(round.feedback_sent_at).toLocaleDateString()}. They can read it on their Coaching Hub.
+            </p>
+          ) : (
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: 16 }}>
+              <button type="button" onClick={() => void sendFeedback()} disabled={busy !== null}
+                style={btn("primary")}>
+                {busy === "feedback" ? "Sending..." : "Send feedback"}
+              </button>
+              <span style={pMuted}>
+                {savedAt ? `Draft saved at ${savedAt}. ` : "Saves as you type. "}
+                Nothing reaches them until you send.
+              </span>
+            </div>
+          )}
+        </section>
+      )}
+
       {round.status === "sent" && (
         <div style={{ ...card }}>
           <p style={{ ...pMuted, margin: 0 }}>
@@ -264,6 +397,55 @@ export default function CoachPracticeRoundPage() {
       )}
     </Wrap>
   )
+}
+
+/**
+ * One feedback box.
+ *
+ * Its own component so the label, the sizing and the read-only treatment are
+ * the same in all three places, and so a released round renders as text rather
+ * than as a disabled input: a greyed-out box invites a click that does nothing.
+ */
+function FbBox({
+  label, placeholder, value, readOnly, onChange,
+}: {
+  label: string
+  placeholder: string
+  value: string
+  readOnly: boolean
+  onChange: (v: string) => void
+}) {
+  if (readOnly) {
+    return (
+      <div>
+        {label && <div style={fbLabel}>{label}</div>}
+        <p style={{ margin: 0, fontSize: TYPE.secondary, lineHeight: "20px", color: value ? T.TEXT : T.MUTED, whiteSpace: "pre-wrap", fontStyle: value ? "normal" : "italic" }}>
+          {value || "Nothing written."}
+        </p>
+      </div>
+    )
+  }
+  return (
+    <div>
+      {label && <div style={fbLabel}>{label}</div>}
+      <textarea
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        rows={2}
+        style={{
+          width: "100%", boxSizing: "border-box", fontFamily: "inherit", resize: "vertical",
+          fontSize: TYPE.secondary, lineHeight: "20px", padding: "9px 11px", borderRadius: 8,
+          border: `1px solid ${T.BORDER}`, background: T.CARD, color: T.TEXT,
+        }}
+      />
+    </div>
+  )
+}
+
+const fbLabel: React.CSSProperties = {
+  fontSize: TYPE.label, fontWeight: 800, letterSpacing: "0.07em",
+  textTransform: "uppercase", color: T.MUTED, marginBottom: 4,
 }
 
 function Wrap({ children }: { children: React.ReactNode }) {
