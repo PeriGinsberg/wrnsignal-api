@@ -188,9 +188,21 @@ export default function PracticeRoundPage() {
   )
 }
 
+/**
+ * The page paints its own ground rather than inheriting the shell's.
+ *
+ * This is a CLIENT page, and for a client the layout already resolves light
+ * (it is in LIGHT_ROUTES). But `useLight` is also gated on the viewer not
+ * being a coach, so a coach opening the same URL to see what their client sees
+ * would get these white cards on the dark navy ground. A page that only looks
+ * right for one of the two people who can open it is a page that will be
+ * screenshotted wrong.
+ */
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "28px 20px 80px" }}>{children}</div>
+    <div style={{ background: "#EAF5FA", margin: "-32px -40px -60px -36px", minHeight: "100vh" }}>
+      <div style={{ maxWidth: 720, margin: "0 auto", padding: "28px 20px 80px" }}>{children}</div>
+    </div>
   )
 }
 
