@@ -8,7 +8,7 @@
 
 import React from "react"
 import {
-  CHECKLIST_PREFIX, answerText,
+  CHECKLIST_PREFIX, answerText, computeCoverage,
   type Block, type SummaryBlock, type WorkbookContent,
 } from "../../lib/workbook/content"
 
@@ -142,6 +142,56 @@ export function Summary({ content, answers, interview, onCheck }: Props) {
             </div>
           </section>
         )
+      case "story_list": {
+        const head = b.stories.slice(0, b.stories.indexOf("*"))
+        const slots = new Set<string>()
+        for (const k of Object.keys(answers)) {
+          if (!k.startsWith(head)) continue
+          const slot = k.slice(head.length).split(".")[0]
+          if (slot) slots.add(head + slot)
+        }
+        const rows = [...slots]
+          .sort((x, y) => x.localeCompare(y, undefined, { numeric: true }))
+          .map((k) => ({
+            name: answerText(answers[`${k}.name`]),
+            trait: answerText(answers[`${k}.trait`]),
+            area: answerText(answers[`${k}.life_area`]),
+          }))
+          .filter((r) => r.name || r.trait)
+        if (!rows.length) return null
+        return (
+          <section key={i} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <Head n={num(b)} title={b.title} />
+            {b.note && <p style={{ margin: 0, fontSize: 15, lineHeight: 1.5 }}>{b.note}</p>}
+            <div>
+              {rows.map((r, j) => (
+                <div key={j} style={{ ...rowLine, display: "grid", gridTemplateColumns: "minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr)", columnGap: 12, fontSize: 15 }}>
+                  <span style={{ fontWeight: 600, lineHeight: 1.4 }}>{r.name || "Unnamed story"}</span>
+                  <span style={{ lineHeight: 1.4 }}>{r.trait}</span>
+                  <span style={{ lineHeight: 1.4 }}>{r.area}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )
+      }
+      case "coverage": {
+        const rows = computeCoverage(b, answers)
+        if (!rows.length) return null
+        return (
+          <section key={i} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <Head n={num(b)} title={b.title ?? "Your coverage"} />
+            <div>
+              {rows.map((r) => (
+                <div key={r.label} style={{ ...rowLine, display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1.6fr)", columnGap: 12, fontSize: 15 }}>
+                  <span style={{ fontWeight: 600, lineHeight: 1.4 }}>{r.label}</span>
+                  <span style={{ lineHeight: 1.4 }}>{r.items.join(" · ")}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )
+      }
       case "quick_answers":
         return (
           <section key={i} style={{ display: "flex", flexDirection: "column", gap: 14 }}>

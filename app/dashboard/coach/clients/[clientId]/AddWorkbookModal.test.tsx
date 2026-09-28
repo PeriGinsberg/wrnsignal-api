@@ -70,13 +70,20 @@ describe("picking a template", () => {
   it("shows the selection, and offers a way forward", async () => {
     open()
     const card = (await screen.findByText(template.title)).closest("button")!
-    // One template, so it starts selected and Next is live: the step is never
-    // a dead end, which is what it was when the card was the only way on.
-    expect(card.getAttribute("aria-checked")).toBe("true")
-    expect(screen.getByText("Selected")).toBeTruthy()
+    // TWO TEMPLATES NOW, so nothing is pre-selected and the coach picks. The
+    // auto-select only fires on a single template, where it stops the step
+    // being a dead end; with a real choice on screen, choosing FOR them would
+    // mean a mis-click ships the wrong session.
+    const many = listTemplates().length > 1
+    expect(card.getAttribute("aria-checked")).toBe(many ? "false" : "true")
     const nextBtn = screen.getByText("Next").closest("button") as HTMLButtonElement
-    expect(nextBtn.disabled).toBe(false)
-    fireEvent.click(nextBtn)
+    if (many) {
+      expect(nextBtn.disabled).toBe(true)
+      fireEvent.click(card)
+    }
+    expect(screen.getByText("Selected")).toBeTruthy()
+    expect((screen.getByText("Next").closest("button") as HTMLButtonElement).disabled).toBe(false)
+    fireEvent.click(screen.getByText("Next").closest("button")!)
     await screen.findByText("Check it over")
   })
 

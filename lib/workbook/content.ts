@@ -7,6 +7,9 @@
 
 export type Tone = "peach" | "paleblue"
 
+/** A choice, or a named group of choices that renders as an <optgroup>. */
+export type SelectOption = string | { group: string; items: string[] }
+
 export type Block =
   | { type: "text"; body: string; label?: string; size?: "lead" }
   | { type: "heading"; text: string }
@@ -31,9 +34,84 @@ export type Block =
        * as progress and does not reach the summary.
        */
       starter?: string
+      /**
+       * Not required to finish the section. The spec marks Reflection, the
+       * scratch notes and the out-loud timing as nice to have, and a client who
+       * did everything asked should not see an incomplete bar.
+       */
+      optional?: boolean
     }
   | { type: "word_track"; body: string; label?: string }
-  | { type: "pick"; key: string; label: string; options: string[]; help?: string; allow_other?: boolean }
+  | { type: "pick"; key: string; label: string; options: string[]; help?: string; allow_other?: boolean; optional?: boolean }
+  /**
+   * A dropdown. Radios do not scale: Session 2 picks a trait from fifteen in
+   * four groups, and fifteen radio buttons under every story slot is a wall.
+   *
+   * `options` are literal, and may be grouped: a group renders as an <optgroup>
+   * whose header shows in the list and cannot be chosen.
+   *
+   * `options_from` builds the list from the CLIENT'S OWN ANSWERS instead, by
+   * globbing a key pattern (one `*`). Section 8 matches twenty questions to the
+   * stories they named in Section 7, and those names do not exist until they
+   * type them. Literal `options` win if both are given.
+   */
+  | {
+      type: "select"
+      key: string
+      label: string
+      options?: SelectOption[]
+      options_from?: string
+      placeholder?: string
+      help?: string
+      multi?: boolean
+      optional?: boolean
+    }
+  /**
+   * One STAR + E story: the trait it proves, where in their life it came from,
+   * and the six parts. Its own block rather than eight fields because a story
+   * is one thing, and because `copy_from` has to move all of it at once.
+   */
+  | {
+      type: "story"
+      key: string
+      title?: string
+      question?: string
+      number?: number
+      /** Ask for a name the client will recognise in the Section 8 dropdown. */
+      named?: boolean
+      /** Also ask what other questions it answers. */
+      other_questions?: boolean
+      /** Seconds said out loud. Optional by the spec. */
+      timed?: boolean
+      traits: SelectOption[]
+      life_areas: SelectOption[]
+      /**
+       * Another story block's key. When THIS slot is still untouched, that
+       * story's answers show as starter text. Never stored on the client's
+       * behalf, so an untouched copy is not progress, exactly as `starter`.
+       */
+      copy_from?: string
+    }
+  /**
+   * Derived, never stored. Reads the answers already on screen and reports
+   * what the client has not covered yet. Owns no field keys.
+   */
+  | {
+      type: "coverage"
+      title?: string
+      /** Story slot keys to read, e.g. "s2.story*". */
+      stories: string
+      /** Match answer keys to read, e.g. "s2.match.*". */
+      matches: string
+      /** Question key -> the trait it tests. */
+      question_traits: Record<string, string>
+      /** Group name -> the traits in it. */
+      trait_groups: SelectOption[]
+      /** The full list of life areas, for the "where from" flag. */
+      life_areas: SelectOption[]
+      /** A story matched this many times or more is leaned on too hard. */
+      overused_at?: number
+    }
   | { type: "star"; key: string; title: string; question: string; number?: number; skill?: string }
   | { type: "scenario"; key: string; prompt: string; number?: number }
   | { type: "coach_only"; body: string; title?: string }
@@ -48,6 +126,16 @@ export type SummaryBlock =
   | { type: "hook"; field: string; prefix: string; note?: string }
   | { type: "tmay"; present: string; past: string; future: string; close?: string; note?: string }
   | { type: "story_map"; title: string; stars: string[]; note?: string }
+  /**
+   * Every story the client built, by name, trait and life area.
+   *
+   * Globbed rather than listed, because the slots are only worth showing when
+   * they hold something: a client who built five stories should see five rows,
+   * not five rows and three blanks.
+   */
+  | { type: "story_list"; title: string; stories: string; note?: string }
+  /** The same panel as the in-workbook coverage block, on the summary page. */
+  | ({ type: "coverage"; title?: string } & CoverageConfig)
   | { type: "quick_answers"; items: ({ label: string; field: string } | { label: string; static: string })[] }
   | { type: "questions"; first: string; fields: string[]; note?: string }
   | { type: "checklist"; items: string[] }
@@ -87,7 +175,8 @@ export type WorkbookContent = {
 
 /** A pick answer. Text fields store a plain string. */
 export type PickValue = { choice: string | null; other: string }
-export type AnswerValue = string | PickValue
+/** string: text and single selects. string[]: a multi-select. */
+export type AnswerValue = string | string[] | PickValue
 
 export const STAR_PARTS = [
   { part: "story", label: "The story I'm using" },
@@ -114,19 +203,77 @@ export const TEMPLATE_KEYS = ["first_name", "full_name", "coach_first_name"] as 
 export type TemplateValues = Record<(typeof TEMPLATE_KEYS)[number], string>
 export const GENERAL_SECTION_ID = "_general"
 
+/**
+ * STAR + E, which is Session 2's shape and deliberately not STAR_PARTS.
+ *
+ * E is the relatable moment and is the whole point of the session, so it is a
+ * required part rather than a bolt-on. `reflection` is optional by the spec.
+ */
+export const STORY_PARTS = [
+  { part: "s", label: "S: Situation", optional: false },
+  { part: "t", label: "T: Task", optional: false },
+  { part: "a", label: "A: Action", optional: false },
+  { part: "r", label: "R: Result", optional: false },
+  { part: "e", label: "E: The relatable moment", optional: false },
+  { part: "reflection", label: "Reflection (optional)", optional: true },
+] as const
+
+/** Every key a story slot owns, in render order. */
+export function storyKeys(b: Extract<Block, { type: "story" }>): string[] {
+  const keys: string[] = []
+  if (b.named) keys.push(`${b.key}.name`)
+  keys.push(`${b.key}.trait`, `${b.key}.life_area`)
+  for (const p of STORY_PARTS) keys.push(`${b.key}.${p.part}`)
+  if (b.other_questions) keys.push(`${b.key}.other_questions`)
+  if (b.timed) keys.push(`${b.key}.seconds`)
+  return keys
+}
+
 /** The field keys one block owns, in render order. */
 export function blockFieldKeys(b: Block): string[] {
   switch (b.type) {
     case "field":
     case "pick":
+    case "select":
       return [b.key]
     case "star":
       return STAR_PARTS.map((p) => `${b.key}.${p.part}`)
     case "scenario":
       return SCENARIO_PARTS.map((p) => `${b.key}.${p.part}`)
+    case "story":
+      return storyKeys(b)
     default:
       return []
   }
+}
+
+/**
+ * The keys that do NOT have to be filled for a section to read as done.
+ *
+ * Kept separate from blockFieldKeys so an optional answer is still a real
+ * answer everywhere else: it saves, it reaches the summary, it is just not
+ * counted against the client.
+ */
+export function blockOptionalKeys(b: Block): string[] {
+  switch (b.type) {
+    case "field":
+    case "pick":
+    case "select":
+      return b.optional ? [b.key] : []
+    case "story": {
+      const out = STORY_PARTS.filter((p) => p.optional).map((p) => `${b.key}.${p.part}`)
+      // Saying it out loud is homework the coach times in session, not a
+      // written answer the client owes.
+      if (b.timed) out.push(`${b.key}.seconds`)
+      return out
+    }
+    default:
+      return []
+  }
+}
+
+export function sectionOptionalKeys(s: Section): string[] {
+  return s.blocks.flatMap(blockOptionalKeys)
 }
 
 export function sectionFieldKeys(s: Section): string[] {
@@ -149,6 +296,126 @@ export function stripCoachOnly<T extends Pick<WorkbookContent, "sections">>(c: T
     ...c,
     sections: c.sections.map((s) => ({ ...s, blocks: s.blocks.filter((b) => b.type !== "coach_only") })),
   }
+}
+
+/** Grouped or flat options, flattened to the choosable values. */
+export function selectValues(options: SelectOption[] | undefined): string[] {
+  if (!options) return []
+  return options.flatMap((o) => (typeof o === "string" ? [o] : o.items))
+}
+
+/**
+ * Resolve `options_from` against the answers: one `*` globbed, in key order.
+ *
+ * Section 8's dropdowns are the client's own story names, so the list only
+ * exists once they have typed some. Blank slots drop out rather than showing
+ * as empty rows.
+ */
+export function optionsFromAnswers(pattern: string, answers: Record<string, unknown>): string[] {
+  const i = pattern.indexOf("*")
+  if (i < 0) return []
+  const head = pattern.slice(0, i)
+  const tail = pattern.slice(i + 1)
+  const hits: { k: string; v: string }[] = []
+  for (const [k, raw] of Object.entries(answers)) {
+    if (!k.startsWith(head) || !k.endsWith(tail)) continue
+    const v = answerText(raw)
+    if (v) hits.push({ k, v })
+  }
+  hits.sort((a, b) => a.k.localeCompare(b.k, undefined, { numeric: true }))
+  const seen = new Set<string>()
+  return hits.map((h) => h.v).filter((v) => (seen.has(v) ? false : (seen.add(v), true)))
+}
+
+/** What a coverage panel needs, wherever it is rendered. */
+export type CoverageConfig = {
+  stories: string
+  matches: string
+  question_traits: Record<string, string>
+  trait_groups: SelectOption[]
+  life_areas: SelectOption[]
+  overused_at?: number
+}
+
+/** The slot keys behind a glob like "s2.story*", in numeric order. */
+export function globSlots(pattern: string, answers: Record<string, unknown>): string[] {
+  const i = pattern.indexOf("*")
+  if (i < 0) return []
+  const head = pattern.slice(0, i)
+  const out = new Set<string>()
+  for (const k of Object.keys(answers)) {
+    if (!k.startsWith(head)) continue
+    const slot = k.slice(head.length).split(".")[0]
+    if (slot) out.add(head + slot)
+  }
+  return [...out].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+}
+
+/**
+ * What the client has not covered yet.
+ *
+ * PURE, and shared by the in-workbook panel and the summary page, so the two
+ * can never disagree about what is missing. Returns only the rows that have
+ * something in them: a heading with nothing under it reads as a problem.
+ */
+export function computeCoverage(
+  cfg: CoverageConfig,
+  answers: Record<string, unknown>,
+): { label: string; items: string[] }[] {
+  const stories = globSlots(cfg.stories, answers)
+    .map((k) => ({
+      name: answerText(answers[`${k}.name`]),
+      trait: answerText(answers[`${k}.trait`]),
+      area: answerText(answers[`${k}.life_area`]),
+      written: STORY_PARTS.some((p) => answerText(answers[`${k}.${p.part}`])),
+    }))
+    .filter((x) => x.name || x.trait || x.written)
+
+  const mHead = cfg.matches.slice(0, cfg.matches.indexOf("*"))
+  const qKeys = Object.keys(cfg.question_traits)
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
+
+  const unanswered = qKeys
+    .filter((q) => !answerText(answers[`${mHead}${q}.story`]))
+    .map((q) => `${q} (${cfg.question_traits[q]})`)
+
+  const used = new Map<string, number>()
+  for (const q of qKeys) {
+    const picked = answerText(answers[`${mHead}${q}.story`])
+    if (picked) used.set(picked, (used.get(picked) ?? 0) + 1)
+  }
+  const cap = cfg.overused_at ?? 4
+  const overused = [...used.entries()]
+    .filter(([, n]) => n >= cap)
+    .map(([name, n]) => `${name} (${n} questions)`)
+
+  const chosen = new Set(stories.map((x) => x.trait).filter(Boolean))
+  const missingTraits: string[] = []
+  const missingGroups: string[] = []
+  for (const g of cfg.trait_groups) {
+    if (typeof g === "string") {
+      if (!chosen.has(g)) missingTraits.push(g)
+      continue
+    }
+    if (!g.items.some((t) => chosen.has(t))) missingGroups.push(g.group)
+    for (const t of g.items) if (!chosen.has(t)) missingTraits.push(t)
+  }
+
+  // Only once ONE area is carrying more than half. Before that, a short list
+  // is just a short list, and nagging about it this early is noise.
+  const areaCount = new Map<string, number>()
+  for (const x of stories) if (x.area) areaCount.set(x.area, (areaCount.get(x.area) ?? 0) + 1)
+  const told = [...areaCount.values()].reduce((a, n) => a + n, 0)
+  const lopsided = told > 0 && [...areaCount.values()].some((n) => n * 2 > told)
+  const missingAreas = lopsided ? selectValues(cfg.life_areas).filter((a) => !areaCount.has(a)) : []
+
+  return [
+    { label: "Questions with no story yet", items: unanswered },
+    { label: "Stories you are leaning on too hard", items: overused },
+    { label: "Traits with no story", items: missingTraits },
+    { label: "Groups with no story", items: missingGroups },
+    { label: "Parts of your life with no story", items: missingAreas },
+  ].filter((r) => r.items.length > 0)
 }
 
 /** The text of a big_quote, whichever field the file uses. */
@@ -198,6 +465,8 @@ export function displayValue(v: unknown, starter?: string): string {
 
 export function isFilled(v: unknown): boolean {
   if (typeof v === "string") return v.trim().length > 0
+  // A multi-select stores an array. Empty is unanswered.
+  if (Array.isArray(v)) return v.some((x) => typeof x === "string" && x.trim().length > 0)
   if (v && typeof v === "object") {
     const p = v as PickValue
     return !!(p.choice && p.choice.trim()) || !!(p.other && p.other.trim())
@@ -208,6 +477,7 @@ export function isFilled(v: unknown): boolean {
 /** The text a summary or coach view shows for an answer. */
 export function answerText(v: unknown): string {
   if (typeof v === "string") return v.trim()
+  if (Array.isArray(v)) return v.filter((x) => typeof x === "string" && x.trim()).join(", ")
   if (v && typeof v === "object") {
     const p = v as PickValue
     const other = (p.other ?? "").trim()
@@ -225,7 +495,13 @@ export function progress(c: Pick<WorkbookContent, "sections">, answers: Record<s
   let total = 0
   const sectionsDone = new Set<string>()
   for (const s of c.sections) {
-    const keys = sectionFieldKeys(s)
+    // OPTIONAL KEYS ARE OUT OF THE DENOMINATOR, and out of the numerator with
+    // them. Counting a filled optional answer while not requiring it would push
+    // a section past 100%, and counting it in `total` means a client who did
+    // everything the spec asks still sees an unfinished bar. Section 7 alone
+    // carries eight optional Reflections and eight timings.
+    const optional = new Set(sectionOptionalKeys(s))
+    const keys = sectionFieldKeys(s).filter((k) => !optional.has(k))
     const done = keys.filter((k) => isFilled(answers[k])).length
     filled += done
     total += keys.length
@@ -259,7 +535,41 @@ export function validateAnswerValue(c: WorkbookContent, key: string, value: unkn
     if (v.choice === "__other__" && !pick.allow_other) return "this pick has no other option"
     return v.other.length > 20000 ? "Answer is too long" : null
   }
+  const all = c.sections.flatMap((s) => s.blocks)
+  const sel = all.find((b) => b.type === "select" && b.key === key) as
+    | Extract<Block, { type: "select" }>
+    | undefined
+
+  // A story block SYNTHESISES its trait and life-area dropdowns, so they are
+  // not `select` blocks and would otherwise accept any string from the API.
+  // The client can only pick from the list; nothing else should be able to.
+  if (!sel) {
+    const story = all.find(
+      (b) => b.type === "story" && (key === `${b.key}.trait` || key === `${b.key}.life_area`),
+    ) as Extract<Block, { type: "story" }> | undefined
+    if (story) {
+      if (typeof value !== "string") return "Answer must be text"
+      if (!value) return null
+      const allowed = selectValues(key.endsWith(".trait") ? story.traits : story.life_areas)
+      return allowed.includes(value) ? null : "Answer is not one of the options"
+    }
+  }
+
+  if (sel?.multi) {
+    if (!Array.isArray(value)) return "A multi-select answer must be a list"
+    if (!value.every((v) => typeof v === "string")) return "Every choice must be text"
+    if (value.join("").length > 20000) return "Answer is too long"
+    // options_from is checked against the client's OWN answers, which change as
+    // they type, so the closed list is only enforced for literal options.
+    const allowed = selectValues(sel.options)
+    if (allowed.length && !value.every((v) => allowed.includes(v))) return "A choice is not one of the options"
+    return null
+  }
   if (typeof value !== "string") return "Answer must be text"
+  if (sel && !sel.multi && value) {
+    const allowed = selectValues(sel.options)
+    if (allowed.length && !allowed.includes(value)) return "Answer is not one of the options"
+  }
   return value.length > 20000 ? "Answer is too long" : null
 }
 
@@ -279,12 +589,27 @@ export function anchorError(c: Pick<WorkbookContent, "sections">, sectionId: unk
 // fail at creation, not render half a workbook to a client.
 // ---------------------------------------------------------------------------
 
+/** Options are strings, or {group, items[]} for an <optgroup>. */
+function okOptions(v: unknown): boolean {
+  if (!Array.isArray(v)) return false
+  return v.every((o) =>
+    typeof o === "string"
+      ? o.trim().length > 0
+      : !!o && typeof o === "object" &&
+        typeof (o as any).group === "string" && (o as any).group.trim().length > 0 &&
+        Array.isArray((o as any).items) && (o as any).items.length > 0 &&
+        (o as any).items.every((i: unknown) => typeof i === "string" && i.trim().length > 0),
+  )
+}
+
 const BLOCK_TYPES = new Set([
   "text", "heading", "list", "callout", "coach_note", "big_quote", "field",
   "word_track", "pick", "star", "scenario", "coach_only",
+  "select", "story", "coverage",
 ])
 const SUMMARY_TYPES = new Set([
   "interview_details", "hook", "tmay", "story_map", "quick_answers", "questions", "checklist", "signoff",
+  "story_list", "coverage",
 ])
 
 export function validateContent(raw: unknown): { ok: true; content: WorkbookContent } | { ok: false; errors: string[] } {
@@ -324,10 +649,33 @@ export function validateContent(raw: unknown): { ok: true; content: WorkbookCont
       if (b.type === "field" && (!["short", "long"].includes(b.input) || !str(b.label))) errors.push(`${bt}: field needs input short|long and a label`)
       if (b.starter != null && (b.type !== "field" || typeof b.starter !== "string")) errors.push(`${bt}: starter text belongs on a field`)
       if (b.type === "pick" && (!Array.isArray(b.options) || b.options.length === 0)) errors.push(`${bt}: pick needs options`)
+      if (b.type === "select") {
+        const hasLiteral = Array.isArray(b.options) && b.options.length > 0
+        const hasSource = str(b.options_from) && b.options_from.includes("*")
+        if (!hasLiteral && !hasSource) {
+          errors.push(`${bt}: select needs options, or options_from with a * to glob`)
+        }
+        if (hasLiteral && !okOptions(b.options)) {
+          errors.push(`${bt}: select options must be strings, or {group, items[]}`)
+        }
+        if (!str(b.label)) errors.push(`${bt}: select needs a label`)
+      }
+      if (b.type === "story") {
+        if (!okOptions(b.traits) || selectValues(b.traits).length === 0) errors.push(`${bt}: story needs traits`)
+        if (!okOptions(b.life_areas) || selectValues(b.life_areas).length === 0) errors.push(`${bt}: story needs life_areas`)
+        if (b.copy_from != null && !str(b.copy_from)) errors.push(`${bt}: copy_from must be a story key`)
+      }
+      if (b.type === "coverage") {
+        if (!str(b.stories) || !b.stories.includes("*")) errors.push(`${bt}: coverage.stories needs a * to glob`)
+        if (!str(b.matches) || !b.matches.includes("*")) errors.push(`${bt}: coverage.matches needs a * to glob`)
+        if (!b.question_traits || typeof b.question_traits !== "object") errors.push(`${bt}: coverage needs question_traits`)
+        if (!okOptions(b.trait_groups)) errors.push(`${bt}: coverage needs trait_groups`)
+        if (!okOptions(b.life_areas)) errors.push(`${bt}: coverage needs life_areas`)
+      }
       if (b.type === "list" && (!["bullets", "numbers", "quotes"].includes(b.style) || !Array.isArray(b.items))) errors.push(`${bt}: list needs style and items`)
       if (b.type === "callout" && !["peach", "paleblue"].includes(b.tone)) errors.push(`${bt}: callout tone must be peach or paleblue`)
       if (b.type === "big_quote" && !str(b.text) && !str(b.body)) errors.push(`${bt}: big_quote needs text or body`)
-      if (["field", "pick", "star", "scenario"].includes(b.type)) {
+      if (["field", "pick", "star", "scenario", "select", "story"].includes(b.type)) {
         if (!str(b.key) || b.key.startsWith(CHECKLIST_PREFIX)) { errors.push(`${bt}: key is required and must not be reserved`); continue }
         for (const k of blockFieldKeys(b)) {
           if (keys.has(k)) errors.push(`${bt}: duplicate field key "${k}"`)

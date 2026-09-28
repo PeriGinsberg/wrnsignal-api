@@ -115,6 +115,7 @@ export function AddWorkbookModal({
   const previewApi: FieldApi = {
     editable: false,
     get: () => undefined,
+    all: () => ({}),
     set: () => {},
     state: () => undefined,
     coachName: coachFirst || "your coach",

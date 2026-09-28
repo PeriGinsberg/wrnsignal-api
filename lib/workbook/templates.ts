@@ -12,6 +12,7 @@
 
 import { allFieldKeys, validateContent, type WorkbookContent } from "./content"
 import sessionOneFoundations from "./templates/session-1-foundations.json"
+import sessionTwoStories from "./templates/session-2-telling-your-stories.json"
 
 /** One line under the title in the picker. Copy about the template, not content. */
 type Registration = { description: string; raw: unknown }
@@ -20,6 +21,10 @@ const REGISTRY: Registration[] = [
   {
     description: "The WRN Three, your hook, Tell Me About Yourself, and Walk Me Through Your Resume, plus five homework questions.",
     raw: sessionOneFoundations,
+  },
+  {
+    description: "STAR + E, two stories built live, then eight stories of their own matched to twenty interview questions.",
+    raw: sessionTwoStories,
   },
 ]
 

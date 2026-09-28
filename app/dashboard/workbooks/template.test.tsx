@@ -37,6 +37,7 @@ function api(over: Partial<FieldApi> = {}): FieldApi {
     // undefined = never answered, which is what lets starter text show. An
     // empty string means the client cleared the box, and is not the same thing.
     get: () => undefined,
+    all: () => ({}),
     set: vi.fn(),
     state: () => undefined,
     coachName: "Peri",

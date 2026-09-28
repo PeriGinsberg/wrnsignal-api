@@ -1,0 +1,1340 @@
+{
+  "schema_version": 1,
+  "template": true,
+  "template_id": "session-2-telling-your-stories",
+  "session": 2,
+  "slug": "session-2-telling-your-stories",
+  "title": "Session 2: Telling Your Stories",
+  "client": {
+    "first_name": "{first_name}",
+    "full_name": "{full_name}"
+  },
+  "interview": null,
+  "coach": {
+    "first_name": "{coach_first_name}"
+  },
+  "block_types_note": "Same block types as session-1-foundations, plus select (grouped options, options_from, multi), story (STAR + E with trait and life area), and coverage (derived, stores nothing). coach_only blocks never render for the client. Section mode is in_session or homework.",
+  "sections": [
+    {
+      "id": "welcome",
+      "number": 1,
+      "title": "Welcome",
+      "mode": "in_session",
+      "blocks": [
+        {
+          "type": "text",
+          "size": "lead",
+          "body": "Today is all about stories. By the end of this session you’ll have two stories built, and you’ll know how to build the rest on your own."
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach guide: Welcome",
+          "body": "TIME: 3 minutes.\nGOAL: Set up the session. No review of Session 1 work; that happened in your video reply.\nSAY THIS: \"Last time was about who you are. Today is about proof. Stories are how you prove it.\"\nMOVE ON WHEN: they know what they are leaving with today."
+        }
+      ]
+    },
+    {
+      "id": "star",
+      "number": 2,
+      "title": "STAR + E",
+      "mode": "in_session",
+      "blocks": [
+        {
+          "type": "text",
+          "size": "lead",
+          "body": "When an interviewer says \"Tell me about a time...\" they want a story. Here is how to build one."
+        },
+        {
+          "type": "text",
+          "body": "Know the trait, do not announce it. Before you tell the story, decide what it proves. Then tell it so the interviewer gets it without you saying it."
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "S: Situation. Where you were and what was going on. One or two sentences.",
+            "T: Task. What you had to do or fix.",
+            "A: Action. What you did. Say \"I,\" not \"we.\" This is the longest part.",
+            "R: Result. What happened because of you. Use numbers if you have them.",
+            "E: The relatable moment. Something the interviewer has felt too. The teammate who did nothing. The night before the deadline when everything broke. This is what makes them nod."
+          ]
+        },
+        {
+          "type": "callout",
+          "tone": "peach",
+          "title": "Bonus: Reflection",
+          "body": "\"That experience taught me...\" One line. Nice to have, not required."
+        },
+        {
+          "type": "callout",
+          "tone": "paleblue",
+          "title": "The 90-second rule",
+          "body": "Every story, start to finish, under 90 seconds."
+        },
+        {
+          "type": "field",
+          "key": "s2.star.notes",
+          "input": "long",
+          "label": "My notes",
+          "optional": true
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach guide: STAR + E",
+          "body": "TIME: 10 minutes.\nGOAL: They can name all six parts and explain what E is in their own words.\nSAY THIS: \"The trait is for you, not for them. The E makes them like you.\"\nLISTEN FOR: confusing Task with Action.\nIF YOU HEAR \"This is a story about my leadership,\" ASK: \"Can you cut that line and let the story show it?\"\nIF YOU HEAR \"we did,\" ASK: \"What did you do?\"\nMOVE ON WHEN: they can explain E without looking."
+        }
+      ]
+    },
+    {
+      "id": "sayless",
+      "number": 3,
+      "title": "Say Less, Let Them Ask",
+      "mode": "in_session",
+      "blocks": [
+        {
+          "type": "text",
+          "size": "lead",
+          "body": "Know what they are listening for, and cut every detail that does not serve it. If they want more, they will ask. When they ask \"What happened?\" that is your cue to tell them everything."
+        },
+        {
+          "type": "text",
+          "body": "Read this answer to \"Tell me about a time you faced a significant challenge. How did you handle it?\""
+        },
+        {
+          "type": "big_quote",
+          "body": "I love baseball. Always have. I played peewee, Little League, travel, and competitively for my high school team. My only dream was to play for a Division 1 NCAA team. I didn’t see anything beyond that. Junior year of high school, I tore my Achilles in two places, and the surgeon told me I would never play ball again. I laid in bed for three days feeling sorry for myself. On day four, I woke up and realized I had a decision to make: keep spiraling, or pick myself up and figure out Plan B. That’s what I chose to do. Today I’m a junior at the University of Michigan Ross School of Business, doing great, and I couldn’t be more excited about my future in finance. On a side note, I’m the loudest fan on the sidelines at Michigan baseball games."
+        },
+        {
+          "type": "field",
+          "key": "s2.sayless.left_out",
+          "input": "long",
+          "label": "What did he leave out?"
+        },
+        {
+          "type": "field",
+          "key": "s2.sayless.why",
+          "input": "long",
+          "label": "Why do you think he left it out?"
+        },
+        {
+          "type": "field",
+          "key": "s2.sayless.e",
+          "input": "short",
+          "label": "Which part is the relatable moment (E)?"
+        },
+        {
+          "type": "field",
+          "key": "s2.sayless.memorable",
+          "input": "short",
+          "label": "Which line would you remember an hour later?"
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach guide: Say Less",
+          "body": "TIME: 10 minutes.\nGOAL: They see that what you cut matters as much as what you say.\nANSWER KEY: He left out his position, his stats, and the injury details, because none of it shows resilience, perseverance, or resourcefulness. E is the three days in bed. The memorable line is the last one. If the interviewer asks \"What happened?\" then he opens the floodgates.\nSAY THIS: \"He could have talked for five minutes about baseball. He did not need to.\"\nMOVE ON WHEN: they can say why the stats did not make the cut."
+        }
+      ]
+    },
+    {
+      "id": "challenge",
+      "number": 4,
+      "title": "Build It Live: A Challenge",
+      "mode": "in_session",
+      "blocks": [
+        {
+          "type": "text",
+          "size": "lead",
+          "body": "\"Tell me about a time you faced a challenge.\""
+        },
+        {
+          "type": "text",
+          "body": "Pick a real one. It does not have to be dramatic. It has to be yours."
+        },
+        {
+          "type": "story",
+          "key": "s2.q1",
+          "traits": [
+            {
+              "group": "How you work with people",
+              "items": [
+                "Teamwork",
+                "Conflict resolution",
+                "Influence",
+                "Leadership"
+              ]
+            },
+            {
+              "group": "How you handle hard things",
+              "items": [
+                "Resilience",
+                "Composure",
+                "Adaptability",
+                "Accountability"
+              ]
+            },
+            {
+              "group": "How you get things done",
+              "items": [
+                "Time management",
+                "Initiative",
+                "Drive",
+                "Problem solving"
+              ]
+            },
+            {
+              "group": "How you learn and think",
+              "items": [
+                "Learning agility",
+                "Coachability",
+                "Analytical thinking"
+              ]
+            }
+          ],
+          "life_areas": [
+            "School",
+            "Work",
+            "Sports",
+            "Clubs and activities",
+            "Volunteering",
+            "Personal life"
+          ],
+          "question": "Tell me about a time you faced a challenge.",
+          "timed": true
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach guide: A Challenge",
+          "body": "TIME: 12 minutes.\nGOAL: One finished story, said out loud once, under 90 seconds.\nSAY THIS: \"Type it rough. Then say it to me.\"\nLISTEN FOR: a long Situation and a short Action. Flip it.\nIF YOU HEAR no result, ASK: \"So what happened next?\"\nIF YOU HEAR over 90 seconds, ASK: \"What can the interviewer live without?\"\nMOVE ON WHEN: it is timed and under 90."
+        }
+      ]
+    },
+    {
+      "id": "priorities",
+      "number": 5,
+      "title": "Build It Live: Competing Priorities",
+      "mode": "in_session",
+      "blocks": [
+        {
+          "type": "text",
+          "size": "lead",
+          "body": "\"Tell me about a time you had to manage multiple competing priorities or deadlines. How did you manage it?\""
+        },
+        {
+          "type": "text",
+          "body": "Try a different part of your life than your first story."
+        },
+        {
+          "type": "story",
+          "key": "s2.q2",
+          "traits": [
+            {
+              "group": "How you work with people",
+              "items": [
+                "Teamwork",
+                "Conflict resolution",
+                "Influence",
+                "Leadership"
+              ]
+            },
+            {
+              "group": "How you handle hard things",
+              "items": [
+                "Resilience",
+                "Composure",
+                "Adaptability",
+                "Accountability"
+              ]
+            },
+            {
+              "group": "How you get things done",
+              "items": [
+                "Time management",
+                "Initiative",
+                "Drive",
+                "Problem solving"
+              ]
+            },
+            {
+              "group": "How you learn and think",
+              "items": [
+                "Learning agility",
+                "Coachability",
+                "Analytical thinking"
+              ]
+            }
+          ],
+          "life_areas": [
+            "School",
+            "Work",
+            "Sports",
+            "Clubs and activities",
+            "Volunteering",
+            "Personal life"
+          ],
+          "question": "Tell me about a time you had to manage multiple competing priorities or deadlines. How did you manage it?",
+          "timed": true
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach guide: Competing Priorities",
+          "body": "TIME: 12 minutes.\nGOAL: Second story, faster than the first. You coach less this time.\nLISTEN FOR: a list of everything they were juggling. The interviewer wants how they decided, not the full calendar.\nIF YOU HEAR \"I just worked hard,\" ASK: \"What did you do first, and why that?\"\nMOVE ON WHEN: it is timed and under 90."
+        }
+      ]
+    },
+    {
+      "id": "great",
+      "number": 6,
+      "title": "What Makes a Great Story",
+      "mode": "in_session",
+      "blocks": [
+        {
+          "type": "text",
+          "size": "lead",
+          "body": "Three rules for every story you build from here on."
+        },
+        {
+          "type": "list",
+          "style": "numbers",
+          "items": [
+            "Know the trait, then show it. Every detail you keep should point to it.",
+            "One story, many questions. A strong story answers more than one question. Change the part you lean on, and the same story fits a new question.",
+            "Spread them out. Pull stories from different parts of your life: school, work, sports, clubs, volunteering, personal life. Eight stories from one internship tell them you have done one thing."
+          ]
+        },
+        {
+          "type": "field",
+          "key": "s2.great.other_questions",
+          "input": "long",
+          "label": "Two other questions your challenge story could answer"
+        },
+        {
+          "type": "field",
+          "key": "s2.great.reopen",
+          "input": "long",
+          "label": "What you would lean on differently for one of them"
+        },
+        {
+          "type": "select",
+          "key": "s2.great.areas",
+          "label": "Where you can pull stories from",
+          "options": [
+            "School",
+            "Work",
+            "Sports",
+            "Clubs and activities",
+            "Volunteering",
+            "Personal life"
+          ],
+          "multi": true,
+          "help": "Tick every part of your life you could pull a story from."
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach guide: What Makes a Great Story",
+          "body": "TIME: 8 minutes.\nGOAL: They leave knowing how to build the other six on their own.\nSAY THIS: \"You do not need a story for every question. You need eight good ones you can bend.\"\nIF YOU HEAR \"I only have my internship,\" ASK: \"What else were you doing that year?\"\nMOVE ON WHEN: they have checked at least three life areas."
+        }
+      ]
+    },
+    {
+      "id": "builder",
+      "number": 7,
+      "title": "Homework: Your Story Builder",
+      "mode": "homework",
+      "blocks": [
+        {
+          "type": "text",
+          "size": "lead",
+          "body": "Your stories are proof of who you are at work. Before you build, pick what you want to prove. Aim for 8 stories that cover at least one trait from every group below."
+        },
+        {
+          "type": "heading",
+          "text": "How you work with people"
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "Teamwork: you made the group better, not just your part.",
+            "Conflict resolution: you disagreed with someone and fixed it without drama.",
+            "Influence: you changed someone’s mind.",
+            "Leadership: people followed you, with or without a title."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "How you handle hard things"
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "Resilience: something knocked you down and you came back.",
+            "Composure: you stayed calm when things got messy.",
+            "Adaptability: the plan changed and you changed with it.",
+            "Accountability: you owned a mistake and made it right."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "How you get things done"
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "Time management: too much on your plate, and you got it all done.",
+            "Initiative: you did something nobody asked you to.",
+            "Drive: you set a goal and kept going until you hit it.",
+            "Problem solving: you found a fix nobody else saw."
+          ]
+        },
+        {
+          "type": "heading",
+          "text": "How you learn and think"
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "Learning agility: you learned something new, fast.",
+            "Coachability: you got tough feedback and used it.",
+            "Analytical thinking: you used facts or data to make a call."
+          ]
+        },
+        {
+          "type": "callout",
+          "tone": "paleblue",
+          "title": "Tip",
+          "body": "When you have a real job description, check which of these it asks for. That is where your strongest stories should go. (You will do this in Session 3.)"
+        },
+        {
+          "type": "text",
+          "body": "Now build. Your first two stories are already here from today. Use STAR + E, know the trait you are proving, and keep each under 90 seconds out loud."
+        },
+        {
+          "type": "story",
+          "key": "s2.story1",
+          "traits": [
+            {
+              "group": "How you work with people",
+              "items": [
+                "Teamwork",
+                "Conflict resolution",
+                "Influence",
+                "Leadership"
+              ]
+            },
+            {
+              "group": "How you handle hard things",
+              "items": [
+                "Resilience",
+                "Composure",
+                "Adaptability",
+                "Accountability"
+              ]
+            },
+            {
+              "group": "How you get things done",
+              "items": [
+                "Time management",
+                "Initiative",
+                "Drive",
+                "Problem solving"
+              ]
+            },
+            {
+              "group": "How you learn and think",
+              "items": [
+                "Learning agility",
+                "Coachability",
+                "Analytical thinking"
+              ]
+            }
+          ],
+          "life_areas": [
+            "School",
+            "Work",
+            "Sports",
+            "Clubs and activities",
+            "Volunteering",
+            "Personal life"
+          ],
+          "number": 1,
+          "title": "Story 1",
+          "named": true,
+          "other_questions": true,
+          "copy_from": "s2.q1"
+        },
+        {
+          "type": "story",
+          "key": "s2.story2",
+          "traits": [
+            {
+              "group": "How you work with people",
+              "items": [
+                "Teamwork",
+                "Conflict resolution",
+                "Influence",
+                "Leadership"
+              ]
+            },
+            {
+              "group": "How you handle hard things",
+              "items": [
+                "Resilience",
+                "Composure",
+                "Adaptability",
+                "Accountability"
+              ]
+            },
+            {
+              "group": "How you get things done",
+              "items": [
+                "Time management",
+                "Initiative",
+                "Drive",
+                "Problem solving"
+              ]
+            },
+            {
+              "group": "How you learn and think",
+              "items": [
+                "Learning agility",
+                "Coachability",
+                "Analytical thinking"
+              ]
+            }
+          ],
+          "life_areas": [
+            "School",
+            "Work",
+            "Sports",
+            "Clubs and activities",
+            "Volunteering",
+            "Personal life"
+          ],
+          "number": 2,
+          "title": "Story 2",
+          "named": true,
+          "other_questions": true,
+          "copy_from": "s2.q2"
+        },
+        {
+          "type": "story",
+          "key": "s2.story3",
+          "traits": [
+            {
+              "group": "How you work with people",
+              "items": [
+                "Teamwork",
+                "Conflict resolution",
+                "Influence",
+                "Leadership"
+              ]
+            },
+            {
+              "group": "How you handle hard things",
+              "items": [
+                "Resilience",
+                "Composure",
+                "Adaptability",
+                "Accountability"
+              ]
+            },
+            {
+              "group": "How you get things done",
+              "items": [
+                "Time management",
+                "Initiative",
+                "Drive",
+                "Problem solving"
+              ]
+            },
+            {
+              "group": "How you learn and think",
+              "items": [
+                "Learning agility",
+                "Coachability",
+                "Analytical thinking"
+              ]
+            }
+          ],
+          "life_areas": [
+            "School",
+            "Work",
+            "Sports",
+            "Clubs and activities",
+            "Volunteering",
+            "Personal life"
+          ],
+          "number": 3,
+          "title": "Story 3",
+          "named": true,
+          "other_questions": true
+        },
+        {
+          "type": "story",
+          "key": "s2.story4",
+          "traits": [
+            {
+              "group": "How you work with people",
+              "items": [
+                "Teamwork",
+                "Conflict resolution",
+                "Influence",
+                "Leadership"
+              ]
+            },
+            {
+              "group": "How you handle hard things",
+              "items": [
+                "Resilience",
+                "Composure",
+                "Adaptability",
+                "Accountability"
+              ]
+            },
+            {
+              "group": "How you get things done",
+              "items": [
+                "Time management",
+                "Initiative",
+                "Drive",
+                "Problem solving"
+              ]
+            },
+            {
+              "group": "How you learn and think",
+              "items": [
+                "Learning agility",
+                "Coachability",
+                "Analytical thinking"
+              ]
+            }
+          ],
+          "life_areas": [
+            "School",
+            "Work",
+            "Sports",
+            "Clubs and activities",
+            "Volunteering",
+            "Personal life"
+          ],
+          "number": 4,
+          "title": "Story 4",
+          "named": true,
+          "other_questions": true
+        },
+        {
+          "type": "story",
+          "key": "s2.story5",
+          "traits": [
+            {
+              "group": "How you work with people",
+              "items": [
+                "Teamwork",
+                "Conflict resolution",
+                "Influence",
+                "Leadership"
+              ]
+            },
+            {
+              "group": "How you handle hard things",
+              "items": [
+                "Resilience",
+                "Composure",
+                "Adaptability",
+                "Accountability"
+              ]
+            },
+            {
+              "group": "How you get things done",
+              "items": [
+                "Time management",
+                "Initiative",
+                "Drive",
+                "Problem solving"
+              ]
+            },
+            {
+              "group": "How you learn and think",
+              "items": [
+                "Learning agility",
+                "Coachability",
+                "Analytical thinking"
+              ]
+            }
+          ],
+          "life_areas": [
+            "School",
+            "Work",
+            "Sports",
+            "Clubs and activities",
+            "Volunteering",
+            "Personal life"
+          ],
+          "number": 5,
+          "title": "Story 5",
+          "named": true,
+          "other_questions": true
+        },
+        {
+          "type": "story",
+          "key": "s2.story6",
+          "traits": [
+            {
+              "group": "How you work with people",
+              "items": [
+                "Teamwork",
+                "Conflict resolution",
+                "Influence",
+                "Leadership"
+              ]
+            },
+            {
+              "group": "How you handle hard things",
+              "items": [
+                "Resilience",
+                "Composure",
+                "Adaptability",
+                "Accountability"
+              ]
+            },
+            {
+              "group": "How you get things done",
+              "items": [
+                "Time management",
+                "Initiative",
+                "Drive",
+                "Problem solving"
+              ]
+            },
+            {
+              "group": "How you learn and think",
+              "items": [
+                "Learning agility",
+                "Coachability",
+                "Analytical thinking"
+              ]
+            }
+          ],
+          "life_areas": [
+            "School",
+            "Work",
+            "Sports",
+            "Clubs and activities",
+            "Volunteering",
+            "Personal life"
+          ],
+          "number": 6,
+          "title": "Story 6",
+          "named": true,
+          "other_questions": true
+        },
+        {
+          "type": "story",
+          "key": "s2.story7",
+          "traits": [
+            {
+              "group": "How you work with people",
+              "items": [
+                "Teamwork",
+                "Conflict resolution",
+                "Influence",
+                "Leadership"
+              ]
+            },
+            {
+              "group": "How you handle hard things",
+              "items": [
+                "Resilience",
+                "Composure",
+                "Adaptability",
+                "Accountability"
+              ]
+            },
+            {
+              "group": "How you get things done",
+              "items": [
+                "Time management",
+                "Initiative",
+                "Drive",
+                "Problem solving"
+              ]
+            },
+            {
+              "group": "How you learn and think",
+              "items": [
+                "Learning agility",
+                "Coachability",
+                "Analytical thinking"
+              ]
+            }
+          ],
+          "life_areas": [
+            "School",
+            "Work",
+            "Sports",
+            "Clubs and activities",
+            "Volunteering",
+            "Personal life"
+          ],
+          "number": 7,
+          "title": "Story 7",
+          "named": true,
+          "other_questions": true
+        },
+        {
+          "type": "story",
+          "key": "s2.story8",
+          "traits": [
+            {
+              "group": "How you work with people",
+              "items": [
+                "Teamwork",
+                "Conflict resolution",
+                "Influence",
+                "Leadership"
+              ]
+            },
+            {
+              "group": "How you handle hard things",
+              "items": [
+                "Resilience",
+                "Composure",
+                "Adaptability",
+                "Accountability"
+              ]
+            },
+            {
+              "group": "How you get things done",
+              "items": [
+                "Time management",
+                "Initiative",
+                "Drive",
+                "Problem solving"
+              ]
+            },
+            {
+              "group": "How you learn and think",
+              "items": [
+                "Learning agility",
+                "Coachability",
+                "Analytical thinking"
+              ]
+            }
+          ],
+          "life_areas": [
+            "School",
+            "Work",
+            "Sports",
+            "Clubs and activities",
+            "Volunteering",
+            "Personal life"
+          ],
+          "number": 8,
+          "title": "Story 8",
+          "named": true,
+          "other_questions": true
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach guide: Story Builder",
+          "body": "REVIEW FOR: a trait group with no story (the first gap to fill), \"we\" instead of \"I,\" missing results, an E that is not relatable, all stories from one life area."
+        }
+      ]
+    },
+    {
+      "id": "match",
+      "number": 8,
+      "title": "Homework: Match Your Stories",
+      "mode": "homework",
+      "blocks": [
+        {
+          "type": "text",
+          "size": "lead",
+          "body": "For each question, pick the story you would tell and write one line on what you would lean on."
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q01.story",
+          "label": "Tell me about a time you faced a challenge. [Resilience]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q01.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q02.story",
+          "label": "Tell me about a time you had to manage multiple competing priorities or deadlines. [Time management]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q02.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q03.story",
+          "label": "Tell me about a time you worked on a team. [Teamwork]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q03.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q04.story",
+          "label": "Tell me about a time you had a conflict with a teammate or coworker. [Conflict resolution]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q04.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q05.story",
+          "label": "Tell me about a time you made a mistake. [Accountability]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q05.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q06.story",
+          "label": "Tell me about a time you failed. [Resilience]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q06.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q07.story",
+          "label": "Tell me about a time you took the lead. [Leadership]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q07.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q08.story",
+          "label": "Tell me about a time you had to persuade someone. [Influence]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q08.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q09.story",
+          "label": "Tell me about a time you went above and beyond. [Initiative]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q09.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q10.story",
+          "label": "Tell me about a time you had to learn something new quickly. [Learning agility]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q10.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q11.story",
+          "label": "Tell me about a time you received critical feedback. [Coachability]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q11.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q12.story",
+          "label": "Tell me about a time you dealt with a difficult person. [Composure]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q12.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q13.story",
+          "label": "Tell me about a time you solved a problem creatively. [Problem solving]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q13.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q14.story",
+          "label": "Tell me about a time you had to adapt to a change. [Adaptability]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q14.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q15.story",
+          "label": "Tell me about a time you used data or research to make a decision. [Analytical thinking]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q15.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q16.story",
+          "label": "Tell me about a time you worked with someone very different from you. [Teamwork]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q16.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q17.story",
+          "label": "Tell me about a time you set a goal and reached it. [Drive]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q17.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q18.story",
+          "label": "Tell me about a time you worked under pressure. [Composure]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q18.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q19.story",
+          "label": "Tell me about a time you spotted a problem before anyone else. [Initiative]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q19.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "select",
+          "key": "s2.match.q20.story",
+          "label": "What is the accomplishment you are proudest of? [Drive]",
+          "options_from": "s2.story*.name",
+          "placeholder": "Choose a story"
+        },
+        {
+          "type": "field",
+          "key": "s2.match.q20.lean",
+          "input": "short",
+          "label": "What you would lean on",
+          "placeholder": "The part of this story that fits this question"
+        },
+        {
+          "type": "coverage",
+          "title": "Your coverage",
+          "stories": "s2.story*",
+          "matches": "s2.match.*",
+          "question_traits": {
+            "q01": "Resilience",
+            "q02": "Time management",
+            "q03": "Teamwork",
+            "q04": "Conflict resolution",
+            "q05": "Accountability",
+            "q06": "Resilience",
+            "q07": "Leadership",
+            "q08": "Influence",
+            "q09": "Initiative",
+            "q10": "Learning agility",
+            "q11": "Coachability",
+            "q12": "Composure",
+            "q13": "Problem solving",
+            "q14": "Adaptability",
+            "q15": "Analytical thinking",
+            "q16": "Teamwork",
+            "q17": "Drive",
+            "q18": "Composure",
+            "q19": "Initiative",
+            "q20": "Drive"
+          },
+          "trait_groups": [
+            {
+              "group": "How you work with people",
+              "items": [
+                "Teamwork",
+                "Conflict resolution",
+                "Influence",
+                "Leadership"
+              ]
+            },
+            {
+              "group": "How you handle hard things",
+              "items": [
+                "Resilience",
+                "Composure",
+                "Adaptability",
+                "Accountability"
+              ]
+            },
+            {
+              "group": "How you get things done",
+              "items": [
+                "Time management",
+                "Initiative",
+                "Drive",
+                "Problem solving"
+              ]
+            },
+            {
+              "group": "How you learn and think",
+              "items": [
+                "Learning agility",
+                "Coachability",
+                "Analytical thinking"
+              ]
+            }
+          ],
+          "life_areas": [
+            "School",
+            "Work",
+            "Sports",
+            "Clubs and activities",
+            "Volunteering",
+            "Personal life"
+          ],
+          "overused_at": 4
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach guide: Match Your Stories",
+          "body": "USE THIS to pick the VideoAsk stories: choose 3 or 4 that cover different traits and at least one that needs work."
+        }
+      ]
+    },
+    {
+      "id": "finish",
+      "number": 9,
+      "title": "Finish Up",
+      "mode": "homework",
+      "blocks": [
+        {
+          "type": "list",
+          "style": "numbers",
+          "items": [
+            "Build your stories in Section 7.",
+            "Match them in Section 8.",
+            "Click Mark homework complete.",
+            "Your coach will send you a VideoAsk with 3 or 4 of your stories to record. No notes."
+          ]
+        },
+        {
+          "type": "field",
+          "key": "s2.finish.due",
+          "input": "short",
+          "label": "Homework due date"
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach guide: Finish Up",
+          "body": "Set the due date together.\nConfirm Session 3 is booked before you hang up.\nCHECK UNDERSTANDING: ask, \"What are you doing first when we hang up?\"\nAFTER HOMEWORK IS COMPLETE: pick 3 or 4 stories and send the Session 2 VideoAsk yourself. It is not auto-sent like Session 1."
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "title": "{first_name}, here are your stories.",
+    "eyebrow": "SESSION 2",
+    "blocks": [
+      {
+        "type": "story_list",
+        "title": "Your stories",
+        "stories": "s2.story*",
+        "note": "Each story, what it proves, and where it came from."
+      },
+      {
+        "type": "coverage",
+        "title": "Your coverage",
+        "stories": "s2.story*",
+        "matches": "s2.match.*",
+        "question_traits": {
+          "q01": "Resilience",
+          "q02": "Time management",
+          "q03": "Teamwork",
+          "q04": "Conflict resolution",
+          "q05": "Accountability",
+          "q06": "Resilience",
+          "q07": "Leadership",
+          "q08": "Influence",
+          "q09": "Initiative",
+          "q10": "Learning agility",
+          "q11": "Coachability",
+          "q12": "Composure",
+          "q13": "Problem solving",
+          "q14": "Adaptability",
+          "q15": "Analytical thinking",
+          "q16": "Teamwork",
+          "q17": "Drive",
+          "q18": "Composure",
+          "q19": "Initiative",
+          "q20": "Drive"
+        },
+        "trait_groups": [
+          {
+            "group": "How you work with people",
+            "items": [
+              "Teamwork",
+              "Conflict resolution",
+              "Influence",
+              "Leadership"
+            ]
+          },
+          {
+            "group": "How you handle hard things",
+            "items": [
+              "Resilience",
+              "Composure",
+              "Adaptability",
+              "Accountability"
+            ]
+          },
+          {
+            "group": "How you get things done",
+            "items": [
+              "Time management",
+              "Initiative",
+              "Drive",
+              "Problem solving"
+            ]
+          },
+          {
+            "group": "How you learn and think",
+            "items": [
+              "Learning agility",
+              "Coachability",
+              "Analytical thinking"
+            ]
+          }
+        ],
+        "life_areas": [
+          "School",
+          "Work",
+          "Sports",
+          "Clubs and activities",
+          "Volunteering",
+          "Personal life"
+        ],
+        "overused_at": 4
+      },
+      {
+        "type": "signoff",
+        "text": "Build them once, and you will use them for every interview you have.",
+        "from": "{coach_first_name}"
+      }
+    ]
+  }
+}

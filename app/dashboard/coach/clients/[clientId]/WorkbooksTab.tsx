@@ -200,7 +200,7 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
   }
 
   const previewApi: FieldApi = {
-    editable: false, get: (k) => values[k], set: () => {}, state: () => undefined,
+    editable: false, get: (k) => values[k], all: () => values, set: () => {}, state: () => undefined,
     coachName: c.coach.first_name, showCoachOnly: false,
   }
 

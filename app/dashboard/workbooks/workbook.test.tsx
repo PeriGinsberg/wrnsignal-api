@@ -24,6 +24,7 @@ function api(values: Record<string, unknown>, over: Partial<FieldApi> = {}): Fie
   return {
     editable: true,
     get: (k) => values[k],
+    all: () => values,
     set: vi.fn(),
     state: () => undefined,
     coachName: "Peri",

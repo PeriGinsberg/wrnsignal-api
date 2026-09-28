@@ -10,8 +10,9 @@
 
 import React, { useEffect, useRef, type ReactNode } from "react"
 import {
-  SCENARIO_PARTS, STAR_PARTS, blockFieldKeys, displayValue, quoteText,
-  type AnswerValue, type Block, type PickValue, type Section,
+  SCENARIO_PARTS, STAR_PARTS, STORY_PARTS, blockFieldKeys, computeCoverage, displayValue,
+  optionsFromAnswers, quoteText, selectValues,
+  type AnswerValue, type Block, type PickValue, type Section, type SelectOption,
 } from "../../lib/workbook/content"
 
 const MODE_LABEL: Record<string, string> = { in_session: "In session", homework: "Homework" }
@@ -30,6 +31,13 @@ export type SaveState =
 export type FieldApi = {
   editable: boolean
   get(key: string): unknown
+  /**
+   * Every answer on the workbook. Needed by blocks that are DERIVED rather than
+   * stored: the Section 8 dropdowns are built from the story names in Section 7,
+   * and the coverage block reads both. `get` alone cannot serve them because
+   * they do not know the keys in advance.
+   */
+  all(): Record<string, unknown>
   set(key: string, value: AnswerValue): void
   state(key: string): SaveState | undefined
   /** Conflict: keep the value from the other device, or save mine over it. */
@@ -186,6 +194,159 @@ function PickField({ api, b }: { api: FieldApi; b: Extract<Block, { type: "pick"
   )
 }
 
+/**
+ * A dropdown, single or multi.
+ *
+ * Grouped options render as <optgroup>, which is how fifteen traits in four
+ * groups stay readable. A multi-select is a checkbox list rather than a
+ * <select multiple>, because nobody knows to ctrl-click and on a phone the
+ * native multi-select is close to unusable.
+ */
+function SelectField({ api, b }: { api: FieldApi; b: Extract<Block, { type: "select" }> }) {
+  const literal = b.options ?? []
+  const derived = b.options_from ? optionsFromAnswers(b.options_from, api.all()) : []
+  const grouped: SelectOption[] = literal.length ? literal : derived
+  const flat = selectValues(grouped)
+  const id = `f-${b.key}`
+  const raw = api.get(b.key)
+
+  if (b.multi) {
+    const chosen = Array.isArray(raw) ? (raw as string[]) : []
+    const toggle = (o: string) =>
+      api.set(b.key, chosen.includes(o) ? chosen.filter((x) => x !== o) : [...chosen, o])
+    return (
+      <fieldset className="wb-pick">
+        <legend className="wb-field-label" style={{ marginBottom: 6 }}>{b.label}</legend>
+        {b.help && <p className="wb-p wb-muted" style={{ fontSize: 16, marginBottom: 8 }}>{b.help}</p>}
+        {grouped.map((o, i) =>
+          typeof o === "string" ? (
+            <label key={i} className={chosen.includes(o) ? "on" : ""}>
+              <input type="checkbox" checked={chosen.includes(o)} disabled={!api.editable} onChange={() => toggle(o)} />
+              <span>{o}</span>
+            </label>
+          ) : (
+            <div key={i} style={{ width: "100%" }}>
+              <span className="wb-eyebrow-ink" style={{ display: "block", margin: "10px 0 4px" }}>{o.group}</span>
+              {o.items.map((it, j) => (
+                <label key={j} className={chosen.includes(it) ? "on" : ""}>
+                  <input type="checkbox" checked={chosen.includes(it)} disabled={!api.editable} onChange={() => toggle(it)} />
+                  <span>{it}</span>
+                </label>
+              ))}
+            </div>
+          ),
+        )}
+        <ConflictBox api={api} k={b.key} />
+        <div className="wb-field-foot"><SaveLine api={api} k={b.key} />{api.fieldFoot?.(b.key)}</div>
+      </fieldset>
+    )
+  }
+
+  const value = typeof raw === "string" ? raw : ""
+  // A stored answer whose option has since disappeared still shows, rather than
+  // silently resetting to blank: renaming a story in Section 7 must not wipe the
+  // Section 8 answers that pointed at it.
+  const orphan = value && !flat.includes(value)
+  return (
+    <div className="wb-field">
+      <div className="wb-field-head" style={{ gridTemplateColumns: "minmax(0,1fr)" }}>
+        <label htmlFor={id} className="wb-field-label">{b.label}</label>
+      </div>
+      {b.help && <p className="wb-p wb-muted" style={{ fontSize: 16, marginBottom: 6 }}>{b.help}</p>}
+      <select id={id} className="wb-input" value={value} disabled={!api.editable}
+        onChange={(e) => api.set(b.key, e.target.value)}>
+        <option value="">{b.placeholder ?? (flat.length ? "Choose one" : "Nothing to choose yet")}</option>
+        {orphan && <option value={value}>{value}</option>}
+        {grouped.map((o, i) =>
+          typeof o === "string"
+            ? <option key={i} value={o}>{o}</option>
+            : (
+              <optgroup key={i} label={o.group}>
+                {o.items.map((it, j) => <option key={j} value={it}>{it}</option>)}
+              </optgroup>
+            ),
+        )}
+      </select>
+      <ConflictBox api={api} k={b.key} />
+      <div className="wb-field-foot">
+        {!flat.length && b.options_from && api.editable && (
+          <span className="wb-muted" style={{ fontSize: 13 }}>Name a story in Section 7 and it will appear here.</span>
+        )}
+        <SaveLine api={api} k={b.key} />{api.fieldFoot?.(b.key)}
+      </div>
+    </div>
+  )
+}
+
+/** One STAR + E story: the trait, where it came from, and the six parts. */
+function StoryBlock({ api, b }: { api: FieldApi; b: Extract<Block, { type: "story" }> }) {
+  // Prefill: while THIS slot is untouched, the source story shows as starter
+  // text. Read per part so a client who has edited one part keeps their edit
+  // and still sees the copy in the parts they have not reached.
+  const starter = (part: string): string | undefined => {
+    if (!b.copy_from) return undefined
+    const v = api.get(`${b.copy_from}.${part}`)
+    const t = typeof v === "string" ? v : ""
+    return t.trim() ? t : undefined
+  }
+  return (
+    <div className="wb-block">
+      {(b.number != null || b.title) && (
+        <div className="wb-block-title">{b.number != null && <b>{b.number}</b>}<span>{b.title}</span></div>
+      )}
+      {b.question && <p className="wb-p" style={{ fontWeight: 600 }}>&ldquo;{b.question}&rdquo;</p>}
+      {b.named && (
+        <TextField api={api} k={`${b.key}.name`} label="Story name (a few words you'll remember it by)"
+          long={false} placeholder="The torn Achilles" />
+      )}
+      <SelectField api={api} b={{ type: "select", key: `${b.key}.trait`, label: "What it proves", options: b.traits, placeholder: "Choose a trait" }} />
+      <SelectField api={api} b={{ type: "select", key: `${b.key}.life_area`, label: "Where it came from", options: b.life_areas, placeholder: "Choose a part of your life" }} />
+      {STORY_PARTS.map((p) => (
+        <TextField key={p.part} api={api} k={`${b.key}.${p.part}`} label={p.label} long
+          starter={starter(p.part)} />
+      ))}
+      {b.other_questions && (
+        <TextField api={api} k={`${b.key}.other_questions`} label="Other questions it answers" long />
+      )}
+      {b.timed && (
+        <TextField api={api} k={`${b.key}.seconds`} label="Time when you said it out loud (seconds)" long={false}
+          placeholder="Under 90" />
+      )}
+    </div>
+  )
+}
+
+/**
+ * What the client has NOT covered yet, recomputed from what is on screen.
+ *
+ * Derived and never stored: it owns no field keys, so it cannot be answered,
+ * cannot be half-finished, and does not move the progress bar. It reads the
+ * story slots and the match answers straight out of the live answer map, which
+ * is why it updates as they type in Sections 7 and 8.
+ *
+ * Silence is the success state. A flag with nothing under it is not rendered at
+ * all, so a client who has covered everything sees an empty panel saying so
+ * rather than five reassuring headings they have to read past.
+ */
+function Coverage({ api, b }: { api: FieldApi; b: Extract<Block, { type: "coverage" }> }) {
+  const rows = computeCoverage(b, api.all())
+  return (
+    <div className="wb-callout paleblue">
+      <span className="wb-callout-title">{b.title ?? "Your coverage"}</span>
+      {rows.length === 0 ? (
+        <p className="wb-p">Nothing missing. Every question has a story, every trait group is covered, and no story is doing too much work.</p>
+      ) : (
+        rows.map((r) => (
+          <div key={r.label} style={{ marginTop: 10 }}>
+            <span className="wb-eyebrow-ink">{r.label}</span>
+            <p className="wb-p" style={{ margin: "2px 0 0" }}>{r.items.join(" · ")}</p>
+          </div>
+        ))
+      )}
+    </div>
+  )
+}
+
 function Star({ api, b }: { api: FieldApi; b: Extract<Block, { type: "star" }> }) {
   return (
     <div className="wb-block">
@@ -270,6 +431,12 @@ function Main({ api, b }: { api: FieldApi; b: Block }): ReactNode {
             placeholder={b.placeholder} starter={b.starter} />
     case "pick":
       return <PickField api={api} b={b} />
+    case "select":
+      return <SelectField api={api} b={b} />
+    case "story":
+      return <StoryBlock api={api} b={b} />
+    case "coverage":
+      return <Coverage api={api} b={b} />
     case "star":
       return <Star api={api} b={b} />
     case "scenario":

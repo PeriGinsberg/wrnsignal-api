@@ -222,6 +222,7 @@ function Loaded({ data }: { data: Loaded }) {
   const api: FieldApi = {
     editable: true,
     get: (k) => auto.values[k],
+    all: () => auto.values,
     set: (k, v: AnswerValue) => auto.set(k, v),
     state: (k) => auto.states[k],
     resolveConflict: auto.resolveConflict,
