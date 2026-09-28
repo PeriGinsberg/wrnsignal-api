@@ -220,19 +220,8 @@ const RESPONSIVE_NAV_CSS = `
     letter-spacing: 0.06em;
     font-size: 15px;
   }
-  .sig-nav {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    z-index: 95;
-    transform: translateX(-102%);
-    transition: transform 180ms ease;
-    overflow-y: auto;
-    padding-top: env(safe-area-inset-top, 0px);
-    box-shadow: 0 0 40px rgba(0,0,0,0.45);
-  }
-  .sig-nav.open { transform: none; }
+  /* The drawer's geometry is inline, set from isPhone/navOpen. See the
+     comment beside that state for why it is not a class here. */
   .sig-scrim {
     display: block;
     position: fixed;
@@ -547,6 +536,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // threw #310. Hook order is not something the reader should have to
   // reconstruct, so they live with the rest of them.
   //
+  // IS THIS A PHONE? Driven from state rather than from a CSS class, because
+  // the class-based version did not work: `.sig-nav.open { transform: none }`
+  // matched the element and still lost to `.sig-nav`, verified in the browser
+  // at 398px with the rule present in the CSSOM. Rather than keep guessing at
+  // a cascade I could not see, the transform is an inline style, which nothing
+  // can outrank.
+  //
+  // False until mounted so the server and the first client render agree; the
+  // sidebar is correct on a laptop and appears for one frame on a phone.
+  const [isPhone, setIsPhone] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 860px)")
+    const apply = () => setIsPhone(mq.matches)
+    apply()
+    mq.addEventListener("change", apply)
+    return () => mq.removeEventListener("change", apply)
+  }, [])
+
   // A drawer that survives navigation covers the page you just asked for.
   useEffect(() => { setNavOpen(false) }, [pathname])
   useEffect(() => {
@@ -1178,8 +1185,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             along with everything else. */}
         <nav
           data-coach-surface="dark"
-          className={`sig-nav${navOpen ? " open" : ""}`}
-          style={{ width: 220, background: navBg, borderRight: `1px solid ${navBorder}`, flexShrink: 0, display: "flex", flexDirection: "column" }}
+          className="sig-nav"
+          style={{
+            width: 220, background: navBg, borderRight: `1px solid ${navBorder}`,
+            flexShrink: 0, display: "flex", flexDirection: "column",
+            ...(isPhone
+              ? {
+                  position: "fixed" as const, top: 0, bottom: 0, left: 0, zIndex: 95,
+                  overflowY: "auto" as const,
+                  paddingTop: "env(safe-area-inset-top, 0px)",
+                  boxShadow: "0 0 40px rgba(0,0,0,0.45)",
+                  transform: navOpen ? "none" : "translateX(-102%)",
+                  transition: "transform 180ms ease",
+                }
+              : null),
+          }}
         >
           <Logo />
           <div style={{ padding: "0 12px" }}>
