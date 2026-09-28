@@ -48,6 +48,21 @@ export type SendResult =
  */
 const LIVE_EMAIL_HOST = (process.env.SIGNAL_LIVE_EMAIL_HOST ?? "wrnsignal-api.vercel.app").trim()
 
+/**
+ * What to call this environment in a redirected subject line.
+ *
+ * NOT VERCEL_ENV, which reads "production" on staging and made every
+ * redirected staging email announce itself as "[production -> ...]". The
+ * project's own host is the thing that actually differs, so the label is its
+ * first segment: "wrnsignal-api-staging" becomes "staging".
+ */
+export function environmentLabel(): string {
+  const host = (process.env.VERCEL_PROJECT_PRODUCTION_URL ?? "").trim()
+  if (!host) return process.env.VERCEL_ENV ?? "local"
+  const name = host.split(".")[0]
+  return name.replace(/^wrnsignal-api-?/, "") || name
+}
+
 export function isProduction(): boolean {
   // VERCEL_ENV IS NOT ENOUGH, and this is the correction. It reads
   // "production" for the production deployment of ANY project, including
@@ -107,7 +122,7 @@ export async function sendToClient(args: {
 
   const production = isProduction()
   const to = production ? intended : NON_PROD_REDIRECT
-  const subjectPrefix = production ? "" : `[${process.env.VERCEL_ENV ?? "local"} -> ${intended}] `
+  const subjectPrefix = production ? "" : `[${environmentLabel()} -> ${intended}] `
 
   try {
     const res = await getPostmarkClient().sendEmailWithTemplate({
@@ -147,7 +162,7 @@ export async function sendToCoach(args: {
 
   const production = isProduction()
   const to = production ? intended : NON_PROD_REDIRECT
-  const subjectPrefix = production ? "" : `[${process.env.VERCEL_ENV ?? "local"} -> ${intended}] `
+  const subjectPrefix = production ? "" : `[${environmentLabel()} -> ${intended}] `
 
   try {
     const res = await getPostmarkClient().sendEmailWithTemplate({
