@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest"
 import {
-  ANSWER_SECONDS, MAX_QUESTIONS, cleanQuestions, isComplete, latestTakes,
+  ANSWER_SECONDS, MAX_FEEDBACK_CHARS, MAX_QUESTIONS, cleanFeedback, cleanQuestions,
+  hasFeedback, isComplete, latestTakes,
   type PracticeQuestion, type PracticeTake,
 } from "./model"
 import { questionBank, bankTraits } from "./questionBank"
@@ -125,5 +126,51 @@ describe("the recorder clock", () => {
 
   it("the limit is the ninety seconds Session 2 teaches", () => {
     expect(ANSWER_SECONDS).toBe(90)
+  })
+})
+
+// Built from char codes so the whitespace under test survives an editor, a
+// linter and a CRLF checkout unchanged. A literal escape here is the kind of
+// thing a trailing-whitespace rule silently rewrites.
+const NEWLINE_TAB = String.fromCharCode(10, 9, 32)
+const TWO_LINES = `One${String.fromCharCode(10)}Two`
+
+describe("written feedback", () => {
+  // The release gate reads this to decide whether there is anything to send.
+  // An empty box under every answer is not feedback, and a coach who opens the
+  // page and closes it should not be able to release silence.
+  it("is present when any one box has words in it", () => {
+    expect(hasFeedback({ fb_overall: null, questions: [{ ...q("1"), fb_works: "Good pace", fb_fix: null }] })).toBe(true)
+    expect(hasFeedback({ fb_overall: null, questions: [{ ...q("1"), fb_works: null, fb_fix: "Slow down" }] })).toBe(true)
+    expect(hasFeedback({ fb_overall: "Nice work", questions: [q("1")] })).toBe(true)
+  })
+
+  it("is absent when every box is empty or only whitespace", () => {
+    expect(hasFeedback({ fb_overall: null, questions: [q("1"), q("2")] })).toBe(false)
+    expect(hasFeedback({ fb_overall: "   ", questions: [{ ...q("1"), fb_works: NEWLINE_TAB, fb_fix: "" }] })).toBe(false)
+    // No questions at all, which a round cannot be in, but the gate should not
+    // answer "yes" to it either.
+    expect(hasFeedback({ fb_overall: "", questions: [] })).toBe(false)
+  })
+
+  it("stores an empty box as null rather than as an empty string", () => {
+    // The client API asks `fb_works ?? null`, so an empty string would render
+    // an empty labelled block under the answer instead of nothing.
+    expect(cleanFeedback("")).toBeNull()
+    expect(cleanFeedback(`   ${NEWLINE_TAB}`)).toBeNull()
+    expect(cleanFeedback(null)).toBeNull()
+    expect(cleanFeedback(undefined)).toBeNull()
+  })
+
+  it("trims the edges and keeps the words", () => {
+    expect(cleanFeedback("  You opened well.  ")).toBe("You opened well.")
+    // Newlines inside survive: the boxes render pre-wrap and a coach writing
+    // three bullets expects three lines.
+    expect(cleanFeedback(TWO_LINES)).toBe(TWO_LINES)
+  })
+
+  it("caps a very long note instead of rejecting it", () => {
+    const long = "x".repeat(MAX_FEEDBACK_CHARS + 500)
+    expect(cleanFeedback(long)?.length).toBe(MAX_FEEDBACK_CHARS)
   })
 })
