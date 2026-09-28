@@ -40,8 +40,47 @@ export type SendResult =
  * misconfigured environment redirects mail inward rather than posting it to a
  * client. Backwards would send real clients test email.
  */
+/**
+ * The host whose deployments are allowed to email real clients.
+ *
+ * Overridable by env so a rename does not need a code change, but it has a
+ * default so the common case needs no configuration at all.
+ */
+const LIVE_EMAIL_HOST = (process.env.SIGNAL_LIVE_EMAIL_HOST ?? "wrnsignal-api.vercel.app").trim()
+
 export function isProduction(): boolean {
-  return process.env.VERCEL_ENV === "production"
+  // VERCEL_ENV IS NOT ENOUGH, and this is the correction. It reads
+  // "production" for the production deployment of ANY project, including
+  // wrnsignal-api-staging, so staging was mailing real client addresses with
+  // no redirect and no [staging -> ] prefix. Confirmed on 2026-09-28: a
+  // practice round sent from staging went straight to the client.
+  //
+  // That matters because the staging project points at the DEV database, and
+  // dev carries a copy of production's client profiles. The redirect that
+  // exists to stop a preview mailing a client did not cover the one
+  // environment most likely to be exercised against real-looking data.
+  if (process.env.VERCEL_ENV !== "production") return false
+
+  // WHICH project this deployment belongs to. Vercel sets this to the
+  // project's own production alias, so staging reports
+  // wrnsignal-api-staging.vercel.app and production reports
+  // wrnsignal-api.vercel.app.
+  const host = (process.env.VERCEL_PROJECT_PRODUCTION_URL ?? "").trim()
+
+  // UNKNOWN MEANS NOT PRODUCTION. If the variable is ever absent we redirect
+  // inward rather than outward: the failure is then "Peri receives mail meant
+  // for clients", which is loud and recoverable in minutes, instead of
+  // "clients receive mail from a test environment", which is neither.
+  if (!host) {
+    console.warn(
+      "[email] VERCEL_PROJECT_PRODUCTION_URL is not set on a production deployment. " +
+      "Treating this as NOT production, so client mail is being redirected. " +
+      "Check /api/version.",
+    )
+    return false
+  }
+
+  return host === LIVE_EMAIL_HOST
 }
 
 /**
