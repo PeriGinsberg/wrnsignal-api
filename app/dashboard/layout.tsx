@@ -541,6 +541,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const showDevAuth = process.env.NEXT_PUBLIC_DEV_AUTH === "true"
   const pathname = usePathname()
 
+  // HOOKS BEFORE EVERY EARLY RETURN. These sat further down, below the
+  // `status === "loading"` and `status === "unauthed"` guards, so the moment
+  // auth resolved the component rendered a different number of hooks and React
+  // threw #310. Hook order is not something the reader should have to
+  // reconstruct, so they live with the rest of them.
+  //
+  // A drawer that survives navigation covers the page you just asked for.
+  useEffect(() => { setNavOpen(false) }, [pathname])
+  useEffect(() => {
+    if (!navOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setNavOpen(false) }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [navOpen])
+
   // The job to come back to.
   //
   // DECLARED BEFORE THE AUTH EFFECT DELIBERATELY. React fires mount effects in
@@ -1035,15 +1050,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // ADD A ROUTE HERE IN THE SAME COMMIT THAT REDESIGNS IT. Nothing else needs
   // to change: the page starts sitting on the light ground the moment its
   // prefix appears in this list.
-  // A drawer that survives navigation covers the page you just asked for.
-  useEffect(() => { setNavOpen(false) }, [pathname])
-  useEffect(() => {
-    if (!navOpen) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setNavOpen(false) }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [navOpen])
-
   const isD2C = !isCoach && !pathname.startsWith("/dashboard/coach")
 
   // THE ONE PLACE A COACH ACCOUNT GETS THE LIGHT GROUND: networking.
