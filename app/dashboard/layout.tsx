@@ -163,6 +163,11 @@ const LIGHT_ROUTES: string[] = [
   "/dashboard/tracker/*",           // step 7, all three views plus the
                                     // application detail page.
   "/dashboard/profile",             // step 8, the sectioned settings home.
+  "/dashboard/practice/*",          // the client's practice round. Designed
+                                    // light from the start, so it is listed
+                                    // in the commit that built it rather than
+                                    // left to render light cards on the dark
+                                    // ground, which is what it did first.
   "/dashboard",                     // step 6, the stateful home. EXACT: every
                                     // converted descendant is listed by name.
 ]
