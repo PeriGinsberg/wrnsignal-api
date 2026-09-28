@@ -1212,8 +1212,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 textDecoration: "none",
                 border: isD2C
                   ? "1px solid rgba(255,255,255,0.16)"
-                  : "1px solid rgba(74,222,128,0.3)",
-                background: isD2C ? "transparent" : "rgba(74,222,128,0.06)",
+                  : "1px solid rgba(0,179,179,0.3)",
+                background: isD2C ? "transparent" : "rgba(0,179,179,0.06)",
                 // Not green, not peach. On light this is a context switch out to
                 // the Framer tools, so it takes the hero link blue.
                 color: isD2C ? S.hero.link : "#4ade80",

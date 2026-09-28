@@ -90,7 +90,7 @@ const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string; border: 
   referral:         { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK, border: "rgba(81,173,229,0.40)" },
   social_media:     { bg: "rgba(167,139,250,0.18)", color: "#C8B6F8", border: "rgba(167,139,250,0.40)" },
   website:          { bg: "rgba(45,165,141,0.15)",  color: T.INK_EMPHASIS, border: "rgba(45,165,141,0.40)" },
-  personal_contact: { bg: "rgba(74,222,128,0.15)",  color: T.SUCCESS, border: "rgba(74,222,128,0.40)" },
+  personal_contact: { bg: "rgba(0,179,179,0.15)",  color: T.SUCCESS, border: "rgba(0,179,179,0.40)" },
   other:            { bg: T.BORDER_SOFT, color: T.MUTED, border: T.BORDER },
 }
 
@@ -181,7 +181,7 @@ const PROSPECT_STATUS_LABEL: Record<ProspectStatus, string> = {
 // Lost = red (the file's error red #f87171 / T.ERROR family). These are the
 // selected-fill styles; non-selected pills render muted (see the control).
 const PROSPECT_STATUS_STYLE: Record<ProspectStatus, { bg: string; color: string; border: string }> = {
-  active:   { bg: "rgba(74,222,128,0.18)",  color: T.SUCCESS, border: "rgba(74,222,128,0.50)" },
+  active:   { bg: "rgba(0,179,179,0.18)",  color: T.SUCCESS, border: "rgba(0,179,179,0.50)" },
   inactive: { bg: "rgba(254,176,106,0.18)", color: T.INK_EMPHASIS, border: "rgba(254,176,106,0.50)" },
   lost:     { bg: "rgba(248,113,113,0.20)", color: "#f87171", border: "rgba(248,113,113,0.55)" },
 }
@@ -378,8 +378,8 @@ function StageTracker({
             // in orange, other reached nodes in green, unreached muted — and an
             // unreached node brightens on hover to signal it's clickable.
             const circleColor = isCurrent ? T.INK_EMPHASIS : reached ? T.SUCCESS : isHover ? T.TEXT : T.DIM
-            const circleBorder = isCurrent ? T.WRN_ORANGE : reached ? "rgba(74,222,128,0.5)" : isHover ? T.MUTED : T.BORDER
-            const circleBg = isCurrent ? T.NAV_ACTIVE_BG : reached ? "rgba(74,222,128,0.18)" : isHover ? T.GLASS : "transparent"
+            const circleBorder = isCurrent ? T.WRN_ORANGE : reached ? "rgba(0,179,179,0.5)" : isHover ? T.MUTED : T.BORDER
+            const circleBg = isCurrent ? T.NAV_ACTIVE_BG : reached ? "rgba(0,179,179,0.18)" : isHover ? T.GLASS : "transparent"
             // The current stage keeps its orange ring; the WORD under it is navy.
             const labelColor = isCurrent ? T.INK_EMPHASIS : reached ? T.TEXT : isHover ? T.TEXT : T.MUTED
             return (
@@ -393,7 +393,7 @@ function StageTracker({
                       flex: "0 0 28px",
                       height: 2,
                       marginTop: 13,
-                      background: reached ? "rgba(74,222,128,0.5)" : T.BORDER_SOFT,
+                      background: reached ? "rgba(0,179,179,0.5)" : T.BORDER_SOFT,
                     }}
                   />
                 )}

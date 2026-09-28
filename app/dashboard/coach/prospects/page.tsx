@@ -47,7 +47,7 @@ const PROSPECT_STATUS_VALUES = Object.keys(PROSPECT_STATUS_LABEL) as ProspectSta
 // Selected colors kept in sync with the detail page (prospects/[id]/page.tsx):
 // Active green, Inactive amber "on hold", Lost red, Won teal.
 const PROSPECT_STATUS_STYLE: Record<ProspectStatus, { bg: string; color: string; border: string }> = {
-  active:   { bg: "rgba(74,222,128,0.18)",  color: T.SUCCESS, border: "rgba(74,222,128,0.50)" },
+  active:   { bg: "rgba(0,179,179,0.18)",  color: T.SUCCESS, border: "rgba(0,179,179,0.50)" },
   inactive: { bg: "rgba(254,176,106,0.18)", color: T.INK_EMPHASIS, border: "rgba(254,176,106,0.50)" },
   lost:     { bg: "rgba(248,113,113,0.20)", color: "#f87171", border: "rgba(248,113,113,0.55)" },
   won:      { bg: "rgba(45,165,141,0.18)",  color: T.INK_EMPHASIS, border: "rgba(45,165,141,0.45)" },
@@ -74,7 +74,7 @@ const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string }> = {
   referral:         { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK },
   social_media:     { bg: "rgba(167,139,250,0.18)", color: "#C8B6F8" },
   website:          { bg: "rgba(45,165,141,0.15)",  color: T.INK_EMPHASIS },
-  personal_contact: { bg: "rgba(74,222,128,0.15)",  color: T.SUCCESS },
+  personal_contact: { bg: "rgba(0,179,179,0.15)",  color: T.SUCCESS },
   other:            { bg: T.BORDER_SOFT, color: T.MUTED },
 }
 
@@ -86,7 +86,7 @@ const AVATAR_PALETTE = [
   { bg: "var(--sig-avatar-1-bg, rgba(254,176,106,0.18))", text: "var(--sig-avatar-1-ink, #FECDA0)" },
   { bg: "var(--sig-avatar-2-bg, rgba(167,139,250,0.18))", text: "var(--sig-avatar-2-ink, #C8B6F8)" },
   { bg: "var(--sig-avatar-3-bg, rgba(244,114,182,0.18))", text: "var(--sig-avatar-3-ink, #F4ADC9)" },
-  { bg: "var(--sig-avatar-4-bg, rgba(74,222,128,0.18))", text: "var(--sig-avatar-4-ink, #9CE7B5)" },
+  { bg: "var(--sig-avatar-4-bg, rgba(0,179,179,0.18))", text: "var(--sig-avatar-4-ink, #7FE0DE)" },
 ] as const
 
 // ── Types ──

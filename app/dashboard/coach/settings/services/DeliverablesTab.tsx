@@ -629,8 +629,8 @@ function Row({
             onClick={onToggle}
             disabled={toggling}
             style={{
-              background: m.active ? "rgba(74,222,128,0.12)" : T.NAV_DEFAULT_BG,
-              border: `1px solid ${m.active ? "rgba(74,222,128,0.40)" : T.BORDER_SOFT}`,
+              background: m.active ? "rgba(0,179,179,0.12)" : T.NAV_DEFAULT_BG,
+              border: `1px solid ${m.active ? "rgba(0,179,179,0.40)" : T.BORDER_SOFT}`,
               color: m.active ? T.SUCCESS : T.MUTED,
               borderRadius: 999, padding: "5px 12px", fontSize: 11, fontWeight: 800,
               cursor: toggling ? "default" : "pointer", opacity: toggling ? 0.6 : 1,
@@ -995,7 +995,7 @@ function Banner({ kind, children }: { kind: "error" | "success" | "info"; childr
     kind === "error"
       ? { color: T.ERROR, bg: T.ERROR_BG, border: "rgba(255,120,120,0.30)" }
       : kind === "success"
-      ? { color: T.SUCCESS, bg: T.SUCCESS_BG, border: "rgba(74,222,128,0.30)" }
+      ? { color: T.SUCCESS, bg: T.SUCCESS_BG, border: "rgba(0,179,179,0.30)" }
       : { color: T.INK_LINK, bg: "rgba(81,173,229,0.10)", border: "rgba(81,173,229,0.30)" }
   return (
     <div style={{ fontSize: 12, color: palette.color, background: palette.bg, border: `1px solid ${palette.border}`, borderRadius: 10, padding: "10px 12px" }}>

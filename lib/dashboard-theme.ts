@@ -74,7 +74,8 @@ export const T = {
   SECTION_SIGNALS: "var(--sig-section-signals, #FFEEDC)",
   GOLD_BG: "var(--sig-gold-bg, rgba(212,164,68,0.22))",
   ERROR: "var(--sig-error, rgba(255,120,120,0.95))",
-  SUCCESS: "var(--sig-success, #4ade80)",
+  // Teal, not green: SUCCESS joined the brand family 2026-09-28.
+  SUCCESS: "var(--sig-success, #2DD4BF)",
   SUCCESS_BG: "var(--sig-success-bg, rgba(74,222,128,0.10))",
   WARNING_BG: "var(--sig-warning-bg, rgba(254,176,106,0.08))",
   ERROR_BG: "var(--sig-error-bg, rgba(255,120,120,0.08))",

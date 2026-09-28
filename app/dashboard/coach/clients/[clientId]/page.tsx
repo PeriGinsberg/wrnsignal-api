@@ -119,7 +119,7 @@ const PRIORITY_STYLE: Record<string, { bg: string; color: string }> = {
 
 const DECISION_STYLE: Record<string, { bg: string; color: string }> = {
   "Priority Apply": { bg: "rgba(15,214,104,0.15)", color: "#0FD668" },
-  Apply: { bg: "rgba(74,222,128,0.12)", color: T.SUCCESS },
+  Apply: { bg: "rgba(0,179,179,0.12)", color: T.SUCCESS },
   Review: { bg: "rgba(212,164,68,0.15)", color: T.INK_EMPHASIS },
   Pass: { bg: "rgba(232,112,112,0.12)", color: "#E87070" },
 }
@@ -174,7 +174,7 @@ const SOURCE_STYLE: Record<string, { bg: string; color: string }> = {
   referral:         { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK },
   social_media:     { bg: "rgba(167,139,250,0.18)", color: "#C8B6F8" },
   website:          { bg: "rgba(45,165,141,0.15)",  color: T.INK_EMPHASIS },
-  personal_contact: { bg: "rgba(74,222,128,0.15)",  color: T.SUCCESS },
+  personal_contact: { bg: "rgba(0,179,179,0.15)",  color: T.SUCCESS },
   other:            { bg: T.BORDER_SOFT, color: T.MUTED },
 }
 const EDUCATION_LABEL: Record<string, string> = {
@@ -1685,17 +1685,17 @@ export default function CoachClientPage() {
                     {/* WHY CARD */}
                     {whyBullets.length > 0 && (
                       <div style={{
-                        borderRadius: 18, border: "1px solid rgba(74,222,128,0.22)",
+                        borderRadius: 18, border: "1px solid rgba(0,179,179,0.22)",
                         background: "#0D1829", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
                       }}>
                         <div style={{ height: 3, background: "linear-gradient(90deg, #4ade80, #22c55e, #51ADE5)" }} />
                         <div style={{
-                          padding: "16px 20px 14px", borderBottom: "1px solid rgba(74,222,128,0.12)",
-                          background: "rgba(74,222,128,0.06)", display: "flex", alignItems: "center", gap: 10,
+                          padding: "16px 20px 14px", borderBottom: "1px solid rgba(0,179,179,0.12)",
+                          background: "rgba(0,179,179,0.06)", display: "flex", alignItems: "center", gap: 10,
                         }}>
                           <div style={{
                             width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-                            background: "rgba(74,222,128,0.15)", border: "1px solid rgba(74,222,128,0.35)",
+                            background: "rgba(0,179,179,0.15)", border: "1px solid rgba(0,179,179,0.35)",
                             display: "flex", alignItems: "center", justifyContent: "center",
                             fontSize: TYPE.body, color: T.SUCCESS,
                           }}>✦</div>
@@ -1716,7 +1716,7 @@ export default function CoachClientPage() {
                               <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                                 <div style={{
                                   width: 22, height: 22, borderRadius: "50%",
-                                  background: "rgba(74,222,128,0.15)", border: "1.5px solid rgba(74,222,128,0.50)",
+                                  background: "rgba(0,179,179,0.15)", border: "1.5px solid rgba(0,179,179,0.50)",
                                   display: "flex", alignItems: "center", justifyContent: "center",
                                   flexShrink: 0, marginTop: 2, fontSize: TYPE.micro, color: T.SUCCESS, fontWeight: 900,
                                 }}>✓</div>
@@ -1814,7 +1814,7 @@ export default function CoachClientPage() {
               <div style={{ ...eyebrow, color: T.INK_EMPHASIS, fontSize: TYPE.micro, marginBottom: 16 }}>STEP 4 — COACHING ANNOTATION</div>
 
               {sendSuccess ? (
-                <div style={{ padding: 16, background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.2)", borderRadius: 10 }}>
+                <div style={{ padding: 16, background: "rgba(0,179,179,0.08)", border: "1px solid rgba(0,179,179,0.2)", borderRadius: 10 }}>
                   <span style={{ color: T.SUCCESS, fontWeight: 900, fontSize: TYPE.secondary }}>
                     Sent to {clientProfile?.name || "client"}'s dashboard. Clearing form...
                   </span>

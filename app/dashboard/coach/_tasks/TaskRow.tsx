@@ -121,7 +121,7 @@ const AVATAR_RGB: Array<[number, number, number]> = [
   [212, 164, 68],   // GOLD
   [81, 173, 229],   // WRN_BLUE
   [33, 140, 140],   // WRN_TEAL
-  [74, 222, 128],   // SUCCESS green
+  [45, 212, 191],  // SUCCESS teal, formerly a green and the one member off palette
 ]
 // TASK_OPEN ice (#B6F2F8) was in this list and came out. At avatar size it
 // reads as near-white rather than as a colour, and it is already the Open

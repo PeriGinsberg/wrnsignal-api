@@ -94,7 +94,7 @@ const AVATAR_PALETTE = [
   { bg: "var(--sig-avatar-1-bg, rgba(254,176,106,0.18))", text: "var(--sig-avatar-1-ink, #FECDA0)" },
   { bg: "var(--sig-avatar-2-bg, rgba(167,139,250,0.18))", text: "var(--sig-avatar-2-ink, #C8B6F8)" },
   { bg: "var(--sig-avatar-3-bg, rgba(244,114,182,0.18))", text: "var(--sig-avatar-3-ink, #F4ADC9)" },
-  { bg: "var(--sig-avatar-4-bg, rgba(74,222,128,0.18))", text: "var(--sig-avatar-4-ink, #9CE7B5)" },
+  { bg: "var(--sig-avatar-4-bg, rgba(0,179,179,0.18))", text: "var(--sig-avatar-4-ink, #7FE0DE)" },
 ] as const
 
 function hashIndex(s: string, mod: number): number {
@@ -507,9 +507,9 @@ export default function MyClientsFullPage() {
                         disabled={inviteSending || inviteSent}
                         style={{
                           background: inviteSent
-                            ? "rgba(74,222,128,0.15)"
+                            ? "rgba(0,179,179,0.15)"
                             : "rgba(255,149,0,0.15)",
-                          border: `1px solid ${inviteSent ? "rgba(74,222,128,0.3)" : "rgba(255,149,0,0.3)"}`,
+                          border: `1px solid ${inviteSent ? "rgba(0,179,179,0.3)" : "rgba(255,149,0,0.3)"}`,
                           color: inviteSent ? T.SUCCESS : T.INK_EMPHASIS,
                           fontSize: 12,
                           fontWeight: 700,

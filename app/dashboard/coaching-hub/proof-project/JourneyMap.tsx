@@ -57,8 +57,8 @@ function Node({ state, index, seen }: { state: NodeState; index: number; seen: b
       <div
         style={{
           ...base,
-          background: "rgba(74,222,128,0.14)",
-          border: `2px solid rgba(74,222,128,0.55)`,
+          background: "rgba(0,179,179,0.14)",
+          border: `2px solid rgba(0,179,179,0.55)`,
           color: T.SUCCESS,
         }}
       >
@@ -178,7 +178,7 @@ export function JourneyMap({ deliverables }: { deliverables: ProofDeliverable[] 
                     flex: 1,
                     borderRadius: 999,
                     // First node has no incoming track.
-                    background: i === 0 ? "transparent" : prevComplete ? "rgba(74,222,128,0.45)" : T.BORDER_SOFT,
+                    background: i === 0 ? "transparent" : prevComplete ? "rgba(0,179,179,0.45)" : T.BORDER_SOFT,
                     transition: "background 500ms ease",
                   }}
                 />
@@ -193,7 +193,7 @@ export function JourneyMap({ deliverables }: { deliverables: ProofDeliverable[] 
                       i === deliverables.length - 1
                         ? "transparent"
                         : state === "complete"
-                          ? "rgba(74,222,128,0.45)"
+                          ? "rgba(0,179,179,0.45)"
                           : T.BORDER_SOFT,
                     transition: "background 500ms ease",
                   }}

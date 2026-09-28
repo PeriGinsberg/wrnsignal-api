@@ -95,7 +95,7 @@ export const LIGHT_COACH_VARS: Record<string, string> = {
   // Each was a low-alpha wash designed to read on navy. On white the same
   // alpha is imperceptible, so each becomes a solid tint at the same meaning.
   GOLD_BG: "#F7EBCC",
-  SUCCESS_BG: "#DFF5E6",
+  SUCCESS_BG: "#D6EFEC",
   WARNING_BG: "#FFEEDC",
   ERROR_BG: "#FBE4E3",
   PINK_BG: "#FDE3EC",
@@ -106,7 +106,7 @@ export const LIGHT_COACH_VARS: Record<string, string> = {
 
   // ── Borders on those fills ──
   GOLD_BORDER: "#E0C173",
-  SUCCESS_BORDER: "#8FD9A6",
+  SUCCESS_BORDER: "#7FCDCD",
   PINK_BORDER: "#F3A8C4",
   ICE_BLUE_BORDER: "#9FD9DD",
   BLUE_BORDER: "#9FCBEA",
@@ -119,7 +119,11 @@ export const LIGHT_COACH_VARS: Record<string, string> = {
   // ERROR was rgba(255,120,120,0.95): 2.3 on white, unreadable. The ink from
   // surfaces.ts LIGHT measures 5.9.
   ERROR: "#C0322F",
-  SUCCESS: "#1B7A72",
+  // SUCCESS IS TEAL, NOT GREEN. It was #4ade80 on dark and a green-teal on
+  // light, off the palette in both. The brand teal #00B3B3 fills chips, icons
+  // and rails; a word takes #00757A, the darkened teal, at 5.49 on a card.
+  // ERROR stays red, because red means wrong and the hue IS the meaning.
+  SUCCESS: "#00757A",
   // THE ACCENTS STAY ACCENTS AND NEVER SET TEXT.
   //
   // These were briefly darkened so they could carry a word: #FF6B00 became
@@ -179,7 +183,7 @@ export const LIGHT_COACH_EXTRAS: Record<string, string> = {
   "avatar-1-bg": "#FFEEDC", "avatar-1-ink": "#8A3D00",
   "avatar-2-bg": "#EDE4F9", "avatar-2-ink": "#5B3392",
   "avatar-3-bg": "#FDE3EC", "avatar-3-ink": "#A3215B",
-  "avatar-4-bg": "#DFF5E6", "avatar-4-ink": "#1B6B44",
+  "avatar-4-bg": "#D6EFEC", "avatar-4-ink": "#00757A",
 
   // Lifecycle pills. #F4A261 with white text is 2.1:1. On navy the
   // surround carried it; on white it is a pale badge with white letters.
@@ -208,7 +212,7 @@ export const LIGHT_COACH_EXTRAS: Record<string, string> = {
 
   // The task-row avatars mix their hue toward navy rather than carrying
   // a second palette. 0% on dark, 34% on light, which is what takes the
-  // palest member (SUCCESS green) past 4.5:1 on its own wash.
+  // palest member past 4.5:1 on its own wash.
   "avatar-darken": "34%",
   "avatar-wash": "0.22",
 }

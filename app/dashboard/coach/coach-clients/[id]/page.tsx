@@ -70,7 +70,7 @@ const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string }> = {
   referral:         { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK },
   social_media:     { bg: "rgba(167,139,250,0.18)", color: "#C8B6F8" },
   website:          { bg: "rgba(45,165,141,0.15)",  color: T.INK_EMPHASIS },
-  personal_contact: { bg: "rgba(74,222,128,0.15)",  color: T.SUCCESS },
+  personal_contact: { bg: "rgba(0,179,179,0.15)",  color: T.SUCCESS },
   other:            { bg: T.BORDER_SOFT, color: T.MUTED },
 }
 
@@ -127,7 +127,7 @@ const AVATAR_PALETTE = [
   { bg: "var(--sig-avatar-1-bg, rgba(254,176,106,0.18))", text: "var(--sig-avatar-1-ink, #FECDA0)" },
   { bg: "var(--sig-avatar-2-bg, rgba(167,139,250,0.18))", text: "var(--sig-avatar-2-ink, #C8B6F8)" },
   { bg: "var(--sig-avatar-3-bg, rgba(244,114,182,0.18))", text: "var(--sig-avatar-3-ink, #F4ADC9)" },
-  { bg: "var(--sig-avatar-4-bg, rgba(74,222,128,0.18))", text: "var(--sig-avatar-4-ink, #9CE7B5)" },
+  { bg: "var(--sig-avatar-4-bg, rgba(0,179,179,0.18))", text: "var(--sig-avatar-4-ink, #7FE0DE)" },
 ] as const
 
 // ── Types ──

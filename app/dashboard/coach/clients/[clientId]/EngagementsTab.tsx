@@ -96,7 +96,7 @@ const PROPOSAL_ORDER: ProposalStatus[] = ["draft", "sent", "approved", "declined
 const PROPOSAL_META: Record<ProposalStatus, { label: string; color: string; bg: string; border: string }> = {
   draft: { label: "Draft", color: T.MUTED, bg: T.NAV_DEFAULT_BG, border: T.BORDER_SOFT },
   sent: { label: "Sent", color: T.INK_LINK, bg: "rgba(81,173,229,0.12)", border: "rgba(81,173,229,0.30)" },
-  approved: { label: "Approved", color: T.SUCCESS, bg: T.SUCCESS_BG, border: "rgba(74,222,128,0.30)" },
+  approved: { label: "Approved", color: T.SUCCESS, bg: T.SUCCESS_BG, border: "rgba(0,179,179,0.30)" },
   declined: { label: "Declined", color: T.ERROR, bg: T.ERROR_BG, border: "rgba(255,120,120,0.30)" },
 }
 
@@ -108,7 +108,7 @@ const ACTIVITY_STATUS_ORDER = ["not_started", "in_progress", "complete"] as cons
 const ACTIVITY_STATUS_META: Record<string, { label: string; color: string; bg: string; border: string }> = {
   not_started: { label: "Not started", color: T.MUTED, bg: T.NAV_DEFAULT_BG, border: T.BORDER_SOFT },
   in_progress: { label: "In progress", color: T.INK_EMPHASIS, bg: "rgba(254,176,106,0.14)", border: T.NAV_ACTIVE_BORDER },
-  complete: { label: "Complete", color: T.SUCCESS, bg: T.SUCCESS_BG, border: "rgba(74,222,128,0.30)" },
+  complete: { label: "Complete", color: T.SUCCESS, bg: T.SUCCESS_BG, border: "rgba(0,179,179,0.30)" },
 }
 
 function countActivities(e: Engagement): number {
@@ -1208,7 +1208,7 @@ function Banner({ kind, children }: { kind: "error" | "success" | "info"; childr
     kind === "error"
       ? { color: T.ERROR, bg: T.ERROR_BG, border: "rgba(255,120,120,0.30)" }
       : kind === "success"
-      ? { color: T.SUCCESS, bg: T.SUCCESS_BG, border: "rgba(74,222,128,0.30)" }
+      ? { color: T.SUCCESS, bg: T.SUCCESS_BG, border: "rgba(0,179,179,0.30)" }
       : { color: T.INK_LINK, bg: "rgba(81,173,229,0.10)", border: "rgba(81,173,229,0.30)" }
   return (
     <div style={{ fontSize: TYPE.secondary, color: palette.color, background: palette.bg, border: `1px solid ${palette.border}`, borderRadius: 10, padding: "10px 12px" }}>
