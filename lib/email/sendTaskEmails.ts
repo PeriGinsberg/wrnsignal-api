@@ -11,7 +11,12 @@ import { sendToCoach } from "./send"
 import { getAppUrl } from "../urls"
 import { isOverdue, type Task } from "../tasks/model"
 
-export const TASK_ASSIGNED_TEMPLATE = "task-assigned"
+// v2 CARRIES THE WHOLE BRIEF. A new alias rather than an edit to the old one,
+// because one Postmark server serves dev and prod: editing `task-assigned` in
+// place would have changed production the moment it was saved, before any of
+// this was tested. The old template stays exactly as it is and stops being
+// used when this deploys, which also makes the rollback a one-word revert.
+export const TASK_ASSIGNED_TEMPLATE = "task-assigned-v2"
 export const OVERDUE_DIGEST_TEMPLATE = "overdue-digest"
 
 /**
@@ -35,7 +40,52 @@ function dueText(t: Pick<Task, "due_at" | "due_has_time">): string {
   return `${day} at ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`
 }
 
-/** A one-line reading of the brief, for the coach who has to act on it. */
+/** The columns the email needs. All of them: see briefFields. */
+export const BRIEF_EMAIL_COLUMNS =
+  "name, primary_roles, secondary_roles, primary_industries, secondary_industries, " +
+  "locations, education_status, immediate_goals, notes_for_builder"
+
+const BRIEF_EMAIL_FIELDS: [string, string][] = [
+  ["primary_roles", "Primary roles"],
+  ["secondary_roles", "Secondary roles"],
+  ["primary_industries", "Primary industries"],
+  ["secondary_industries", "Secondary industries"],
+  ["locations", "Locations"],
+  ["education_status", "Education status"],
+  ["immediate_goals", "Immediate goals"],
+  ["notes_for_builder", "Notes for the builder"],
+]
+
+/**
+ * THE WHOLE BRIEF, as labelled rows.
+ *
+ * This used to be a one-line summary of three fields joined with a dot, and the
+ * other five were simply not in the email. Secondary roles, secondary
+ * industries, education status, immediate goals and the notes written
+ * specifically FOR the person reading the email were all dropped. That is not a
+ * summary, it is a brief with most of it missing, and the assignee had no way
+ * to tell that anything was absent.
+ *
+ * Empty fields are omitted rather than sent blank: a row reading "Locations:"
+ * with nothing after it looks like a rendering bug.
+ */
+function briefFields(brief: any | null): { label: string; value: string }[] {
+  if (!brief) return []
+  const out: { label: string; value: string }[] = []
+  for (const [k, label] of BRIEF_EMAIL_FIELDS) {
+    const raw = brief[k]
+    const value = Array.isArray(raw) ? raw.join(", ") : String(raw ?? "").trim()
+    if (value) out.push({ label, value })
+  }
+  return out
+}
+
+/**
+ * The one-liner, kept ONLY so an older copy of the template still renders
+ * something. The template prefers brief_fields and falls back to this, so the
+ * code and the template can be deployed in either order without a release in
+ * which the brief block silently disappears.
+ */
 function briefSummary(brief: any | null): string | null {
   if (!brief) return null
   const bits: string[] = []
@@ -80,7 +130,7 @@ export async function sendTaskAssignedEmail(
         : Promise.resolve({ data: null } as any),
       task.brief_id
         ? db.from("networking_campaign_briefs")
-            .select("name, primary_roles, primary_industries, locations").eq("id", task.brief_id).maybeSingle()
+            .select(BRIEF_EMAIL_COLUMNS).eq("id", task.brief_id).maybeSingle()
         : Promise.resolve({ data: null } as any),
     ])
 
@@ -95,6 +145,21 @@ export async function sendTaskAssignedEmail(
         // "a rule" rather than "auto": the assignee wants to know whether a
         // person chose this for them.
         source_text: task.source === "auto" ? "a rule" : "a coach",
+        // A ZERO-OR-ONE ELEMENT ARRAY, which is how you write "if" in a
+        // Postmark template that also has to loop.
+        //
+        // Mustachio, measured rather than assumed: {{#each}} is the only loop
+        // ({{#array}} renders once with every variable empty), and NO section
+        // falls back to the parent context, so a {{#each}} nested inside a
+        // {{#has_brief}} wrapper renders nothing at all. What does work is a
+        // nested {{#each}}, because that is a child lookup. An empty array
+        // renders nothing, so the orange box appears only when there is a
+        // brief, and the wrapper still renders exactly once when there is.
+        brief_wrap: brief
+          ? [{ name: (brief as any).name ?? "", fields: briefFields(brief) }]
+          : [],
+        // Still sent so that pointing TASK_ASSIGNED_TEMPLATE back at the old
+        // `task-assigned` alias is a complete rollback on its own.
         brief_summary: briefSummary(brief) ?? "",
         task_url: taskUrl(task.id),
         is_reassignment: !!opts.reassignment,

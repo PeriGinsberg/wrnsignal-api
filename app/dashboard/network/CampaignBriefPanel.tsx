@@ -14,6 +14,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { LIGHT as S, action as actionStyle, surfaceCard } from "../../../lib/theme/surfaces"
+import { AutoGrowTextarea } from "../../../components/ui/AutoGrowTextarea"
 
 const ACCENT = "#009BFF"
 const RULE = "#FF6B00"
@@ -87,6 +88,58 @@ function fromForm(f: FormState): Record<string, any> {
   for (const [k] of LIST_FIELDS) out[k] = f[k] ?? ""
   for (const [k] of TEXT_FIELDS) out[k] = (f[k] ?? "").trim() || null
   return out
+}
+
+/**
+ * A SUBMITTED BRIEF IS A DOCUMENT, so it is rendered as one.
+ *
+ * It used to be the same form with `readOnly` on every control, which is the
+ * worst of both: it still looks like something you can type into, every value
+ * is still trapped in a box the width of a column, and a long list still
+ * scrolls out of sight inside its own input. Erin opens this to READ it before
+ * she builds a list, and she could not read it.
+ *
+ * Labels and wrapped text. `pre-wrap` keeps the line breaks somebody typed into
+ * the notes, and `anywhere` breaks a pasted URL rather than letting it push the
+ * modal sideways. Empty fields say so instead of showing a blank line, because
+ * "no secondary industries" and "I forgot to fill this in" are different facts.
+ */
+function BriefReadOnly({ brief }: { brief: Brief }) {
+  const rowLabel: React.CSSProperties = {
+    fontSize: 11, fontWeight: 800, letterSpacing: "0.07em", textTransform: "uppercase",
+    color: S.text.muted, marginBottom: 4,
+  }
+  const rowValue: React.CSSProperties = {
+    fontSize: 14, color: S.text.primary, lineHeight: 1.5,
+    whiteSpace: "pre-wrap", overflowWrap: "anywhere",
+  }
+  const empty: React.CSSProperties = { ...rowValue, color: S.text.dim, fontStyle: "italic" }
+
+  const rows: { key: string; label: string; value: string }[] = [
+    ...LIST_FIELDS.map(([k, l]) => ({
+      key: k, label: l, value: ((brief as any)[k] ?? []).join(", "),
+    })),
+    ...TEXT_FIELDS.map(([k, l]) => ({
+      key: k, label: l, value: ((brief as any)[k] ?? "") || "",
+    })),
+  ]
+
+  return (
+    <div style={{ marginTop: 20, display: "grid", gap: 16 }}>
+      <div>
+        <div style={rowLabel}>Campaign name</div>
+        <div style={rowValue}>{brief.name}</div>
+      </div>
+      {rows.map((r) => (
+        <div key={r.key}>
+          <div style={rowLabel}>{r.label}</div>
+          <div style={r.value.trim() ? rowValue : empty}>
+            {r.value.trim() ? r.value : "Not set"}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 export function CampaignBriefModal({
@@ -236,9 +289,11 @@ export function CampaignBriefModal({
           </div>
         )}
 
+        {readOnly ? <BriefReadOnly brief={brief} /> : (
+        <>
         <div style={{ marginTop: 20 }}>
           <label style={label} htmlFor="brief-name">Campaign name</label>
-          <input id="brief-name" style={input} value={form.name} readOnly={readOnly} onChange={(e) => set("name", e.target.value)} />
+          <AutoGrowTextarea id="brief-name" style={input} value={form.name} onChange={(e) => set("name", e.target.value)} />
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14, marginTop: 16 }}>
@@ -252,9 +307,12 @@ export function CampaignBriefModal({
                   </span>
                 )}
               </label>
-              <input
-                id={`brief-${k}`} style={input} value={form[k]} readOnly={readOnly}
-                placeholder={readOnly ? "" : "Separate with commas"}
+              {/* A LIST IS NOT A LINE. This was an <input>, which scrolls
+                  sideways: ten target roles showed as three and a bit, with no
+                  sign that the rest existed. */}
+              <AutoGrowTextarea
+                id={`brief-${k}`} style={input} value={form[k]}
+                placeholder="Separate with commas"
                 onChange={(e) => set(k, e.target.value)}
               />
             </div>
@@ -265,14 +323,16 @@ export function CampaignBriefModal({
           {TEXT_FIELDS.map(([k, l, ph]) => (
             <div key={k}>
               <label style={label} htmlFor={`brief-${k}`}>{l}</label>
-              <textarea
-                id={`brief-${k}`} style={{ ...input, minHeight: k === "notes_for_builder" ? 80 : 56, resize: "vertical" }}
-                value={form[k]} placeholder={readOnly ? "" : ph} readOnly={readOnly}
+              <AutoGrowTextarea
+                id={`brief-${k}`} style={input} minRows={k === "notes_for_builder" ? 3 : 2}
+                value={form[k]} placeholder={ph}
                 onChange={(e) => set(k, e.target.value)}
               />
             </div>
           ))}
         </div>
+        </>
+        )}
 
         {error && (
           <div style={{ marginTop: 14, fontSize: 13, color: S.meaning.error.ink }}>{error}</div>

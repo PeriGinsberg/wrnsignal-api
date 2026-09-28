@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from "react"
 import { T, btnPrimary, btnSecondary, fieldLabel, fieldWrap, input, selectDark, selectDarkOption, textarea } from "../../../../lib/dashboard-theme"
 import { TASK_STATUSES, type Task, type TaskStatus } from "../../../../lib/tasks/model"
 import { apiJson, type Assignee } from "./taskClient"
+import { AutoGrowTextarea } from "@/components/ui/AutoGrowTextarea"
 
 export type TaskFormModalProps = {
   task: Task | null
@@ -184,8 +185,11 @@ export function TaskFormModal(props: TaskFormModalProps) {
 
         <div style={fieldWrap}>
           <label style={fieldLabel} htmlFor="task-desc">Description</label>
-          <textarea
-            id="task-desc" style={{ ...textarea, minHeight: 90 }} value={description}
+          {/* Grows with the text. A task carrying a campaign brief is long,
+              and a fixed 90px box put the rest of it behind an inner
+              scrollbar that nothing on screen advertised. */}
+          <AutoGrowTextarea
+            id="task-desc" style={textarea} minRows={3} value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Links pasted here are clickable in the list."
           />
