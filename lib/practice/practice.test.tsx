@@ -101,8 +101,16 @@ describe("takes", () => {
 })
 
 describe("the recorder clock", () => {
+  it("is minutes and seconds, not a count of seconds", () => {
+    // It used to print `0:${seconds}`, so ninety seconds read "0:90" and the
+    // countdown went 0:90, 0:89, which is not a time anybody recognises.
+    expect(formatClock(90_000)).toBe("1:30")
+    expect(formatClock(60_000)).toBe("1:00")
+    expect(formatClock(59_000)).toBe("0:59")
+    expect(formatClock(87_000)).toBe("1:27")
+  })
+
   it("counts down in whole seconds and never goes below zero", () => {
-    expect(formatClock(90_000)).toBe("0:90")
     expect(formatClock(9_400)).toBe("0:10")
     expect(formatClock(1)).toBe("0:01")
     expect(formatClock(0)).toBe("0:00")

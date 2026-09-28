@@ -129,7 +129,7 @@ export default function PracticeRoundPage() {
         <p style={{ ...p, margin: 0 }}>
           {done
             ? `Sent to ${round.coach_name}. They will watch these back and come back to you.`
-            : `${round.coach_name} picked ${round.questions.length} question${round.questions.length === 1 ? "" : "s"} for you. Record each one in ${round.seconds} seconds or less. You can redo any answer before you send.`}
+            : `${round.coach_name} picked ${round.questions.length} question${round.questions.length === 1 ? "" : "s"} for you. Press Start and recording begins straight away, ${round.seconds} seconds per answer. Restart as many times as you like; Finished locks that answer in. When all of them are answered, send the round.`}
         </p>
       </div>
 
@@ -145,15 +145,12 @@ export default function PracticeRoundPage() {
                 <span style={num}>{i + 1}</span>
                 <div style={{ minWidth: 0 }}>
                   <p style={{ margin: 0, fontSize: 18, lineHeight: 1.4, color: "#08203F", fontWeight: 600 }}>{q.text}</p>
-                  {q.answered && (
-                    <span style={{ fontSize: 14, color: "#00757A", fontWeight: 700 }}>
-                      Answered{q.takes > 1 ? ` after ${q.takes} takes` : ""}
-                    </span>
-                  )}
+
                 </div>
               </div>
               <Recorder
                 seconds={round.seconds}
+                locked={q.answered}
                 onRecorded={(blob, mime, ms) => upload(q.id, blob, mime, ms)}
               />
             </div>
@@ -198,12 +195,13 @@ export default function PracticeRoundPage() {
  * right for one of the two people who can open it is a page that will be
  * screenshotted wrong.
  */
+/**
+ * The ground is painted by <main> in the dashboard layout, which knows its own
+ * padding. This used to cancel that padding with matching negative margins,
+ * which was correct exactly until the padding changed for phone widths.
+ */
 function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{ background: "#EAF5FA", margin: "-32px -40px -60px -36px", minHeight: "100vh" }}>
-      <div style={{ maxWidth: 720, margin: "0 auto", padding: "28px 20px 80px" }}>{children}</div>
-    </div>
-  )
+  return <div style={{ maxWidth: 720, margin: "0 auto" }}>{children}</div>
 }
 
 const p: React.CSSProperties = { fontSize: 16, lineHeight: "24px", color: "#46607A" }
@@ -211,7 +209,10 @@ const eyebrow: React.CSSProperties = {
   fontSize: 11, fontWeight: 800, letterSpacing: "0.09em", textTransform: "uppercase", color: "#009BFF",
 }
 const card: React.CSSProperties = {
-  background: "#FFFFFF", border: "1px solid rgba(8,32,63,0.12)", borderRadius: 14, padding: 18,
+  background: "#FFFFFF", border: "1px solid rgba(8,32,63,0.12)", borderRadius: 14,
+  // Tighter on a phone so the video preview, which is the point of the card,
+  // gets the width instead of the padding.
+  padding: "clamp(12px, 3.5vw, 18px)",
 }
 const num: React.CSSProperties = {
   flexShrink: 0, width: 28, height: 28, borderRadius: "50%", background: "#DCEDF9", color: "#00569A",

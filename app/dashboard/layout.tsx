@@ -176,6 +176,78 @@ const LIGHT_ROUTES: string[] = [
 // the nav shell because they carry their own header and navigation. The
 // interview workbook (spec: its own editorial style, left section nav, phone
 // bottom bar) is the only one.
+/**
+ * The nav is a column on a laptop and a drawer on a phone.
+ *
+ * 860px because the nav is 220px and the narrowest thing the Coaches Center
+ * renders comfortably is about 640: below the sum of those two, a fixed column
+ * is taking room the page needs rather than helping anyone navigate.
+ *
+ * The drawer is `position: fixed` so it leaves the flex row entirely when it
+ * is closed, which is what makes every page genuinely full width rather than
+ * full width minus a hidden 220px.
+ */
+const RESPONSIVE_NAV_CSS = `
+.sig-topbar { display: none; }
+.sig-scrim { display: none; }
+@media (max-width: 860px) {
+  .sig-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px));
+    position: sticky;
+    top: 0;
+    z-index: 80;
+  }
+  .sig-burger {
+    width: 40px;
+    height: 40px;
+    border-radius: 9px;
+    border: 1px solid rgba(255,255,255,0.22);
+    background: transparent;
+    color: #fff;
+    font-size: 19px;
+    line-height: 1;
+    cursor: pointer;
+    font-family: inherit;
+    flex-shrink: 0;
+  }
+  .sig-topbar-title {
+    color: #fff;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    font-size: 15px;
+  }
+  .sig-nav {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 95;
+    transform: translateX(-102%);
+    transition: transform 180ms ease;
+    overflow-y: auto;
+    padding-top: env(safe-area-inset-top, 0px);
+    box-shadow: 0 0 40px rgba(0,0,0,0.45);
+  }
+  .sig-nav.open { transform: none; }
+  .sig-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    background: rgba(4,6,15,0.5);
+  }
+  /* Full width, and a gutter that still reads as a margin rather than none. */
+  .sig-main { padding: 18px 16px 64px 16px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sig-nav { transition: none; }
+}
+`
+
 const BARE_ROUTES = ["/dashboard/workbooks/"]
 
 function isBareRoute(pathname: string): boolean {
@@ -455,6 +527,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Beta-feedback slide-in (Phase 3). Mounted at layout level so it's
   // reachable from any coach page; nav trigger wired in Phase 4.
   const [feedbackOpen, setFeedbackOpen] = useState(false)
+  // THE NAV IS A DRAWER ON A PHONE. It was a fixed 220px column at every
+  // width, so on a 390px screen it ate more than half the viewport on every
+  // page and nothing could be read. Open state lives here rather than in CSS
+  // because the scrim and the Escape key need it too.
+  const [navOpen, setNavOpen] = useState(false)
   const [authToken, setAuthToken] = useState<string | null>(null)
   // Dev-only password sign-in. Gated on NEXT_PUBLIC_DEV_AUTH=true (set in
   // .env.development.local; absent in prod .env.local). Without that env
@@ -958,6 +1035,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // ADD A ROUTE HERE IN THE SAME COMMIT THAT REDESIGNS IT. Nothing else needs
   // to change: the page starts sitting on the light ground the moment its
   // prefix appears in this list.
+  // A drawer that survives navigation covers the page you just asked for.
+  useEffect(() => { setNavOpen(false) }, [pathname])
+  useEffect(() => {
+    if (!navOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setNavOpen(false) }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [navOpen])
+
   const isD2C = !isCoach && !pathname.startsWith("/dashboard/coach")
 
   // THE ONE PLACE A COACH ACCOUNT GETS THE LIGHT GROUND: networking.
@@ -1045,6 +1131,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           its attribute, so this costs nothing when the Coaches Center is dark
           and makes turning it light a one-word change. */}
       <style>{coachSurfaceCss()}</style>
+      <style>{RESPONSIVE_NAV_CSS}</style>
       {coachOnClientBoard && boardClientId && (
         <CoachBoardBar clientId={boardClientId} clientName={boardClientName} />
       )}
@@ -1052,7 +1139,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <FramerBanner runId={returnRun} jobTitle={returnTitle} />
       )}
       {handoffDegraded && <HandoffDegradedBanner />}
-      <div style={{ display: "flex", flex: 1 }}>
+      {/* ── Phone chrome ──────────────────────────────────────────────
+          A bar and a drawer, both invisible above the breakpoint. The bar is
+          in the document flow rather than fixed, so it cannot cover the first
+          line of any page, and it carries the safe-area inset so it clears the
+          notch. */}
+      <div className="sig-topbar" data-coach-surface="dark" style={{ background: navBg, borderBottom: `1px solid ${navBorder}` }}>
+        <button
+          type="button"
+          className="sig-burger"
+          aria-label={navOpen ? "Close the menu" : "Open the menu"}
+          aria-expanded={navOpen}
+          onClick={() => setNavOpen((v) => !v)}
+        >
+          <span aria-hidden="true">{navOpen ? "✕" : "☰"}</span>
+        </button>
+        <span className="sig-topbar-title">SIGNAL</span>
+      </div>
+      {navOpen && (
+        <div
+          className="sig-scrim"
+          onClick={() => setNavOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <div style={{ display: "flex", flex: 1, minWidth: 0 }}>
         {/* THE NAV STAYS NAVY ON BOTH GROUNDS. Navy is structure here, not
             theme: it reads correctly against a light page and a dark one, and
             it is what JobFit's converted surfaces already do. Custom properties
@@ -1060,6 +1172,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             along with everything else. */}
         <nav
           data-coach-surface="dark"
+          className={`sig-nav${navOpen ? " open" : ""}`}
           style={{ width: 220, background: navBg, borderRight: `1px solid ${navBorder}`, flexShrink: 0, display: "flex", flexDirection: "column" }}
         >
           <Logo />
@@ -1247,6 +1360,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </nav>
         <main
+          className="sig-main"
           style={{
             flex: 1,
             // minWidth 0 so a wide table inside cannot push <main> past the
@@ -1256,6 +1370,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             padding: isD2C ? "36px 44px 72px 40px" : "32px 40px 60px 36px",
             overflowY: "auto",
             color: useLight ? S.text.primary : coachLight ? T.TEXT : undefined,
+            // The client practice page is light for everyone who opens it,
+            // including a coach previewing what their client sees. Set here
+            // rather than by the page, which used to do it with negative
+            // margins that had to match <main>'s padding exactly and therefore
+            // broke the moment that padding changed for phones.
+            ...(pathname.startsWith("/dashboard/practice/") ? { background: "#EAF5FA" } : null),
           }}
         >
           {children}

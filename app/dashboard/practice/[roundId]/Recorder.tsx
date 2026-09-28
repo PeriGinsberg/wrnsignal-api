@@ -2,29 +2,39 @@
 
 // One question, one camera, one ninety-second answer.
 //
-// THE TIMER IS THE POINT. Session 2 teaches a ninety-second story, so the
-// recorder enforces it rather than asking the client to watch a clock while
-// they talk. It stops itself at the limit; the last ten seconds turn the
-// countdown red because a hard stop with no warning feels like a fault.
+// THREE STATES AND NO MORE, because this is used once, alone, by somebody who
+// is nervous:
 //
-// WHAT CAN GO WRONG HERE IS THE BROWSER, not the code. getUserMedia needs a
-// secure context and a permission the client can refuse; MediaRecorder's
-// supported container differs by browser, and iOS Safari produces mp4 rather
-// than webm. So the codec is negotiated from what the browser actually
-// reports, never assumed, and every failure path says what happened in words
-// rather than leaving a dead button.
+//   Start      turns the camera on AND begins recording. One press, not two.
+//              Arming the camera and then waiting for a second press gave
+//              people a live picture of themselves and nothing happening,
+//              which reads as broken.
+//   Restart    throws this take away and begins again. The camera stays on, so
+//              it is instant.
+//   Finished   stops, uploads, and LOCKS the question. No more recording.
+//
+// Locking is the point of Finished. "Submit" at the bottom sends the round;
+// this button is how the client says "that one is my answer", and a question
+// that could still be re-recorded after they said that would make Submit mean
+// something different for each card.
+//
+// WHAT CAN GO WRONG HERE IS THE BROWSER. getUserMedia needs a secure context
+// and a permission that can be refused; MediaRecorder's container differs by
+// browser and iOS Safari produces mp4 rather than webm. So the codec is
+// negotiated from what the browser reports, never assumed, and every failure
+// says what happened in words rather than leaving a dead button.
 
 import { useCallback, useEffect, useRef, useState } from "react"
 
-export type RecorderState = "idle" | "ready" | "recording" | "uploading" | "done" | "error"
+export type RecorderState = "idle" | "recording" | "uploading" | "done" | "error"
 
 /**
  * The best container this browser will actually record.
  *
- * Ordered by preference, not by popularity: VP9 is smaller than VP8 for the
- * same quality, and mp4 is last because only Safari needs it and only Safari
- * offers it. An empty string means "let the browser choose", which is the
- * correct fallback and what older Safari wants.
+ * Ordered by preference, not popularity: VP9 is smaller than VP8 at the same
+ * quality, and mp4 is last because only Safari needs it and only Safari offers
+ * it. An empty string means "let the browser choose", which is the correct
+ * fallback and what older Safari wants.
  */
 export function pickMimeType(): string {
   if (typeof MediaRecorder === "undefined") return ""
@@ -44,19 +54,27 @@ export function pickMimeType(): string {
   return ""
 }
 
+/**
+ * Minutes and seconds, always.
+ *
+ * It used to print `0:${seconds}`, so ninety seconds read "0:90" and a
+ * countdown went 0:90, 0:89 ... which is not a time anybody recognises.
+ */
 export function formatClock(msLeft: number): string {
-  const s = Math.max(0, Math.ceil(msLeft / 1000))
-  return `0:${String(s).padStart(2, "0")}`
+  const total = Math.max(0, Math.ceil(msLeft / 1000))
+  const m = Math.floor(total / 60)
+  const s = total % 60
+  return `${m}:${String(s).padStart(2, "0")}`
 }
 
 export function Recorder({
   seconds,
-  disabled,
+  locked,
   onRecorded,
 }: {
   seconds: number
-  disabled?: boolean
-  /** Called with the finished blob. Upload is the caller's business. */
+  /** Already answered and finished. The recorder does not offer to run again. */
+  locked?: boolean
   onRecorded: (blob: Blob, mime: string, durationMs: number) => Promise<void>
 }) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -65,6 +83,9 @@ export function Recorder({
   const chunksRef = useRef<Blob[]>([])
   const startedAtRef = useRef<number>(0)
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // Set while Restart is tearing a recorder down, so its onstop knows the take
+  // is being thrown away rather than kept.
+  const discardRef = useRef(false)
 
   const [state, setState] = useState<RecorderState>("idle")
   const [error, setError] = useState<string>("")
@@ -75,9 +96,8 @@ export function Recorder({
     streamRef.current = null
   }, [])
 
-  // The camera light staying on after the client has finished is alarming and
-  // is a real complaint about tools like this, so the stream is released on
-  // unmount as well as on stop.
+  // A camera light still on after they finish is alarming, and is the usual
+  // complaint about tools like this.
   useEffect(() => {
     return () => {
       if (tickRef.current) clearInterval(tickRef.current)
@@ -85,11 +105,70 @@ export function Recorder({
     }
   }, [stopTracks])
 
-  const arm = useCallback(async () => {
+  const beginRecording = useCallback(
+    (stream: MediaStream) => {
+      const mime = pickMimeType()
+      let rec: MediaRecorder
+      try {
+        rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream)
+      } catch (e: any) {
+        setState("error")
+        setError(`This browser refused to start recording: ${e?.message ?? e}`)
+        return
+      }
+      chunksRef.current = []
+      recorderRef.current = rec
+      discardRef.current = false
+
+      rec.ondataavailable = (ev) => {
+        if (ev.data && ev.data.size > 0) chunksRef.current.push(ev.data)
+      }
+      rec.onstop = async () => {
+        if (tickRef.current) clearInterval(tickRef.current)
+        const chunks = chunksRef.current
+        chunksRef.current = []
+        if (discardRef.current) return  // Restart: the bytes go nowhere.
+
+        const durationMs = Date.now() - startedAtRef.current
+        const type = rec.mimeType || mime || "video/webm"
+        const blob = new Blob(chunks, { type })
+        stopTracks()
+        setState("uploading")
+        try {
+          await onRecorded(blob, type.split(";")[0], durationMs)
+          setState("done")
+        } catch (e: any) {
+          setState("error")
+          setError(`That recorded, but did not upload: ${e?.message ?? e}`)
+        }
+      }
+
+      startedAtRef.current = Date.now()
+      setMsLeft(seconds * 1000)
+      // A timeslice means data arrives as it goes rather than in one blob at
+      // the end, so a tab closed mid-answer does not lose everything.
+      rec.start(1000)
+      setState("recording")
+
+      if (tickRef.current) clearInterval(tickRef.current)
+      tickRef.current = setInterval(() => {
+        const left = seconds * 1000 - (Date.now() - startedAtRef.current)
+        setMsLeft(left)
+        if (left <= 0) {
+          const r = recorderRef.current
+          if (r && r.state !== "inactive") r.stop()
+        }
+      }, 200)
+    },
+    [onRecorded, seconds, stopTracks],
+  )
+
+  /** Start: camera on and recording, in one press. */
+  const start = useCallback(async () => {
     setError("")
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
       setState("error")
-      setError("This browser cannot record video. Try Chrome, Safari or Edge, and make sure the page is on https.")
+      setError("This browser cannot record video. Try Safari or Chrome, and make sure the page is on https.")
       return
     }
     try {
@@ -103,80 +182,50 @@ export function Recorder({
         videoRef.current.muted = true
         await videoRef.current.play().catch(() => {})
       }
-      setState("ready")
+      beginRecording(stream)
     } catch (e: any) {
       setState("error")
-      // NotAllowedError is a refusal, NotFoundError is no camera. They need
-      // different things from the client, so they get different sentences.
       const name = String(e?.name ?? "")
       setError(
         name === "NotAllowedError"
-          ? "SIGNAL needs permission to use your camera and microphone. Allow it in your browser, then press Start over."
+          ? "SIGNAL needs permission to use your camera and microphone. Allow it in your browser, then press Start."
           : name === "NotFoundError"
             ? "No camera or microphone found on this device."
             : `Could not start the camera: ${e?.message ?? e}`,
       )
     }
-  }, [])
+  }, [beginRecording])
 
-  const finish = useCallback(async () => {
+  /** Restart: throw this take away and go again, camera already warm. */
+  const restart = useCallback(() => {
+    const rec = recorderRef.current
+    const stream = streamRef.current
+    if (!rec || !stream) return
+    discardRef.current = true
+    if (rec.state !== "inactive") rec.stop()
+    if (tickRef.current) clearInterval(tickRef.current)
+    beginRecording(stream)
+  }, [beginRecording])
+
+  /** Finished: stop, upload, and lock the question. */
+  const finish = useCallback(() => {
     const rec = recorderRef.current
     if (!rec || rec.state === "inactive") return
+    discardRef.current = false
     rec.stop()
   }, [])
 
-  const start = useCallback(() => {
-    const stream = streamRef.current
-    if (!stream) return
-    const mime = pickMimeType()
-    let rec: MediaRecorder
-    try {
-      rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream)
-    } catch (e: any) {
-      setState("error")
-      setError(`This browser refused to start recording: ${e?.message ?? e}`)
-      return
-    }
-    chunksRef.current = []
-    recorderRef.current = rec
-
-    rec.ondataavailable = (ev) => {
-      if (ev.data && ev.data.size > 0) chunksRef.current.push(ev.data)
-    }
-    rec.onstop = async () => {
-      if (tickRef.current) clearInterval(tickRef.current)
-      const durationMs = Date.now() - startedAtRef.current
-      const type = rec.mimeType || mime || "video/webm"
-      const blob = new Blob(chunksRef.current, { type })
-      chunksRef.current = []
-      stopTracks()
-      setState("uploading")
-      try {
-        await onRecorded(blob, type.split(";")[0], durationMs)
-        setState("done")
-      } catch (e: any) {
-        setState("error")
-        setError(`That recorded, but did not upload: ${e?.message ?? e}`)
-      }
-    }
-
-    startedAtRef.current = Date.now()
-    setMsLeft(seconds * 1000)
-    // A timeslice means we get data as it goes rather than one blob at the
-    // end, which is what stops a long answer being lost if the tab is closed
-    // mid-recording on some browsers.
-    rec.start(1000)
-    setState("recording")
-
-    tickRef.current = setInterval(() => {
-      const left = seconds * 1000 - (Date.now() - startedAtRef.current)
-      setMsLeft(left)
-      if (left <= 0) void finish()
-    }, 200)
-  }, [finish, onRecorded, seconds, stopTracks])
+  if (locked && state !== "uploading") {
+    return (
+      <p style={{ margin: 0, fontSize: 15, color: "#00757A", fontWeight: 700 }}>
+        Answered. This one is locked in.
+      </p>
+    )
+  }
 
   const low = msLeft <= 10_000
   const pct = Math.max(0, Math.min(100, (msLeft / (seconds * 1000)) * 100))
+  const showVideo = state === "recording" || state === "uploading"
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -190,8 +239,28 @@ export function Recorder({
           ref={videoRef}
           playsInline
           muted
-          style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }}
+          style={{
+            width: "100%", height: "100%", objectFit: "cover",
+            transform: "scaleX(-1)",
+            // Hidden rather than unmounted: the element has to exist before
+            // getUserMedia resolves so the stream has somewhere to go.
+            visibility: showVideo ? "visible" : "hidden",
+          }}
         />
+        {!showVideo && (
+          <div
+            style={{
+              position: "absolute", inset: 0, display: "flex", alignItems: "center",
+              justifyContent: "center", padding: "16px 20px",
+              color: "rgba(255,255,255,0.72)", fontSize: 15, lineHeight: "22px",
+              textAlign: "center", overflowWrap: "anywhere",
+            }}
+          >
+            {state === "done"
+              ? "Answer saved."
+              : "Press Start. Your camera comes on and recording begins straight away."}
+          </div>
+        )}
         {state === "recording" && (
           <div
             aria-live="polite"
@@ -205,11 +274,6 @@ export function Recorder({
             <span style={{ color: low ? "#FF9B80" : "#fff" }}>{formatClock(msLeft)}</span>
           </div>
         )}
-        {state === "idle" && (
-          <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", color: "rgba(255,255,255,0.7)", fontSize: 15, padding: 20, textAlign: "center" }}>
-            Press Start over to turn on your camera.
-          </div>
-        )}
       </div>
 
       {state === "recording" && (
@@ -219,26 +283,25 @@ export function Recorder({
       )}
 
       {error && (
-        <p style={{ margin: 0, fontSize: 14, lineHeight: "20px", color: "#C0322F" }} role="alert">{error}</p>
+        <p style={{ margin: 0, fontSize: 15, lineHeight: "22px", color: "#C0322F" }} role="alert">{error}</p>
       )}
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-        {(state === "idle" || state === "error" || state === "done") && (
-          <button type="button" onClick={() => void arm()} disabled={disabled}
-            style={btn(state === "done" ? "secondary" : "primary")}>
-            {state === "done" ? "Record it again" : "Start over"}
-          </button>
-        )}
-        {state === "ready" && (
-          <button type="button" onClick={start} style={btn("primary")}>Record</button>
+        {(state === "idle" || state === "error") && (
+          <button type="button" onClick={() => void start()} style={btn("primary")}>Start</button>
         )}
         {state === "recording" && (
-          <button type="button" onClick={() => void finish()} style={btn("primary")}>
-            Stop ({formatClock(msLeft)} left)
-          </button>
+          <>
+            <button type="button" onClick={finish} style={btn("primary")}>
+              Finished ({formatClock(msLeft)} left)
+            </button>
+            <button type="button" onClick={restart} style={btn("secondary")}>Restart</button>
+          </>
         )}
-        {state === "uploading" && <span style={{ fontSize: 15 }}>Uploading your answer...</span>}
-        {state === "done" && <span style={{ fontSize: 15, color: "#00757A", fontWeight: 700 }}>Recorded</span>}
+        {state === "uploading" && <span style={{ fontSize: 15 }}>Saving your answer...</span>}
+        {state === "done" && (
+          <span style={{ fontSize: 15, color: "#00757A", fontWeight: 700 }}>Answered. This one is locked in.</span>
+        )}
       </div>
     </div>
   )
@@ -246,13 +309,13 @@ export function Recorder({
 
 function btn(kind: "primary" | "secondary"): React.CSSProperties {
   return {
-    padding: "11px 18px",
+    padding: "12px 20px",
     borderRadius: 10,
     fontSize: 16,
     fontWeight: 800,
     cursor: "pointer",
     fontFamily: "inherit",
-    minHeight: 44,
+    minHeight: 48,
     border: kind === "primary" ? "none" : "1px solid rgba(8,32,63,0.25)",
     background: kind === "primary" ? "#08203F" : "transparent",
     color: kind === "primary" ? "#fff" : "#08203F",
