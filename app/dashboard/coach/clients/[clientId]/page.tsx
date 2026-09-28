@@ -1373,7 +1373,10 @@ export default function CoachClientPage() {
 
       {/* TAB 2 — Source a Job */}
       {tab === "source" && (
-        <div style={{ maxWidth: 700 }}>
+        // Full content width. This was capped at 700px, which is a reading
+        // measure, but step 3 is a two-column grid of result cards and 700
+        // gave each one about 340px with the rest of the page empty.
+        <div>
           <div style={{ ...eyebrow, color: T.INK_EMPHASIS, marginBottom: 16 }}>SOURCE A JOB FOR {clientProfile?.name?.toUpperCase() || "CLIENT"}</div>
 
           {laneResultId && (
@@ -1620,7 +1623,7 @@ export default function CoachClientPage() {
                 onClick={runDryAnalysis}
                 disabled={running || !selectedPersona}
                 style={{
-                  ...btnPrimary, background: "#FEB06A", color: "var(--sig-ink-on-bright, #04060F)", fontWeight: 900,
+                  ...btnPrimary, fontWeight: 900,
                   width: "100%", opacity: running || !selectedPersona ? 0.5 : 1,
                   display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
                 }}
@@ -1685,17 +1688,23 @@ export default function CoachClientPage() {
                     {/* WHY CARD */}
                     {whyBullets.length > 0 && (
                       <div style={{
-                        borderRadius: 18, border: "1px solid rgba(0,179,179,0.22)",
-                        background: "#0D1829", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+                        // LIGHT, like everything around it. This was
+                        // background:#0D1829 with T.TEXT inside it, and T.TEXT
+                        // is a variable that now resolves navy, so the bullets
+                        // were navy on navy. The card never carried
+                        // data-coach-surface="dark", so nothing kept its tokens
+                        // dark when the ground flipped.
+                        borderRadius: 18, border: `1px solid ${T.SUCCESS_BORDER}`,
+                        background: T.CARD, overflow: "hidden", boxShadow: T.SHADOW_POPUP,
                       }}>
-                        <div style={{ height: 3, background: "linear-gradient(90deg, #2DD4BF, #00B3B3, #51ADE5)" }} />
+                        <div style={{ height: 3, background: "linear-gradient(90deg, #00B3B3, #00757A, #009BFF)" }} />
                         <div style={{
-                          padding: "16px 20px 14px", borderBottom: "1px solid rgba(0,179,179,0.12)",
-                          background: "rgba(0,179,179,0.06)", display: "flex", alignItems: "center", gap: 10,
+                          padding: "16px 20px 14px", borderBottom: `1px solid ${T.SUCCESS_BORDER}`,
+                          background: T.SUCCESS_BG, display: "flex", alignItems: "center", gap: 10,
                         }}>
                           <div style={{
                             width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-                            background: "rgba(0,179,179,0.15)", border: "1px solid rgba(0,179,179,0.35)",
+                            background: T.SUCCESS_BG, border: `1px solid ${T.SUCCESS_BORDER}`,
                             display: "flex", alignItems: "center", justifyContent: "center",
                             fontSize: TYPE.body, color: T.SUCCESS,
                           }}>✦</div>
@@ -1716,7 +1725,7 @@ export default function CoachClientPage() {
                               <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                                 <div style={{
                                   width: 22, height: 22, borderRadius: "50%",
-                                  background: "rgba(0,179,179,0.15)", border: "1.5px solid rgba(0,179,179,0.50)",
+                                  background: T.SUCCESS_BG, border: `1.5px solid ${T.SUCCESS_BORDER}`,
                                   display: "flex", alignItems: "center", justifyContent: "center",
                                   flexShrink: 0, marginTop: 2, fontSize: TYPE.micro, color: T.SUCCESS, fontWeight: 900,
                                 }}>✓</div>
@@ -1741,17 +1750,17 @@ export default function CoachClientPage() {
                     {/* RISK CARD */}
                     {riskBullets.length > 0 && (
                       <div style={{
-                        borderRadius: 18, border: "1px solid rgba(248,113,113,0.22)",
-                        background: "#0D1829", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+                        borderRadius: 18, border: `1px solid ${T.ERROR_BORDER}`,
+                        background: T.CARD, overflow: "hidden", boxShadow: T.SHADOW_POPUP,
                       }}>
-                        <div style={{ height: 3, background: "linear-gradient(90deg, #f87171, #ef4444, #FEB06A)" }} />
+                        <div style={{ height: 3, background: `linear-gradient(90deg, ${T.ERROR}, #E5484D, ${T.WRN_ORANGE})` }} />
                         <div style={{
-                          padding: "16px 20px 14px", borderBottom: "1px solid rgba(248,113,113,0.12)",
-                          background: "rgba(248,113,113,0.06)", display: "flex", alignItems: "center", gap: 10,
+                          padding: "16px 20px 14px", borderBottom: `1px solid ${T.ERROR_BORDER}`,
+                          background: T.ERROR_BG, display: "flex", alignItems: "center", gap: 10,
                         }}>
                           <div style={{
                             width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-                            background: "rgba(248,113,113,0.15)", border: "1px solid rgba(248,113,113,0.35)",
+                            background: T.ERROR_BG, border: `1px solid ${T.ERROR_BORDER}`,
                             display: "flex", alignItems: "center", justifyContent: "center",
                             fontSize: TYPE.body, color: T.ERROR,
                           }}>⚠</div>
@@ -1769,7 +1778,7 @@ export default function CoachClientPage() {
                             <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                               <div style={{
                                 width: 22, height: 22, borderRadius: "50%",
-                                background: "rgba(248,113,113,0.15)", border: "1.5px solid rgba(248,113,113,0.50)",
+                                background: T.ERROR_BG, border: `1.5px solid ${T.ERROR_BORDER}`,
                                 display: "flex", alignItems: "center", justifyContent: "center",
                                 flexShrink: 0, marginTop: 2, fontSize: TYPE.micro, color: T.ERROR, fontWeight: 900,
                               }}>!</div>
@@ -1794,7 +1803,7 @@ export default function CoachClientPage() {
               <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                 <button
                   onClick={() => setShowAnnotation(true)}
-                  style={{ ...btnPrimary, background: "#FEB06A", color: "var(--sig-ink-on-bright, #04060F)", fontWeight: 900 }}
+                  style={{ ...btnPrimary, fontWeight: 900 }}
                 >
                   Add Coaching Note & Send →
                 </button>

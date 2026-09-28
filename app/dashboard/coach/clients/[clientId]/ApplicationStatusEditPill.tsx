@@ -154,10 +154,15 @@ export function ApplicationStatusEditPill({
             position: "absolute",
             [placement === "up" ? "bottom" : "top"]: "calc(100% + 4px)",
             left: 0,
-            background: "#0D1F35",
-            border: "1px solid rgba(255,255,255,0.12)",
+            // A POPUP IS A CARD. This was a hard-coded dark panel carrying
+            // color: T.TEXT, and T.TEXT is a variable that resolves navy on
+            // the light surface, so the options were navy on dark navy. It
+            // only renders while the pill is open, which is why walking the
+            // pages with a contrast probe never saw it.
+            background: T.CARD,
+            border: `1px solid ${T.BORDER}`,
             borderRadius: 8,
-            boxShadow: "0 12px 32px rgba(0,0,0,0.45)",
+            boxShadow: T.SHADOW_POPUP,
             padding: 4,
             minWidth: 160,
             zIndex: 50,

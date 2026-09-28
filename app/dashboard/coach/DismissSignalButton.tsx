@@ -121,8 +121,13 @@ export function SignalUndoToast({
         <div
           key={e.signalId}
           style={{
-            background: "rgba(13,31,53,0.96)",
-            border: "1px solid rgba(255,255,255,0.12)",
+            // The undo toast, which only exists for a few seconds after a
+            // dismiss and so was never on screen during the light sweep. It
+            // was a dark plane carrying T.TEXT and T.INK_LINK, both of which
+            // resolve navy now: the message and the Undo control were navy on
+            // dark navy.
+            background: T.CARD,
+            border: `1px solid ${T.BORDER}`,
             borderRadius: 10,
             padding: "10px 14px",
             display: "flex",
@@ -130,7 +135,7 @@ export function SignalUndoToast({
             gap: 14,
             minWidth: 280,
             maxWidth: 380,
-            boxShadow: "0 10px 30px rgba(0,0,0,0.45)",
+            boxShadow: T.SHADOW_POPUP,
             pointerEvents: "auto",
           }}
         >

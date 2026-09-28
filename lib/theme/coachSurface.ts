@@ -107,6 +107,7 @@ export const LIGHT_COACH_VARS: Record<string, string> = {
   // ── Borders on those fills ──
   GOLD_BORDER: "#E0C173",
   SUCCESS_BORDER: "#7FCDCD",
+  ERROR_BORDER: "#E8A9A7",
   PINK_BORDER: "#F3A8C4",
   ICE_BLUE_BORDER: "#9FD9DD",
   BLUE_BORDER: "#9FCBEA",

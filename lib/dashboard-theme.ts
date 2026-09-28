@@ -100,6 +100,9 @@ export const T = {
   /** Lift for a popup floating over the page. Depth, not a palette colour. */
   SHADOW_POPUP: "var(--sig-shadow-popup, 0 12px 32px rgba(0,0,0,0.45))",
   SUCCESS_BORDER: "var(--sig-success-border, rgba(45,212,191,0.35))",
+  /** The red counterpart, at the same strength. Three call sites wrote
+   *  rgba(255,120,120,0.35) by hand because this did not exist. */
+  ERROR_BORDER: "var(--sig-error-border, rgba(255,120,120,0.35))",
   PINK_BORDER: "var(--sig-pink-border, rgba(236,72,153,0.35))",
   PINK_BG: "var(--sig-pink-bg, rgba(236,72,153,0.10))",
   ICE_BLUE_BORDER: "var(--sig-ice-blue-border, rgba(220,254,255,0.35))",
