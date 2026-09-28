@@ -46,7 +46,10 @@ export async function coachPracticeScope(req: Request, clientId: string) {
     .select("id")
     .eq("client_profile_id", scope.subjectId)
     .eq("coach_profile_id", owningCoach)
-    .is("deleted_at", null)
+    // NO deleted_at ON THIS TABLE. It uses `status` ('active', 'revoked'),
+    // and a revoked relationship is not one you may send practice rounds
+    // through. Assumed the soft-delete column and got a 500 on staging.
+    .eq("status", "active")
     .maybeSingle()
   if (error) throw new Error(`resolve coach_client: ${error.message}`)
   if (!cc) throw new ForbiddenError("Forbidden")
