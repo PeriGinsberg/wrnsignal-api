@@ -76,7 +76,7 @@ export const T = {
   ERROR: "var(--sig-error, rgba(255,120,120,0.95))",
   // Teal, not green: SUCCESS joined the brand family 2026-09-28.
   SUCCESS: "var(--sig-success, #2DD4BF)",
-  SUCCESS_BG: "var(--sig-success-bg, rgba(74,222,128,0.10))",
+  SUCCESS_BG: "var(--sig-success-bg, rgba(45,212,191,0.10))",
   WARNING_BG: "var(--sig-warning-bg, rgba(254,176,106,0.08))",
   ERROR_BG: "var(--sig-error-bg, rgba(255,120,120,0.08))",
 
@@ -99,7 +99,7 @@ export const T = {
   ORANGE_GLOW: "var(--sig-orange-glow, rgba(254,176,106,0.05))",
   /** Lift for a popup floating over the page. Depth, not a palette colour. */
   SHADOW_POPUP: "var(--sig-shadow-popup, 0 12px 32px rgba(0,0,0,0.45))",
-  SUCCESS_BORDER: "var(--sig-success-border, rgba(74,222,128,0.35))",
+  SUCCESS_BORDER: "var(--sig-success-border, rgba(45,212,191,0.35))",
   PINK_BORDER: "var(--sig-pink-border, rgba(236,72,153,0.35))",
   PINK_BG: "var(--sig-pink-bg, rgba(236,72,153,0.10))",
   ICE_BLUE_BORDER: "var(--sig-ice-blue-border, rgba(220,254,255,0.35))",
@@ -167,7 +167,7 @@ export const T = {
 export const PHASE = {
   idle:     { fg: "rgba(255,255,255,0.62)", bg: "rgba(255,255,255,0.10)" }, // not started
   active:   { fg: T.WRN_BLUE,               bg: "rgba(81,173,229,0.20)"  }, // in progress
-  alive:    { fg: T.SUCCESS,                bg: "rgba(74,222,128,0.16)"  }, // replied
+  alive:    { fg: T.SUCCESS,                bg: "rgba(0,179,179,0.16)"   }, // replied
   momentum: { fg: "#a7f3d0",                bg: "rgba(16,185,129,0.34)"  }, // chat booked/done
   longgame: { fg: "#c4b5fd",                bg: "rgba(167,139,250,0.22)" }, // nurture / ask
   won:      { fg: T.GOLD,                   bg: T.GOLD_BG               }, // outcome: ACHIEVED, not urgent

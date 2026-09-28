@@ -108,7 +108,7 @@ type Props = {
 function SaveIndicator({ state }: { state: SaveState }) {
   if (state === "idle") return null
   const text = state === "saving" ? "Saving…" : state === "saved" ? "Saved" : "Error — retry"
-  const color = state === "error" ? T.ERROR : state === "saved" ? "#4ade80" : T.DIM
+  const color = state === "error" ? T.ERROR : state === "saved" ? T.SUCCESS : T.DIM
   return <span style={{ fontSize: TYPE.micro, color, marginLeft: 8 }}>{text}</span>
 }
 
@@ -709,7 +709,7 @@ export default function ProfilePersonasTab({
                       Extracting...
                     </p>
                   )}
-                  {uploadMsg && <p style={{ fontSize: TYPE.micro, color: uploadMsg === "Resume extracted" ? "#4ade80" : T.ERROR, marginTop: 6 }}>{uploadMsg}</p>}
+                  {uploadMsg && <p style={{ fontSize: TYPE.micro, color: uploadMsg === "Resume extracted" ? T.SUCCESS : T.ERROR, marginTop: 6 }}>{uploadMsg}</p>}
                   {newResume && (
                     <p style={{ fontSize: TYPE.micro, color: T.DIM, marginTop: 6 }}>{newResume.length.toLocaleString()} characters extracted</p>
                   )}
@@ -889,7 +889,7 @@ function PersonaCard(props: {
           <div style={{ display: "flex", alignItems: "center", marginBottom: 6 }}>
             <span style={{ ...label, color: T.INK_LINK }}>RESUME BODY</span>
             {resumeMsg && (
-              <span style={{ fontSize: TYPE.micro, color: resumeMsg === "Saved" ? "#4ade80" : T.DIM, marginLeft: 8 }}>
+              <span style={{ fontSize: TYPE.micro, color: resumeMsg === "Saved" ? T.SUCCESS : T.DIM, marginLeft: 8 }}>
                 {resumeMsg}
               </span>
             )}

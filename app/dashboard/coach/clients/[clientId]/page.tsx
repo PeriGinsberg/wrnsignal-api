@@ -172,7 +172,7 @@ const SOURCE_LABEL: Record<string, string> = {
 }
 const SOURCE_STYLE: Record<string, { bg: string; color: string }> = {
   referral:         { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK },
-  social_media:     { bg: "rgba(167,139,250,0.18)", color: "#C8B6F8" },
+  social_media:     { bg: "rgba(167,139,250,0.18)", color: "var(--sig-avatar-2-ink, #C8B6F8)" },
   website:          { bg: "rgba(45,165,141,0.15)",  color: T.INK_EMPHASIS },
   personal_contact: { bg: "rgba(0,179,179,0.15)",  color: T.SUCCESS },
   other:            { bg: T.BORDER_SOFT, color: T.MUTED },
@@ -1688,7 +1688,7 @@ export default function CoachClientPage() {
                         borderRadius: 18, border: "1px solid rgba(0,179,179,0.22)",
                         background: "#0D1829", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
                       }}>
-                        <div style={{ height: 3, background: "linear-gradient(90deg, #4ade80, #22c55e, #51ADE5)" }} />
+                        <div style={{ height: 3, background: "linear-gradient(90deg, #2DD4BF, #00B3B3, #51ADE5)" }} />
                         <div style={{
                           padding: "16px 20px 14px", borderBottom: "1px solid rgba(0,179,179,0.12)",
                           background: "rgba(0,179,179,0.06)", display: "flex", alignItems: "center", gap: 10,

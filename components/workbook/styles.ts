@@ -31,7 +31,12 @@ export const WORKBOOK_CSS = `
 .wb-root a:hover{color:var(--blue)}
 .wb-root :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .wb-serif{font-family:var(--wb-font-serif),Georgia,serif}
-.wb-eyebrow{font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--orange)}
+/* AN EYEBROW IS A RULE PLUS A WORD, not an orange word. Brand orange on
+   white measures 2.76:1, so as 12px letters it was decoration pretending to
+   be text. The orange moves to the mark in front of the label, which is
+   what it is good at, and the label itself takes navy and reads. */
+.wb-eyebrow{font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--navy)}
+.wb-eyebrow::before{content:"";display:inline-block;width:18px;height:2px;background:var(--orange);vertical-align:middle;margin-right:9px;margin-bottom:2px}
 .wb-eyebrow-ink{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--navy)}
 .wb-muted{color:var(--muted)}
 .wb-page{min-height:100vh;display:flex;flex-direction:column}

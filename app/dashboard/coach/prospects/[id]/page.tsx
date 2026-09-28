@@ -88,7 +88,7 @@ const SOURCE_LABEL: Record<SourceCategory, string> = {
 
 const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string; border: string }> = {
   referral:         { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK, border: "rgba(81,173,229,0.40)" },
-  social_media:     { bg: "rgba(167,139,250,0.18)", color: "#C8B6F8", border: "rgba(167,139,250,0.40)" },
+  social_media:     { bg: "rgba(167,139,250,0.18)", color: "var(--sig-avatar-2-ink, #C8B6F8)", border: "rgba(167,139,250,0.40)" },
   website:          { bg: "rgba(45,165,141,0.15)",  color: T.INK_EMPHASIS, border: "rgba(45,165,141,0.40)" },
   personal_contact: { bg: "rgba(0,179,179,0.15)",  color: T.SUCCESS, border: "rgba(0,179,179,0.40)" },
   other:            { bg: T.BORDER_SOFT, color: T.MUTED, border: T.BORDER },

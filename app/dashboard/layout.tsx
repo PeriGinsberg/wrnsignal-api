@@ -987,7 +987,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // reads is a CSS variable now, so one attribute repaints all of it and a
   // half-flipped state cannot happen. COACH_SURFACE in lib/theme/coachSurface.ts
   // is the switch. See that file for why it is done this way.
-  const onCoachCenter = pathname.startsWith("/dashboard/coach")
+  //
+  // THE IMPORT PAGE RIDES ALONG, and it is the same mechanism rather than an
+  // exception to it. /dashboard/network/import was the one page reachable from
+  // the Coaches Center still rendering on the dark navy ground while every
+  // screen around it was light, because it is not under /dashboard/coach and
+  // it is not in LIGHT_ROUTES. It did not need converting: all 642 lines of it
+  // already read `T` tokens, which are variables now, so the light values
+  // arrive the moment it sits inside a light subtree. Listing it in
+  // LIGHT_ROUTES instead would have given it the light GROUND with its tokens
+  // still dark, which is precisely the half-flipped state the comment above
+  // warns about.
+  const onCoachCenter =
+    pathname.startsWith("/dashboard/coach") || pathname === "/dashboard/network/import"
   const coachLight = onCoachCenter && COACH_SURFACE === "light"
 
   const useLight = (isD2C || (isCoach && onNetworking)) && isLightRoute(pathname)
@@ -1215,8 +1227,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   : "1px solid rgba(0,179,179,0.3)",
                 background: isD2C ? "transparent" : "rgba(0,179,179,0.06)",
                 // Not green, not peach. On light this is a context switch out to
-                // the Framer tools, so it takes the hero link blue.
-                color: isD2C ? S.hero.link : "#4ade80",
+                // the Framer tools, so it takes the hero link blue. On the dark
+                // nav it takes the dark teal, matching the border and wash it
+                // already sits inside; it was the last green in the chrome.
+                color: isD2C ? S.hero.link : "#2DD4BF",
               }}
             >
               <span style={{ display: "flex", alignItems: "center", gap: 11 }}>

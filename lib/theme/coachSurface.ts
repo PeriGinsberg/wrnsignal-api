@@ -160,8 +160,8 @@ export const LIGHT_COACH_VARS: Record<string, string> = {
   // dark-ground device; on white it is a pale smear with no contrast for its
   // own label. This is the same decision surfaces.ts LIGHT made for `action`.
   GRAD_PRIMARY: "linear-gradient(#08203F, #08203F)",
-  GRAD_PROFILE: "linear-gradient(90deg, #00569A, #00757A, #8A3D00)",
-  GRAD_PERSONA: "linear-gradient(90deg, #8A3D00, #C0322F, #00569A)",
+  GRAD_PROFILE: "linear-gradient(90deg, #00569A, #00757A, #FF6B00)",
+  GRAD_PERSONA: "linear-gradient(90deg, #FF6B00, #C0322F, #00569A)",
 }
 
 /**
@@ -178,21 +178,25 @@ export const LIGHT_COACH_VARS: Record<string, string> = {
 export const LIGHT_COACH_EXTRAS: Record<string, string> = {
   // Avatar initials. The wash was 18% alpha over navy; on white the same
   // wash is almost nothing and the pale ink measured 1.0 to 1.5 against the
-  // card. Solid tint, ink dark enough to carry two letters.
+  // card. Solid tint, ink dark enough to carry two letters. The peach
+  // member carries NAVY letters rather than a darkened orange: the tint
+  // is what identifies the avatar, so the ink only has to be legible.
   "avatar-0-bg": "#DCEDF9", "avatar-0-ink": "#00569A",
-  "avatar-1-bg": "#FFEEDC", "avatar-1-ink": "#8A3D00",
+  "avatar-1-bg": "#FFEEDC", "avatar-1-ink": "#08203F",
   "avatar-2-bg": "#EDE4F9", "avatar-2-ink": "#5B3392",
   "avatar-3-bg": "#FDE3EC", "avatar-3-ink": "#A3215B",
   "avatar-4-bg": "#D6EFEC", "avatar-4-ink": "#00757A",
 
   // Lifecycle pills. #F4A261 with white text is 2.1:1. On navy the
   // surround carried it; on white it is a pale badge with white letters.
-  "pill-prospect-bg": "#FFEEDC", "pill-prospect-ink": "#8A3D00",
+  "pill-prospect-bg": "#FFEEDC", "pill-prospect-ink": "#08203F",
   "pill-active-bg": "#D6EFEC", "pill-active-ink": "#17706F",
   "pill-inactive-bg": "#DCEDF9", "pill-inactive-ink": "#00569A",
   "pill-archived-bg": "#E9EEF4", "pill-archived-ink": "#3D5878",
-  // The same orange as a NUMERAL on a white card rather than a chip fill.
-  "pill-prospect-ink-on-card": "#8A3D00",
+  // THE PROSPECT COUNT, which is a numeral on a white card rather than a
+  // word on a chip. It was the darkened orange; a numeral is a heading, so
+  // it is navy, and the tile keeps its orange rule to say which tile it is.
+  "pill-prospect-ink-on-card": "#08203F",
 
   // GRAD_PRIMARY is solid navy on light, so near-black ink on it is 1.2:1.
   "ink-on-primary": "#FFFFFF",
@@ -204,8 +208,10 @@ export const LIGHT_COACH_EXTRAS: Record<string, string> = {
 
   // The due chip. TASK_OVERDUE stays brand orange, because it draws the row
   // border and the chip fill and that is what orange is for. The WORD inside
-  // the chip cannot be that orange: on the peach fill it measured 1.0.
-  "chip-overdue-ink": "#8A3D00",
+  // the chip is navy: brand orange on the peach fill measured 1.0, and the
+  // darkened orange that replaced it was brown, which is not in the palette.
+  // The orange border and fill are what say "overdue"; the word just reads.
+  "chip-overdue-ink": "#08203F",
   "chip-due-ink": "#00569A",
   // A 14% wash over white is not a chip. 26% is.
   "chip-wash": "0.26",

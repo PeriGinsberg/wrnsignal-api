@@ -40,12 +40,36 @@ export function isValidApplicationStatus(s: unknown): s is ApplicationStatus {
 //   - app/dashboard/tracker/page.tsx                STATUS_STYLE
 //   - app/dashboard/coach/applications-recent/page.tsx  APP_STATUS_STYLE
 // Both now import from here.
+//
+// LIGHT VALUES, BECAUSE EVERY SURFACE THAT RENDERS THESE IS LIGHT NOW.
+//
+// These were the dark-theme pills: a white 7% wash carrying #51ADE5, and so on
+// down the list. Dropped on a white card they became pale ink on almost
+// nothing. Measured on /dashboard/coach/applications-recent: `applied` 1.66:1,
+// `interviewing` 2.38, `saved` 2.48, `withdrawn` 2.56, over three hundred
+// elements on one screen. The tracker renders the same map on the same white
+// and had the same problem.
+//
+// They are PLAIN VALUES rather than var(--sig-*) indirection, and that is a
+// decision rather than an oversight. The indirection works by sitting inside a
+// [data-coach-surface] subtree, and the tracker is not in one: it would have
+// kept the dark fallbacks and stayed broken. All four consumers are light, so
+// light is simply what the map is. IF THE COACHES CENTER EVER GOES BACK TO
+// DARK, this map is one of the things that has to come back with it.
+//
+// Each is a pale tint of its own hue carrying an ink dark enough to read on it,
+// the same shape as the lifecycle pills in LIGHT_COACH_EXTRAS.
 export const APP_STATUS_STYLE: Record<string, { bg: string; color: string }> = {
-  saved: { bg: "rgba(255,255,255,0.07)", color: "#51ADE5" },
-  applied: { bg: "rgba(254,176,106,0.15)", color: "#FEB06A" },
-  interviewing: { bg: "rgba(167,139,250,0.15)", color: "#a78bfa" },
-  offer: { bg: "rgba(74,222,128,0.15)", color: "#4ade80" },
-  rejected: { bg: "rgba(248,113,113,0.10)", color: "#f87171" },
-  withdrawn: { bg: "rgba(255,255,255,0.05)", color: "#94a3b8" },
-  coach_recommended: { bg: "rgba(0,245,212,0.10)", color: "#00F5D4" },
+  saved: { bg: "#DCEDF9", color: "#00569A" },
+  // Peach fill, NAVY word. The word was the darkened orange, which is brown,
+  // and brown is not in the palette. The fill is what says "applied".
+  applied: { bg: "#FFEEDC", color: "#08203F" },
+  interviewing: { bg: "#EDE4F9", color: "#5B3392" },
+  // TEAL, NOT GREEN. An offer is the success state and success is teal.
+  offer: { bg: "#D6EFEC", color: "#00757A" },
+  rejected: { bg: "#FBE3E2", color: "#C0322F" },
+  withdrawn: { bg: "#E9EEF4", color: "#3D5878" },
+  // Ice fill, navy word: the same ground as `saved` but a different ink, since
+  // the two never mean the same thing and the label already says which.
+  coach_recommended: { bg: "#DCEDF9", color: "#08203F" },
 }
