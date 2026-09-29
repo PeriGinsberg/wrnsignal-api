@@ -245,8 +245,11 @@ export default function CoachingHubPage() {
             but a coach asking for something is still the more urgent thing on
             the page. Renders nothing at all unless a proof project exists. */}
         <ProofProjectEntry />
-        <WorkbooksEntry />
+        {/* PRACTICE ABOVE WORKBOOKS. A workbook is reading and writing the
+            client does at their own pace; a practice round is a thing their
+            coach is waiting on. Whose-turn-is-it beats chronology here. */}
         <PracticeEntry />
+        <WorkbooksEntry />
         <MyPlanSection
           groups={groups}
           loading={loading}

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest"
 import {
   ANSWER_SECONDS, MAX_FEEDBACK_CHARS, MAX_QUESTIONS, cleanFeedback, cleanQuestions,
-  hasFeedback, isComplete, latestTakes,
+  hasFeedback, isComplete, latestTakes, practiceGroup,
   type PracticeQuestion, type PracticeTake,
 } from "./model"
 import { questionBank, bankTraits } from "./questionBank"
@@ -172,5 +172,27 @@ describe("written feedback", () => {
   it("caps a very long note instead of rejecting it", () => {
     const long = "x".repeat(MAX_FEEDBACK_CHARS + 500)
     expect(cleanFeedback(long)?.length).toBe(MAX_FEEDBACK_CHARS)
+  })
+})
+
+describe("which pile a round sits in", () => {
+  it("puts a submitted round in front of the coach", () => {
+    expect(practiceGroup("submitted")).toBe("needs_feedback")
+  })
+
+  it("moves it out again once the feedback is released", () => {
+    expect(practiceGroup("feedback_sent")).toBe("done")
+  })
+
+  it("leaves a sent round waiting on the client", () => {
+    expect(practiceGroup("sent")).toBe("waiting")
+  })
+
+  // The cross-client endpoint filters drafts out, so this is the fallback for
+  // a status that should never arrive. It must not land in "needs your
+  // feedback", which is the one pile a coach is meant to trust as real work.
+  it("does not put an unexpected status in front of the coach", () => {
+    expect(practiceGroup("draft")).toBe("waiting")
+    expect(practiceGroup("something new")).toBe("waiting")
   })
 })

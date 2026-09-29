@@ -137,3 +137,21 @@ export function cleanFeedback(v: unknown): string | null {
   if (!t) return null
   return t.slice(0, MAX_FEEDBACK_CHARS)
 }
+
+/**
+ * Which pile a round sits in on the coach's cross-client Practice page.
+ *
+ * WHOSE TURN IT IS, expressed once. The coach page groups by this and the
+ * client's hub labels off the same three states, so the two sides of the same
+ * round can never disagree about what is happening to it. A draft is the
+ * coach's own unsent page and belongs in no pile; the cross-client endpoint
+ * filters those out before this is reached, and 'waiting' is the safe answer
+ * if one ever arrives.
+ */
+export type PracticeGroup = "needs_feedback" | "waiting" | "done"
+
+export function practiceGroup(status: PracticeStatus | string): PracticeGroup {
+  if (status === "feedback_sent") return "done"
+  if (status === "submitted") return "needs_feedback"
+  return "waiting"
+}

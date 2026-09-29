@@ -34,13 +34,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ roun
     const { data: coach } = await db
       .from("client_profiles").select("name").eq("id", round.coach_profile_id).maybeSingle()
 
-    // PLAYBACK, BUT ONLY ONCE THE FEEDBACK IS IN. Watching yourself back is
-    // the point of reading "what to fix", and before that it is just a way to
-    // wince. Signed only in that state, which also keeps the number of live
-    // URLs down while a round is still being recorded.
-    const urls = round.feedback_sent_at
-      ? await signTakes(db, [...newest.values()])
-      : {}
+    // PLAYBACK ONCE THE ROUND IS IN, NOT ONCE THE FEEDBACK IS.
+    //
+    // This started the other way round, on the theory that watching yourself
+    // back before the notes arrive is just a way to wince. That was a guess
+    // about how someone feels, imposed as a permission. The client recorded
+    // these; they can watch them. Feedback is still gated below, because a
+    // half-written draft is genuinely not ready to be read.
+    //
+    // Still not signed while a round is being recorded: the takes are not
+    // final, and minting URLs for them puts links in circulation for files
+    // that are about to be replaced.
+    const canPlay = round.status === "submitted" || round.status === "feedback_sent"
+    const urls = canPlay ? await signTakes(db, [...newest.values()]) : {}
 
     return withCorsJson(req, {
       ok: true,

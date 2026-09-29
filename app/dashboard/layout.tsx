@@ -98,6 +98,10 @@ const COACH_NAV: NavGroup[] = [
       // matchPrefix so /dashboard/coach/prospects/[id] highlights "My Prospects"
       { href: "/dashboard/coach/prospects", label: "My Prospects", matchPrefix: true },
       { href: "/dashboard/coach/tasks", label: "Tasks" },
+      // matchPrefix so /dashboard/coach/practice/[roundId] keeps "Practice"
+      // lit: a coach arriving from a Required Action lands on a round, and the
+      // nav going blank there reads as having left the section.
+      { href: "/dashboard/coach/practice", label: "Practice", matchPrefix: true },
     ],
   },
   {

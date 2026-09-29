@@ -50,11 +50,18 @@ async function token(): Promise<string | null> {
   return session?.access_token ?? null
 }
 
-/** What the client should read, which is about whose turn it is. */
-function statusLine(r: Row): { text: string; key: "attention" | "progress" | "replied" } {
+/**
+ * Three states, named for whose turn it is.
+ *
+ * "To record" rather than "Sent" or "Not started": the client is not tracking
+ * what their coach did, they are deciding what to do next. A part-finished
+ * round keeps the same label and shows its count alongside, because it is
+ * still the same job.
+ */
+export function statusLine(r: Row): { text: string; key: "attention" | "progress" | "replied" } {
   if (r.status === "feedback_sent") return { text: "Feedback ready", key: "replied" }
-  if (r.status === "submitted") return { text: "Sent to your coach", key: "progress" }
-  return { text: r.answered > 0 ? `${r.answered} of ${r.questions} recorded` : "Not started", key: "attention" }
+  if (r.status === "submitted") return { text: "With your coach", key: "progress" }
+  return { text: "To record", key: "attention" }
 }
 
 export function PracticeEntry() {
@@ -93,9 +100,12 @@ export function PracticeEntry() {
 
   return (
     <section style={{ ...surfaceCard(S), padding: 24 }}>
-      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", color: S.text.muted, marginBottom: 16 }}>
+      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", color: S.text.muted, marginBottom: 4 }}>
         Practice rounds
       </div>
+      <p style={{ fontSize: 14, color: S.text.muted, margin: "0 0 16px" }}>
+        Interview questions you answer on video. Your coach writes back on each one.
+      </p>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {rows.map((r) => {
@@ -117,6 +127,11 @@ export function PracticeEntry() {
                   <span style={{ width: 8, height: 8, borderRadius: 999, background: S.meaning[s.key].ink, flexShrink: 0 }} />
                   <span style={{ fontSize: 13, fontWeight: 700, color: S.meaning[s.key].ink }}>{s.text}</span>
                 </span>
+                {r.status === "sent" && r.answered > 0 && (
+                  <span style={{ fontSize: 13, color: S.text.muted, whiteSpace: "nowrap" }}>
+                    {r.answered} of {r.questions} done
+                  </span>
+                )}
                 <span style={{ fontSize: 13, color: S.text.muted, whiteSpace: "nowrap" }}>
                   {expanded ? "Hide" : "Open"}
                 </span>
@@ -131,14 +146,20 @@ export function PracticeEntry() {
                         Record your answers &rarr;
                       </a>
                     </p>
-                  ) : r.status === "submitted" ? (
-                    <p style={{ fontSize: 14, color: S.text.secondary, margin: "14px 0 0" }}>
-                      Your coach is watching these back. You will get an email when the feedback is ready.
-                    </p>
                   ) : !d ? (
                     <p style={{ fontSize: 14, color: S.text.muted, margin: "14px 0 0" }}>Loading...</p>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 20, marginTop: 16 }}>
+                      {/* A submitted round opens to the same thing a finished
+                          one does, minus the notes. Hiding your own answers
+                          while a coach reviews them made the wait feel like a
+                          closed door; the questions and the recordings are the
+                          client's, and this line sets the expectation. */}
+                      {r.status === "submitted" && (
+                        <p style={{ fontSize: 14, color: S.text.secondary, margin: 0 }}>
+                          Your coach is watching these back. You will get an email when the feedback is ready.
+                        </p>
+                      )}
                       {d.questions.map((q, i) => (
                         <div key={q.id}>
                           {/* i + 1, not q.position: position is 0-indexed in the
