@@ -139,10 +139,13 @@ export function PracticeEntry() {
                     <p style={{ fontSize: 14, color: S.text.muted, margin: "14px 0 0" }}>Loading...</p>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 20, marginTop: 16 }}>
-                      {d.questions.map((q) => (
+                      {d.questions.map((q, i) => (
                         <div key={q.id}>
+                          {/* i + 1, not q.position: position is 0-indexed in the
+                              database and the client should not be reading
+                              "0. Tell me about a time...". */}
                           <p style={{ fontSize: 15.5, fontWeight: 700, color: S.text.primary, margin: "0 0 10px" }}>
-                            {q.position}. {q.text}
+                            {i + 1}. {q.text}
                           </p>
                           {q.url ? (
                             <video controls src={q.url} preload="metadata" playsInline
