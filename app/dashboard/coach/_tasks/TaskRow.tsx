@@ -297,6 +297,38 @@ function SourceIcon({ task }: { task: Task }) {
   )
 }
 
+/**
+ * Where the work is done.
+ *
+ * Renders nothing without a link, which is the whole distinction the `link`
+ * column exists to draw: a system task always has one, a hand-written task has
+ * one only if its author added it. An always-present button that sometimes did
+ * nothing would erase that.
+ */
+function GoButton({ task }: { task: Task }) {
+  if (!task.link) return null
+  return (
+    <a
+      href={task.link}
+      title={`Open where "${task.title}" is done`}
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 5,
+        minHeight: SPACE.control, padding: "0 14px", borderRadius: 8,
+        fontSize: TYPE.control, fontWeight: 800, textDecoration: "none",
+        border: `1px solid ${T.BORDER_SOFT}`, background: "transparent",
+        color: T.INK_LINK, marginRight: 8, whiteSpace: "nowrap",
+      }}
+    >
+      Go
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M5 12h14" />
+        <path d="M13 6l6 6-6 6" />
+      </svg>
+    </a>
+  )
+}
+
 function IconButton(props: { title: string; onClick: () => void; children: React.ReactNode; danger?: boolean }) {
   return (
     <button
@@ -438,8 +470,21 @@ export function TaskRow(props: TaskRowProps) {
         </div>
       )}
 
+      {/* ON THE CONDENSED CARD TOO. The dashboard's five-task list is the one
+          most coaches read first, and it is the surface where "which screen
+          does this mean" costs the most, because there is no room for the
+          description that used to carry the hint. Go only; edit and delete
+          stay on the full list. */}
+      {condensed && <GoButton task={task} />}
+
       {!condensed && (
         <div className="tsk-cell tsk-actions" style={{ display: "flex", justifyContent: "flex-end", gap: 2, alignItems: "center" }}>
+          {/* GO, BEFORE THE DECISION BUTTONS. Approve and Request changes are
+              answers; Go is how you get to the thing you are answering about.
+              A real <a>, not a router push, so middle-click and open-in-new-tab
+              behave: a coach working a list wants the task to still be there
+              when they come back. */}
+          <GoButton task={task} />
           {decides && props.decisionOptions!.includes("approve") && (
             <button
               onClick={() => props.onDecide!(task, "approve")}

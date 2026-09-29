@@ -172,6 +172,9 @@ export async function POST(req: NextRequest) {
       due_at: input.due_at ?? null,
       due_has_time: input.due_has_time ?? false,
       source: "manual",
+      // Optional on this path, by definition: everything created here was
+      // typed by a coach. createTask still validates the shape.
+      link: input.link ?? null,
     }, coachProfileId)
 
     if (!created.ok) return withCorsJson(req, { ok: false, error: created.error }, created.status)

@@ -38,7 +38,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ta
     // ORDER MATTERS. Fields first, then assignment, then status. A task being
     // completed in the same edit that retitles it should carry the new title
     // into the audit row and the automation event, not the old one.
-    const fieldKeys = ["title", "description", "client_profile_id", "coach_client_id", "due_at", "due_has_time"] as const
+    const fieldKeys = ["title", "description", "client_profile_id", "coach_client_id", "due_at", "due_has_time", "link"] as const
     const patch: Record<string, unknown> = {}
     for (const k of fieldKeys) {
       if (Object.prototype.hasOwnProperty.call(body, k)) patch[k] = body[k]

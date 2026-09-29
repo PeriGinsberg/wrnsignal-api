@@ -19,6 +19,7 @@ import { workbookError } from "../../../../_lib/workbookError"
 import { logCoachClientEvent } from "../../../../_lib/coachClientEvents"
 import { clientWorkbookScope, rpcError } from "@/lib/workbook/server"
 import { raiseCoachTask } from "@/lib/practice/server"
+import { clientLink } from "@/lib/tasks/links"
 import { getSupabaseAdmin } from "../../../../_lib/coachAuth"
 
 export const runtime = "nodejs"
@@ -98,9 +99,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ wor
           assigneeProfileId: cc.coach_profile_id,
           title: `Build a practice round for ${first}`,
           description:
-            `${first} finished the Session ${session} homework. Pick a few questions and send them to record.
-` +
-            `/dashboard/coach/clients/${cc.client_profile_id}/practice`,
+            `${first} finished the Session ${session} homework. Pick a few questions and send them to record.`,
+          // The Practice TAB on the client record, not the standalone list.
+          // Both show the same rounds, and the tab keeps the client's name,
+          // status and history one click away from the decision about what to
+          // ask them next.
+          link: clientLink(cc.client_profile_id, "practice"),
         })
       }
     }

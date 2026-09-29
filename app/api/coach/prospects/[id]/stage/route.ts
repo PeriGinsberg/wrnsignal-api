@@ -31,6 +31,7 @@ import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 // through the one canonical implementation.
 import { PATCH as convertProspectLifecycle } from "../route"
 import { logCoachClientEvent } from "../../../../_lib/coachClientEvents"
+import { clientLink } from "@/lib/tasks/links"
 import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
@@ -264,6 +265,9 @@ export async function PATCH(
             created_by_profile_id: null,
             title: `${INVITE_ACTION_PREFIX}${inviteName}`,
             source: "auto",
+            // The client record. Re-send invite is a button on its header, so
+            // this is the exact screen even though it is not a tab.
+            link: clientLink(prospect.client_profile_id),
             // Tomorrow, matching the default offset a task template carries.
             due_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
             due_has_time: false,

@@ -17,6 +17,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createTask, emitTaskEvent, setTaskStatus, type ServiceResult } from "../tasks/service"
+import { fallbackLink, resolveLinkTemplate } from "@/lib/tasks/links"
 import { sendTaskReopenedEmail } from "../email/sendTaskEmails"
 import type { Task } from "../tasks/model"
 
@@ -195,8 +196,23 @@ async function applyRule(
       dueAt = due.toISOString()
     }
 
+    // WHERE THIS TASK IS DONE.
+    //
+    // From the template's own pattern, so a sixth networking step stays an
+    // INSERT. The fallback is the client record: a rule that stopped firing
+    // because somebody added a template without a link_template would be an
+    // automation silently going dark, which is worse than a Go button that
+    // lands one click short. If neither resolves, createTask refuses the task
+    // and the event is recorded with an error, which is visible and replayable.
+    const link =
+      resolveLinkTemplate(tmpl.link_template as string | null, {
+        clientId: ev.client_profile_id,
+        briefId: ev.payload?.brief_id ?? null,
+      }) ?? fallbackLink(ev.client_profile_id)
+
     const created = await createTask(db, {
       title: String(tmpl.title),
+      link,
       description: tmpl.description ?? null,
       client_profile_id: ev.client_profile_id,
       coach_client_id: ev.payload?.coach_client_id ?? null,

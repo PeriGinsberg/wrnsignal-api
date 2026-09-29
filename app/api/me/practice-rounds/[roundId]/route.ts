@@ -10,6 +10,7 @@ import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
 import { clientPracticeScope, loadRound, raiseCoachTask, signTakes, NotFoundError } from "@/lib/practice/server"
 import { ANSWER_SECONDS, isComplete, latestTakes } from "@/lib/practice/model"
 import { logCoachClientEvent } from "../../../_lib/coachClientEvents"
+import { practiceRoundLink } from "@/lib/tasks/links"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -139,9 +140,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ rou
         clientProfileId: round.client_profile_id,
         assigneeProfileId: round.coach_profile_id,
         title: `Watch ${first}'s practice round`,
+        // THE PATH IS OUT OF THE SENTENCE AND INTO `link`. It was written into
+        // the description because there was nowhere else to put it, which
+        // produced a URL the coach had to read and retype.
         description:
-          `${first} recorded ${round.questions.length} answer${round.questions.length === 1 ? "" : "s"}. ` +
-          `Watch them back: /dashboard/coach/practice/${roundId}`,
+          `${first} recorded ${round.questions.length} answer${round.questions.length === 1 ? "" : "s"}.`,
+        link: practiceRoundLink(roundId),
       })
 
       await logCoachClientEvent({

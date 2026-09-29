@@ -11,6 +11,8 @@
 // one screen and three rows on another.
 
 export const TASK_STATUSES = ["open", "done", "cancelled"] as const
+import { isSafeTaskLink } from "./links"
+
 export type TaskStatus = (typeof TASK_STATUSES)[number]
 
 export const TASK_SOURCES = ["manual", "auto"] as const
@@ -39,6 +41,8 @@ export type Task = {
   brief_id: string | null
   decision: string | null
   legacy_note_id: string | null
+  /** Where the work is done: a same-origin /dashboard path, or null. */
+  link: string | null
   created_at: string
   updated_at: string
   deleted_at: string | null
@@ -191,6 +195,7 @@ export function validateTaskWrite(input: {
   due_at?: unknown
   due_has_time?: unknown
   assignee_profile_id?: unknown
+  link?: unknown
 }, opts: { partial?: boolean } = {}): TaskWriteErrors {
   const errors: TaskWriteErrors = []
   const present = (k: string) => Object.prototype.hasOwnProperty.call(input, k)
@@ -219,6 +224,14 @@ export function validateTaskWrite(input: {
 
   if (present("due_has_time") && typeof input.due_has_time !== "boolean") {
     errors.push("due_has_time must be true or false.")
+  }
+
+  // Shape only. Whether a link is REQUIRED depends on the task's source, which
+  // this function does not see; createTask owns that half.
+  if (present("link") && input.link != null && String(input.link).trim() !== "") {
+    if (!isSafeTaskLink(String(input.link).trim())) {
+      errors.push("A link must be a path inside SIGNAL, starting with /dashboard/.")
+    }
   }
 
   return errors

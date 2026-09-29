@@ -16,6 +16,7 @@
 //      day somebody adds a fifth route, the history quietly stops recording.
 
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { cleanTaskLink } from "./links"
 import { sendTaskAssignedEmail } from "../email/sendTaskEmails"
 import { logCoachClientEvent } from "../../app/api/_lib/coachClientEvents"
 import { coachClientIdForTask } from "./scope"
@@ -38,7 +39,7 @@ export type ServiceResult<T> = { ok: true; data: T } | { ok: false; error: strin
 const TASK_COLUMNS =
   "id, title, description, client_profile_id, coach_client_id, assignee_profile_id, " +
   "created_by_profile_id, due_at, due_has_time, status, completed_at, source, template_id, " +
-  "chain_id, brief_id, decision, legacy_note_id, created_at, updated_at, deleted_at"
+  "chain_id, brief_id, decision, legacy_note_id, link, created_at, updated_at, deleted_at"
 
 /**
  * Is this profile a coach who may be handed work?
@@ -161,6 +162,11 @@ export type CreateTaskInput = {
   template_id?: string | null
   chain_id?: string | null
   brief_id?: string | null
+  /**
+   * Where the work is done. REQUIRED when source is 'auto'; see below.
+   * Always a same-origin /dashboard path.
+   */
+  link?: string | null
 }
 
 export async function createTask(
@@ -172,6 +178,25 @@ export async function createTask(
   if (!coachCheck.ok) return coachCheck
 
   const source = input.source ?? "manual"
+
+  // A SYSTEM TASK MUST SAY WHERE THE WORK IS DONE.
+  //
+  // Refused here rather than defaulted, and refused loudly. Quietly falling
+  // back to the client record would make every new automation ship with a Go
+  // button that lands one click short, and nobody would ever find out: the
+  // task would look finished. `fallbackLink` exists for callers that decide a
+  // near-miss beats no task at all, and it is their decision to make at the
+  // call site, in writing.
+  const link = cleanTaskLink(input.link)
+  if (source === "auto" && !link) {
+    return {
+      ok: false,
+      status: 400,
+      error: input.link
+        ? `System task link must be a /dashboard path: ${String(input.link)}`
+        : "A system task must carry a link to where the work is done",
+    }
+  }
 
   // A TASK WITH A CLIENT ALWAYS CARRIES THE RELATIONSHIP TOO.
   //
@@ -203,6 +228,7 @@ export async function createTask(
     template_id: input.template_id ?? null,
     chain_id: input.chain_id ?? null,
     brief_id: input.brief_id ?? null,
+    link,
   }).select(TASK_COLUMNS).single()
 
   if (error) return { ok: false, error: error.message, status: 500 }
@@ -222,7 +248,7 @@ export async function createTask(
 // ---------------------------------------------------------------------------
 
 export type UpdateTaskInput = Partial<
-  Pick<Task, "title" | "description" | "client_profile_id" | "coach_client_id" | "due_at" | "due_has_time">
+  Pick<Task, "title" | "description" | "client_profile_id" | "coach_client_id" | "due_at" | "due_has_time" | "link">
 >
 
 export async function updateTask(
@@ -231,8 +257,21 @@ export async function updateTask(
   patch: UpdateTaskInput,
   actor: ActorId | null,
 ): Promise<ServiceResult<Task>> {
+  // The link is re-cleaned on the way through even though the column has a
+  // CHECK behind it. The CHECK returns a Postgres error string; this returns a
+  // sentence, and an edit that silently strips a bad link is worse than one
+  // that says the link was not usable.
+  const clean: Record<string, unknown> = { ...patch }
+  if ("link" in patch) {
+    const link = cleanTaskLink(patch.link)
+    if (patch.link && !link) {
+      return { ok: false, status: 400, error: "A task link must be a /dashboard path." }
+    }
+    clean.link = link
+  }
+
   const { data, error } = await db.from("coach_tasks")
-    .update({ ...patch, updated_at: new Date().toISOString() })
+    .update({ ...clean, updated_at: new Date().toISOString() })
     .eq("id", taskId).is("deleted_at", null)
     .select(TASK_COLUMNS).maybeSingle()
 

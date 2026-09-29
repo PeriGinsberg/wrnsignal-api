@@ -158,6 +158,8 @@ export async function raiseCoachTask(
     assigneeProfileId: string
     title: string
     description?: string
+    /** Where the work is done. Required: this raises a system task. */
+    link: string
   },
 ): Promise<string | null> {
   const { data, error } = await db
@@ -170,6 +172,7 @@ export async function raiseCoachTask(
       description: args.description ?? null,
       status: "open",
       source: "auto",
+      link: args.link,
     })
     .select("id")
     .maybeSingle()

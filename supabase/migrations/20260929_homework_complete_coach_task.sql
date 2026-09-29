@@ -16,6 +16,13 @@
 -- two places and make the History tab and the task list disagree about how
 -- much work there is.
 
+-- ORDER-INDEPENDENT. This file and 20260929_task_links.sql both land on
+-- 2026-09-29 and there is no guarantee which runs first, so the column this
+-- INSERT needs is asserted here rather than assumed. Idempotent; if task_links
+-- has already run, this does nothing.
+ALTER TABLE public.coach_tasks ADD COLUMN IF NOT EXISTS link TEXT;
+
+
 CREATE OR REPLACE FUNCTION public.workbook_mark_homework_complete(p_workbook uuid)
 RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
@@ -59,15 +66,21 @@ BEGIN
     IF v_coach IS NOT NULL THEN
       INSERT INTO coach_tasks
         (coach_client_id, client_profile_id, assignee_profile_id,
-         title, description, status, source)
+         title, description, status, source, link)
       VALUES
         (w.coach_client_id,
          COALESCE(v_client, w.client_profile_id),
          v_coach,
          v_first || ' finished the homework: ' || v_title,
-         'Review it in SIGNAL, then send your video reply.',
+         'Read it, then decide what to practise next.',
          'open',
-         'auto');
+         'auto',
+         -- A SYSTEM TASK CARRIES ITS DESTINATION. See
+         -- 20260929_task_links.sql: the CHECK refuses source='auto' with a
+         -- null link, so this INSERT would fail without it.
+         '/dashboard/coach/clients/'
+           || COALESCE(v_client, w.client_profile_id)::text
+           || '?tab=workbooks');
     END IF;
   END IF;
 

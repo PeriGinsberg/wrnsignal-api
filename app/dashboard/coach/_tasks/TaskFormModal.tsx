@@ -16,6 +16,8 @@ import { T, btnPrimary, btnSecondary, fieldLabel, fieldWrap, input, selectDark, 
 import { TASK_STATUSES, type Task, type TaskStatus } from "../../../../lib/tasks/model"
 import { apiJson, type Assignee } from "./taskClient"
 import { AutoGrowTextarea } from "@/components/ui/AutoGrowTextarea"
+import { isSafeTaskLink } from "../../../../lib/tasks/links"
+import { TYPE } from "../../../../lib/theme/surfaces"
 
 export type TaskFormModalProps = {
   task: Task | null
@@ -92,7 +94,12 @@ export function TaskFormModal(props: TaskFormModalProps) {
   const [due, setDue] = useState(
     toLocalInput(task?.due_at ?? props.presetDueAt ?? null, task?.due_has_time ?? false),
   )
+  const [link, setLink] = useState(task?.link ?? "")
   const [status, setStatus] = useState<TaskStatus>(task?.status ?? "open")
+  // A system task's link may be edited but not removed; the API refuses it
+  // either way, and saying so here beats a Postgres constraint string.
+  const isSystem = task?.source === "auto"
+  const linkBad = link.trim().length > 0 && !isSafeTaskLink(link.trim())
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -119,6 +126,8 @@ export function TaskFormModal(props: TaskFormModalProps) {
   }, [hasTime])
 
   async function save() {
+    if (linkBad) { setError("A link must be a path inside SIGNAL, starting with /dashboard/."); return }
+    if (isSystem && !link.trim()) { setError("A system task must keep a link to where the work is done."); return }
     setSaving(true)
     setError(null)
     try {
@@ -129,6 +138,7 @@ export function TaskFormModal(props: TaskFormModalProps) {
         client_profile_id: clientId || null,
         due_at: fromLocalInput(due, hasTime)?.toISOString() ?? null,
         due_has_time: hasTime,
+        link: link.trim() || null,
       }
       if (editing) body.status = status
 
@@ -191,8 +201,34 @@ export function TaskFormModal(props: TaskFormModalProps) {
           <AutoGrowTextarea
             id="task-desc" style={textarea} minRows={3} value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Links pasted here are clickable in the list."
+            placeholder="What needs doing, and anything the next person needs to know."
           />
+        </div>
+
+        {/* OPTIONAL HERE, REQUIRED FOR A SYSTEM TASK. A coach writing their own
+            task already knows where they meant; SIGNAL raising one does not get
+            to assume that. The field is the same either way so there is one
+            place to look, and the hint changes rather than the control. */}
+        <div style={fieldWrap}>
+          <label style={fieldLabel} htmlFor="task-link">
+            Link {isSystem ? "" : <span style={{ fontWeight: 600, color: T.DIM }}>(optional)</span>}
+          </label>
+          <input
+            id="task-link" style={input} value={link} type="text"
+            onChange={(e) => setLink(e.target.value)}
+            placeholder="/dashboard/coach/clients/..."
+            aria-describedby="task-link-hint"
+          />
+          <p id="task-link-hint" style={{ margin: "5px 0 0", fontSize: TYPE.secondary, color: T.DIM }}>
+            {isSystem
+              ? "Where this task is done. System tasks always carry one."
+              : "A page inside SIGNAL. Leave it empty and the task shows no Go button."}
+          </p>
+          {linkBad && (
+            <p role="alert" style={{ margin: "5px 0 0", fontSize: TYPE.secondary, color: T.ERROR }}>
+              A link must be a path inside SIGNAL, starting with /dashboard/.
+            </p>
+          )}
         </div>
 
         <div style={fieldWrap}>
