@@ -129,6 +129,31 @@ UPDATE public.coach_tasks
    AND link IS NULL
    AND client_profile_id IS NOT NULL;
 
+-- 3f. The descriptions stop carrying the path.
+--
+-- Two task types wrote "Watch them back: /dashboard/..." into the sentence,
+-- because there was nowhere else to put it. Now that there is, leaving the
+-- text in place would show the same destination twice: once as a Go button
+-- and once as a string nobody can click. Only touched where a link was
+-- actually set, so a row that failed to backfill keeps its only clue.
+-- Trimmed with a regex rather than TRIM(BOTH '...'), so the whitespace set is
+-- spelled once, in the pattern, instead of as escape sequences inside a string
+-- literal that every editor between here and the database gets a vote on.
+UPDATE public.coach_tasks
+   SET description = NULLIF(
+         regexp_replace(
+           regexp_replace(
+             description,
+             '\s*(Watch them back:|Review it in SIGNAL[^/]*)?\s*/dashboard/\S*',
+             '',
+             'g'
+           ),
+           '^\s+|\s+$', '', 'g'
+         ), '')
+ WHERE source = 'auto'
+   AND link IS NOT NULL
+   AND description LIKE '%/dashboard/%';
+
 -- ---------------------------------------------------------------------------
 -- 4. The rule, from here on
 -- ---------------------------------------------------------------------------
