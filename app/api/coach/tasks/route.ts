@@ -29,7 +29,7 @@ import {
   type TaskView,
 } from "@/lib/tasks/model"
 import { createTask, TASK_COLUMNS } from "@/lib/tasks/service"
-import { clientTaskFilter } from "@/lib/tasks/scope"
+import { clientTaskFilter, resolveTaskReach, taskReachFilter } from "@/lib/tasks/scope"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -65,8 +65,25 @@ export async function GET(req: NextRequest) {
     const view: TaskView = isTaskView(viewParam) ? viewParam : "all"
     const card = q.get("card") === "1"
 
-    let sel = db.from("coach_tasks").select(TASK_COLUMNS).is("deleted_at", null)
+    // WHAT THIS CALLER MAY SEE AT ALL, before any of the filters below.
+    //
+    // Without it, `assignee=all` resolved to null and applied NO filter: every
+    // task in the database, for every coach and every client, came back to any
+    // authenticated coach. The assignee dropdown made that reachable in two
+    // clicks, and the result was a task with a Go button that returned
+    // Forbidden, because the destination checks the relationship this did not.
+    // Same rule both sides now; see lib/tasks/scope.ts.
+    const reach = await resolveTaskReach(db, coachProfileId)
 
+    let sel = db
+      .from("coach_tasks")
+      .select(TASK_COLUMNS)
+      .is("deleted_at", null)
+      .or(taskReachFilter(reach))
+
+    // The assignee filter narrows within reach; it can no longer widen beyond
+    // it. "all" now means every coach in this caller's book, which is what the
+    // dropdown always claimed to mean.
     if (assignee) sel = sel.eq("assignee_profile_id", assignee)
 
     // FILTERING BY CLIENT MATCHES EITHER COLUMN, so the client page's Tasks

@@ -23,6 +23,7 @@
 // ever fails.
 
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { resolveDelegation } from "../collab/delegation"
 
 /**
  * A PostgREST `or` expression selecting every task tied to this client.
@@ -71,4 +72,100 @@ export async function coachClientIdForTask(
     .order("id", { ascending: true })
   const rows = (data ?? []) as { id: string; status: string }[]
   return rows.find((r) => r.status === "active")?.id ?? rows[0]?.id ?? null
+}
+
+// ---------------------------------------------------------------------------
+// Whose tasks a coach may see at all
+// ---------------------------------------------------------------------------
+//
+// THE HOLE THIS CLOSES. The list applied `assignee_profile_id = <me>` and
+// nothing else, and `assignee=all` set that to null: every task in the
+// database, for every coach and every client, returned to any authenticated
+// coach. The single-task PATCH and DELETE checked nothing at all. The symptom
+// was a task for a client the caller had no relationship with sitting in their
+// queue with a Go button that returned Forbidden, which is the product telling
+// somebody to do work it will not let them do.
+//
+// THE RULE, and it is deliberately the same one the pages enforce: a task is
+// reachable if it belongs to a client in the caller's book. `coach_clients`
+// with status='active' is what every client-scoped page resolves against, so
+// scoping here on the same rows is what makes the Go button's promise true.
+//
+// A TASK WITH NO CLIENT ("Renew the Postmark domain") belongs to nobody's
+// book, so it falls back to the rule the table's own RLS policy already
+// states: the assignee, or whoever wrote it.
+//
+// ACCESS LEVEL IS NOT PART OF THIS, and that is a real limit rather than an
+// oversight. The client record needs a relationship; the networking board
+// needs `full`. Every row in both environments is `full` today, so the two
+// coincide, and the day a `view`-level grant exists a networking task's Go
+// button could still outrun it. Widening this to compare levels per
+// destination needs each link to declare what it requires, which is a change
+// to lib/tasks/links.ts and not to this filter.
+
+export type TaskReach = {
+  /** Coaches this caller acts as: themselves, plus principals they delegate for. */
+  actingIds: string[]
+  /** client_profile_id values in the caller's book. */
+  clientIds: string[]
+  /** coach_clients row ids in the caller's book. */
+  coachClientIds: string[]
+}
+
+export async function resolveTaskReach(
+  db: SupabaseClient,
+  callerId: string,
+): Promise<TaskReach> {
+  const { actingIds } = await resolveDelegation(db, callerId)
+
+  const { data, error } = await db
+    .from("coach_clients")
+    .select("id, client_profile_id")
+    .in("coach_profile_id", actingIds)
+    .eq("status", "active")
+  if (error) {
+    // NOT swallowed into an empty book. An empty book here would read as "this
+    // coach has no tasks", which is indistinguishable from having finished
+    // them all. Thrown, so the request fails loudly instead.
+    throw new Error(`could not read the caller's clients: ${error.message}`)
+  }
+
+  const rows = (data ?? []) as { id: string; client_profile_id: string | null }[]
+  return {
+    actingIds,
+    clientIds: [...new Set(rows.map((r) => r.client_profile_id).filter(Boolean) as string[])],
+    coachClientIds: [...new Set(rows.map((r) => r.id))],
+  }
+}
+
+/**
+ * The PostgREST `or` expression selecting every task this caller may reach.
+ *
+ * Built as a string rather than applied here because the list composes it with
+ * its other filters, and because the single-row guard reuses the same sets.
+ */
+export function taskReachFilter(reach: TaskReach): string {
+  const parts: string[] = []
+  if (reach.clientIds.length) parts.push(`client_profile_id.in.(${reach.clientIds.join(",")})`)
+  if (reach.coachClientIds.length) parts.push(`coach_client_id.in.(${reach.coachClientIds.join(",")})`)
+  // The client-less tasks. `and(...)` inside `or(...)` is PostgREST's own
+  // grouping syntax; without the nesting the null checks would widen the whole
+  // expression instead of narrowing this one branch.
+  parts.push(
+    `and(client_profile_id.is.null,coach_client_id.is.null,assignee_profile_id.in.(${reach.actingIds.join(",")}))`,
+  )
+  return parts.join(",")
+}
+
+/** Is this one task inside the caller's reach? For the single-row routes. */
+export function taskIsReachable(
+  reach: TaskReach,
+  task: { client_profile_id: string | null; coach_client_id: string | null; assignee_profile_id: string },
+): boolean {
+  if (task.client_profile_id && reach.clientIds.includes(task.client_profile_id)) return true
+  if (task.coach_client_id && reach.coachClientIds.includes(task.coach_client_id)) return true
+  if (!task.client_profile_id && !task.coach_client_id) {
+    return reach.actingIds.includes(task.assignee_profile_id)
+  }
+  return false
 }

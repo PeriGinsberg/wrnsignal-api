@@ -16,11 +16,36 @@ import { resolveCoach } from "@/app/api/_lib/coachAuth"
 import { isTaskStatus, validateTaskWrite, type Task } from "@/lib/tasks/model"
 import { deleteTask, reassignTask, setTaskStatus, updateTask } from "@/lib/tasks/service"
 import { drain } from "@/lib/automation/run"
+import { resolveTaskReach, taskIsReachable } from "@/lib/tasks/scope"
+import type { SupabaseClient } from "@supabase/supabase-js"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 export async function OPTIONS(req: NextRequest) { return corsOptionsResponse(req.headers.get("origin")) }
+
+/**
+ * Is this task one the caller may touch at all?
+ *
+ * NEITHER HANDLER CHECKED, so any coach could edit, reassign, complete or
+ * delete any task in the database by id. The list's own hole made ids easy to
+ * come by. Same rule the list uses, so "I can see it" and "I can change it"
+ * cannot drift apart; see lib/tasks/scope.ts.
+ *
+ * 404, NOT 403. A task outside your book should not be discoverable, and
+ * "forbidden" on a bare id confirms the id exists.
+ */
+async function reachable(db: SupabaseClient, taskId: string, callerId: string): Promise<boolean> {
+  const { data } = await db
+    .from("coach_tasks")
+    .select("client_profile_id, coach_client_id, assignee_profile_id")
+    .eq("id", taskId)
+    .is("deleted_at", null)
+    .maybeSingle()
+  if (!data) return false
+  return taskIsReachable(await resolveTaskReach(db, callerId), data as any)
+}
+
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ taskId: string }> }) {
   try {
@@ -33,6 +58,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ta
     if (errors.length) return withCorsJson(req, { ok: false, error: errors[0], errors }, 400)
 
     const db = getSupabaseAdmin()
+    if (!(await reachable(db, taskId, coachProfileId))) {
+      return withCorsJson(req, { ok: false, error: "That task no longer exists." }, 404)
+    }
     let task: Task | null = null
 
     // ORDER MATTERS. Fields first, then assignment, then status. A task being
@@ -109,7 +137,12 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ t
     const { coachProfileId, error } = await resolveCoach(req)
     if (error) return error
 
-    const r = await deleteTask(getSupabaseAdmin(), taskId, coachProfileId)
+    const db = getSupabaseAdmin()
+    if (!(await reachable(db, taskId, coachProfileId))) {
+      return withCorsJson(req, { ok: false, error: "That task no longer exists." }, 404)
+    }
+
+    const r = await deleteTask(db, taskId, coachProfileId)
     if (!r.ok) return withCorsJson(req, { ok: false, error: r.error }, r.status)
     return withCorsJson(req, { ok: true }, 200)
   } catch (err: any) {

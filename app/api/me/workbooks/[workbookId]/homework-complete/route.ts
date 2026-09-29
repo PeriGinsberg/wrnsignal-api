@@ -116,7 +116,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ wor
         .eq("id", r.coach_client_id)
         .maybeSingle()
       if (cc?.client_profile_id && cc?.coach_profile_id) {
-        const first = (r.first_name ?? "your client").trim()
+        // WHOSE NAME THIS IS, and why it is not the RPC's.
+        //
+        // The function reads content.client.first_name first, which is a
+        // snapshot taken when the workbook was created. On staging Jordan
+        // Demo's Session 1 workbook carries "Ryan", so the coach's task read
+        // "Ryan finished Session 1 homework" about a client called Jordan.
+        //
+        // The snapshot is right for the workbook's own prose, which is a
+        // document addressed to whoever it was written for. It is wrong for
+        // naming a client to their coach, and wrong for greeting them in an
+        // email: the profile is the live record of who this person is. So the
+        // profile wins here, and the RPC's value is the fallback for a profile
+        // with no name on it.
+        const { data: clientProfile } = await admin
+          .from("client_profiles").select("name").eq("id", cc.client_profile_id).maybeSingle()
+        const first =
+          String(clientProfile?.name ?? "").trim().split(/\s+/)[0] ||
+          (r.first_name ?? "your client").trim()
 
         // ── The automatic round, for sessions that have a preset ────────
         //
