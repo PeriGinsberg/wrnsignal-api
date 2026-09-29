@@ -74,11 +74,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ wor
       })
     }
 
-    // ── Ask the coach to build a practice round ───────────────────────
+    // ── One task, not two ─────────────────────────────────────────────
     //
     // A REAL TASK, not a coach_client_notes action_item. needs-attention
     // stopped counting those on 2026-09-26, so the note this RPC still writes
     // does not reach the coach's queue; this is what actually surfaces.
+    //
+    // THE RPC USED TO RAISE ONE TOO, and the two said the same thing in
+    // different words: "X finished the homework: <title>" pointing at the
+    // Workbooks tab, and "Build a practice round for X" pointing at Practice.
+    // Reading the homework and deciding what to practise is one job, so it is
+    // one row now and the RPC's insert is gone.
     //
     // Fired once, with the completion, and never retried: a duplicate reminder
     // is worse than a late one, and the coach can always start a round by hand.
@@ -97,13 +103,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ wor
           coachClientId: r.coach_client_id,
           clientProfileId: cc.client_profile_id,
           assigneeProfileId: cc.coach_profile_id,
-          title: `Build a practice round for ${first}`,
-          description:
-            `${first} finished the Session ${session} homework. Pick a few questions and send them to record.`,
-          // The Practice TAB on the client record, not the standalone list.
-          // Both show the same rounds, and the tab keeps the client's name,
-          // status and history one click away from the decision about what to
-          // ask them next.
+          // ONE SENTENCE EACH, split at the wording's own full stop. The
+          // title is what happened and the description is what to do about
+          // it, which is the shape every other task has and the shape TaskRow
+          // renders: title on one line, description as the snippet under it.
+          // Kept as one long title it would have been ellipsised on the
+          // dashboard card, which is the surface most coaches read first.
+          title: `${first} finished Session ${session} homework`,
+          description: "Review it and build their practice round.",
+          // The Practice TAB, not the Workbooks tab the RPC's task pointed at.
+          // The homework is one more click from here, and the thing the coach
+          // has to DO is on this tab.
           link: clientLink(cc.client_profile_id, "practice"),
         })
       }

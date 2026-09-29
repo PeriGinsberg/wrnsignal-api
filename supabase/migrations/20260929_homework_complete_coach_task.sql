@@ -1,26 +1,27 @@
--- The homework Required Action goes into coach_tasks, where the coach reads.
+-- The homework function stops writing a reminder nowhere anybody reads.
 --
--- WHY IT HAD TO MOVE. This function has written a coach_client_notes row with
--- type='action_item' since it was created. On 2026-09-26 those rows were
+-- WHY IT HAD TO CHANGE. This function has written a coach_client_notes row
+-- with type='action_item' since it was created. On 2026-09-26 those rows were
 -- migrated into coach_tasks and needs-attention stopped counting notes, so
--- every homework completion since then has written a reminder into a table
--- nothing reads. The client's completion worked; the coach was simply never
--- told. See the header of
--- app/api/coach/clients/[clientId]/needs-attention/route.ts.
+-- every homework completion since then wrote a reminder into a table nothing
+-- reads. The client's completion worked; the coach was simply never told. See
+-- the header of app/api/coach/clients/[clientId]/needs-attention/route.ts.
+--
+-- AND IT DOES NOT RAISE THE TASK EITHER. An earlier draft of this file moved
+-- the note into coach_tasks, which fixed the silence and created a duplicate:
+-- the route raised its own task for the same event, so one completion produced
+-- two rows saying the same thing in different words. The route's is the one
+-- that survives, because it can resolve the session number and this function
+-- cannot. See the comment at the insert site below.
+--
+-- So what is left here is a removal: the note is gone, nothing replaces it in
+-- SQL, and the task is raised once by
+-- app/api/me/workbooks/[workbookId]/homework-complete/route.ts.
 --
 -- Everything else is unchanged: same Forbidden guard, same one-shot timestamp,
 -- same return shape. `fired` is still true only for the call that set the
--- timestamp, so a second press or a second tab still writes nothing.
---
--- THE NOTE IS NOT KEPT AS WELL. Writing both would put the same reminder in
--- two places and make the History tab and the task list disagree about how
--- much work there is.
-
--- ORDER-INDEPENDENT. This file and 20260929_task_links.sql both land on
--- 2026-09-29 and there is no guarantee which runs first, so the column this
--- INSERT needs is asserted here rather than assumed. Idempotent; if task_links
--- has already run, this does nothing.
-ALTER TABLE public.coach_tasks ADD COLUMN IF NOT EXISTS link TEXT;
+-- timestamp, so a second press or a second tab still writes nothing, which is
+-- what keeps the route from raising a second task.
 
 
 CREATE OR REPLACE FUNCTION public.workbook_mark_homework_complete(p_workbook uuid)
@@ -33,8 +34,6 @@ DECLARE
   v_last   text;
   v_email  text;
   v_title  text;
-  v_coach  uuid;
-  v_client uuid;
   v_fired  boolean := false;
 BEGIN
   SELECT * INTO w FROM workbooks WHERE id = p_workbook FOR UPDATE;
@@ -55,33 +54,16 @@ BEGIN
     RETURNING homework_completed_at INTO w.homework_completed_at;
     v_fired := true;
 
-    SELECT COALESCE(w.created_by, cc.coach_profile_id), cc.client_profile_id
-      INTO v_coach, v_client
-      FROM coach_clients cc WHERE cc.id = w.coach_client_id;
-
-    -- A REAL TASK. assignee_profile_id is what puts it in the coach's queue;
-    -- client_profile_id is what puts it on the client's page. source='auto'
-    -- so the row reads as something a rule produced, not something a coach
-    -- typed, which is what the task list uses to phrase it.
-    IF v_coach IS NOT NULL THEN
-      INSERT INTO coach_tasks
-        (coach_client_id, client_profile_id, assignee_profile_id,
-         title, description, status, source, link)
-      VALUES
-        (w.coach_client_id,
-         COALESCE(v_client, w.client_profile_id),
-         v_coach,
-         v_first || ' finished the homework: ' || v_title,
-         'Read it, then decide what to practise next.',
-         'open',
-         'auto',
-         -- A SYSTEM TASK CARRIES ITS DESTINATION. See
-         -- 20260929_task_links.sql: the CHECK refuses source='auto' with a
-         -- null link, so this INSERT would fail without it.
-         '/dashboard/coach/clients/'
-           || COALESCE(v_client, w.client_profile_id)::text
-           || '?tab=workbooks');
-    END IF;
+    -- NO TASK IS RAISED HERE, and no note either.
+    --
+    -- The route raises it, for one reason: the session number. This function
+    -- can only read content->>'session', which is missing on some workbooks;
+    -- the route falls back to parsing the template id, and logs when even that
+    -- fails. A task titled "finished Session  homework" is worse than one
+    -- raised a few milliseconds later, outside the transaction.
+    --
+    -- The coach and client lookup that used to sit here went with it. The
+    -- route does its own, from coach_client_id, which this function returns.
   END IF;
 
   RETURN jsonb_build_object(
