@@ -31,7 +31,13 @@ export type PracticeQuestion = {
   id: string
   position: number
   text: string
-  source: "bank" | "custom"
+  /**
+   * Where the question came from. "preset" is a fixed round the product
+   * sent by itself (see lib/practice/presets.ts); it is never a value the
+   * coach's builder can produce, which is why QuestionInput below stays
+   * narrower than this.
+   */
+  source: "bank" | "custom" | "preset"
   /** Coach feedback. Draft until the round's feedback_sent_at is set. */
   fb_works?: string | null
   fb_fix?: string | null

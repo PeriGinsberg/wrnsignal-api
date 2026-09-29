@@ -47,7 +47,15 @@ const STATUS_LABEL: Record<ListRow["status"], string> = {
 export function WorkbooksTab({ clientId, clientName }: { clientId: string; clientName: string }) {
   const [list, setList] = useState<ListRow[] | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [openId, setOpenId] = useState<string | null>(null)
+  // DEEP-LINKABLE, via ?tab=workbooks&workbook=<id>. The homework task's Go
+  // button names the workbook it is about; without this the coach lands on a
+  // list and has to work out which one the task meant. Read once, as the
+  // initial value, so closing the workbook does not immediately reopen it.
+  const [openId, setOpenId] = useState<string | null>(
+    () => (typeof window === "undefined"
+      ? null
+      : new URLSearchParams(window.location.search).get("workbook")),
+  )
   const [adding, setAdding] = useState(false)
 
   const load = useCallback(async () => {

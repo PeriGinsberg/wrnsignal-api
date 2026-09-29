@@ -2,16 +2,25 @@
 //
 // POST — the client marks a session workbook's homework complete.
 //
-// TWO EFFECTS, IN THIS ORDER, AND ONLY THE FIRST IS GUARANTEED:
-//   1. workbook_mark_homework_complete() stamps the workbook and raises the
-//      coach's Required Actions item, in one transaction. It reports `fired`
-//      true only for the call that actually set the timestamp, so a second press
-//      (or a second tab) changes nothing.
-//   2. On `fired`, and only then, this posts to GHL_HOMEWORK_WEBHOOK_URL.
+// FOUR EFFECTS, IN THIS ORDER, AND ONLY THE FIRST IS GUARANTEED:
+//   1. workbook_mark_homework_complete() stamps the workbook, in one
+//      transaction. It reports `fired` true only for the call that actually set
+//      the timestamp, so a second press (or a second tab) changes nothing. That
+//      one-shot is what every step below relies on not to happen twice.
+//   2. On `fired`, a History event.
+//   3. On `fired`, and only for a session with a preset (see
+//      lib/practice/presets.ts), SIGNAL builds that session's fixed practice
+//      round, marks it sent, and emails the client straight away.
+//   4. On `fired`, the coach's task. Its wording and its Go destination depend
+//      on whether step 3 actually sent: read the homework, or build a round.
+//   5. On `fired`, and only for a session WITHOUT a preset, this posts to
+//      GHL_HOMEWORK_WEBHOOK_URL. Where SIGNAL sends its own round it has
+//      already done the job that webhook exists to trigger, and firing both
+//      would put two practice links in one inbox.
 //
-// A webhook that is unset, slow or failing must not cost the client their
-// completion, so a failure is logged and reported, never retried in a loop, and
-// never rolls step 1 back. homework_webhook_at stays empty until a POST lands.
+// Nothing after step 1 may cost the client their completion, so each is
+// best-effort: failures are logged and reported, never retried in a loop, and
+// never roll step 1 back. homework_webhook_at stays empty until a POST lands.
 
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
@@ -19,7 +28,9 @@ import { workbookError } from "../../../../_lib/workbookError"
 import { logCoachClientEvent } from "../../../../_lib/coachClientEvents"
 import { clientWorkbookScope, rpcError } from "@/lib/workbook/server"
 import { raiseCoachTask } from "@/lib/practice/server"
-import { clientLink } from "@/lib/tasks/links"
+import { clientLink, workbookLink } from "@/lib/tasks/links"
+import { presetForSession } from "@/lib/practice/presets"
+import { createAndSendPresetRound } from "@/lib/practice/autoRound"
 import { getSupabaseAdmin } from "../../../../_lib/coachAuth"
 
 export const runtime = "nodejs"
@@ -88,6 +99,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ wor
     //
     // Fired once, with the completion, and never retried: a duplicate reminder
     // is worse than a late one, and the coach can always start a round by hand.
+    // The same one-shot guard is what stops a client pressing the button twice
+    // from being sent two practice rounds.
+
+    // Non-null when this session sends its own round. Read here rather than
+    // inside the block because the webhook further down needs it too.
+    const preset = presetForSession(session)
+
     if (r.fired && r.coach_client_id) {
       const admin = getSupabaseAdmin()
       // The RPC does not return these and changing its signature would mean a
@@ -99,6 +117,33 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ wor
         .maybeSingle()
       if (cc?.client_profile_id && cc?.coach_profile_id) {
         const first = (r.first_name ?? "your client").trim()
+
+        // ── The automatic round, for sessions that have a preset ────────
+        //
+        // BEFORE THE TASK, so the task can tell the truth. Its wording says
+        // the round "was sent automatically", and raising that before the
+        // send has happened would make it a claim rather than a report. If
+        // the send fails the coach gets the ordinary build-it-yourself task
+        // instead, which is the correct fallback and needs no other handling.
+        let autoSent = false
+        if (preset) {
+          const { data: coach } = await admin
+            .from("client_profiles").select("name").eq("id", cc.coach_profile_id).maybeSingle()
+          const sent = await createAndSendPresetRound(admin, {
+            preset,
+            coachClientId: r.coach_client_id,
+            clientProfileId: cc.client_profile_id,
+            coachProfileId: cc.coach_profile_id,
+            clientEmail: r.email ?? null,
+            clientFirstName: first,
+            coachName: String(coach?.name ?? "").trim().split(/\s+/)[0] || "Your coach",
+          })
+          autoSent = sent.ok
+          if (!sent.ok) {
+            console.error("[homework-complete] preset round failed:", sent.reason, "workbook:", workbookId)
+          }
+        }
+
         await raiseCoachTask(admin, {
           coachClientId: r.coach_client_id,
           clientProfileId: cc.client_profile_id,
@@ -110,19 +155,37 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ wor
           // Kept as one long title it would have been ellipsised on the
           // dashboard card, which is the surface most coaches read first.
           title: `${first} finished Session ${session} homework`,
-          description: "Review it and build their practice round.",
-          // The Practice TAB, not the Workbooks tab the RPC's task pointed at.
-          // The homework is one more click from here, and the thing the coach
-          // has to DO is on this tab.
-          link: clientLink(cc.client_profile_id, "practice"),
+          description: autoSent
+            ? "Review it. Their practice round was sent automatically."
+            : "Review it and build their practice round.",
+          // WHERE THE WORK IS. When the round went by itself there is nothing
+          // to build, so the job is reading the homework and the link opens
+          // that workbook. When it did not, the job is building a round, and
+          // the Practice tab is where that happens.
+          link: autoSent
+            ? workbookLink(cc.client_profile_id, workbookId)
+            : clientLink(cc.client_profile_id, "practice"),
         })
       }
     }
 
-    let webhook: "sent" | "skipped" | "not_configured" | "failed" = r.fired ? "not_configured" : "skipped"
+    // ── GHL, for the sessions SIGNAL does not own yet ───────────────────
+    //
+    // The webhook exists to make GoHighLevel send the homework-complete email
+    // with the VideoAsk link. For a session with a preset, SIGNAL has just
+    // done that job itself, with its own email and its own round: firing the
+    // webhook as well would put two practice links in the same inbox, minutes
+    // apart, pointing at two different systems.
+    //
+    // KEYED ON THE PRESET, not on `session === 1`. The day Session 3 gets a
+    // preset, its webhook stops too, and nobody has to remember this line.
+    // Sessions that are still coach-built keep firing it unchanged.
+    let webhook: "sent" | "skipped" | "not_configured" | "failed" | "superseded" =
+      r.fired ? "not_configured" : "skipped"
     const url = process.env.GHL_HOMEWORK_WEBHOOK_URL
+    if (r.fired && preset) webhook = "superseded"
 
-    if (r.fired && url) {
+    if (r.fired && url && !preset) {
       try {
         const res = await fetch(url, {
           method: "POST",

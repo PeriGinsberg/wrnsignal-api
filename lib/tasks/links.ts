@@ -74,6 +74,18 @@ export function networkImportLink(clientId: string): string {
   return `/dashboard/network/import?client_profile_id=${encodeURIComponent(clientId)}`
 }
 
+/**
+ * One workbook, open, on the coach's side.
+ *
+ * The coach reads a workbook inside the client record's Workbooks tab rather
+ * than at a route of its own, so this is the tab plus the id it should open
+ * on. WorkbooksTab reads `workbook` from the query string; without it the
+ * coach lands on a list and has to find the one the task meant.
+ */
+export function workbookLink(clientId: string, workbookId: string): string {
+  return `${clientLink(clientId, "workbooks")}&workbook=${encodeURIComponent(workbookId)}`
+}
+
 /** One practice round, on the coach's side: playback and the feedback boxes. */
 export function practiceRoundLink(roundId: string): string {
   return `/dashboard/coach/practice/${roundId}`
