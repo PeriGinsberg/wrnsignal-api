@@ -129,7 +129,7 @@ export default function PracticeRoundPage() {
         <p style={{ ...p, margin: 0 }}>
           {done
             ? `Sent to ${round.coach_name}. They will watch these back and come back to you.`
-            : `${round.coach_name} picked ${round.questions.length} question${round.questions.length === 1 ? "" : "s"} for you. Press Start and recording begins straight away, ${round.seconds} seconds per answer. Restart as many times as you like; Finished locks that answer in. When all of them are answered, send the round.`}
+            : `${round.coach_name} picked ${round.questions.length} question${round.questions.length === 1 ? "" : "s"} for you. Press Start recording and the camera comes on straight away, ${round.seconds} seconds per answer. Cancel throws a take away without saving it, so you can go again as many times as you like. Finish saves that answer and locks it in. When all of them are answered, send the round.`}
         </p>
       </div>
 

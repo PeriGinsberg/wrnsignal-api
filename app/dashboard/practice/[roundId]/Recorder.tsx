@@ -2,21 +2,35 @@
 
 // One question, one camera, one ninety-second answer.
 //
-// THREE STATES AND NO MORE, because this is used once, alone, by somebody who
-// is nervous:
+// THE STATES, because this is used once, alone, by somebody who is nervous:
 //
-//   Start      turns the camera on AND begins recording. One press, not two.
-//              Arming the camera and then waiting for a second press gave
-//              people a live picture of themselves and nothing happening,
-//              which reads as broken.
-//   Restart    throws this take away and begins again. The camera stays on, so
-//              it is instant.
-//   Finished   stops, uploads, and LOCKS the question. No more recording.
+//   Start recording  turns the camera on AND begins recording. One press, not
+//                    two. Arming the camera and then waiting for a second
+//                    press gave people a live picture of themselves and
+//                    nothing happening, which reads as broken.
+//   Cancel           stops, turns the camera OFF, and throws the take away.
+//                    Nothing is uploaded and nothing is stored. The card is
+//                    left showing Re-record.
+//   Re-record        the same thing Start does, from a cancelled card.
+//   Finish           stops, uploads, and LOCKS the question.
 //
-// Locking is the point of Finished. "Submit" at the bottom sends the round;
-// this button is how the client says "that one is my answer", and a question
-// that could still be re-recorded after they said that would make Submit mean
+// WHY CANCEL TURNS THE CAMERA OFF. It is the button somebody presses when they
+// want to stop being filmed. Leaving the light on because the next take would
+// start faster answers a question nobody asked.
+//
+// Locking is the point of Finish. "Submit" at the bottom sends the round; this
+// button is how the client says "that one is my answer", and a question that
+// could still be re-recorded after they said that would make Submit mean
 // something different for each card.
+//
+// THE BUG THIS SHAPE EXISTS TO PREVENT. The previous version kept one
+// `discardRef` shared by every recorder it made. Cancel set it true, called
+// stop(), and then synchronously started the next recorder, which set it back
+// to false -- all before the first recorder's `onstop` had fired. By the time
+// the discarded take's handler ran, the flag said "keep it", so Cancel
+// uploaded the take it was meant to throw away. The discard decision now
+// belongs to ONE recorder, in its own closure, where nothing else can reach
+// it; the chunk buffer does too, for the same reason.
 //
 // WHAT CAN GO WRONG HERE IS THE BROWSER. getUserMedia needs a secure context
 // and a permission that can be refused; MediaRecorder's container differs by
@@ -26,39 +40,32 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 
-export type RecorderState = "idle" | "recording" | "uploading" | "done" | "error"
+export type RecorderState = "idle" | "recording" | "cancelled" | "uploading" | "done" | "error"
+
+/** The containers worth asking for, best first. */
+const CANDIDATES = [
+  "video/webm;codecs=vp9,opus",
+  "video/webm;codecs=vp8,opus",
+  "video/webm",
+  "video/mp4",
+]
 
 /**
- * The best container this browser will actually record.
+ * What this browser will actually record.
  *
- * Ordered by preference, not popularity: VP9 is smaller than VP8 at the same
- * quality, and mp4 is last because only Safari needs it and only Safari offers
- * it. An empty string means "let the browser choose", which is the correct
- * fallback and what older Safari wants.
+ * Returns "" when nothing is supported or MediaRecorder is missing entirely,
+ * which means "let the browser choose" and is what older Safari wants.
  */
 export function pickMimeType(): string {
-  if (typeof MediaRecorder === "undefined") return ""
-  const candidates = [
-    "video/webm;codecs=vp9,opus",
-    "video/webm;codecs=vp8,opus",
-    "video/webm",
-    "video/mp4",
-  ]
-  for (const c of candidates) {
-    try {
-      if (MediaRecorder.isTypeSupported(c)) return c
-    } catch {
-      // Safari has historically thrown here rather than returning false.
-    }
-  }
-  return ""
+  if (typeof MediaRecorder === "undefined" || !MediaRecorder.isTypeSupported) return ""
+  return CANDIDATES.find((t) => MediaRecorder.isTypeSupported(t)) ?? ""
 }
 
 /**
- * Minutes and seconds, always.
+ * Milliseconds to m:ss.
  *
- * It used to print `0:${seconds}`, so ninety seconds read "0:90" and a
- * countdown went 0:90, 0:89 ... which is not a time anybody recognises.
+ * It used to print `0:${seconds}`, so ninety seconds read "0:90" and the
+ * countdown went 0:90, 0:89, which is not a time anybody recognises.
  */
 export function formatClock(msLeft: number): string {
   const total = Math.max(0, Math.ceil(msLeft / 1000))
@@ -73,19 +80,22 @@ export function Recorder({
   onRecorded,
 }: {
   seconds: number
-  /** Already answered and finished. The recorder does not offer to run again. */
-  locked?: boolean
+  locked: boolean
   onRecorded: (blob: Blob, mime: string, durationMs: number) => Promise<void>
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const recorderRef = useRef<MediaRecorder | null>(null)
-  const chunksRef = useRef<Blob[]>([])
   const startedAtRef = useRef<number>(0)
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  // Set while Restart is tearing a recorder down, so its onstop knows the take
-  // is being thrown away rather than kept.
-  const discardRef = useRef(false)
+  /**
+   * Marks the CURRENT recorder's take as one to throw away.
+   *
+   * A function rather than a boolean, and rebuilt for every recorder: calling
+   * it closes over that one instance's own flag, so a later recorder cannot
+   * un-discard an earlier one's take. See the note at the top of this file.
+   */
+  const discardRef = useRef<(() => void) | null>(null)
 
   const [state, setState] = useState<RecorderState>("idle")
   const [error, setError] = useState<string>("")
@@ -94,6 +104,7 @@ export function Recorder({
   const stopTracks = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop())
     streamRef.current = null
+    if (videoRef.current) videoRef.current.srcObject = null
   }, [])
 
   // A camera light still on after they finish is alarming, and is the usual
@@ -116,18 +127,25 @@ export function Recorder({
         setError(`This browser refused to start recording: ${e?.message ?? e}`)
         return
       }
-      chunksRef.current = []
+
+      // PER-RECORDER, both of them. `discarded` cannot be flipped by anything
+      // that happens after this recorder is replaced, and `chunks` cannot be
+      // emptied out from under this recorder's onstop by the next one.
+      let discarded = false
+      const chunks: Blob[] = []
+
       recorderRef.current = rec
-      discardRef.current = false
+      discardRef.current = () => { discarded = true }
 
       rec.ondataavailable = (ev) => {
-        if (ev.data && ev.data.size > 0) chunksRef.current.push(ev.data)
+        if (ev.data && ev.data.size > 0) chunks.push(ev.data)
       }
       rec.onstop = async () => {
         if (tickRef.current) clearInterval(tickRef.current)
-        const chunks = chunksRef.current
-        chunksRef.current = []
-        if (discardRef.current) return  // Restart: the bytes go nowhere.
+        // CANCELLED. Nothing is built, nothing is uploaded, nothing is stored.
+        // The camera and the card state are the canceller's business, because
+        // this handler also runs for the 90-second timeout.
+        if (discarded) return
 
         const durationMs = Date.now() - startedAtRef.current
         const type = rec.mimeType || mime || "video/webm"
@@ -155,6 +173,9 @@ export function Recorder({
         const left = seconds * 1000 - (Date.now() - startedAtRef.current)
         setMsLeft(left)
         if (left <= 0) {
+          // Time up is a Finish, not a Cancel: ninety seconds of answer is an
+          // answer, and throwing it away because they did not press the button
+          // in time would be the cruellest possible reading of the timer.
           const r = recorderRef.current
           if (r && r.state !== "inactive") r.stop()
         }
@@ -163,7 +184,7 @@ export function Recorder({
     [onRecorded, seconds, stopTracks],
   )
 
-  /** Start: camera on and recording, in one press. */
+  /** Start, and Re-record: camera on and recording, in one press. */
   const start = useCallback(async () => {
     setError("")
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
@@ -188,7 +209,7 @@ export function Recorder({
       const name = String(e?.name ?? "")
       setError(
         name === "NotAllowedError"
-          ? "SIGNAL needs permission to use your camera and microphone. Allow it in your browser, then press Start."
+          ? "SIGNAL needs permission to use your camera and microphone. Allow it in your browser, then press Start recording."
           : name === "NotFoundError"
             ? "No camera or microphone found on this device."
             : `Could not start the camera: ${e?.message ?? e}`,
@@ -196,22 +217,30 @@ export function Recorder({
     }
   }, [beginRecording])
 
-  /** Restart: throw this take away and go again, camera already warm. */
-  const restart = useCallback(() => {
+  /**
+   * Cancel: stop, camera off, take thrown away.
+   *
+   * The discard is marked BEFORE stop() because onstop can fire immediately,
+   * and the recorder reference is cleared afterwards so nothing can stop it
+   * twice.
+   */
+  const cancel = useCallback(() => {
+    discardRef.current?.()
     const rec = recorderRef.current
-    const stream = streamRef.current
-    if (!rec || !stream) return
-    discardRef.current = true
-    if (rec.state !== "inactive") rec.stop()
+    if (rec && rec.state !== "inactive") rec.stop()
     if (tickRef.current) clearInterval(tickRef.current)
-    beginRecording(stream)
-  }, [beginRecording])
+    recorderRef.current = null
+    discardRef.current = null
+    stopTracks()
+    setMsLeft(seconds * 1000)
+    setError("")
+    setState("cancelled")
+  }, [seconds, stopTracks])
 
-  /** Finished: stop, upload, and lock the question. */
+  /** Finish: stop, upload, and lock the question. */
   const finish = useCallback(() => {
     const rec = recorderRef.current
     if (!rec || rec.state === "inactive") return
-    discardRef.current = false
     rec.stop()
   }, [])
 
@@ -258,7 +287,9 @@ export function Recorder({
           >
             {state === "done"
               ? "Answer saved."
-              : "Press Start. Your camera comes on and recording begins straight away."}
+              : state === "cancelled"
+                ? "Take discarded. Nothing was saved."
+                : "Press Start recording. Your camera comes on and recording begins straight away."}
           </div>
         )}
         {state === "recording" && (
@@ -287,15 +318,20 @@ export function Recorder({
       )}
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+        {/* A FRESH CARD HAS ONE BUTTON. Anything beside it is a choice offered
+            before there is anything to choose between. */}
         {(state === "idle" || state === "error") && (
-          <button type="button" onClick={() => void start()} style={btn("primary")}>Start</button>
+          <button type="button" onClick={() => void start()} style={btn("primary")}>Start recording</button>
+        )}
+        {state === "cancelled" && (
+          <button type="button" onClick={() => void start()} style={btn("primary")}>Re-record</button>
         )}
         {state === "recording" && (
           <>
             <button type="button" onClick={finish} style={btn("primary")}>
-              Finished ({formatClock(msLeft)} left)
+              Finish ({formatClock(msLeft)} left)
             </button>
-            <button type="button" onClick={restart} style={btn("secondary")}>Restart</button>
+            <button type="button" onClick={cancel} style={btn("secondary")}>Cancel</button>
           </>
         )}
         {state === "uploading" && <span style={{ fontSize: 15 }}>Saving your answer...</span>}
