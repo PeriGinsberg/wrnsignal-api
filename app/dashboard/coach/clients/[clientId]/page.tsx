@@ -840,14 +840,25 @@ export default function CoachClientPage() {
         <InfoCard title="Client Information" groups={buildClientInfoGroups(capture, clientProfile)} />
       )}
 
-      {/* Tab bar */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 28, borderBottom: `1px solid ${T.BORDER_SOFT}`, paddingBottom: 12 }}>
+      {/* Tab bar.
+          IT SCROLLS ITSELF, rather than spilling. Eleven tabs is 1386px of row;
+          with the default `overflow: visible` that width propagated up through
+          <main> and the whole client record scrolled sideways at phone width,
+          which is the same complaint as the nav that would not collapse. The
+          tabs keep one row and take a swipe; `flexShrink: 0` on each button
+          stops flex squeezing "Profile & Personas" into two lines instead. */}
+      <div style={{
+        display: "flex", gap: 6, marginBottom: 28, borderBottom: `1px solid ${T.BORDER_SOFT}`,
+        paddingBottom: 12, overflowX: "auto", overflowY: "hidden", minWidth: 0,
+        scrollbarWidth: "thin", WebkitOverflowScrolling: "touch",
+      }}>
         {TABS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             style={{
               fontSize: TYPE.secondary, fontWeight: 900, padding: "8px 16px", borderRadius: 10, cursor: "pointer",
+              flexShrink: 0, whiteSpace: "nowrap",
               border: tab === t.id ? `1px solid rgba(254,176,106,0.35)` : `1px solid ${T.BORDER_SOFT}`,
               background: tab === t.id ? "rgba(254,176,106,0.08)" : T.GLASS,
               color: tab === t.id ? T.INK_EMPHASIS : T.MUTED,

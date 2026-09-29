@@ -14,6 +14,7 @@ import { questionBank } from "@/lib/practice/questionBank"
 import { MAX_QUESTIONS } from "@/lib/practice/model"
 import { T } from "@/lib/dashboard-theme"
 import { TYPE } from "@/lib/theme/surfaces"
+import { AutoGrowTextarea } from "@/components/ui/AutoGrowTextarea"
 
 type Q = {
   id: string; position: number; text: string; source: "bank" | "custom"
@@ -428,13 +429,17 @@ function FbBox({
   return (
     <div>
       {label && <div style={fbLabel}>{label}</div>}
-      <textarea
+      {/* AUTO-GROWING, NOT A FIXED BOX. Two rows of feedback behind an inner
+          scrollbar is the campaign-brief bug again, and it bites hardest on a
+          phone: at 390px "Say I for the part you owned" wraps to four lines and
+          the coach proof-reads their own note through a slot. */}
+      <AutoGrowTextarea
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        rows={2}
+        minRows={2}
         style={{
-          width: "100%", boxSizing: "border-box", fontFamily: "inherit", resize: "vertical",
+          width: "100%", boxSizing: "border-box", fontFamily: "inherit",
           fontSize: TYPE.secondary, lineHeight: "20px", padding: "9px 11px", borderRadius: 8,
           border: `1px solid ${T.BORDER}`, background: T.CARD, color: T.TEXT,
         }}
