@@ -73,7 +73,25 @@ BEGIN
     'email', v_email, 'first_name', v_first, 'last_name', v_last,
     'template_id', w.content->>'template_id',
     'session', (w.content->>'session')::int,
-    'title', v_title
+    'title', v_title,
+    -- ADDED, AND IT WAS LOAD-BEARING ALL ALONG.
+    --
+    -- The route types this key and guards two side effects on it:
+    --
+    --   if (r.fired && r.coach_client_id) { logCoachClientEvent(...) }
+    --   if (r.fired && r.coach_client_id) { raiseCoachTask(...) }
+    --
+    -- The function never returned it, so `r.coach_client_id` was always
+    -- undefined and both were dead code from the day they were written. No
+    -- homework_complete row has ever reached the History tab, and the route's
+    -- task has never been raised: the only reminder anybody saw came from this
+    -- function's own insert, which is why removing that insert produced zero
+    -- tasks rather than one.
+    --
+    -- The type on the route said `coach_client_id: string | null`, so nothing
+    -- failed loudly. Found by completing homework on staging and counting the
+    -- rows instead of reading the code.
+    'coach_client_id', w.coach_client_id
   );
 END $$;
 
