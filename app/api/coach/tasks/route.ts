@@ -28,7 +28,7 @@ import {
   type Task,
   type TaskView,
 } from "@/lib/tasks/model"
-import { createTask } from "@/lib/tasks/service"
+import { createTask, TASK_COLUMNS } from "@/lib/tasks/service"
 import { clientTaskFilter } from "@/lib/tasks/scope"
 
 export const runtime = "nodejs"
@@ -36,10 +36,10 @@ export const dynamic = "force-dynamic"
 
 export async function OPTIONS(req: NextRequest) { return corsOptionsResponse(req.headers.get("origin")) }
 
-const TASK_COLUMNS =
-  "id, title, description, client_profile_id, coach_client_id, assignee_profile_id, " +
-  "created_by_profile_id, due_at, due_has_time, status, completed_at, source, template_id, " +
-  "chain_id, brief_id, decision, legacy_note_id, created_at, updated_at, deleted_at"
+// IMPORTED, NOT RETYPED. This file kept its own copy of the select list, and
+// the two drifted the first time a column was added: `link` reached the
+// service's reads and not this one, so the whole task list came back with
+// link: null and no Go button anywhere. One list, one place.
 
 export async function GET(req: NextRequest) {
   try {

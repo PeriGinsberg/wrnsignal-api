@@ -158,7 +158,7 @@ export async function GET(
       // task with a null client_profile_id is still counted.
       supabase
         .from("coach_tasks")
-        .select("id, title, description, due_at, created_at, completed_at")
+        .select("id, title, description, due_at, created_at, completed_at, link")
         // EITHER COLUMN. Matching the relationship alone hid a hand-written
         // task that carried only client_profile_id; matching the person alone
         // would hide every prospect-era task, which carries only the
@@ -194,6 +194,7 @@ export async function GET(
         due_at: (r.due_at as string | null) ?? null,
         created_at: r.created_at as string,
         completed_at: r.completed_at as string | null,
+        link: (r.link as string | null) ?? null,
       }))
       .sort((a, b) => {
         if (a.due_at && b.due_at) return a.due_at.localeCompare(b.due_at)

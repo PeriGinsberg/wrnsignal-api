@@ -36,7 +36,7 @@ export type ServiceResult<T> = { ok: true; data: T } | { ok: false; error: strin
 // GenericStringError. Hence `as unknown as Task` at each read site: the cast
 // is asserting the select list matches the Task type, which is exactly what
 // this constant exists to keep true.
-const TASK_COLUMNS =
+export const TASK_COLUMNS =
   "id, title, description, client_profile_id, coach_client_id, assignee_profile_id, " +
   "created_by_profile_id, due_at, due_has_time, status, completed_at, source, template_id, " +
   "chain_id, brief_id, decision, legacy_note_id, link, created_at, updated_at, deleted_at"

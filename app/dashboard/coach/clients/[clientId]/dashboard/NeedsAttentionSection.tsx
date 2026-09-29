@@ -21,6 +21,8 @@ type ActionItem = {
   due_at?: string | null
   created_at: string
   completed_at: string | null
+  /** Where the work is done. Present on every system task; see lib/tasks/links.ts. */
+  link?: string | null
 }
 
 // EngagementSignal shape mirrors the server's runHeuristics() return —
@@ -266,6 +268,18 @@ export function NeedsAttentionSection({ authFetch, clientId, refreshKey }: Props
                         >
                           {item.body}
                         </span>
+                        {/* Where the work is done. Under the title rather than
+                            beside it: this row is narrow, already carries a
+                            checkbox and a badge, and a third element on the
+                            top line pushed the title into two. */}
+                        {item.link && (
+                          <a href={item.link} style={{
+                            display: "inline-block", marginTop: 6, fontSize: TYPE.secondary,
+                            fontWeight: 800, color: T.INK_LINK, textDecoration: "none",
+                          }}>
+                            Go &rarr;
+                          </a>
+                        )}
                       </div>
                     </div>
                   )
