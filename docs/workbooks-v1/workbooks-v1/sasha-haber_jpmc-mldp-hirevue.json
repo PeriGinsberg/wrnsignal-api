@@ -1,0 +1,615 @@
+{
+  "schema_version": 1,
+  "slug": "jpmc-mldp-hirevue",
+  "title": "JPMorganChase MLDP HireVue",
+  "source_doc": "Haber_JPMorganChase_HireVueWorkbook.md",
+  "client": {
+    "first_name": "Sasha",
+    "full_name": "Sasha Haber"
+  },
+  "interview": {
+    "company": "JPMorganChase",
+    "role": "2027 Marketing Leadership Development Program, Summer Analyst",
+    "date": null,
+    "time": null,
+    "interviewer_name": null,
+    "interviewer_title": null,
+    "location": "HireVue, one-way recorded video"
+  },
+  "coach": {
+    "first_name": "Peri"
+  },
+  "block_types_note": "Built from the Markdown source, same mapping as Alex Nachman's. COACH NOTE -> coach_only (written about Sasha, in the third person). STARTER -> field.starter on the 'Your version' field it belongs to. FIELD -> field. SUMMARY -> the summary blocks. The proof table and the Backup Bank table have no table block, so they became labelled lists, and the Backup Bank's two write-in cells became fields. The Practice Round section is not in the workbook: it is the SIGNAL practice round.",
+  "sections": [
+    {
+      "id": "welcome",
+      "number": 1,
+      "title": "Welcome and How to Use This",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Sasha, this workbook gets you ready for one thing: your JPMorganChase HireVue. Work through it in order. Where you see a starter answer, it is a first draft written in plain words. Change anything that does not sound like you. If you would never say a sentence out loud, cross it out and say it your way.",
+          "size": "lead"
+        },
+        {
+          "type": "list",
+          "style": "numbers",
+          "items": [
+            "TONIGHT: fill in every field. Say each answer out loud at least twice. Do not memorize word for word.",
+            "TOMORROW: record the practice round in SIGNAL. No notes. Treat it like the real thing.",
+            "AFTER MY FEEDBACK: make the fixes, then record the real HireVue."
+          ],
+          "title": "Your timeline"
+        },
+        {
+          "type": "text",
+          "body": "When you are done, hit Send to Coach. It does not have to be perfect."
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach note: the invite window",
+          "body": "Posting says JPMC strongly encourages completing the HireVue within three days of receiving the invite. Confirm the date her invite arrived and lock the real recording date before she starts."
+        }
+      ]
+    },
+    {
+      "id": "format",
+      "number": 2,
+      "title": "How the JPMorganChase HireVue Works",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "There is no person on the other side. You see a question on screen, get a short time to think, then record your answer against a timer."
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "3 to 5 questions",
+            "30 to 120 seconds to think before each one",
+            "1.5 to 2 minutes to record each answer",
+            "1 optional retry per question"
+          ],
+          "title": "What reported JPMC Summer Analyst HireVues have looked like (IGotAnOffer analysis of Glassdoor reports, updated September 2026)"
+        },
+        {
+          "type": "callout",
+          "tone": "peach",
+          "title": "Plan for the hardest version",
+          "body": "30 seconds to think and 90 seconds to answer. If you get more time, that is a bonus."
+        },
+        {
+          "type": "text",
+          "body": "Use it only if something actually went wrong (you lost your place, you got cut off, you went blank). Do not retry just because it felt imperfect. Your second take is not guaranteed to be better, and you do not get a third.",
+          "label": "About the retry"
+        },
+        {
+          "type": "text",
+          "body": "JPMorgan does not publicly say how much is AI versus human review. One published guide reports the scoring looks at what you say and how you sound, not your face (The Interview Guys, 2026). Either way, the words matter most. Clear answers with real examples win.",
+          "label": "How it is scored"
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach note: sourcing",
+          "body": "All format details are sourced. Do not add claims about what \"most candidates\" see. The posting itself says the HireVue is her chance to \"bring your resume to life,\" which is the framing to reinforce."
+        }
+      ]
+    },
+    {
+      "id": "program",
+      "number": 3,
+      "title": "The Program Decoded",
+      "blocks": [
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "A 9 week summer program in JPMorganChase's firmwide Marketing organization.",
+            "You get a manager, mentors, and senior leaders, plus frequent feedback and coaching.",
+            "Doing well can lead to an offer for the full time MLDP, a 2 year rotational program.",
+            "Marketing at JPMC works across every line of business, from Card Services and Consumer Banking to Asset & Wealth Management and Global Banking, in more than 100 countries."
+          ],
+          "title": "What MLDP is"
+        },
+        {
+          "type": "callout",
+          "tone": "peach",
+          "title": "Heart & Science",
+          "body": "They describe their approach as Heart & Science: human empathy plus data driven insight. Remember this phrase. It is your bridge for almost every answer."
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "Helping build and run marketing campaigns: content, coordination, tracking deliverables",
+            "Looking at performance numbers and customer trends",
+            "Working with teammates and stakeholders on projects",
+            "Using AI and new tools to research trends, draft content, and brainstorm campaign ideas"
+          ],
+          "title": "What the summer work actually is (from the posting)"
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "DEMONSTRATED INTEREST IN MARKETING: three marketing internships, Marketing major, your own photography business",
+            "CREATIVE THINKING AND CONTENT: Canva graphics and slides shown to 200+ people; photography used across social, web, and promo",
+            "ANALYZING DATA AND CAMPAIGN PERFORMANCE: Mailchimp to Google Sheets export for a 10,000 recipient weekly campaign",
+            "RESEARCH ON COMPETITORS, AUDIENCES, TRENDS: 40+ sponsor prospects found by looking at brands next to the sport, not just fishing brands",
+            "MANAGING MULTIPLE PROJECTS, FAST PACE: trade shows, a 400+ member annual meeting, a 3 day tournament on site, all while in school",
+            "FAMILIARITY WITH GENERATIVE AI, WITH JUDGMENT: Applied AI Literacy certification; Business Analytics & AI specialization",
+            "DIGITAL TOOLS (ADOBE PREFERRED): Photoshop, Canva, Mailchimp, Instagram, TikTok"
+          ],
+          "title": "What they are screening for, and your proof"
+        },
+        {
+          "type": "field",
+          "key": "program.rows",
+          "input": "long",
+          "label": "Which two rows above are your strongest? Which one feels weakest, and what could you say about it?"
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach note: the AI row",
+          "body": "The AI row is the one to push on. The certification is on paper; she needs one real, specific example of using AI (Section 8)."
+        }
+      ]
+    },
+    {
+      "id": "hook",
+      "number": 4,
+      "title": "Your Hook",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Imagine the person reviewing your video is watching their 40th HireVue of the day. Every candidate looks qualified on paper. When they finish yours, what will make them say \"oh yeah, the one who...\"?",
+          "size": "lead"
+        },
+        {
+          "type": "text",
+          "body": "This is not a resume line and not a strength. It is something that is uniquely you. It should show up once, naturally, somewhere in your answers."
+        },
+        {
+          "type": "field",
+          "key": "hook.final",
+          "input": "short",
+          "label": "The one who...",
+          "style": "hook",
+          "prefix": "The one who"
+        },
+        {
+          "type": "field",
+          "key": "hook.where",
+          "input": "short",
+          "label": "Which answer will you work it into?"
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach note: the hook",
+          "body": "No starter ideas here, per method. Let her land it. If she picks something from her stories, fine. HireVue reviewers can't ask a follow up, so the hook has to be said, not hinted."
+        }
+      ]
+    },
+    {
+      "id": "tmay",
+      "number": 5,
+      "title": "Prompt 1: Tell Me About Yourself",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Reported as one of the most frequent JPMC Summer Analyst HireVue questions (IGotAnOffer, Glassdoor data). Even if it doesn't come up word for word, this answer is the backbone of \"walk me through your resume\" and \"why are you the right candidate.\"",
+          "label": "Why it's here"
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "PRESENT: who you are right now. School, major, what you are focused on.",
+            "PAST: two or three things that got you here. Pick, don't list. Not every internship gets equal time.",
+            "FUTURE: what you are looking for now and why it points at this program. This part quietly answers \"why MLDP\" before they ask."
+          ],
+          "title": "How to build it: Present, Past, Future"
+        },
+        {
+          "type": "text",
+          "body": "Target: about 60 to 75 seconds. Short is a strength here."
+        },
+        {
+          "type": "field",
+          "key": "tmay.mine",
+          "input": "long",
+          "label": "Your version, in your words.",
+          "starter": "I'm a junior at Tulane in the Freeman School of Business, majoring in marketing with minors in psychology and strategy and analytics. I'm spending this fall studying in Madrid.\n\nI got into marketing through photography. I started my own business shooting yachts, events, and weddings, and I also shoot shelter dogs for their adoption listings. That's where I figured out that the picture is only half of it, and getting it in front of the right people is the other half. Since then I've done three marketing internships. This past summer I was with the Sport Fishing Championship, a tournament series that streams on ESPN+, where I found and pitched sponsors, built a way to track our weekly email numbers, and worked on site at a tournament in Newport.\n\nWhat I'm looking for now is a place where I can learn the bigger version of that, the creative side and the numbers side together, at a brand people actually know. That's what drew me to MLDP."
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach note: Tell Me About Yourself",
+          "body": "Check she has a one sentence answer ready if asked why she switched into Freeman (open item from story work). The Madrid line is optional; keep it if it helps her sound current, cut if she's over time. Watch the Past section for list mode."
+        }
+      ]
+    },
+    {
+      "id": "why_jpmc",
+      "number": 6,
+      "title": "Prompt 2: Why JPMorganChase?",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "A past WRN client who took this HireVue remembered it. It is also listed as a top reported JPMC HireVue question (IGotAnOffer).",
+          "label": "Why it's here"
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "Names something real and specific about JPMC, not \"you're the biggest bank.\"",
+            "Connects it to something you have actually done.",
+            "Stays in your voice. No brochure language."
+          ],
+          "title": "What a strong answer does"
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "JPMC just marked 45 years as a partner of the US Open. For 2026, Chase added the Chase Market, a pop up inspired by a New York bodega where fans got scratch off prizes, and a magazine cover photo moment where fans got a digital copy of their own tennis magazine cover. (JPMorganChase press release, Aug 24, 2026)",
+            "Marketing at JPMC works across every line of business in more than 100 countries, and they call their approach Heart & Science. (MLDP posting)"
+          ],
+          "title": "Real things you can use (sourced)"
+        },
+        {
+          "type": "callout",
+          "tone": "peach",
+          "title": "Why this fits you",
+          "body": "You have worked a Fanfest merch booth, run sponsor check in, staffed a trade show booth, and you are a photographer. The US Open activations are the big league version of what you've already done."
+        },
+        {
+          "type": "field",
+          "key": "why_jpmc.mine",
+          "input": "long",
+          "label": "Your version. Swap in anything about JPMC that you personally noticed or care about.",
+          "starter": "I've spent the last two summers on the event side of marketing. I worked a merch booth at a fishing tournament Fanfest, did sponsor check in, and helped run a trade show booth. So when I read about what Chase did at the US Open this year, it clicked for me. The magazine cover photo moment is exactly the kind of thing I'd want to build. I'm a photographer, and I know people share a picture of themselves way more than they'd ever share a logo.\n\nWhat I like about JPMorganChase is that it does that kind of work at a huge scale, and it's backed by data. The program describes it as Heart and Science, and that's how I think about marketing too. I want to learn it at a place that does both at that level."
+        },
+        {
+          "type": "field",
+          "key": "why_jpmc.found",
+          "input": "short",
+          "label": "One thing about JPMC or Chase you found on your own (a campaign, an ad, a card, an experience)"
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach note: why JPMorganChase",
+          "body": "The US Open angle is chosen because it sits right on top of her event and photo work. If she has a personal Chase connection (her own card, family, something she saw), that beats anything researched. Make sure she doesn't list facts; one real thing plus why it matters to her."
+        }
+      ]
+    },
+    {
+      "id": "why_mldp",
+      "number": 7,
+      "title": "Prompt 3: Why This Program (MLDP)?",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Also remembered by the past WRN client who took this HireVue.",
+          "label": "Why it's here"
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "Shows you understand what MLDP actually is: a structured summer inside a big marketing org, with mentors, that can lead to a 2 year rotation.",
+            "Explains why a rotational, learn a lot of it program fits where you are right now.",
+            "Points to what you'd bring."
+          ],
+          "title": "What a strong answer does"
+        },
+        {
+          "type": "field",
+          "key": "why_mldp.mine",
+          "input": "long",
+          "label": "Your version.",
+          "starter": "I've done sponsorships, events, email, social, and photography, and I've liked each of them for different reasons. I'm not ready to pick one lane yet, and I don't want to guess. MLDP lets me see how marketing works across a lot of different parts of a big company, with a manager and mentors, instead of figuring it out alone.\n\nI also like that the summer can lead into the two year rotation. If it goes well, I get to keep building on what I learned instead of starting over somewhere else.\n\nWhat I'd bring is that I'm comfortable on both sides. I can make the content, and I like looking at the numbers after to see if it worked."
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach note: why MLDP",
+          "body": "Watch for \"I want to learn\" with nothing about what she gives back. The last paragraph fixes that; make sure it survives her edit."
+        }
+      ]
+    },
+    {
+      "id": "ai",
+      "number": 8,
+      "title": "Prompt 4: AI",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "The past WRN client remembered a question about his thoughts on AI. We don't know the exact wording, so prepare for all of these:",
+          "label": "Why it's here"
+        },
+        {
+          "type": "list",
+          "style": "quotes",
+          "items": [
+            "What are your thoughts on AI in marketing?",
+            "How have you used AI, and what did you learn?",
+            "How do you think AI will change marketing?",
+            "What are the risks of using AI in marketing?"
+          ]
+        },
+        {
+          "type": "callout",
+          "tone": "peach",
+          "title": "Read this line from the posting",
+          "body": "They want \"familiarity with using generative AI to support marketing tasks such as research, content development, and insights, with an awareness of data accuracy, ethical use, and the role of human judgment.\""
+        },
+        {
+          "type": "list",
+          "style": "numbers",
+          "items": [
+            "HOW YOU ACTUALLY USE IT: one real, specific example",
+            "WHERE IT HELPS: speed on research, drafts, ideas",
+            "WHERE YOU DON'T TRUST IT ALONE: accuracy, checking facts, brand voice",
+            "WHY THAT MATTERS MORE AT A BANK: people's money and data"
+          ],
+          "title": "That sentence is your answer outline"
+        },
+        {
+          "type": "field",
+          "key": "ai.example",
+          "input": "long",
+          "label": "A real time you used AI for school, an internship, or your photography business. What did you ask it to do? What did you change or double check before using it?"
+        },
+        {
+          "type": "field",
+          "key": "ai.cert",
+          "input": "short",
+          "label": "One thing from your Applied AI Literacy certification that stuck with you"
+        },
+        {
+          "type": "field",
+          "key": "ai.mine",
+          "input": "long",
+          "label": "Your version.",
+          "starter": "I use it a lot, but I treat it like a first draft, not the final answer. [Your real example: what you used it for, and what you fixed or checked before it went out.]\n\nIn my Applied AI Literacy certification at Tulane, [one thing you learned]. So I always check anything factual before it goes anywhere, and I make sure it still sounds like the brand and not like a robot.\n\nAt a bank I think that matters even more, because you're talking about people's money and their information. So the way I see it, AI helps you get to good ideas faster, and then your own judgment decides what's actually right for the customer."
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach note: a real example",
+          "body": "Do not let her invent an example. If she has none, have her do one real task with AI tonight (for example, a first draft of captions for a shoot, then edit it) so she has something true to say. This is the answer most likely to sound generic; specifics are the whole game."
+        }
+      ]
+    },
+    {
+      "id": "comm",
+      "number": 9,
+      "title": "Prompt 5: Changing How You Communicate for Your Audience",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "\"Tell me about a time where you had to change your communications strategy to better fit your audience\" was reported from a JPMC Summer Analyst HireVue on Glassdoor. It also matches the posting's \"strong verbal and written communication skills.\"",
+          "label": "Why it's here"
+        },
+        {
+          "type": "callout",
+          "tone": "peach",
+          "title": "Your story: The Psychology Project",
+          "body": "You already have it. The point of this version is not that you organized the group. It is that you thought about how it would be heard."
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "SITUATION: set it up in one or two sentences",
+            "TASK: what was on you",
+            "ACTION: what you did, in \"I,\" with the most time here",
+            "RESULT: what happened",
+            "EMOTION: a moment the listener can relate to (every group project has one)",
+            "Don't announce the trait. Let the story show it."
+          ],
+          "title": "Reminder: STAR + E"
+        },
+        {
+          "type": "field",
+          "key": "comm.mine",
+          "input": "long",
+          "label": "Your version.",
+          "starter": "I had a group project in a psychology class, and a few weeks in it was drifting. Nobody had picked up the plan, and deadlines were getting close.\n\nI knew if I just told everyone what to do, it would land badly. Nobody likes being managed by someone in their own class. So I didn't point out that work wasn't getting done. I built a simple plan with who does what and when, and I brought it to the group as a way to make things easier for everyone, which it was. People got to stop wondering what they were supposed to be doing.\n\nEveryone did their part, we got an A, and we all stayed on good terms. What I took from it is that how you say something matters as much as whether you're right."
+        },
+        {
+          "type": "field",
+          "key": "comm.backup",
+          "input": "short",
+          "label": "Backup story if you get a different communication question"
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach note: communication",
+          "body": "Backup options: the Canva slides delivered to an audience of 200+ at Emazing, or tailoring sponsor outreach to brands outside fishing. Watch for \"we\" where it should be \"I\" in the Action."
+        }
+      ]
+    },
+    {
+      "id": "challenge",
+      "number": 10,
+      "title": "Prompt 6: A Challenge or a Mistake You Learned From",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "\"Describe a challenge that you have overcome\" is on the reported JPMC Summer Analyst HireVue list (IGotAnOffer, Glassdoor data). The same story also answers \"a time you failed\" and \"a time you learned from a mistake.\"",
+          "label": "Why it's here"
+        },
+        {
+          "type": "callout",
+          "tone": "peach",
+          "title": "Your story: The Car Wash",
+          "body": "This is one of your strongest. It is also a marketing story in disguise, which is perfect for MLDP."
+        },
+        {
+          "type": "field",
+          "key": "challenge.mine",
+          "input": "long",
+          "label": "Your version.",
+          "starter": "I ran a restaurant fundraiser for BBYO, and it went badly because of how I ran it. I promoted it late and only in one place. On the day, I wasn't near the register making sure people said they were there for us, so some of what they spent never got credited. And I took the restaurant's first offer on the split without pushing.\n\nA few months later we had another one, a car wash with 7-Eleven, and I fixed all three things. I started promoting early, on every platform we had. I ran presales so people committed before the day. And I sent Venmo promos ahead of time so giving didn't depend on people showing up.\n\nWe raised over five hundred dollars. The biggest thing I learned is that a fundraiser is really a marketing campaign with an event at the end. Most of the result is decided before the day even starts."
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach note: the car wash",
+          "body": "Name all three mistakes; specifics are the value. Must reach the car wash or it's just a failure story. Brief, no blame, no over apologizing."
+        }
+      ]
+    },
+    {
+      "id": "backup",
+      "number": 11,
+      "title": "Backup Bank",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "If you get a question you didn't prep, pick a story from this list. One good story can answer a lot of questions."
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "YOUR GREATEST ACCOMPLISHMENT / WHAT YOU'RE MOST PROUD OF: Fifty Dogs",
+            "A TIME YOU SAW A PROBLEM NOBODY ASKED YOU TO SOLVE: Fifty Dogs",
+            "MANAGING MULTIPLE PRIORITIES OR DEADLINES: Red, Yellow, Green",
+            "A TIME YOU WORKED ON A TEAM: The Angler Bags",
+            "A TIME YOU LEARNED SOMETHING FAST: The Wedding",
+            "WHY ARE YOU THE RIGHT CANDIDATE?: TMAY Future plus your strongest proof row from Section 3"
+          ],
+          "title": "If they ask... use this story"
+        },
+        {
+          "type": "field",
+          "key": "backup.stand_up",
+          "input": "short",
+          "label": "A time you stood up for something you believed in: your pick"
+        },
+        {
+          "type": "field",
+          "key": "backup.mentor",
+          "input": "short",
+          "label": "The best advice a mentor gave you: who, and what they said"
+        },
+        {
+          "type": "text",
+          "body": "Question wording from reported JPMC HireVues: IGotAnOffer and Glassdoor."
+        },
+        {
+          "type": "field",
+          "key": "backup.scary",
+          "input": "long",
+          "label": "Any question that scares you? Write it here and pick a story for it."
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach note: standing up for something",
+          "body": "\"Stand up for yourself / something you believed in\" was reported on Glassdoor for MLDP (stage not specified). The Lead Title may fit, but confirm the facts with her first (open question on whether the co lead agreed)."
+        }
+      ]
+    },
+    {
+      "id": "recording",
+      "number": 12,
+      "title": "Recording Day Checklist",
+      "blocks": [
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "Laptop at eye level. Camera slightly above your eyes, not looking up your nose.",
+            "Light in front of you, not behind you. A window behind you turns you into a silhouette.",
+            "Quiet room, door closed, phone on silent and out of reach.",
+            "Plain background.",
+            "Dress like it's a real interview, top to bottom.",
+            "Look at the camera lens when you talk, not at your own face on screen.",
+            "Use the 30 seconds to pick your story and your first sentence. That's it.",
+            "Start with your headline. End on purpose. Stop when you're done; don't fill time.",
+            "Do the HireVue practice question first if they offer one.",
+            "Before you start, check your time zone against any deadline in the invite."
+          ]
+        },
+        {
+          "type": "coach_only",
+          "title": "Coach note: Madrid",
+          "body": "She's in Madrid. Confirm the invite deadline in her local time."
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "JPMorganChase 2027 MLDP Summer Analyst posting (Built In NYC, reposted 2026)",
+            "IGotAnOffer, \"JP Morgan HireVue Interview 2026,\" updated Sept 18, 2026 (Glassdoor analysis)",
+            "Glassdoor, J.P. Morgan Chase Leadership Development Program Summer Analyst interview reports; JPMorganChase MLDP interview reports",
+            "The Interview Guys, \"Top 10 JPMorgan Chase HireVue Interview Questions,\" 2026",
+            "JPMorganChase press release, \"JPMorganChase Celebrates 45 Years of Serving Tennis Fans at the US Open,\" Aug 24, 2026"
+          ],
+          "title": "Sources"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "title": "Sasha, here's your HireVue plan.",
+    "eyebrow": "READ THIS 1 HOUR BEFORE",
+    "blocks": [
+      {
+        "type": "interview_details"
+      },
+      {
+        "type": "hook",
+        "field": "hook.final",
+        "prefix": "The one who"
+      },
+      {
+        "type": "quick_answers",
+        "items": [
+          {
+            "label": "TELL ME ABOUT YOURSELF",
+            "field": "tmay.mine"
+          },
+          {
+            "label": "MY JPMC SPECIFIC",
+            "field": "why_jpmc.found"
+          },
+          {
+            "label": "WHY JPMORGANCHASE",
+            "field": "why_jpmc.mine"
+          },
+          {
+            "label": "WHY MLDP",
+            "field": "why_mldp.mine"
+          },
+          {
+            "label": "MY REAL AI EXAMPLE",
+            "field": "ai.example"
+          },
+          {
+            "label": "COMMUNICATION: THE PSYCHOLOGY PROJECT",
+            "field": "comm.mine"
+          },
+          {
+            "label": "CHALLENGE: THE CAR WASH",
+            "field": "challenge.mine"
+          }
+        ]
+      },
+      {
+        "type": "checklist",
+        "items": [
+          "Heart & Science",
+          "30 seconds to think: pick your story",
+          "Say your headline first",
+          "Stop when you're done"
+        ]
+      },
+      {
+        "type": "signoff",
+        "text": "Start with your headline. Stop when you're done.",
+        "from": "Peri"
+      }
+    ]
+  }
+}
