@@ -13,6 +13,8 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import { getSupabaseAdmin } from "@/app/api/_lib/coachAuth"
 import { ForbiddenError, resolveActor, resolveScope } from "@/lib/collab/scope"
 import type { PracticeQuestion, PracticeRound, PracticeTake } from "./model"
+import { createTask, setTaskStatus } from "@/lib/tasks/service"
+import { practiceRoundLink } from "@/lib/tasks/links"
 
 export class NotFoundError extends Error {
   readonly status = 404
@@ -149,6 +151,11 @@ export async function signTakes(
  * action_item notes on 2026-09-26 when those rows were migrated into
  * coach_tasks, so a note written today would never surface. See the header of
  * app/api/coach/clients/[clientId]/needs-attention/route.ts.
+ *
+ * THROUGH createTask, NOT A RAW INSERT. The insert this replaced skipped the
+ * audit event, the History line, the assignment email and the is-a-coach
+ * check, because those live in lib/tasks/service.ts and nowhere else. The
+ * actor is null: SIGNAL raised this, not the coach it is for.
  */
 export async function raiseCoachTask(
   db: SupabaseClient,
@@ -162,25 +169,57 @@ export async function raiseCoachTask(
     link: string
   },
 ): Promise<string | null> {
-  const { data, error } = await db
-    .from("coach_tasks")
-    .insert({
-      coach_client_id: args.coachClientId,
-      client_profile_id: args.clientProfileId,
-      assignee_profile_id: args.assigneeProfileId,
-      title: args.title,
-      description: args.description ?? null,
-      status: "open",
-      source: "auto",
-      link: args.link,
-    })
-    .select("id")
-    .maybeSingle()
-  if (error) {
+  const r = await createTask(db, {
+    coach_client_id: args.coachClientId,
+    client_profile_id: args.clientProfileId,
+    assignee_profile_id: args.assigneeProfileId,
+    title: args.title,
+    description: args.description ?? null,
+    source: "auto",
+    link: args.link,
+  }, null)
+  if (!r.ok) {
     // The work that triggered this still happened. A missing task is a missing
     // reminder, not a reason to fail the request.
-    console.error("[practice] raising coach task failed:", error.message)
+    console.error("[practice] raising coach task failed:", r.error)
     return null
   }
-  return data?.id ?? null
+  return r.data.id
+}
+
+/**
+ * Close the "Watch <name>'s practice round" task once feedback is released.
+ *
+ * FOUND BY ITS LINK, which is built by the same practiceRoundLink the submit
+ * route used to create it. The first cut matched the round id inside the
+ * description; the id moved out of the description into `link` on 2026-09-29
+ * and the match silently found nothing, so no feedback ever closed its task.
+ *
+ * Closed through setTaskStatus, so it gets the audit event, the History line
+ * and the task.completed automation event every other completion gets.
+ * Returns how many tasks were closed. Never throws.
+ */
+export async function closePracticeRoundTask(
+  db: SupabaseClient,
+  round: { id: string; coach_client_id: string },
+  actorId: string,
+): Promise<number> {
+  const { data, error } = await db
+    .from("coach_tasks")
+    .select("id")
+    .eq("coach_client_id", round.coach_client_id)
+    .eq("link", practiceRoundLink(round.id))
+    .eq("status", "open")
+    .is("deleted_at", null)
+  if (error) {
+    console.error("[practice] finding the round's task failed:", error.message)
+    return 0
+  }
+  let closed = 0
+  for (const t of data ?? []) {
+    const r = await setTaskStatus(db, t.id, "done", actorId)
+    if (r.ok) closed++
+    else console.error("[practice] closing the round's task failed:", r.error)
+  }
+  return closed
 }

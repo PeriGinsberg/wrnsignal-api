@@ -26,7 +26,15 @@ import { resolveDelegation } from "@/lib/collab/delegation"
 // Reuse the generic coach-route auth/scoping helpers (the recent worked example).
 export { getSupabaseAdmin, resolveCoach, errStatus, UUID_RE } from "./coachAuth"
 
-// ── Ownership guard: does this coach_clients row belong to the coach? ──
+// ── Ownership guard: does this coach_clients row belong to the coach, and is
+//    it still live? ──
+//
+// ACTIVE ONLY. This checked ownership alone, so a coach whose relationship was
+// revoked (removed from the practice, a deleted prospect) or paused kept
+// reading and writing engagements and History through the coach-clients/[id]
+// routes. Every other coach surface keys on status='active'. Prospects are
+// created active and stay active through won and lost (those live on
+// prospect_status), so they are unaffected.
 export async function isCoachClientOwnedByCoach(
   supabase: SupabaseClient,
   coachProfileId: string,
@@ -37,6 +45,7 @@ export async function isCoachClientOwnedByCoach(
     .select("id")
     .eq("id", coachClientId)
     .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
+    .eq("status", "active")
     .maybeSingle()
   if (error) throw new Error(`Ownership check failed: ${error.message}`)
   return !!data

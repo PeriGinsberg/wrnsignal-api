@@ -32,6 +32,7 @@ import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { PATCH as convertProspectLifecycle } from "../route"
 import { logCoachClientEvent } from "../../../../_lib/coachClientEvents"
 import { clientLink } from "@/lib/tasks/links"
+import { createTask } from "@/lib/tasks/service"
 import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
@@ -258,20 +259,29 @@ export async function PATCH(
           .maybeSingle()
         if (!existingInvite) {
           const inviteName = (prospect.name as string | null)?.trim() || "this client"
-          await supabase.from("coach_tasks").insert({
+          // Through createTask, so the audit event and History line are
+          // written like any other task's. The actor is the converting coach,
+          // which is also the assignee, so no email tells them what they just
+          // did; createTask still leaves created_by null because source is auto.
+          const made = await createTask(supabase, {
             coach_client_id: id,
             client_profile_id: prospect.client_profile_id,
             assignee_profile_id: coachProfileId,
-            created_by_profile_id: null,
             title: `${INVITE_ACTION_PREFIX}${inviteName}`,
             source: "auto",
             // The client record. Re-send invite is a button on its header, so
-            // this is the exact screen even though it is not a tab.
-            link: clientLink(prospect.client_profile_id),
+            // this is the exact screen even though it is not a tab. A prospect
+            // converted before it has a SIGNAL account has no client record
+            // yet: its invite lives on the post-conversion page, which is where
+            // this route redirects the coach. That used to be /clients/null.
+            link: prospect.client_profile_id
+              ? clientLink(prospect.client_profile_id)
+              : `${CONVERT_REDIRECT_PREFIX}${id}`,
             // Tomorrow, matching the default offset a task template carries.
             due_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
             due_has_time: false,
-          })
+          }, coachProfileId)
+          if (!made.ok) console.error("[prospects/stage] invite task not created:", made.error)
         }
       } catch {
         // Swallow: the invite reminder is a nicety, not part of the convert.

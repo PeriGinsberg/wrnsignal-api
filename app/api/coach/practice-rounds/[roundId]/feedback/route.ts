@@ -11,7 +11,7 @@ import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { getSupabaseAdmin } from "../../../../_lib/coachAuth"
 import { logCoachClientEvent } from "../../../../_lib/coachClientEvents"
 import { resolveActor, ForbiddenError } from "@/lib/collab/scope"
-import { coachPracticeScope, loadRound, NotFoundError } from "@/lib/practice/server"
+import { closePracticeRoundTask, coachPracticeScope, loadRound, NotFoundError } from "@/lib/practice/server"
 import { cleanFeedback, hasFeedback } from "@/lib/practice/model"
 import { sendPracticeFeedbackEmail } from "@/lib/email/sendPracticeRound"
 
@@ -115,13 +115,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ rou
     // CLOSE THE TASK THAT ASKED FOR THIS. The Required Action said "watch
     // their practice round"; sending feedback is what finishing it looks like,
     // and leaving it open would have the coach chase work they have done.
-    const { error: taskErr } = await db
-      .from("coach_tasks")
-      .update({ status: "done", completed_at: now, updated_at: now })
-      .eq("coach_client_id", round.coach_client_id)
-      .eq("status", "open")
-      .ilike("description", `%${roundId}%`)
-    if (taskErr) console.error("[practice-feedback] closing the task failed:", taskErr.message)
+    await closePracticeRoundTask(db, { id: roundId, coach_client_id: round.coach_client_id }, actorId)
 
     await logCoachClientEvent({
       coachClientId: round.coach_client_id,
