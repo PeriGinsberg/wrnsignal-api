@@ -10,6 +10,11 @@
 //       Convert stage (§4). Reject 'won' with 400.
 //     - Updates ONLY coach_clients.prospect_status. lifecycle_status is NEVER
 //       touched here — the two columns are independent (§5.3).
+//     - LOST needs a reason (Phase 1, 2026-10-02): body also carries
+//       lost_reason, lost_reason_detail (for Other) and lost_notes. See
+//       markProspectLost in lib/prospects/workflow.ts.
+//     - LEAVING LOST is a reopen: the reason is cleared on the record and kept
+//       in History, then the new status is set.
 //
 // Auth: standard coach Bearer pattern (matches the sibling routes).
 
@@ -17,6 +22,7 @@ import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { resolveDelegation } from "@/lib/collab/delegation"
+import { markProspectLost, parseLostInput, reopenProspect } from "@/lib/prospects/workflow"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -135,6 +141,25 @@ export async function PATCH(
     const prospect = await verifyProspectOwnership(id, coachProfileId, supabase)
     if (!prospect) {
       return withCorsJson(req, { ok: false, error: "Forbidden: no active coach relationship" }, 403)
+    }
+
+    const { data: currentRow, error: curErr } = await supabase
+      .from("coach_clients").select("prospect_status").eq("id", id).maybeSingle()
+    if (curErr) return withCorsJson(req, { ok: false, error: curErr.message }, 500)
+    const current = (currentRow as { prospect_status: string | null } | null)?.prospect_status ?? null
+
+    if (status === "lost") {
+      const lost = parseLostInput(body as Record<string, unknown>)
+      if (!lost.ok) return withCorsJson(req, { ok: false, error: lost.error }, 400)
+      const r = await markProspectLost(supabase, { coachClientId: id, ...lost.value, actor: coachProfileId })
+      if (!r.ok) return withCorsJson(req, { ok: false, error: r.error }, r.status)
+      return withCorsJson(req, { ok: true, prospect_status: "lost" })
+    }
+
+    if (current === "lost") {
+      const r = await reopenProspect(supabase, { coachClientId: id, actor: coachProfileId })
+      if (!r.ok) return withCorsJson(req, { ok: false, error: r.error }, r.status)
+      if (status === "active") return withCorsJson(req, { ok: true, prospect_status: "active" })
     }
 
     // Allow-listed single-column update. lifecycle_status is NOT in this

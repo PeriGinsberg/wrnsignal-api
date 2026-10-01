@@ -18,14 +18,15 @@ import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { logCoachClientEvent } from "../../_lib/coachClientEvents"
 import { owningCoachId as owningCoachIdFor, resolveDelegation } from "@/lib/collab/delegation"
+import { parseLeadSource, parseParent, type StoredLeadSource } from "@/lib/prospects/model"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
 // ── Constants + types (inlined per coach-route duplication pattern) ──
 
-const SOURCE_CATEGORIES = ["referral", "social_media", "website", "personal_contact", "other"] as const
-type SourceCategory = (typeof SOURCE_CATEGORIES)[number]
+// Lead sources live in lib/prospects/model.ts (shared with every screen).
+type SourceCategory = StoredLeadSource
 
 const LIFECYCLE_STATUSES = ["Prospect", "Active", "Inactive", "Archived"] as const
 type LifecycleStatus = (typeof LIFECYCLE_STATUSES)[number]
@@ -392,14 +393,13 @@ export async function POST(req: NextRequest) {
     if (!name) return withCorsJson(req, { ok: false, error: "name is required" }, 400)
     if (name.length > 200) return withCorsJson(req, { ok: false, error: "name too long (max 200 chars)" }, 400)
 
-    const sourceCategoryRaw = typeof body.source_category === "string" ? body.source_category.trim() : ""
-    if (!(SOURCE_CATEGORIES as readonly string[]).includes(sourceCategoryRaw)) {
-      return withCorsJson(req, {
-        ok: false,
-        error: `source_category must be one of: ${SOURCE_CATEGORIES.join(", ")}`,
-      }, 400)
-    }
-    const sourceCategory = sourceCategoryRaw as SourceCategory
+    // Lead source, its Other text and, for a referral, who referred them.
+    const lead = parseLeadSource(body, null, { required: true })
+    if (!lead.ok) return withCorsJson(req, { ok: false, error: lead.error }, 400)
+    const sourceCategory = lead.value.source_category as SourceCategory
+    // Parent or guardian contact, all optional.
+    const parent = parseParent(body)
+    if (!parent.ok) return withCorsJson(req, { ok: false, error: parent.error }, 400)
 
     // invited_email: empty-after-trim → null (not empty string). Avoids
     // mixing '' and NULL in the column for the no-email case.
@@ -421,14 +421,7 @@ export async function POST(req: NextRequest) {
       return withCorsJson(req, { ok: false, error: "phone too long (max 50 chars)" }, 400)
     }
 
-    // source_detail: same empty-after-trim → null pattern.
-    const sourceDetailRaw = typeof body.source_detail === "string"
-      ? body.source_detail.trim()
-      : null
-    const sourceDetail = sourceDetailRaw && sourceDetailRaw.length > 0 ? sourceDetailRaw : null
-    if (sourceDetail && sourceDetail.length > 500) {
-      return withCorsJson(req, { ok: false, error: "source_detail too long (max 500 chars)" }, 400)
-    }
+    const sourceDetail = lead.value.source_detail ?? null
 
     const initialNoteRaw = typeof body.initial_note === "string"
       ? body.initial_note.trim()
@@ -475,6 +468,11 @@ export async function POST(req: NextRequest) {
         phone,
         source_category: sourceCategory,
         source_detail: sourceDetail,
+        referred_by_name: lead.value.referred_by_name ?? null,
+        referred_by_email: lead.value.referred_by_email ?? null,
+        parent_name: parent.value.parent_name ?? null,
+        parent_email: parent.value.parent_email ?? null,
+        parent_phone: parent.value.parent_phone ?? null,
         // v0.2 modal-captured optionals (null when not provided).
         linkedin_url: linkedin.value,
         target_roles: targetRoles.value,

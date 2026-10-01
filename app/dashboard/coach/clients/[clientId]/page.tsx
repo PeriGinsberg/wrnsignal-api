@@ -16,6 +16,8 @@ import {
   selectDarkInk,
   selectDarkOption,
 } from "../../../../../lib/dashboard-theme"
+import { leadSourceStyle } from "../../_prospects/leadSourceUi"
+import { leadSourceLabel } from "../../../../../lib/prospects/model"
 import ProfilePersonasTab, { type ClientProfileFull, type ClientPersonaFull } from "./ProfilePersonasTab"
 import { NotesTab } from "./NotesTab"
 import { AddNotePanel, type NoteSubmitInput } from "./AddNotePanel"
@@ -168,17 +170,6 @@ type Capture = {
   last_activity_at: string | null
 }
 
-const SOURCE_LABEL: Record<string, string> = {
-  referral: "Referral", social_media: "Social Media", website: "Website",
-  personal_contact: "Personal Contact", other: "Other",
-}
-const SOURCE_STYLE: Record<string, { bg: string; color: string }> = {
-  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK },
-  social_media:     { bg: "rgba(167,139,250,0.18)", color: "var(--sig-avatar-2-ink, #C8B6F8)" },
-  website:          { bg: "rgba(45,165,141,0.15)",  color: T.INK_EMPHASIS },
-  personal_contact: { bg: "rgba(0,179,179,0.15)",  color: T.SUCCESS },
-  other:            { bg: T.BORDER_SOFT, color: T.MUTED },
-}
 const EDUCATION_LABEL: Record<string, string> = {
   in_school: "In school", graduated: "Graduated", na: "Not applicable",
 }
@@ -219,10 +210,10 @@ function buildClientInfoGroups(cap: Capture | null, profile: ClientProfile): Inf
   const university = c.university ?? (profile as any).university ?? null
   const gradDate = c.grad_date ?? (profile as any).grad_date ?? null
 
-  const sourceStyle = c.source_category ? (SOURCE_STYLE[c.source_category] ?? SOURCE_STYLE.other) : SOURCE_STYLE.other
+  const sourceStyle = leadSourceStyle(c.source_category)
   const sourceBadge = c.source_category ? (
     <span style={{ display: "inline-block", background: sourceStyle.bg, color: sourceStyle.color, fontSize: TYPE.micro, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase", padding: "3px 10px", borderRadius: 999 }}>
-      {SOURCE_LABEL[c.source_category] ?? c.source_category}
+      {leadSourceLabel(c.source_category)}
     </span>
   ) : null
   const phoneVal = phone ? (

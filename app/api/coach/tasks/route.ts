@@ -29,6 +29,7 @@ import {
   type TaskView,
 } from "@/lib/tasks/model"
 import { createTask, TASK_COLUMNS } from "@/lib/tasks/service"
+import { withRecordNames } from "@/lib/tasks/records"
 import { clientTaskFilter, resolveTaskReach, taskReachFilter } from "@/lib/tasks/scope"
 
 export const runtime = "nodejs"
@@ -149,14 +150,15 @@ export async function GET(req: NextRequest) {
       const { shown, total } = cardTasks(all, now)
       return withCorsJson(req, {
         ok: true,
-        tasks: shown,
+        tasks: await withRecordNames(db, shown),
         total,
         has_more: total > CARD_LIMIT,
         templates,
       }, 200)
     }
 
-    const tasks = view === "all" ? all : all.filter((t) => matchesView(t, view, now))
+    // A prospect task names its prospect (lib/tasks/records.ts), not "No client".
+    const tasks = await withRecordNames(db, view === "all" ? all : all.filter((t) => matchesView(t, view, now)))
     return withCorsJson(req, { ok: true, tasks, total: tasks.length, templates }, 200)
   } catch (err: any) {
     const msg = err?.message || String(err)

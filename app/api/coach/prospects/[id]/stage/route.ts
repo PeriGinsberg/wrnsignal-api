@@ -5,6 +5,9 @@
 //
 // Route:
 //   PATCH — advance a prospect to a stage. Body: { stage_key }.
+//     With { stage_key, direction: "back" } it MOVES BACK to an earlier stage
+//     the prospect has reached instead: every later stage is un-reached and
+//     History records the move (moveProspectBack, lib/prospects/stages.ts).
 //     - Validates stage_key belongs to this coach's ACTIVE pipeline.
 //     - Writes/updates a prospect_stage_progress row (reached_at = now() if
 //       newly reached; existing reached_at is preserved).
@@ -34,6 +37,7 @@ import { logCoachClientEvent } from "../../../../_lib/coachClientEvents"
 import { clientLink } from "@/lib/tasks/links"
 import { createTask } from "@/lib/tasks/service"
 import { resolveDelegation } from "@/lib/collab/delegation"
+import { moveProspectBack } from "@/lib/prospects/stages"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -156,6 +160,18 @@ export async function PATCH(
     const prospect = await verifyProspectOwnership(id, coachProfileId, supabase)
     if (!prospect) {
       return withCorsJson(req, { ok: false, error: "Forbidden: no active coach relationship" }, 403)
+    }
+
+    // ── Moving back (Phase 1) ──
+    if ((body as any)?.direction === "back") {
+      const r = await moveProspectBack(supabase, {
+        coachClientId: id,
+        actingIds: (await resolveDelegation(supabase, coachProfileId)).actingIds,
+        stageKey,
+        actor: coachProfileId,
+      })
+      if (!r.ok) return withCorsJson(req, { ok: false, error: r.error }, r.status)
+      return withCorsJson(req, { ok: true, moved_back: true, ...r.data })
     }
 
     // Load the coach's pipeline (the source of truth for which stages exist,

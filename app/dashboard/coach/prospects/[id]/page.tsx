@@ -48,6 +48,16 @@ import { HistoryTab } from "../../clients/[clientId]/HistoryTab"
 import { TaskList } from "../../_tasks/TaskList"
 import { useRecordNoteTaskActions } from "../../_notes/RecordNoteTaskActions"
 import {
+  LeadSourceBadge,
+  LeadSourceFields,
+  ParentFields,
+  leadSourcePayload,
+  type LeadSourceValue,
+  type ParentValue,
+} from "../../_prospects/leadSourceUi"
+import { ChainConfirmDialog, LostReasonFields, lostInputValid, todayInput, type LostInput } from "../../_prospects/dialogs"
+import { LOST_REASON_LABEL, isLostReason, takesReferredBy } from "../../../../../lib/prospects/model"
+import {
   LegacyTaskLine,
   NOTE_TYPE_BADGE,
   NOTE_TYPE_LABEL,
@@ -83,36 +93,6 @@ const PHASE_LABEL: Record<PhaseKey, string> = {
   invoice_sent: "Invoice sent",
   invoice_paid: "Invoice paid",
 }
-
-const SOURCE_CATEGORIES = [
-  "referral",
-  "social_media",
-  "website",
-  "personal_contact",
-  "other",
-] as const
-type SourceCategory = (typeof SOURCE_CATEGORIES)[number]
-
-const SOURCE_LABEL: Record<SourceCategory, string> = {
-  referral: "Referral",
-  social_media: "Social Media",
-  website: "Website",
-  personal_contact: "Personal Contact",
-  other: "Other",
-}
-
-const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string; border: string }> = {
-  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK, border: "rgba(81,173,229,0.40)" },
-  social_media:     { bg: "rgba(167,139,250,0.18)", color: "var(--sig-avatar-2-ink, #C8B6F8)", border: "rgba(167,139,250,0.40)" },
-  website:          { bg: "rgba(45,165,141,0.15)",  color: T.INK_EMPHASIS, border: "rgba(45,165,141,0.40)" },
-  personal_contact: { bg: "rgba(0,179,179,0.15)",  color: T.SUCCESS, border: "rgba(0,179,179,0.40)" },
-  other:            { bg: T.BORDER_SOFT, color: T.MUTED, border: T.BORDER },
-}
-
-// See the note on the same map in coach-clients/[id]: the column is nullable
-// and the Record is exhaustive over the type, not over the data.
-const sourceStyle = (c: SourceCategory | null | undefined) =>
-  (c && SOURCE_STYLE[c]) || SOURCE_STYLE.other
 
 // ── Note constants ── (types, labels and topic pieces are shared with the
 //    client page through app/dashboard/coach/_notes/noteUi.tsx)
@@ -182,8 +162,18 @@ type Prospect = {
   name: string | null
   invited_email: string | null
   phone: string | null
-  source_category: SourceCategory | null
+  source_category: string | null
   source_detail: string | null
+  referred_by_name: string | null
+  referred_by_email: string | null
+  parent_name: string | null
+  parent_email: string | null
+  parent_phone: string | null
+  target_industries: string | null
+  lost_reason: string | null
+  lost_reason_detail: string | null
+  lost_notes: string | null
+  lost_at: string | null
   phases: Record<PhaseKey, PhasePair>
   lifecycle_status: string
   client_profile_id: string | null
@@ -327,6 +317,7 @@ function StageTracker({
   converting,
   onAdvance,
   onConvert,
+  onMoveBack,
 }: {
   stages: PipelineStage[]
   reachedMap: Record<string, string | null>
@@ -335,6 +326,8 @@ function StageTracker({
   converting: boolean
   onAdvance: (stageKey: string) => void
   onConvert: () => void
+  /** Move back to an earlier reached stage. Absent = going back is not offered. */
+  onMoveBack?: (stageKey: string) => void
 }) {
   const working = stages.filter((s) => !s.is_terminal)
   const terminal = stages.find((s) => s.is_terminal)
@@ -348,7 +341,7 @@ function StageTracker({
     <div>
       {hasUnreached && (
         <p style={{ fontSize: 11, color: T.DIM, margin: "0 0 12px" }}>
-          Click a stage to advance — the path fills automatically.
+          Click a stage to advance (the path fills automatically), or an earlier one to move back.
         </p>
       )}
       {/* Horizontal stepper band. APPROACH: overflow-x scroll keeps the
@@ -363,8 +356,11 @@ function StageTracker({
             const isCurrent = currentStageKey === s.stage_key
             const reachedAt = reachedMap[s.stage_key] ?? null
             const busy = busyKey === s.stage_key
-            // Hover only applies to clickable (unreached, not-busy) nodes.
-            const isHover = hoveredKey === s.stage_key && !reached && !busy
+            // An earlier reached stage moves the prospect back (with a confirm).
+            const canGoBack = !!onMoveBack && reached && !isCurrent && !busy
+            const clickable = (!reached && !busy) || canGoBack
+            // Hover only applies to clickable nodes.
+            const isHover = hoveredKey === s.stage_key && clickable
             // Current is always reached (furthest-reached pointer); highlight it
             // in orange, other reached nodes in green, unreached muted — and an
             // unreached node brightens on hover to signal it's clickable.
@@ -389,11 +385,14 @@ function StageTracker({
                   />
                 )}
                 <button
-                  onClick={() => { if (!reached && !busy) onAdvance(s.stage_key) }}
-                  onMouseEnter={() => { if (!reached && !busy) setHoveredKey(s.stage_key) }}
+                  onClick={() => {
+                    if (!reached && !busy) onAdvance(s.stage_key)
+                    else if (canGoBack) onMoveBack!(s.stage_key)
+                  }}
+                  onMouseEnter={() => { if (clickable) setHoveredKey(s.stage_key) }}
                   onMouseLeave={() => setHoveredKey(null)}
-                  disabled={busy || reached}
-                  title={reached ? (reachedAt ? `Reached ${timeAgo(reachedAt)}` : "Reached") : `Advance to ${s.label}`}
+                  disabled={!clickable}
+                  title={canGoBack ? `Move back to ${s.label}` : reached ? (reachedAt ? `Reached ${timeAgo(reachedAt)}` : "Reached") : `Advance to ${s.label}`}
                   style={{
                     flex: "0 0 auto",
                     width: 92,
@@ -405,7 +404,7 @@ function StageTracker({
                     border: "none",
                     padding: "0 4px",
                     fontFamily: "inherit",
-                    cursor: reached || busy ? "default" : "pointer",
+                    cursor: clickable ? "pointer" : "default",
                   }}
                 >
                   <span
@@ -472,7 +471,7 @@ function StageTracker({
             disabled={converting}
             style={{
               background: T.GRAD_PRIMARY,
-              color: "var(--sig-ink-on-bright, #04060F)",
+              color: "var(--sig-ink-on-primary-accent, #04060F)",
               borderRadius: 10,
               padding: "9px 16px",
               fontSize: 13,
@@ -505,8 +504,14 @@ function StageTracker({
 type ProspectUpdate = Record<string, string | null | boolean>
 
 type Draft = {
-  source_category: SourceCategory | ""
+  source_category: string
   source_detail: string
+  referred_by_name: string
+  referred_by_email: string
+  parent_name: string
+  parent_email: string
+  parent_phone: string
+  target_industries: string
   invited_email: string
   phone: string
   linkedin_url: string
@@ -532,8 +537,14 @@ type DraftStringKey = Exclude<keyof Draft, "is_returning">
 
 function draftFromProspect(p: Prospect): Draft {
   return {
-    source_category: (p.source_category ?? "") as SourceCategory | "",
+    source_category: p.source_category ?? "",
     source_detail: p.source_detail ?? "",
+    referred_by_name: p.referred_by_name ?? "",
+    referred_by_email: p.referred_by_email ?? "",
+    parent_name: p.parent_name ?? "",
+    parent_email: p.parent_email ?? "",
+    parent_phone: p.parent_phone ?? "",
+    target_industries: p.target_industries ?? "",
     invited_email: p.invited_email ?? "",
     phone: p.phone ?? "",
     linkedin_url: p.linkedin_url ?? "",
@@ -591,16 +602,22 @@ function ProspectInfoBlock({
   }
 
   async function handleSave() {
-    if (!draft.source_category) { setError("Source category is required"); return }
+    if (!draft.source_category) { setError("Choose how they heard about us"); return }
+    if (draft.source_category === "other" && !draft.source_detail.trim()) { setError("Say what the other source was"); return }
     setSaving(true)
     setError(null)
     const base = draftFromProspect(prospect)
     const updates: ProspectUpdate = {}
-    // source_category is a chip (always valid here); send the value on change.
-    if (draft.source_category !== base.source_category) updates.source_category = draft.source_category
+    // Lead source, its Other text and referred-by travel together: the server
+    // decides referred-by from the source (lib/prospects/model.ts).
+    const leadKeys = ["source_category", "source_detail", "referred_by_name", "referred_by_email"] as const
+    if (leadKeys.some((k) => draft[k].trim() !== (base[k] as string))) {
+      Object.assign(updates, leadSourcePayload(draft))
+    }
     // All other fields: send trimmed value on change ("" clears server-side).
     const keys: DraftStringKey[] = [
-      "source_detail", "invited_email", "phone", "linkedin_url",
+      "invited_email", "phone", "linkedin_url",
+      "parent_name", "parent_email", "parent_phone", "target_industries",
       "current_title", "current_company", "location", "education_status",
       "university", "field_of_study", "grad_date", "years_experience_approx",
       "job_type", "target_roles", "target_locations",
@@ -621,19 +638,9 @@ function ProspectInfoBlock({
   // ── View mode ──
   if (!editing) {
     const dash = <span style={{ color: T.DIM }}>—</span>
-    const sourceBadge = prospect.source_category ? (
-      <span
-        style={{
-          display: "inline-block",
-          background: sourceStyle(prospect.source_category).bg,
-          color: sourceStyle(prospect.source_category).color,
-          fontSize: 11, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase",
-          padding: "3px 10px", borderRadius: 999,
-        }}
-      >
-        {SOURCE_LABEL[prospect.source_category]}
-      </span>
-    ) : dash
+    const sourceBadge = <LeadSourceBadge source={prospect.source_category} detail={prospect.source_detail} />
+    const referredBy = [prospect.referred_by_name, prospect.referred_by_email].filter(Boolean).join(" · ")
+    const parentContact = [prospect.parent_name, prospect.parent_email, prospect.parent_phone].filter(Boolean).join(" · ")
     const phoneVal = prospect.phone ? (
       <a
         href={`tel:${prospect.phone}`}
@@ -655,7 +662,10 @@ function ProspectInfoBlock({
     const groups: InfoGroup[] = [
       { title: "CONTACT", rows: [
         { label: "SOURCE", value: sourceBadge, show: true },
-        { label: "DETAIL", value: prospect.source_detail || dash, show: !!prospect.source_detail },
+        // Other's text shows inside the badge; older sources kept a free note here.
+        { label: "DETAIL", value: prospect.source_detail || dash, show: !!prospect.source_detail && prospect.source_category !== "other" },
+        { label: "REFERRED BY", value: referredBy || dash, show: !!referredBy && takesReferredBy(prospect.source_category) },
+        { label: "PARENT / GUARDIAN", value: parentContact || dash, show: !!parentContact },
         { label: "EMAIL", value: prospect.invited_email || dash, show: true },
         { label: "PHONE", value: phoneVal, show: true },
         { label: "LINKEDIN", value: linkedinVal, show: !!prospect.linkedin_url },
@@ -674,6 +684,7 @@ function ProspectInfoBlock({
       ] },
       { title: "TARGETING", rows: [
         { label: "ROLES", value: prospect.target_roles, show: !!prospect.target_roles },
+        { label: "INDUSTRIES", value: prospect.target_industries, show: !!prospect.target_industries },
         { label: "LOCATIONS", value: prospect.target_locations, show: !!prospect.target_locations },
         { label: "PREFERRED", value: prospect.preferred_locations, show: !!prospect.preferred_locations },
         { label: "TIMELINE", value: prospect.timeline, show: !!prospect.timeline },
@@ -722,36 +733,12 @@ function ProspectInfoBlock({
   return (
     <Section title="Prospect Information">
     <div style={{ display: "flex", flexDirection: "column", gap: 14, opacity: saving ? 0.5 : 1, pointerEvents: saving ? "none" : "auto", transition: "opacity 120ms ease" }}>
-      {/* Source */}
-      <div>
-        <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 8 }}>SOURCE</span>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          {SOURCE_CATEGORIES.map((cat) => {
-            const active = draft.source_category === cat
-            const s = SOURCE_STYLE[cat]
-            return (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => set("source_category", cat)}
-                style={{
-                  fontSize: 11, fontWeight: 900, padding: "6px 12px", borderRadius: 8,
-                  cursor: "pointer", textTransform: "uppercase", letterSpacing: 0.6,
-                  border: active ? `1px solid ${s.border}` : `1px solid ${T.BORDER_SOFT}`,
-                  background: active ? s.bg : T.GLASS,
-                  color: active ? s.color : T.DIM, fontFamily: "inherit",
-                }}
-              >
-                {SOURCE_LABEL[cat]}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-      <div>
-        <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>SOURCE DETAIL</span>
-        <textarea style={{ ...textarea, minHeight: 60 }} value={draft.source_detail} onChange={(e) => set("source_detail", e.target.value)} placeholder="e.g. Met at conference, intro from Sarah" maxLength={500} />
-      </div>
+      {/* Lead source, Other: specify, Referred by */}
+      <LeadSourceFields
+        idPrefix="prospect-edit"
+        value={{ source_category: draft.source_category, source_detail: draft.source_detail, referred_by_name: draft.referred_by_name, referred_by_email: draft.referred_by_email }}
+        onChange={(v: LeadSourceValue) => setDraft((d) => ({ ...d, ...v }))}
+      />
 
       {/* Contact */}
       <div style={editGroupStyle}>
@@ -759,6 +746,14 @@ function ProspectInfoBlock({
         {field("phone", "PHONE", { type: "tel", placeholder: "(555) 555-5555" })}
         {field("linkedin_url", "LINKEDIN", { type: "url", placeholder: "https://linkedin.com/in/..." })}
       </div>
+
+      {/* Parent or guardian */}
+      <div style={groupHdr}>PARENT / GUARDIAN</div>
+      <ParentFields
+        idPrefix="prospect-edit"
+        value={{ parent_name: draft.parent_name, parent_email: draft.parent_email, parent_phone: draft.parent_phone }}
+        onChange={(v: ParentValue) => setDraft((d) => ({ ...d, ...v }))}
+      />
 
       {/* Current role */}
       <div style={groupHdr}>CURRENT ROLE</div>
@@ -790,6 +785,7 @@ function ProspectInfoBlock({
       <div style={groupHdr}>TARGETING</div>
       <div style={editGroupStyle}>
         {field("target_roles", "TARGET ROLES", { placeholder: "e.g. Product Manager" })}
+        {field("target_industries", "TARGET INDUSTRIES")}
         {field("target_locations", "TARGET LOCATIONS")}
         {field("timeline", "TIMELINE", { placeholder: "e.g. 3-6 months" })}
         <div>
@@ -1180,6 +1176,17 @@ export default function ProspectDetailPage() {
   const [stageError, setStageError] = useState<string | null>(null)
   const [stageBusyKey, setStageBusyKey] = useState<string | null>(null)
   const [statusBusy, setStatusBusy] = useState(false)
+  // Which confirm dialog is open (prospect workflow, Phase 1). Each lists what
+  // it will do and runs only on Confirm.
+  const [dialog, setDialog] = useState<
+    | null
+    | { kind: "lost" }
+    | { kind: "reopen"; next: ProspectStatus }
+    | { kind: "back"; stageKey: string; label: string }
+    | { kind: "booked" }
+  >(null)
+  const [lostInput, setLostInput] = useState<LostInput>({ lost_reason: "", lost_reason_detail: "", lost_notes: "" })
+  const [bookDay, setBookDay] = useState("")
   const [archiving, setArchiving] = useState(false)
   const [converting, setConverting] = useState(false)
   const [archiveHover, setArchiveHover] = useState(false)
@@ -1328,6 +1335,42 @@ export default function ProspectDetailPage() {
   }
 
   // ── Prospect status (Active / Inactive / Lost) ──
+  function requestStatus(next: ProspectStatus) {
+    if (!prospect) return
+    if (next === "lost") {
+      setLostInput({ lost_reason: "", lost_reason_detail: "", lost_notes: "" })
+      setDialog({ kind: "lost" })
+      return
+    }
+    if (prospect.prospect_status === "lost") { setDialog({ kind: "reopen", next }); return }
+    void setProspectStatus(next)
+  }
+
+  /** PATCH the status, with any lost fields. Returns the server's sentence on failure. */
+  async function patchStatus(body: Record<string, unknown>): Promise<{ ok: true } | { ok: false; error: string }> {
+    if (!prospect) return { ok: false, error: "No prospect loaded" }
+    try {
+      const res = await authFetch(`/api/coach/prospects/${prospect.id}/status`, { method: "PATCH", body: JSON.stringify(body) })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) return { ok: false, error: j?.error || "Couldn't update status, try again" }
+      await load({ silent: true })
+      return { ok: true }
+    } catch {
+      return { ok: false, error: "Network error, try again" }
+    }
+  }
+
+  async function postJson(url: string, body: unknown): Promise<{ ok: true } | { ok: false; error: string }> {
+    try {
+      const res = await authFetch(url, { method: url.endsWith("/stage") ? "PATCH" : "POST", body: JSON.stringify(body) })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) return { ok: false, error: j?.error || "That didn't save, try again" }
+      return { ok: true }
+    } catch {
+      return { ok: false, error: "Network error, try again" }
+    }
+  }
+
   async function setProspectStatus(next: ProspectStatus) {
     if (!prospect) return
     setStatusBusy(true)
@@ -1573,7 +1616,25 @@ export default function ProspectDetailPage() {
             }}
           >
             <span style={{ ...eyebrow, fontSize: 9, color: T.DIM }}>STATUS</span>
-            <ProspectStatusControl status={prospect.prospect_status} busy={statusBusy} onSet={setProspectStatus} />
+            <ProspectStatusControl status={prospect.prospect_status} busy={statusBusy} onSet={requestStatus} />
+            {prospect.prospect_status === "lost" && (
+              <>
+                <span style={{ fontSize: 12, color: T.MUTED }}>
+                  {prospect.lost_reason && isLostReason(prospect.lost_reason)
+                    ? prospect.lost_reason === "other" && prospect.lost_reason_detail
+                      ? `Other: ${prospect.lost_reason_detail}`
+                      : LOST_REASON_LABEL[prospect.lost_reason]
+                    : "Lost"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setDialog({ kind: "reopen", next: "active" })}
+                  style={{ ...btnSecondary, fontSize: 11, padding: "5px 12px" }}
+                >
+                  Reopen
+                </button>
+              </>
+            )}
           </div>
           <div style={{ marginLeft: "auto", display: "flex", gap: 8, flexWrap: "wrap" }}>
             {actions.element}
@@ -1649,8 +1710,29 @@ export default function ProspectDetailPage() {
             converting={converting}
             onAdvance={advanceTo}
             onConvert={convertViaStage}
+            onMoveBack={(stageKey) => setDialog({
+              kind: "back",
+              stageKey,
+              label: activeStages.find((st) => st.stage_key === stageKey)?.label ?? stageKey,
+            })}
           />
         )}
+        {/* The consult: book it (creates the prep task) or open its screen. */}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
+          <button
+            type="button"
+            onClick={() => { setBookDay(todayInput()); setDialog({ kind: "booked" }) }}
+            style={{ ...btnSecondary, fontSize: 12, padding: "7px 14px" }}
+          >
+            Consult booked
+          </button>
+          <a
+            href={`/dashboard/coach/prospects/${prospect.id}/consult`}
+            style={{ ...btnSecondary, fontSize: 12, padding: "7px 14px", textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+          >
+            Open consult
+          </a>
+        </div>
         {/* Notes filed under Phase, Deliverable or Milestone, on the tracker.
             Each jumps to the note in the Notes section below. */}
         <div style={{ marginTop: 16 }}>
@@ -1697,6 +1779,76 @@ export default function ProspectDetailPage() {
         onChanged={() => { load({ silent: true }) }}
         onAddNote={actions.openNote}
       />
+
+      {dialog?.kind === "lost" && (
+        <ChainConfirmDialog
+          title="Mark as lost"
+          steps={[
+            "Sets the prospect's status to Lost, with the reason and notes you give.",
+            "Adds it to History. You can reopen the prospect later.",
+          ]}
+          confirmLabel="Mark lost"
+          danger
+          canConfirm={lostInputValid(lostInput)}
+          onClose={() => setDialog(null)}
+          onConfirm={() => patchStatus({ prospect_status: "lost", ...lostInput })}
+        >
+          <LostReasonFields value={lostInput} onChange={setLostInput} />
+        </ChainConfirmDialog>
+      )}
+      {dialog?.kind === "reopen" && (
+        <ChainConfirmDialog
+          title="Reopen prospect"
+          steps={[
+            `Sets the status back to ${PROSPECT_STATUS_LABEL[dialog.next]}.`,
+            "Clears the lost reason on the record. History keeps it.",
+          ]}
+          confirmLabel="Reopen"
+          onClose={() => setDialog(null)}
+          onConfirm={() => patchStatus({ prospect_status: dialog.next })}
+        />
+      )}
+      {dialog?.kind === "back" && (
+        <ChainConfirmDialog
+          title="Move back a stage"
+          steps={[
+            `Moves the prospect back to ${dialog.label}.`,
+            "Un-marks every stage after it.",
+            "Adds the move to History.",
+          ]}
+          confirmLabel="Move back"
+          onClose={() => setDialog(null)}
+          onConfirm={async () => {
+            const r = await postJson(`/api/coach/prospects/${prospect.id}/stage`, { stage_key: dialog.stageKey, direction: "back" })
+            if (r.ok) await load({ silent: true })
+            return r
+          }}
+        />
+      )}
+      {dialog?.kind === "booked" && (
+        <ChainConfirmDialog
+          title="Consult booked"
+          steps={[
+            "Records the date of the consult call.",
+            "Moves the prospect to Consult Scheduled, if that stage is in your pipeline.",
+            `Creates the task "Prep for consult with ${prospect.name || "this prospect"}", due that day. If it already exists, moves it to the new date.`,
+            "Adds the booking to History.",
+          ]}
+          confirmLabel="Confirm booking"
+          canConfirm={!!bookDay}
+          onClose={() => setDialog(null)}
+          onConfirm={async () => {
+            const r = await postJson(`/api/coach/prospects/${prospect.id}/consult/booked`, { date: bookDay })
+            if (r.ok) { await load({ silent: true }); setTasksKey((k) => k + 1) }
+            return r
+          }}
+        >
+          <label htmlFor="consult-day" style={{ display: "block" }}>
+            <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>DATE OF THE CALL</span>
+            <input id="consult-day" type="date" style={{ ...input, colorScheme: "dark" }} value={bookDay} onChange={(e) => setBookDay(e.target.value)} />
+          </label>
+        </ChainConfirmDialog>
+      )}
     </div>
   )
 }

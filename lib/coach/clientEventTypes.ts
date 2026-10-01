@@ -60,6 +60,19 @@ export const COACH_CLIENT_EVENT_TYPES = [
   "practice_round_sent",
   "practice_round_submitted",
   "practice_feedback_sent",
+  // ── The prospect workflow (Phase 1, 2026-10-02) ──
+  // A move back is its own type: "Moved to stage X" would read as progress.
+  "stage_moved_back",
+  // Reason, its detail and the notes ride in context, so reopening (which
+  // clears them on the record) loses nothing.
+  "prospect_lost",
+  "prospect_reopened",
+  "consult_booked",
+  // Context holds the values the save replaced: the record of what the
+  // booking (or an earlier save) said before the consult became official.
+  "consult_saved",
+  "consult_completed",
+  "consult_no_show",
 ] as const
 
 export type CoachClientEventType = (typeof COACH_CLIENT_EVENT_TYPES)[number]

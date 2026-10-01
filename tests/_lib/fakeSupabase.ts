@@ -1,9 +1,10 @@
 // tests/_lib/fakeSupabase.ts
 //
 // An in-memory stand-in for the slice of the Supabase query builder the task,
-// automation and access code uses: select / insert / update, eq, neq, in, is,
-// lt, or (flat expressions only), order, limit, maybeSingle, single, and
-// awaiting the builder itself.
+// automation, access and prospect code uses: select / insert / update /
+// delete, eq, neq, in, is, lt, gt, ilike (% only), or (flat expressions only), order, limit,
+// maybeSingle, single, and awaiting the builder itself. rpc() calls a handler
+// the test registers with onRpc().
 //
 // For logic tests, not for database behaviour. Row locking, constraints and
 // RLS are Postgres's; anything that depends on them is exercised by the
@@ -59,17 +60,20 @@ export type FakeDb = {
   tables: Record<string, Row[]>
   /** Run once, just before the next UPDATE on this table is applied. */
   beforeNextUpdate(table: string, fn: () => void): void
+  /** Answer db.rpc(name, args). Unregistered names return an error. */
+  onRpc(name: string, fn: (args: Record<string, any>) => { data?: any; error?: { message: string } | null }): void
 }
 
 export function makeFakeDb(seed: Record<string, Row[]>): FakeDb {
   const tables: Record<string, Row[]> = {}
   for (const [k, v] of Object.entries(seed)) tables[k] = v.map((r) => ({ ...r }))
   const hooks: Record<string, (() => void) | undefined> = {}
+  const rpcs: Record<string, (args: Record<string, any>) => { data?: any; error?: { message: string } | null }> = {}
 
   function builder(table: string) {
     const rows = () => (tables[table] ??= [])
     const preds: Pred[] = []
-    let op: "select" | "update" | "insert" = "select"
+    let op: "select" | "update" | "insert" | "delete" = "select"
     let patch: Row = {}
     let inserted: Row[] = []
     let returning = false
@@ -87,6 +91,9 @@ export function makeFakeDb(seed: Record<string, Row[]>): FakeDb {
           hit = rows().filter((r) => preds.every((p) => p(r)))
         }
         for (const r of hit) Object.assign(r, patch)
+      }
+      if (op === "delete") {
+        tables[table] = rows().filter((r) => !hit.includes(r))
       }
       if (order) {
         const { col, asc } = order
@@ -114,11 +121,18 @@ export function makeFakeDb(seed: Record<string, Row[]>): FakeDb {
         return api
       },
       update(v: Row) { op = "update"; patch = v; return api },
+      delete() { op = "delete"; return api },
       eq(c: string, v: any) { preds.push((r) => r[c] === v); return api },
       neq(c: string, v: any) { preds.push((r) => r[c] !== v); return api },
       in(c: string, vs: any[]) { preds.push((r) => vs.includes(r[c])); return api },
       is(c: string, v: any) { preds.push((r) => (r[c] ?? null) === v); return api },
       lt(c: string, v: any) { preds.push((r) => r[c] != null && r[c] < v); return api },
+      gt(c: string, v: any) { preds.push((r) => r[c] != null && r[c] > v); return api },
+      ilike(c: string, pattern: string) {
+        const re = new RegExp("^" + pattern.split("%").map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join(".*") + "$", "i")
+        preds.push((r) => typeof r[c] === "string" && re.test(r[c]))
+        return api
+      },
       or(expr: string) {
         const terms = splitTop(expr).map(orTerm)
         preds.push((r) => terms.some((t) => t(r)))
@@ -144,8 +158,17 @@ export function makeFakeDb(seed: Record<string, Row[]>): FakeDb {
   }
 
   return {
-    client: { from: (t: string) => builder(t) },
+    client: {
+      from: (t: string) => builder(t),
+      rpc: (name: string, args: Record<string, any>) => {
+        const fn = rpcs[name]
+        if (!fn) return Promise.resolve({ data: null, error: { message: `fakeSupabase: no rpc ${name}` } })
+        const r = fn(args)
+        return Promise.resolve({ data: r.data ?? null, error: r.error ?? null })
+      },
+    },
     tables,
     beforeNextUpdate(table, fn) { hooks[table] = fn },
+    onRpc(name, fn) { rpcs[name] = fn },
   }
 }

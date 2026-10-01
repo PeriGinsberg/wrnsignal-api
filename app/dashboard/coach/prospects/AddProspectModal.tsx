@@ -10,10 +10,11 @@
 //
 // Validation gates:
 //   - name required + trim>0 (client-side disable on empty)
-//   - source_category required (5-enum)
-//   - invited_email optional; server trims whitespace → null
-//   - source_detail optional; <= 500 chars
-//   - initial_note optional; <= 5000 chars
+//   - lead source required (lib/prospects/model.ts LEAD_SOURCES); Other asks
+//     to specify, and a friend/family or past-client source offers
+//     "Referred by" (name, optional email)
+//   - email, parent or guardian contact, and the note: optional
+// Server validation is authoritative.
 // Server validation is authoritative; client-side errors are
 // translated by mapServerErrorToField.
 
@@ -32,26 +33,13 @@ import {
   selectDarkOption,
 } from "../../../../lib/dashboard-theme"
 import { SavingSpinner } from "../SavingSpinner"
-
-// ── Source category constants (duplicated across List + Modal per
-//    the established inline pattern; not extracted to lib/) ──
-
-const SOURCE_CATEGORIES = [
-  "referral",
-  "social_media",
-  "website",
-  "personal_contact",
-  "other",
-] as const
-type SourceCategory = (typeof SOURCE_CATEGORIES)[number]
-
-const SOURCE_LABEL: Record<SourceCategory, string> = {
-  referral: "Referral",
-  social_media: "Social Media",
-  website: "Website",
-  personal_contact: "Personal Contact",
-  other: "Other",
-}
+import {
+  LeadSourceFields,
+  ParentFields,
+  leadSourcePayload,
+  type LeadSourceValue,
+  type ParentValue,
+} from "../_prospects/leadSourceUi"
 
 // Education status (v0.2). University + Grad date reveal only for in_school /
 // graduated (not for "na"). Values match the coach_clients CHECK enum.
@@ -60,17 +48,6 @@ const EDUCATION_OPTIONS: { value: "in_school" | "graduated" | "na"; label: strin
   { value: "graduated", label: "Graduated" },
   { value: "na", label: "Not applicable" },
 ]
-
-// Q11 palette: blue / purple / teal / green / dim.
-// personal_contact uses T.SUCCESS green to avoid CTA-collision with
-// T.WRN_ORANGE; "personal warmth" semantics fit a green tone.
-const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string; border: string }> = {
-  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK, border: "rgba(81,173,229,0.40)" },
-  social_media:     { bg: "rgba(167,139,250,0.18)", color: "var(--sig-avatar-2-ink, #C8B6F8)", border: "rgba(167,139,250,0.40)" },
-  website:          { bg: "rgba(45,165,141,0.15)",  color: T.INK_EMPHASIS, border: "rgba(45,165,141,0.40)" },
-  personal_contact: { bg: "rgba(0,179,179,0.15)",  color: T.SUCCESS, border: "rgba(0,179,179,0.40)" },
-  other:            { bg: T.BORDER_SOFT, color: T.MUTED, border: T.BORDER },
-}
 
 // ── Auth helpers (inline per established convention) ──
 
@@ -113,10 +90,11 @@ type FieldErrors = Partial<{
 
 export default function AddProspectModal({ onClose, onSuccess }: Props) {
   const [name, setName] = useState("")
-  const [sourceCategory, setSourceCategory] = useState<SourceCategory | "">("")
+  const [lead, setLead] = useState<LeadSourceValue>({ source_category: "", source_detail: "", referred_by_name: "", referred_by_email: "" })
+  const [parent, setParent] = useState<ParentValue>({ parent_name: "", parent_email: "", parent_phone: "" })
+  const [showParent, setShowParent] = useState(false)
   const [invitedEmail, setInvitedEmail] = useState("")
   const [phone, setPhone] = useState("")
-  const [sourceDetail, setSourceDetail] = useState("")
   const [initialNote, setInitialNote] = useState("")
   // v0.2 "add details" expander fields.
   const [expanded, setExpanded] = useState(false)
@@ -133,7 +111,7 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
   const showEducationDetails = educationStatus === "in_school" || educationStatus === "graduated"
 
   const nameValid = name.trim().length > 0
-  const sourceCategoryValid = sourceCategory !== ""
+  const sourceCategoryValid = lead.source_category !== "" && (lead.source_category !== "other" || lead.source_detail.trim() !== "")
   const canSubmit = nameValid && sourceCategoryValid && !submitting
 
   function mapServerErrorToField(serverMsg: string) {
@@ -143,8 +121,8 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
       setErrors({ name: serverMsg })
     } else if (/source_category/i.test(serverMsg)) {
       setErrors({ source_category: serverMsg })
-    } else if (/source_detail/i.test(serverMsg)) {
-      setErrors({ source_detail: serverMsg })
+    } else if (/source_detail|referred_by|parent_/i.test(serverMsg)) {
+      setErrors({ source_category: serverMsg })
     } else if (/initial_note/i.test(serverMsg)) {
       setErrors({ initial_note: serverMsg })
     } else if (/invited_email|email/i.test(serverMsg)) {
@@ -172,16 +150,15 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
     if (!canSubmit) return
     setSubmitting(true)
     try {
-      const body: Record<string, string> = {
+      const body: Record<string, string | null> = {
         name: name.trim(),
-        source_category: sourceCategory as string,
+        ...leadSourcePayload(lead),
       }
+      for (const [k, v] of Object.entries(parent)) if (v.trim()) body[k] = v.trim()
       const trimmedEmail = invitedEmail.trim()
       if (trimmedEmail) body.invited_email = trimmedEmail
       const trimmedPhone = phone.trim()
       if (trimmedPhone) body.phone = trimmedPhone
-      const trimmedDetail = sourceDetail.trim()
-      if (trimmedDetail) body.source_detail = trimmedDetail
       const trimmedNote = initialNote.trim()
       if (trimmedNote) body.initial_note = trimmedNote
       // v0.2 expander fields (only sent when filled).
@@ -270,39 +247,59 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
             )}
           </div>
 
-          {/* Source category */}
+          {/* Email (optional) */}
           <div>
-            <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 8 }}>SOURCE</span>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {SOURCE_CATEGORIES.map((cat) => {
-                const active = sourceCategory === cat
-                const s = SOURCE_STYLE[cat]
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => { setSourceCategory(cat); if (errors.source_category) setErrors({ ...errors, source_category: undefined }) }}
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 900,
-                      padding: "6px 12px",
-                      borderRadius: 8,
-                      cursor: "pointer",
-                      textTransform: "uppercase",
-                      letterSpacing: 0.6,
-                      border: active ? `1px solid ${s.border}` : `1px solid ${T.BORDER_SOFT}`,
-                      background: active ? s.bg : T.GLASS,
-                      color: active ? s.color : T.DIM,
-                      fontFamily: "inherit",
-                    }}
-                  >
-                    {SOURCE_LABEL[cat]}
-                  </button>
-                )
-              })}
-            </div>
-            {errors.source_category && (
-              <div style={{ fontSize: 12, color: T.ERROR, marginTop: 6, fontWeight: 700 }}>{errors.source_category}</div>
+            <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>
+              EMAIL <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
+            </span>
+            <input
+              type="email"
+              style={input}
+              placeholder="student@example.com"
+              value={invitedEmail}
+              onChange={(e) => { setInvitedEmail(e.target.value); if (errors.invited_email) setErrors({ ...errors, invited_email: undefined }) }}
+            />
+            <p style={{ fontSize: 11, color: T.DIM, marginTop: 4 }}>The student&apos;s email. Used later when you send a SIGNAL invite.</p>
+            {errors.invited_email && (
+              <div style={{ fontSize: 12, color: T.ERROR, marginTop: 4, fontWeight: 700 }}>{errors.invited_email}</div>
+            )}
+          </div>
+
+          {/* Lead source, Other: specify, and Referred by */}
+          <LeadSourceFields
+            idPrefix="add-prospect"
+            value={lead}
+            onChange={(next) => { setLead(next); if (errors.source_category) setErrors({ ...errors, source_category: undefined }) }}
+            error={errors.source_category}
+          />
+
+          {/* Parent or guardian (optional) */}
+          {showParent ? (
+            <ParentFields idPrefix="add-prospect" value={parent} onChange={setParent} />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowParent(true)}
+              style={{ alignSelf: "flex-start", background: "none", border: "none", color: T.INK_LINK, fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", padding: 0 }}
+            >
+              + Add a parent or guardian
+            </button>
+          )}
+
+          {/* Note (optional) */}
+          <div>
+            <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>
+              NOTE <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
+            </span>
+            <textarea
+              style={{ ...textarea, minHeight: 80 }}
+              placeholder="Anything to remember about this prospect..."
+              value={initialNote}
+              onChange={(e) => { setInitialNote(e.target.value); if (errors.initial_note) setErrors({ ...errors, initial_note: undefined }) }}
+              maxLength={5000}
+            />
+            {errors.initial_note && (
+              <div style={{ fontSize: 12, color: T.ERROR, marginTop: 4, fontWeight: 700 }}>{errors.initial_note}</div>
             )}
           </div>
 
@@ -328,24 +325,6 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
 
           {expanded && (
             <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-              {/* Invited email (optional) */}
-              <div>
-                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>
-                  INVITED EMAIL <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
-                </span>
-                <input
-                  type="email"
-                  style={input}
-                  placeholder="prospect@example.com"
-                  value={invitedEmail}
-                  onChange={(e) => { setInvitedEmail(e.target.value); if (errors.invited_email) setErrors({ ...errors, invited_email: undefined }) }}
-                />
-                <p style={{ fontSize: 11, color: T.DIM, marginTop: 4 }}>Used later when you send a SIGNAL invite</p>
-                {errors.invited_email && (
-                  <div style={{ fontSize: 12, color: T.ERROR, marginTop: 4, fontWeight: 700 }}>{errors.invited_email}</div>
-                )}
-              </div>
-
               {/* Phone number (optional) */}
               <div>
                 <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>
@@ -454,39 +433,6 @@ export default function AddProspectModal({ onClose, onSuccess }: Props) {
                 </>
               )}
 
-              {/* Source detail (optional) */}
-              <div>
-                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>
-                  SOURCE DETAIL <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
-                </span>
-                <textarea
-                  style={{ ...textarea, minHeight: 60 }}
-                  placeholder="e.g. Met at conference, intro from Sarah"
-                  value={sourceDetail}
-                  onChange={(e) => { setSourceDetail(e.target.value); if (errors.source_detail) setErrors({ ...errors, source_detail: undefined }) }}
-                  maxLength={500}
-                />
-                {errors.source_detail && (
-                  <div style={{ fontSize: 12, color: T.ERROR, marginTop: 4, fontWeight: 700 }}>{errors.source_detail}</div>
-                )}
-              </div>
-
-              {/* Initial note (optional) */}
-              <div>
-                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>
-                  INITIAL NOTE <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span>
-                </span>
-                <textarea
-                  style={{ ...textarea, minHeight: 100 }}
-                  placeholder="Anything to remember about this prospect..."
-                  value={initialNote}
-                  onChange={(e) => { setInitialNote(e.target.value); if (errors.initial_note) setErrors({ ...errors, initial_note: undefined }) }}
-                  maxLength={5000}
-                />
-                {errors.initial_note && (
-                  <div style={{ fontSize: 12, color: T.ERROR, marginTop: 4, fontWeight: 700 }}>{errors.initial_note}</div>
-                )}
-              </div>
             </div>
           )}
         </div>

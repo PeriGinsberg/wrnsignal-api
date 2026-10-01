@@ -51,10 +51,50 @@ export function actorLabel(e: CoachClientEvent): string {
  * typecheck rather than shipping: `account_created` reached production with no
  * case and rendered to coaches as the literal string "account_created".
  */
+/** A stored YYYY-MM-DD as "Oct 9, 2026". Noon UTC, so no timezone moves the day. */
+function historyDay(d: unknown): string | null {
+  if (typeof d !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return null
+  return new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })
+}
+
 export const LABELS: Record<CoachClientEventType, (e: CoachClientEvent) => string> = {
   prospect_created: () => "Prospect created",
-  stage_changed: (e) =>
-    e.context?.stage_key ? `Moved to stage: ${e.context.stage_key}` : "Moved to a new stage",
+  stage_changed: (e) => {
+    const stage = e.context?.stage_label ?? e.context?.stage_key
+    return stage ? `Moved to stage: ${stage}` : "Moved to a new stage"
+  },
+  stage_moved_back: (e) => {
+    const to = e.context?.stage_label ?? e.context?.stage_key
+    const from = e.context?.from_stage_label ?? e.context?.from_stage_key
+    if (to && from) return `Moved back from ${from} to ${to}`
+    return to ? `Moved back to stage: ${to}` : "Moved back a stage"
+  },
+  // The reason, its detail and the notes are the record of why; reopening
+  // clears them on the prospect, so this line is where they stay.
+  prospect_lost: (e) => {
+    const reason = e.context?.reason === "other" && e.context?.detail
+      ? `Other: ${e.context.detail}`
+      : e.context?.reason_label ?? "no reason given"
+    const t = `Marked lost (${reason})`
+    return e.context?.notes ? `${t}. ${e.context.notes}` : t
+  },
+  prospect_reopened: (e) =>
+    e.context?.previous_reason_label ? `Reopened (was lost: ${e.context.previous_reason_label})` : "Reopened",
+  consult_booked: (e) => {
+    const when = historyDay(e.context?.date)
+    const verb = e.context?.rescheduled ? "Consult rescheduled" : "Consult booked"
+    return when ? `${verb} for ${when}` : verb
+  },
+  consult_saved: (e) => {
+    const n = Array.isArray(e.context?.changed) ? e.context.changed.length : 0
+    return n > 0 ? `Consult saved, ${n} field${n === 1 ? "" : "s"} updated` : "Consult saved"
+  },
+  consult_completed: (e) => {
+    const parts = [e.context?.package_name ? `package: ${e.context.package_name}` : null,
+      e.context?.minutes != null ? `${e.context.minutes} min` : null].filter(Boolean)
+    return parts.length ? `Consult complete (${parts.join(", ")})` : "Consult complete"
+  },
+  consult_no_show: () => "Consult no-show",
   converted_to_client: () => "Converted to client",
   proposal_sent: () => "Proposal sent",
   proposal_approved: () => "Proposal approved",
@@ -187,8 +227,13 @@ async function authFetch(url: string, opts: RequestInit = {}): Promise<Response>
   })
 }
 
+/** How many entries History shows before "Show all". Newest first. */
+export const HISTORY_PREVIEW = 5
+
 export function HistoryTab({ coachClientId }: { coachClientId: string | null }) {
   const [events, setEvents] = useState<CoachClientEvent[]>([])
+  // The newest few on load; the full timeline on request.
+  const [expanded, setExpanded] = useState(false)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -233,9 +278,12 @@ export function HistoryTab({ coachClientId }: { coachClientId: string | null }) 
     return <p style={{ fontSize: TYPE.secondary, color: T.DIM, margin: 0 }}>No activity logged yet.</p>
   }
 
+  const shown = expanded ? events : events.slice(0, HISTORY_PREVIEW)
+  const hidden = events.length - HISTORY_PREVIEW
+
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
-      {events.map((e, i) => (
+      {shown.map((e, i) => (
         <div
           key={`${e.created_at}-${i}`}
           style={{
@@ -254,6 +302,16 @@ export function HistoryTab({ coachClientId }: { coachClientId: string | null }) 
           </div>
         </div>
       ))}
+      {hidden > 0 && (
+        <button
+          type="button"
+          onClick={() => setExpanded((x) => !x)}
+          aria-expanded={expanded}
+          style={{ ...btnSecondary, alignSelf: "flex-start", marginTop: 10, minHeight: 0, padding: "6px 14px", fontSize: TYPE.micro }}
+        >
+          {expanded ? "Show fewer" : `Show ${hidden} more`}
+        </button>
+      )}
     </div>
   )
 }

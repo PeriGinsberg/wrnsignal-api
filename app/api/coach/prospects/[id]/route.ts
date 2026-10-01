@@ -23,6 +23,7 @@ import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
 import { canonicalizeLegacyJobType, normalizeJobType } from "@/lib/jobType"
 import { resolveDelegation } from "@/lib/collab/delegation"
+import { parseLeadSource, parseParent, type StoredLeadSource } from "@/lib/prospects/model"
 import { withNoteTasks } from "@/lib/notes/actionItems"
 
 export const runtime = "nodejs"
@@ -30,8 +31,8 @@ export const dynamic = "force-dynamic"
 
 // ── Constants + types (inlined per coach-route duplication pattern) ──
 
-const SOURCE_CATEGORIES = ["referral", "social_media", "website", "personal_contact", "other"] as const
-type SourceCategory = (typeof SOURCE_CATEGORIES)[number]
+// Lead sources live in lib/prospects/model.ts (shared with every screen).
+type SourceCategory = StoredLeadSource
 
 const LIFECYCLE_STATUSES = ["Prospect", "Active", "Inactive", "Archived"] as const
 type LifecycleStatus = (typeof LIFECYCLE_STATUSES)[number]
@@ -56,6 +57,17 @@ type CoachClientRow = {
   phone: string | null
   source_category: string | null
   source_detail: string | null
+  // Prospect workflow, Phase 1 (20261002_prospect_phase1.sql).
+  referred_by_name: string | null
+  referred_by_email: string | null
+  parent_name: string | null
+  parent_email: string | null
+  parent_phone: string | null
+  target_industries: string | null
+  lost_reason: string | null
+  lost_reason_detail: string | null
+  lost_notes: string | null
+  lost_at: string | null
   lifecycle_status: string
   invited_at: string
   client_profile_id: string | null
@@ -103,6 +115,16 @@ const PROSPECT_SELECT_COLS = [
   "phone",
   "source_category",
   "source_detail",
+  "referred_by_name",
+  "referred_by_email",
+  "parent_name",
+  "parent_email",
+  "parent_phone",
+  "target_industries",
+  "lost_reason",
+  "lost_reason_detail",
+  "lost_notes",
+  "lost_at",
   "lifecycle_status",
   "invited_at",
   "client_profile_id",
@@ -305,6 +327,16 @@ function buildProspectListItem(
     phone: row.phone,
     source_category: row.source_category as SourceCategory | null,
     source_detail: row.source_detail,
+    referred_by_name: row.referred_by_name,
+    referred_by_email: row.referred_by_email,
+    parent_name: row.parent_name,
+    parent_email: row.parent_email,
+    parent_phone: row.parent_phone,
+    target_industries: row.target_industries,
+    lost_reason: row.lost_reason,
+    lost_reason_detail: row.lost_reason_detail,
+    lost_notes: row.lost_notes,
+    lost_at: row.lost_at,
     phases: {
       initial_contact_made:     { checked: row.phase_initial_contact_made,     at: row.phase_initial_contact_made_at },
       discovery_call_scheduled: { checked: row.phase_discovery_call_scheduled, at: row.phase_discovery_call_scheduled_at },
@@ -518,37 +550,21 @@ export async function PATCH(
       }
     }
 
-    if ("source_category" in body) {
-      if (body.source_category === null) {
-        updates.source_category = null
-      } else if (typeof body.source_category === "string" &&
-                 (SOURCE_CATEGORIES as readonly string[]).includes(body.source_category)) {
-        updates.source_category = body.source_category
-      } else {
-        return withCorsJson(req, {
-          ok: false,
-          error: `source_category must be one of: ${SOURCE_CATEGORIES.join(", ")}, or null`,
-        }, 400)
-      }
+    // Lead source, its Other text and referred-by, together (the last depends
+    // on the first). See parseLeadSource in lib/prospects/model.ts.
+    if (["source_category", "source_detail", "referred_by_name", "referred_by_email"].some((k) => k in body)) {
+      const lead = parseLeadSource(body, {
+        source_category: row.source_category,
+        referred_by_name: row.referred_by_name,
+        referred_by_email: row.referred_by_email,
+      }, { required: true })
+      if (!lead.ok) return withCorsJson(req, { ok: false, error: lead.error }, 400)
+      Object.assign(updates, lead.value)
     }
-
-    if ("source_detail" in body) {
-      if (body.source_detail === null) {
-        updates.source_detail = null
-      } else if (typeof body.source_detail === "string") {
-        const trimmed = body.source_detail.trim()
-        // Empty-after-trim → null (consistent with invited_email).
-        if (!trimmed) {
-          updates.source_detail = null
-        } else {
-          if (trimmed.length > 500) {
-            return withCorsJson(req, { ok: false, error: "source_detail too long (max 500 chars)" }, 400)
-          }
-          updates.source_detail = trimmed
-        }
-      } else {
-        return withCorsJson(req, { ok: false, error: "source_detail must be string or null" }, 400)
-      }
+    if (["parent_name", "parent_email", "parent_phone"].some((k) => k in body)) {
+      const parent = parseParent(body)
+      if (!parent.ok) return withCorsJson(req, { ok: false, error: parent.error }, 400)
+      Object.assign(updates, parent.value)
     }
 
     if ("lifecycle_status" in body) {
@@ -588,6 +604,7 @@ export async function PATCH(
       ["field_of_study", 200],
       ["target_roles", 1000],
       ["target_locations", 1000],
+      ["target_industries", 1000],
       ["preferred_locations", 1000],
       ["timeline", 200],
       ["tags", 500],

@@ -6,7 +6,7 @@
 // missing case looks like when the fallback is the raw type.
 
 import { describe as suite, it, expect, afterEach, vi } from "vitest"
-import { render, screen, cleanup } from "@testing-library/react"
+import { render, screen, cleanup, fireEvent } from "@testing-library/react"
 import { HistoryTab, LABELS, actorLabel, describe, stamp, type CoachClientEvent } from "./HistoryTab"
 import { COACH_CLIENT_EVENT_TYPES } from "../../../../../lib/coach/clientEventTypes"
 
@@ -43,6 +43,27 @@ suite("every event type has wording", () => {
       expect(line.length).toBeGreaterThan(0)
     }
   })
+})
+
+suite("the prospect workflow", () => {
+  const cases: [string, Record<string, unknown> | null, string][] = [
+    ["stage_changed", { stage_key: "consult_scheduled", stage_label: "Consult Scheduled" }, "Moved to stage: Consult Scheduled"],
+    ["stage_moved_back", { stage_label: "Initial Contact", from_stage_label: "Consult Completed" },
+      "Moved back from Consult Completed to Initial Contact"],
+    ["prospect_lost", { reason: "price", reason_label: "Price", notes: "Budget next spring" }, "Marked lost (Price). Budget next spring"],
+    ["prospect_lost", { reason: "other", reason_label: "Other", detail: "Moved abroad" }, "Marked lost (Other: Moved abroad)"],
+    ["prospect_reopened", { previous_reason_label: "Timing" }, "Reopened (was lost: Timing)"],
+    ["consult_booked", { date: "2026-10-09" }, "Consult booked for Oct 9, 2026"],
+    ["consult_booked", { date: "2026-10-12", rescheduled: true }, "Consult rescheduled for Oct 12, 2026"],
+    ["consult_saved", { changed: ["why_now", "services"] }, "Consult saved, 2 fields updated"],
+    ["consult_completed", { package_name: "Run the Search", minutes: 45 }, "Consult complete (package: Run the Search, 45 min)"],
+    ["consult_no_show", null, "Consult no-show"],
+  ]
+  for (const [type, context, expected] of cases) {
+    it(`${type} reads as written`, () => {
+      expect(describe(ev({ event_type: type, context }))).toBe(expected)
+    })
+  }
 })
 
 suite("the six workbook events", () => {
@@ -101,6 +122,33 @@ suite("who did it", () => {
     expect(await screen.findByText("Workbook created · Session 1")).toBeTruthy()
     expect(screen.getByText(/ · Erin Condon$/)).toBeTruthy()
     expect(screen.getByText(/ · SIGNAL$/)).toBeTruthy()
+  })
+
+  it("shows the newest five on load, and the rest on request", async () => {
+    const events = Array.from({ length: 8 }, (_, i) =>
+      ev({ event_type: "task_created", context: { title: `Task ${i + 1}` } }))
+    global.fetch = (async () =>
+      new Response(JSON.stringify({ ok: true, events }), { status: 200 })) as typeof fetch
+
+    render(<HistoryTab coachClientId="cc-1" />)
+    expect(await screen.findByText("Task created: Task 1")).toBeTruthy()
+    expect(screen.getByText("Task created: Task 5")).toBeTruthy()
+    expect(screen.queryByText("Task created: Task 6")).toBeNull()
+    fireEvent.click(screen.getByRole("button", { name: "Show 3 more" }))
+    expect(screen.getByText("Task created: Task 8")).toBeTruthy()
+    fireEvent.click(screen.getByRole("button", { name: "Show fewer" }))
+    expect(screen.queryByText("Task created: Task 8")).toBeNull()
+  })
+
+  it("has no button when there are five or fewer", async () => {
+    const events = Array.from({ length: 5 }, (_, i) =>
+      ev({ event_type: "task_created", context: { title: `Task ${i + 1}` } }))
+    global.fetch = (async () =>
+      new Response(JSON.stringify({ ok: true, events }), { status: 200 })) as typeof fetch
+
+    render(<HistoryTab coachClientId="cc-1" />)
+    expect(await screen.findByText("Task created: Task 5")).toBeTruthy()
+    expect(screen.queryByRole("button", { name: /more|fewer/ })).toBeNull()
   })
 
   // The whole reason relative time was dropped: "3 days ago" twice cannot say

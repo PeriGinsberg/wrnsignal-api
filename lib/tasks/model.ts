@@ -46,7 +46,15 @@ export type Task = {
   created_at: string
   updated_at: string
   deleted_at: string | null
+  /**
+   * Read-side only, set by the list route (withRecordNames, ./records.ts):
+   * the relationship a task belongs to when it has no client profile to name
+   * it by, i.e. a prospect, or a converted client not yet set up in SIGNAL.
+   */
+  record?: TaskRecord | null
 }
+
+export type TaskRecord = { kind: "prospect" | "client"; name: string | null; href: string }
 
 /** The view tabs on the full list. `all` excludes nothing but deleted rows. */
 export const TASK_VIEWS = ["all", "due_today", "overdue", "upcoming"] as const

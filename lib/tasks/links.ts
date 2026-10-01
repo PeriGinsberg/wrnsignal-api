@@ -100,6 +100,12 @@ export function noteLink(note: { id: string; coach_client_id: string; client_pro
     : `/dashboard/coach/prospects/${note.coach_client_id}${anchor}`
 }
 
+/** A prospect's page, or its consult screen. Keyed by the relationship: a prospect has no profile. */
+export function prospectLink(coachClientId: string, page: "record" | "consult" = "record"): string {
+  const base = `/dashboard/coach/prospects/${encodeURIComponent(coachClientId)}`
+  return page === "consult" ? `${base}/consult` : base
+}
+
 /** One practice round, on the coach's side: playback and the feedback boxes. */
 export function practiceRoundLink(roundId: string): string {
   return `/dashboard/coach/practice/${roundId}`

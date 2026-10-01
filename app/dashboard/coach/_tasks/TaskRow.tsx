@@ -346,6 +346,23 @@ function IconButton(props: { title: string; onClick: () => void; children: React
   )
 }
 
+/** Marks a task about a prospect rather than a client. */
+function ProspectBadge() {
+  return (
+    <span
+      title="This task is about a prospect"
+      style={{
+        flexShrink: 0, fontSize: 10, fontWeight: 900, letterSpacing: 0.4,
+        padding: "1px 7px", borderRadius: 999,
+        background: "rgba(167,139,250,0.18)", color: "var(--sig-avatar-2-ink, #C8B6F8)",
+        border: "1px solid rgba(167,139,250,0.40)",
+      }}
+    >
+      Prospect
+    </span>
+  )
+}
+
 export type TaskRowProps = {
   task: Task
   clientName?: string | null
@@ -369,6 +386,9 @@ export type TaskRowProps = {
 
 export function TaskRow(props: TaskRowProps) {
   const { task, condensed = false } = props
+  // A client's name comes from their profile; a prospect has none, so the list
+  // route sends the relationship's own name instead (task.record).
+  const whoName = props.clientName ?? task.record?.name ?? null
   const late = isOverdue(task)
   const done = task.status === "done"
   const decides = !done && !!props.onDecide && !!props.decisionOptions?.length
@@ -432,16 +452,17 @@ export function TaskRow(props: TaskRowProps) {
       {/* Client shows in BOTH forms. On the dashboard card a task without
           one is just a sentence with no owner, and "whose is this" is the
           first thing a coach asks of a list spanning every client. */}
-      <div className="tsk-cell" style={{ minWidth: 0 }}>
+      <div className="tsk-cell" style={{ minWidth: 0, display: "flex", alignItems: "center", gap: 6 }}>
         <span className="tsk-cell-label">Client</span>
         <Person
           name={condensed
-            ? (props.clientName ? props.clientName.split(/\s+/)[0] : null)
-            : (props.clientName ?? null)}
-          fullName={props.clientName ?? null}
+            ? (whoName ? whoName.split(/\s+/)[0] : null)
+            : whoName}
+          fullName={whoName}
           label="No client"
-          href={task.client_profile_id ? `/dashboard/coach/clients/${task.client_profile_id}` : null}
+          href={task.client_profile_id ? `/dashboard/coach/clients/${task.client_profile_id}` : task.record?.href ?? null}
         />
+        {task.record?.kind === "prospect" && <ProspectBadge />}
       </div>
 
       {!condensed && (

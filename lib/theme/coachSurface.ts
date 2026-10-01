@@ -201,6 +201,12 @@ export const LIGHT_COACH_EXTRAS: Record<string, string> = {
 
   // GRAD_PRIMARY is solid navy on light, so near-black ink on it is 1.2:1.
   "ink-on-primary": "#FFFFFF",
+  // The bright orange label for a featured navy button (Convert to Client,
+  // Send Invite, Go to Client Dashboard). These carried ink-on-bright, the
+  // near-black meant for peach fills, and read black on navy. Brand orange on
+  // #08203F measures about 5.8:1. Dark ground keeps near-black: there the
+  // button is the peach-to-blue gradient.
+  "ink-on-primary-accent": "#FF6B00",
   // AND NOT THE OTHER WAY. --sig-ink-on-bright is the ink for the count pills
   // and the peach buttons, whose fills are bright on BOTH grounds. It stays
   // near-black: white on #B6F2F8 measures 1.2:1. The two were briefly one
@@ -267,8 +273,39 @@ export function coachSurfaceCss(): string {
   return [
     `[data-coach-surface="light"] {\n${declsFor(LIGHT_COACH_VARS)}\n${extraDecls()}\n}`,
     `[data-coach-surface="dark"] {\n${declsFor(darkVars())}\n}`,
+    DATE_PICKER_CSS,
   ].join("\n")
 }
+
+/**
+ * DATE PICKERS ON THE LIGHT GROUND.
+ *
+ * Date inputs were written for the dark surface and many still say
+ * colorScheme:"dark" inline, which asks the browser for a WHITE calendar icon
+ * (and a dark popup). On the light ground's white input the icon vanished:
+ * white on white. Fixed here, once, for every date field on the light
+ * surface, including ones written later, rather than per screen:
+ *   - color-scheme is light (!important, to beat the inline hint), so the
+ *     popup calendar is light too;
+ *   - the calendar icon is drawn in navy (#08203F, the light ground's ink).
+ * The dark island (nav, topbar) carries data-coach-surface="dark" and is
+ * not matched.
+ */
+const NAVY_CALENDAR_ICON =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' " +
+  "stroke='%2308203F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E" +
+  "%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cline x1='16' y1='2' x2='16' y2='6'/%3E" +
+  "%3Cline x1='8' y1='2' x2='8' y2='6'/%3E%3Cline x1='3' y1='10' x2='21' y2='10'/%3E%3C/svg%3E\")"
+
+const LIGHT_DATE_INPUTS = ["date", "datetime-local", "month", "week"]
+  .map((t) => `[data-coach-surface="light"] input[type="${t}"]`)
+
+export const DATE_PICKER_CSS = [
+  `${[...LIGHT_DATE_INPUTS, '[data-coach-surface="light"] input[type="time"]'].join(",\n")} {\n  color-scheme: light !important;\n}`,
+  `${LIGHT_DATE_INPUTS.map((s) => `${s}::-webkit-calendar-picker-indicator`).join(",\n")} {\n` +
+    `  background: ${NAVY_CALENDAR_ICON} center / 16px 16px no-repeat;\n` +
+    `  color: transparent;\n  opacity: 1;\n  cursor: pointer;\n}`,
+].join("\n")
 
 /** The light half alone, for a wrapper that only ever needs that. */
 export function lightCoachSurfaceCss(selector = '[data-coach-surface="light"]'): string {

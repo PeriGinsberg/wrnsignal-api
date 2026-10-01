@@ -15,6 +15,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { getSupabaseBrowser } from "../../../../lib/supabase-browser"
 import { T, btnSecondary, card, eyebrow } from "../../../../lib/dashboard-theme"
+import { leadSourceStyle } from "../_prospects/leadSourceUi"
+import { leadSourceLabel } from "../../../../lib/prospects/model"
 import { BackToDashboard } from "../BackToDashboard"
 import { LoadingShell } from "../LoadingShell"
 import {
@@ -53,31 +55,6 @@ const PROSPECT_STATUS_STYLE: Record<ProspectStatus, { bg: string; color: string;
   won:      { bg: "rgba(45,165,141,0.18)",  color: T.INK_EMPHASIS, border: "rgba(45,165,141,0.45)" },
 }
 
-const SOURCE_CATEGORIES = [
-  "referral",
-  "social_media",
-  "website",
-  "personal_contact",
-  "other",
-] as const
-type SourceCategory = (typeof SOURCE_CATEGORIES)[number]
-
-const SOURCE_LABEL: Record<SourceCategory, string> = {
-  referral: "Referral",
-  social_media: "Social Media",
-  website: "Website",
-  personal_contact: "Personal Contact",
-  other: "Other",
-}
-
-const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string }> = {
-  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK },
-  social_media:     { bg: "rgba(167,139,250,0.18)", color: "var(--sig-avatar-2-ink, #C8B6F8)" },
-  website:          { bg: "rgba(45,165,141,0.15)",  color: T.INK_EMPHASIS },
-  personal_contact: { bg: "rgba(0,179,179,0.15)",  color: T.SUCCESS },
-  other:            { bg: T.BORDER_SOFT, color: T.MUTED },
-}
-
 const AVATAR_PALETTE = [
   // Variables, because these read on navy and vanish on white. The
   // wash is the dark fallback; lib/theme/coachSurface.ts supplies a
@@ -95,7 +72,7 @@ type Prospect = {
   id: string
   name: string | null
   invited_email: string | null
-  source_category: SourceCategory | null
+  source_category: string | null
   source_detail: string | null
   lifecycle_status: string
   current_stage_key: string | null
@@ -178,9 +155,9 @@ function Avatar({ name, email }: { name: string | null; email: string | null }) 
   )
 }
 
-function SourceCategoryBadge({ category }: { category: SourceCategory | null }) {
+function SourceCategoryBadge({ category }: { category: string | null }) {
   if (!category) return null
-  const s = SOURCE_STYLE[category]
+  const s = leadSourceStyle(category)
   return (
     <span
       style={{
@@ -188,14 +165,13 @@ function SourceCategoryBadge({ category }: { category: SourceCategory | null }) 
         color: s.color,
         fontSize: TYPE.micro,
         fontWeight: 900,
-        letterSpacing: "0.06em",
-        textTransform: "uppercase",
+        letterSpacing: "0.04em",
         padding: "3px 8px",
         borderRadius: 6,
         whiteSpace: "nowrap",
       }}
     >
-      {SOURCE_LABEL[category]}
+      {leadSourceLabel(category)}
     </span>
   )
 }

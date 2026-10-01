@@ -35,6 +35,8 @@ import {
 } from "../../../../../lib/dashboard-theme"
 import { SavingSpinner } from "../../SavingSpinner"
 import { LoadingShell } from "../../LoadingShell"
+import { leadSourceStyle } from "../../_prospects/leadSourceUi"
+import { leadSourceLabel } from "../../../../../lib/prospects/model"
 import { TaskList } from "../../_tasks/TaskList"
 import { useRecordNoteTaskActions } from "../../_notes/RecordNoteTaskActions"
 import {
@@ -62,35 +64,7 @@ const PHASE_KEYS = [
 ] as const
 type PhaseKey = (typeof PHASE_KEYS)[number]
 
-const SOURCE_CATEGORIES = [
-  "referral",
-  "social_media",
-  "website",
-  "personal_contact",
-  "other",
-] as const
-type SourceCategory = (typeof SOURCE_CATEGORIES)[number]
-
-const SOURCE_LABEL: Record<SourceCategory, string> = {
-  referral: "Referral",
-  social_media: "Social Media",
-  website: "Website",
-  personal_contact: "Personal Contact",
-  other: "Other",
-}
-
-const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string }> = {
-  referral:         { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK },
-  social_media:     { bg: "rgba(167,139,250,0.18)", color: "var(--sig-avatar-2-ink, #C8B6F8)" },
-  website:          { bg: "rgba(45,165,141,0.15)",  color: T.INK_EMPHASIS },
-  personal_contact: { bg: "rgba(0,179,179,0.15)",  color: T.SUCCESS },
-  other:            { bg: T.BORDER_SOFT, color: T.MUTED },
-}
-
-// source_category is nullable, and "other" is the honest reading of a value the
-// map does not know. Without this an unrecognised category crashes the record.
-const sourceStyle = (c: SourceCategory | null | undefined) =>
-  (c && SOURCE_STYLE[c]) || SOURCE_STYLE.other
+const sourceStyle = (c: string | null | undefined) => leadSourceStyle(c)
 
 // Note types, labels and topics are shared with the client and prospect pages
 // (app/dashboard/coach/_notes/noteUi.tsx). Action Item is not offered: work to
@@ -140,7 +114,7 @@ type CoachClientRecord = {
   name: string | null
   invited_email: string | null
   phone: string | null
-  source_category: SourceCategory | null
+  source_category: string | null
   source_detail: string | null
   phases: Record<PhaseKey, PhasePair>
   lifecycle_status: string
@@ -852,7 +826,7 @@ export default function CoachClientPostConversionPage() {
                   }
                   style={{
                     background: T.GRAD_PRIMARY,
-                    color: "var(--sig-ink-on-bright, #04060F)",
+                    color: "var(--sig-ink-on-primary-accent, #04060F)",
                     borderRadius: 10,
                     padding: "10px 18px",
                     fontSize: 13,
@@ -873,7 +847,7 @@ export default function CoachClientPostConversionPage() {
                   disabled={sending || !record.invited_email}
                   style={{
                     background: T.GRAD_PRIMARY,
-                    color: "var(--sig-ink-on-bright, #04060F)",
+                    color: "var(--sig-ink-on-primary-accent, #04060F)",
                     borderRadius: 10,
                     padding: "12px 22px",
                     fontSize: 14,
@@ -965,7 +939,7 @@ export default function CoachClientPostConversionPage() {
                     borderRadius: 999,
                   }}
                 >
-                  {SOURCE_LABEL[record.source_category]}
+                  {leadSourceLabel(record.source_category)}
                 </span>
               }
             />
