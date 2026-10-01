@@ -34,7 +34,7 @@ export type TaskListProps = {
    * Show a "New task" button that opens the form fixed to this prospect. The
    * prospect counterpart of newTaskClientId.
    */
-  newTaskCoachClient?: { id: string; name: string }
+  newTaskCoachClient?: { id: string; name: string; label?: string }
   /**
    * Called after this list changes a task. The prospect page uses it to
    * re-read its notes, because ticking an action item's task ticks the note.

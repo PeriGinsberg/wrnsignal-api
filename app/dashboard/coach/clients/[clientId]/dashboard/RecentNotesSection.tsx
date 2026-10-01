@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { SPACE, TYPE } from "../../../../../../lib/theme/surfaces"
 import { T, card, eyebrow } from "../../../../../../lib/dashboard-theme"
+import { LegacyTaskLine, NoteTopicChip, type NoteTaskSummary, type NoteTopic } from "../../../_notes/noteUi"
 
 type NoteType = "session_recap" | "action_item" | "other"
 type Priority = "urgent" | "this_week" | "when_ready"
@@ -10,11 +11,14 @@ type Priority = "urgent" | "this_week" | "when_ready"
 type Note = {
   id: string
   type: NoteType
+  topic?: NoteTopic | null
   body: string
   priority: Priority | null
   completed_at: string | null
   created_at: string
   updated_at: string
+  /** An old action item's task. Its tick lives on the task, not here. */
+  task?: NoteTaskSummary | null
 }
 
 const TYPE_LABEL: Record<NoteType, string> = {
@@ -54,7 +58,6 @@ export function RecentNotesSection({ authFetch, clientId, refreshKey, onNavigate
   const [notes, setNotes] = useState<Note[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [busyId, setBusyId] = useState<string | null>(null)
 
   async function load() {
     setLoading(true)
@@ -82,30 +85,6 @@ export function RecentNotesSection({ authFetch, clientId, refreshKey, onNavigate
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId, refreshKey])
-
-  async function toggleCompletion(note: Note) {
-    if (note.type !== "action_item") return
-    setBusyId(note.id)
-    const next = note.completed_at ? null : new Date().toISOString()
-    try {
-      const res = await authFetch(`/api/coach/clients/${clientId}/note-feed/${note.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ completed_at: next }),
-      })
-      const j = await res.json().catch(() => null)
-      if (res.ok && j?.ok) {
-        setNotes((prev) =>
-          prev.map((n) => (n.id === note.id ? { ...n, completed_at: next } : n))
-        )
-      } else {
-        setError(j?.error || "Couldn't update")
-      }
-    } catch {
-      setError("Network error")
-    }
-    setBusyId(null)
-  }
 
   return (
     <section style={{ ...card, padding: 22, marginBottom: 24 }}>
@@ -143,7 +122,7 @@ export function RecentNotesSection({ authFetch, clientId, refreshKey, onNavigate
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {notes.map((n) => {
             const isActionItem = n.type === "action_item"
-            const isComplete = !!n.completed_at
+            const isComplete = isActionItem && (n.task ? n.task.status !== "open" : !!n.completed_at)
             const typeBadge = TYPE_BADGE[n.type]
             const priorityBadge = n.priority ? PRIORITY_BADGE[n.priority] : null
             const created = new Date(n.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
@@ -196,11 +175,8 @@ export function RecentNotesSection({ authFetch, clientId, refreshKey, onNavigate
                       {PRIORITY_LABEL[n.priority]}
                     </span>
                   )}
-                  {isComplete && (
-                    <span style={{ fontSize: TYPE.label, color: T.SUCCESS, fontWeight: 700 }}>
-                      ✓ Complete
-                    </span>
-                  )}
+                  <NoteTopicChip topic={n.topic} />
+                  {isActionItem && <LegacyTaskLine task={n.task} />}
                   <span style={{ fontSize: TYPE.micro, color: T.DIM, marginLeft: "auto" }}>
                     {created}
                   </span>
@@ -219,33 +195,6 @@ export function RecentNotesSection({ authFetch, clientId, refreshKey, onNavigate
                 >
                   {n.body}
                 </div>
-                {isActionItem && (
-                  <label
-                    onClick={(e) => e.stopPropagation()}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      fontSize: TYPE.micro,
-                      color: T.MUTED,
-                      cursor: "pointer",
-                      width: "fit-content",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isComplete}
-                      disabled={busyId === n.id}
-                      onChange={(e) => {
-                        e.stopPropagation()
-                        toggleCompletion(n)
-                      }}
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ accentColor: T.WRN_ORANGE, width: 14, height: 14, cursor: "pointer" }}
-                    />
-                    {isComplete ? "Mark incomplete" : "Mark complete"}
-                  </label>
-                )}
               </button>
             )
           })}

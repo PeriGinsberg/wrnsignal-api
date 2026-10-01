@@ -23,6 +23,7 @@ import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
 import { canonicalizeLegacyJobType, normalizeJobType } from "@/lib/jobType"
 import { resolveDelegation } from "@/lib/collab/delegation"
+import { withNoteTasks } from "@/lib/notes/actionItems"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -381,12 +382,13 @@ export async function GET(
     // canonical filter post-Commit-2a refactor.
     const { data: notesData, error: notesErr } = await supabase
       .from("coach_client_notes")
-      .select("id, type, body, priority, completed_at, created_at, updated_at")
+      .select("id, type, topic, body, priority, completed_at, created_at, updated_at")
       .eq("coach_client_id", id)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
     if (notesErr) throw new Error(`Notes lookup failed: ${notesErr.message}`)
-    const notes = notesData ?? []
+    // An old action item's task rides along, so the card can show its state.
+    const notes = await withNoteTasks(supabase, notesData ?? [])
 
     const latestNoteAt = (notes[0]?.created_at as string | null) ?? null
     const lastActivity = computeLastActivityAt(row, latestNoteAt)
@@ -681,11 +683,11 @@ export async function PATCH(
     // "updated full detail").
     const { data: notesData } = await supabase
       .from("coach_client_notes")
-      .select("id, type, body, priority, completed_at, created_at, updated_at")
+      .select("id, type, topic, body, priority, completed_at, created_at, updated_at")
       .eq("coach_client_id", id)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
-    const notes = notesData ?? []
+    const notes = await withNoteTasks(supabase, notesData ?? [])
     const latestNoteAt = (notes[0]?.created_at as string | null) ?? null
     const lastActivity = computeLastActivityAt(updated, latestNoteAt)
 

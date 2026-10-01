@@ -3,7 +3,7 @@
 // Per-note operations on the typed-notes feed.
 //
 // Routes:
-//   PUT    — update body, type, or completed_at on a single note
+//   PUT    — update body, type or topic (see lib/notes/edit.ts)
 //   DELETE — soft delete (sets deleted_at)
 //
 // Both routes require the authenticated coach to own the note (i.e.
@@ -15,16 +15,10 @@ import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../../_lib/cors"
 import { resolveDelegation } from "@/lib/collab/delegation"
+import { deleteNote, editNote, type ExistingNote } from "@/lib/notes/edit"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-
-const NOTE_TYPES = ["session_recap", "action_item", "other"] as const
-type NoteType = (typeof NOTE_TYPES)[number]
-
-const NOTE_PRIORITIES = ["urgent", "this_week", "when_ready"] as const
-type NotePriority = (typeof NOTE_PRIORITIES)[number]
-const DEFAULT_ACTION_ITEM_PRIORITY: NotePriority = "this_week"
 
 function getSupabaseAdmin() {
   const url = process.env.SUPABASE_URL
@@ -132,7 +126,7 @@ export async function PUT(
     // client_profile_id is NULL.
     const { data: existing, error: readErr } = await supabase
       .from("coach_client_notes")
-      .select("id, coach_client_id, type, priority, completed_at, deleted_at")
+      .select("id, coach_client_id, client_profile_id, type, topic, body, priority, completed_at, deleted_at")
       .eq("id", noteId)
       .maybeSingle()
     if (readErr) throw new Error(`Note read failed: ${readErr.message}`)
@@ -148,95 +142,10 @@ export async function PUT(
       return withCorsJson(req, { ok: false, error: "Invalid JSON body" }, 400)
     }
 
-    const updates: Record<string, any> = {}
-
-    if ("body" in body) {
-      const trimmed = typeof body.body === "string" ? body.body.trim() : ""
-      if (!trimmed) {
-        return withCorsJson(req, { ok: false, error: "body cannot be empty" }, 400)
-      }
-      updates.body = trimmed
-    }
-
-    // Type can no longer be null. Caller must omit type to leave it as-is
-    // or pass a valid enum value.
-    let nextType: NoteType = existing.type as NoteType
-    if ("type" in body) {
-      if (body.type === null || body.type === "" || !(NOTE_TYPES as readonly string[]).includes(body.type)) {
-        return withCorsJson(req, { ok: false, error: "Invalid type" }, 400)
-      }
-      nextType = body.type as NoteType
-      updates.type = nextType
-    }
-    const typeChanged = "type" in body && nextType !== existing.type
-
-    // Priority is only meaningful for action_item. Three resolution paths:
-    //   (a) caller passed priority explicitly → validate it
-    //   (b) type changed to action_item with no priority supplied →
-    //       default if existing was null
-    //   (c) type changed away from action_item → clear priority
-    let nextPriority: NotePriority | null = (existing.priority as NotePriority | null) ?? null
-    if ("priority" in body) {
-      if (body.priority === null || body.priority === "") {
-        nextPriority = null
-      } else if ((NOTE_PRIORITIES as readonly string[]).includes(body.priority)) {
-        nextPriority = body.priority as NotePriority
-      } else {
-        return withCorsJson(req, { ok: false, error: "Invalid priority" }, 400)
-      }
-    }
-
-    if (nextType === "action_item" && nextPriority === null) {
-      nextPriority = DEFAULT_ACTION_ITEM_PRIORITY
-    }
-    if (nextType !== "action_item" && nextPriority !== null) {
-      nextPriority = null
-    }
-
-    if (nextPriority !== ((existing.priority as NotePriority | null) ?? null)) {
-      updates.priority = nextPriority
-    }
-
-    if ("completed_at" in body) {
-      // Toggling completion. The DB CHECK constraint enforces that
-      // completed_at can only be set when type='action_item', but we
-      // surface a clearer 400 here for the API caller.
-      if (body.completed_at === null) {
-        updates.completed_at = null
-      } else if (typeof body.completed_at === "string") {
-        const parsed = new Date(body.completed_at)
-        if (Number.isNaN(parsed.getTime())) {
-          return withCorsJson(req, { ok: false, error: "Invalid completed_at timestamp" }, 400)
-        }
-        if (nextType !== "action_item") {
-          return withCorsJson(req, { ok: false, error: "completed_at can only be set on action_item notes" }, 400)
-        }
-        updates.completed_at = parsed.toISOString()
-      } else {
-        return withCorsJson(req, { ok: false, error: "Invalid completed_at value" }, 400)
-      }
-    } else if (typeChanged && nextType !== "action_item" && existing.completed_at) {
-      // If the type changed away from action_item, clear any stale
-      // completed_at to keep the row consistent with the CHECK constraint.
-      updates.completed_at = null
-    }
-
-    if (Object.keys(updates).length === 0) {
-      return withCorsJson(req, { ok: false, error: "No fields to update" }, 400)
-    }
-
-    updates.updated_at = new Date().toISOString()
-
-    const { data: updated, error: updErr } = await supabase
-      .from("coach_client_notes")
-      .update(updates)
-      .eq("id", noteId)
-      .select("id, type, body, priority, completed_at, created_at, updated_at")
-      .single()
-
-    if (updErr) throw new Error(`Note update failed: ${updErr.message}`)
-
-    return withCorsJson(req, { ok: true, note: updated })
+    // What an edit means lives in lib/notes/edit.ts, shared with the other
+    // note route. This route decides only who may make it.
+    const result = await editNote(supabase, existing as ExistingNote, body)
+    return withCorsJson(req, result.json, result.status)
   } catch (err: any) {
     const msg = err?.message || String(err)
     const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500
@@ -277,13 +186,8 @@ export async function DELETE(
       return withCorsJson(req, { ok: false, error: "Forbidden: note does not belong to this coach-client relationship" }, 403)
     }
 
-    const now = new Date().toISOString()
-    const { error: delErr } = await supabase
-      .from("coach_client_notes")
-      .update({ deleted_at: now, updated_at: now })
-      .eq("id", noteId)
-
-    if (delErr) throw new Error(`Note delete failed: ${delErr.message}`)
+    // Soft delete. An old action item's task is its own record and stays.
+    await deleteNote(supabase, noteId)
 
     return withCorsJson(req, { ok: true })
   } catch (err: any) {

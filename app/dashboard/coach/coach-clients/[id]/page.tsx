@@ -35,6 +35,19 @@ import {
 } from "../../../../../lib/dashboard-theme"
 import { SavingSpinner } from "../../SavingSpinner"
 import { LoadingShell } from "../../LoadingShell"
+import { TaskList } from "../../_tasks/TaskList"
+import { useRecordNoteTaskActions } from "../../_notes/RecordNoteTaskActions"
+import {
+  LegacyTaskLine,
+  NOTE_TYPE_BADGE,
+  NOTE_TYPE_LABEL,
+  NoteTopicChip,
+  NoteTopicSelect,
+  NoteTypeChips,
+  type NoteTaskSummary,
+  type NoteTopic,
+  type StoredNoteType,
+} from "../../_notes/noteUi"
 
 // ── Constants ──
 
@@ -79,43 +92,18 @@ const SOURCE_STYLE: Record<SourceCategory, { bg: string; color: string }> = {
 const sourceStyle = (c: SourceCategory | null | undefined) =>
   (c && SOURCE_STYLE[c]) || SOURCE_STYLE.other
 
-const NOTE_TYPES = ["session_recap", "action_item", "other"] as const
-type NoteType = (typeof NOTE_TYPES)[number]
-
-const NOTE_PRIORITIES = ["urgent", "this_week", "when_ready"] as const
-type NotePriority = (typeof NOTE_PRIORITIES)[number]
-
-const NOTE_TYPE_LABEL: Record<NoteType, string> = {
-  session_recap: "Session Recap",
-  action_item: "Action Item",
-  other: "Other",
-}
-
-const NOTE_TYPE_BADGE: Record<NoteType, { bg: string; color: string }> = {
-  session_recap: { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK },
-  action_item:   { bg: "rgba(254,176,106,0.12)", color: T.INK_EMPHASIS },
-  other:         { bg: T.BORDER_SOFT, color: T.MUTED },
-}
-
-const NOTE_PRIORITY_LABEL: Record<NotePriority, string> = {
-  urgent: "Urgent",
-  this_week: "This Week",
-  when_ready: "When Ready",
-}
-
-const NOTE_PRIORITY_BADGE: Record<NotePriority, { bg: string; color: string; border: string }> = {
-  urgent:     { bg: "rgba(248,113,113,0.15)", color: T.ERROR, border: "rgba(248,113,113,0.4)" },
-  this_week:  { bg: "rgba(254,176,106,0.15)", color: T.INK_EMPHASIS, border: "rgba(254,176,106,0.4)" },
-  when_ready: { bg: "rgba(81,173,229,0.12)",  color: T.INK_LINK, border: "rgba(81,173,229,0.4)" },
-}
+// Note types, labels and topics are shared with the client and prospect pages
+// (app/dashboard/coach/_notes/noteUi.tsx). Action Item is not offered: work to
+// do is a task.
+type NoteType = StoredNoteType
+type NotePriority = "urgent" | "this_week" | "when_ready"
 
 const DEFAULT_NOTE_TYPE: NoteType = "session_recap"
-const DEFAULT_ACTION_ITEM_PRIORITY: NotePriority = "this_week"
 
+// Old action items show under All; the type is not offered as a filter.
 const NOTE_FILTER_OPTIONS: { value: "" | NoteType; label: string }[] = [
   { value: "", label: "All" },
   { value: "session_recap", label: "Session Recap" },
-  { value: "action_item", label: "Action Item" },
   { value: "other", label: "Other" },
 ]
 
@@ -137,11 +125,14 @@ type PhasePair = { checked: boolean; at: string | null }
 type ProspectNote = {
   id: string
   type: NoteType
+  topic?: NoteTopic | null
   body: string
   priority: NotePriority | null
   completed_at: string | null
   created_at: string
   updated_at: string
+  /** An old action item's task. Its tick lives on the task, not here. */
+  task?: NoteTaskSummary | null
 }
 
 type CoachClientRecord = {
@@ -278,29 +269,26 @@ function InfoRow({ label: rowLabel, value }: { label: string; value: React.React
 }
 
 // ── Notes section (copy of 4c.2 ProspectNotesSection with the same
-//    type system, completion toggle, and filter chip bar) ──
+//    type system, topics and filter chip bar) ──
 
 function ClientNotesSection({
   coachClientId,
   notes,
   onChanged,
+  onAddNote,
 }: {
   coachClientId: string
   notes: ProspectNote[]
   onChanged: () => void
+  /** Opens the page's Add Note panel (shared with the prospect page). */
+  onAddNote: () => void
 }) {
   const [filter, setFilter] = useState<"" | NoteType>("")
-  const [adding, setAdding] = useState(false)
-  const [draftBody, setDraftBody] = useState("")
-  const [draftType, setDraftType] = useState<NoteType>(DEFAULT_NOTE_TYPE)
-  const [draftPriority, setDraftPriority] = useState<NotePriority>(DEFAULT_ACTION_ITEM_PRIORITY)
-  const [savingAdd, setSavingAdd] = useState(false)
-  const [addError, setAddError] = useState<string | null>(null)
 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editBody, setEditBody] = useState("")
   const [editType, setEditType] = useState<NoteType>(DEFAULT_NOTE_TYPE)
-  const [editPriority, setEditPriority] = useState<NotePriority>(DEFAULT_ACTION_ITEM_PRIORITY)
+  const [editTopic, setEditTopic] = useState<NoteTopic | "">("")
   const [savingEdit, setSavingEdit] = useState(false)
   const [editError, setEditError] = useState<string | null>(null)
 
@@ -309,53 +297,11 @@ function ClientNotesSection({
 
   const filteredNotes = filter ? notes.filter((n) => n.type === filter) : notes
 
-  function startAdd() {
-    setAdding(true)
-    setDraftBody("")
-    setDraftType(DEFAULT_NOTE_TYPE)
-    setDraftPriority(DEFAULT_ACTION_ITEM_PRIORITY)
-    setAddError(null)
-  }
-  function cancelAdd() {
-    setAdding(false)
-    setDraftBody("")
-    setAddError(null)
-  }
-
-  async function handleAdd() {
-    const trimmed = draftBody.trim()
-    if (!trimmed) {
-      setAddError("Note can't be empty")
-      return
-    }
-    setSavingAdd(true)
-    setAddError(null)
-    try {
-      const body: Record<string, string> = { body: trimmed, type: draftType }
-      if (draftType === "action_item") body.priority = draftPriority
-      const res = await authFetch(`/api/coach/prospects/${coachClientId}/notes`, {
-        method: "POST",
-        body: JSON.stringify(body),
-      })
-      const j = await res.json().catch(() => ({}))
-      if (res.status === 201 || j?.ok) {
-        cancelAdd()
-        onChanged()
-      } else {
-        setAddError(j?.error || "Couldn't save note — try again")
-      }
-    } catch {
-      setAddError("Network error — try again")
-    } finally {
-      setSavingAdd(false)
-    }
-  }
-
   function startEdit(n: ProspectNote) {
     setEditingId(n.id)
     setEditBody(n.body)
     setEditType(n.type)
-    setEditPriority(n.priority ?? DEFAULT_ACTION_ITEM_PRIORITY)
+    setEditTopic(n.topic ?? "")
     setEditError(null)
   }
   function cancelEdit() {
@@ -375,11 +321,7 @@ function ClientNotesSection({
     try {
       const res = await authFetch(`/api/coach/prospects/${coachClientId}/notes/${noteId}`, {
         method: "PUT",
-        body: JSON.stringify({
-          body: trimmed,
-          type: editType,
-          priority: editType === "action_item" ? editPriority : null,
-        }),
+        body: JSON.stringify({ body: trimmed, type: editType, topic: editTopic || null }),
       })
       const j = await res.json().catch(() => ({}))
       if (res.ok && j?.ok) {
@@ -392,29 +334,6 @@ function ClientNotesSection({
       setEditError("Network error — try again")
     } finally {
       setSavingEdit(false)
-    }
-  }
-
-  async function toggleCompletion(n: ProspectNote) {
-    if (n.type !== "action_item") return
-    setBusyNoteId(n.id)
-    setRowError(null)
-    const next = n.completed_at ? null : new Date().toISOString()
-    try {
-      const res = await authFetch(`/api/coach/prospects/${coachClientId}/notes/${n.id}`, {
-        method: "PUT",
-        body: JSON.stringify({ completed_at: next }),
-      })
-      const j = await res.json().catch(() => ({}))
-      if (res.ok && j?.ok) {
-        onChanged()
-      } else {
-        setRowError(j?.error || "Couldn't update completion")
-      }
-    } catch {
-      setRowError("Network error")
-    } finally {
-      setBusyNoteId(null)
     }
   }
 
@@ -439,9 +358,9 @@ function ClientNotesSection({
     }
   }
 
-  const headerRight = !adding ? (
+  const headerRight = (
     <button
-      onClick={startAdd}
+      onClick={onAddNote}
       style={{
         ...btnSecondary,
         fontSize: 12,
@@ -454,11 +373,11 @@ function ClientNotesSection({
     >
       + Add note
     </button>
-  ) : null
+  )
 
   return (
     <Section title="Notes" count={notes.length > 0 ? `(${notes.length})` : undefined} headerRight={headerRight}>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: adding || notes.length > 0 ? 16 : 0 }}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: notes.length > 0 ? 16 : 0 }}>
         {NOTE_FILTER_OPTIONS.map((f) => {
           const active = filter === f.value
           return (
@@ -485,121 +404,6 @@ function ClientNotesSection({
         })}
       </div>
 
-      {adding && (
-        <div
-          style={{
-            marginBottom: 16,
-            padding: 14,
-            background: T.GLASS,
-            border: `1px solid ${T.BORDER_SOFT}`,
-            borderRadius: 10,
-            display: "flex",
-            flexDirection: "column",
-            gap: 10,
-            opacity: savingAdd ? 0.5 : 1,
-            pointerEvents: savingAdd ? "none" : "auto",
-            transition: "opacity 120ms ease",
-          }}
-        >
-          <div>
-            <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6, fontSize: 9 }}>TYPE</span>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {NOTE_TYPES.map((t) => {
-                const active = draftType === t
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setDraftType(t)}
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 900,
-                      padding: "6px 12px",
-                      borderRadius: 8,
-                      cursor: "pointer",
-                      textTransform: "uppercase",
-                      letterSpacing: 0.6,
-                      border: active ? "1px solid rgba(254,176,106,0.4)" : `1px solid ${T.BORDER_SOFT}`,
-                      background: active ? "rgba(254,176,106,0.1)" : T.GLASS,
-                      color: active ? T.INK_EMPHASIS : T.DIM,
-                      fontFamily: "inherit",
-                    }}
-                  >
-                    {NOTE_TYPE_LABEL[t]}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-          {draftType === "action_item" && (
-            <div>
-              <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6, fontSize: 9 }}>PRIORITY</span>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {NOTE_PRIORITIES.map((p) => {
-                  const active = draftPriority === p
-                  const s = NOTE_PRIORITY_BADGE[p]
-                  return (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setDraftPriority(p)}
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 900,
-                        padding: "6px 12px",
-                        borderRadius: 8,
-                        cursor: "pointer",
-                        textTransform: "uppercase",
-                        letterSpacing: 0.6,
-                        border: active ? `1px solid ${s.border}` : `1px solid ${T.BORDER_SOFT}`,
-                        background: active ? s.bg : T.GLASS,
-                        color: active ? s.color : T.DIM,
-                        fontFamily: "inherit",
-                      }}
-                    >
-                      {NOTE_PRIORITY_LABEL[p]}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-          <textarea
-            style={{ ...textarea, minHeight: 80, fontSize: 13 }}
-            placeholder="What did you want to capture?"
-            value={draftBody}
-            onChange={(e) => { setDraftBody(e.target.value); if (addError) setAddError(null) }}
-            autoFocus
-          />
-          {addError && (
-            <div style={{ padding: 8, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8 }}>
-              <span style={{ fontSize: 12, color: T.ERROR, fontWeight: 700 }}>{addError}</span>
-            </div>
-          )}
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              onClick={handleAdd}
-              disabled={savingAdd || draftBody.trim().length === 0}
-              style={{
-                ...btnPrimary,
-                fontSize: 11,
-                padding: "6px 14px",
-                opacity: savingAdd || draftBody.trim().length === 0 ? 0.5 : 1,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              {savingAdd && <SavingSpinner size={10} />}
-              {savingAdd ? "Saving..." : "Save"}
-            </button>
-            <button onClick={cancelAdd} disabled={savingAdd} style={{ ...btnSecondary, fontSize: 11, padding: "6px 12px" }}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
       {rowError && (
         <div style={{ marginBottom: 12, padding: 10, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8 }}>
           <span style={{ fontSize: 12, color: T.ERROR, fontWeight: 700 }}>{rowError}</span>
@@ -615,9 +419,9 @@ function ClientNotesSection({
           {filteredNotes.map((n) => {
             const isEditing = editingId === n.id
             const isActionItem = n.type === "action_item"
-            const isCompleted = !!n.completed_at
+            // An old action item reads as done when its task is.
+            const isCompleted = isActionItem && (n.task ? n.task.status !== "open" : !!n.completed_at)
             const typeBadge = NOTE_TYPE_BADGE[n.type]
-            const priorityBadge = n.priority ? NOTE_PRIORITY_BADGE[n.priority] : null
             const created = n.created_at ? new Date(n.created_at) : null
             const createdLabel = created
               ? created.toLocaleString("en-US", {
@@ -642,16 +446,6 @@ function ClientNotesSection({
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
-                  {isActionItem && (
-                    <input
-                      type="checkbox"
-                      checked={isCompleted}
-                      disabled={busyNoteId === n.id}
-                      onChange={() => toggleCompletion(n)}
-                      style={{ accentColor: T.WRN_ORANGE, width: 16, height: 16, cursor: "pointer" }}
-                      aria-label={isCompleted ? "Mark incomplete" : "Mark complete"}
-                    />
-                  )}
                   <span
                     style={{
                       background: typeBadge.bg,
@@ -666,27 +460,8 @@ function ClientNotesSection({
                   >
                     {NOTE_TYPE_LABEL[n.type]}
                   </span>
-                  {isActionItem && priorityBadge && n.priority && (
-                    <span
-                      style={{
-                        background: priorityBadge.bg,
-                        color: priorityBadge.color,
-                        fontSize: 10,
-                        fontWeight: 900,
-                        letterSpacing: 0.8,
-                        textTransform: "uppercase",
-                        padding: "3px 10px",
-                        borderRadius: 999,
-                      }}
-                    >
-                      {NOTE_PRIORITY_LABEL[n.priority]}
-                    </span>
-                  )}
-                  {isCompleted && (
-                    <span style={{ fontSize: 11, color: T.SUCCESS, fontWeight: 700 }}>
-                      ✓ Completed {new Date(n.completed_at!).toLocaleDateString()}
-                    </span>
-                  )}
+                  <NoteTopicChip topic={n.topic} />
+                  {isActionItem && <LegacyTaskLine task={n.task} />}
                   {createdLabel && (
                     <span style={{ fontSize: 11, color: T.DIM, marginLeft: "auto" }}>
                       {createdLabel}
@@ -697,67 +472,10 @@ function ClientNotesSection({
 
                 {isEditing ? (
                   <div style={{ opacity: savingEdit ? 0.5 : 1, pointerEvents: savingEdit ? "none" : "auto", transition: "opacity 120ms ease" }}>
-                    <div style={{ marginBottom: 10 }}>
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        {NOTE_TYPES.map((t) => {
-                          const active = editType === t
-                          return (
-                            <button
-                              key={t}
-                              type="button"
-                              onClick={() => setEditType(t)}
-                              style={{
-                                fontSize: 10,
-                                fontWeight: 900,
-                                padding: "4px 10px",
-                                borderRadius: 8,
-                                cursor: "pointer",
-                                textTransform: "uppercase",
-                                letterSpacing: 0.6,
-                                border: active ? "1px solid rgba(254,176,106,0.4)" : `1px solid ${T.BORDER_SOFT}`,
-                                background: active ? "rgba(254,176,106,0.1)" : T.GLASS,
-                                color: active ? T.INK_EMPHASIS : T.DIM,
-                                fontFamily: "inherit",
-                              }}
-                            >
-                              {NOTE_TYPE_LABEL[t]}
-                            </button>
-                          )
-                        })}
-                      </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 10 }}>
+                      <NoteTypeChips compact value={editType} onChange={setEditType} />
+                      <NoteTopicSelect id={`converted-edit-topic-${n.id}`} value={editTopic} onChange={setEditTopic} />
                     </div>
-                    {editType === "action_item" && (
-                      <div style={{ marginBottom: 10 }}>
-                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                          {NOTE_PRIORITIES.map((p) => {
-                            const active = editPriority === p
-                            const s = NOTE_PRIORITY_BADGE[p]
-                            return (
-                              <button
-                                key={p}
-                                type="button"
-                                onClick={() => setEditPriority(p)}
-                                style={{
-                                  fontSize: 10,
-                                  fontWeight: 900,
-                                  padding: "4px 10px",
-                                  borderRadius: 8,
-                                  cursor: "pointer",
-                                  textTransform: "uppercase",
-                                  letterSpacing: 0.6,
-                                  border: active ? `1px solid ${s.border}` : `1px solid ${T.BORDER_SOFT}`,
-                                  background: active ? s.bg : T.GLASS,
-                                  color: active ? s.color : T.DIM,
-                                  fontFamily: "inherit",
-                                }}
-                              >
-                                {NOTE_PRIORITY_LABEL[p]}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )}
                     <textarea
                       style={{ ...textarea, minHeight: 100, fontSize: 13 }}
                       value={editBody}
@@ -892,6 +610,16 @@ export default function CoachClientPostConversionPage() {
   )
 
   useEffect(() => { load() }, [load])
+
+  // The record's two buttons, shared with the prospect page.
+  const [tasksKey, setTasksKey] = useState(0)
+  const actions = useRecordNoteTaskActions({
+    coachClientId: id,
+    name: record?.name || record?.invited_email || "This client",
+    recordLabel: "Client",
+    onNoteSaved: () => { load({ silent: true }) },
+    onTaskSaved: () => setTasksKey((k) => k + 1),
+  })
 
   // Routing guards — redirect away when the record's lifecycle / link
   // state doesn't match the 4d surface contract. Both use router.replace
@@ -1053,6 +781,9 @@ export default function CoachClientPostConversionPage() {
           >
             Awaiting SIGNAL Setup
           </span>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {actions.element}
+          </div>
         </div>
       </div>
 
@@ -1265,11 +996,26 @@ export default function CoachClientPostConversionPage() {
         </div>
       </Section>
 
+      {/* Tasks on this client. assignee="all", as on the prospect and client
+          pages: what is outstanding for this person, not what is on my plate. */}
+      <Section title="Tasks">
+        <TaskList
+          key={tasksKey}
+          showStatusFilter
+          assignee="all"
+          coachClient={record.id}
+          newTaskCoachClient={{ id: record.id, name: displayName, label: "Client" }}
+          editable
+          onChanged={() => load({ silent: true })}
+        />
+      </Section>
+
       {/* Notes section — same type system as the prospect detail page */}
       <ClientNotesSection
         coachClientId={record.id}
         notes={record.notes}
         onChanged={() => load({ silent: true })}
+        onAddNote={actions.openNote}
       />
     </div>
   )

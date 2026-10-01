@@ -11,28 +11,20 @@ import {
   label,
 } from "../../../../../lib/dashboard-theme"
 import { SavingSpinner } from "../../SavingSpinner"
+import { NoteTopicSelect, NoteTypeChips, type NoteTopic, type NoteType } from "../../_notes/noteUi"
 
-export type NoteType = "session_recap" | "action_item" | "other"
-export type NotePriority = "urgent" | "this_week" | "when_ready"
+export type { NoteType }
 
-// "Action Item" is deliberately not offered any more. An action item is a
-// task, and tasks live on the client's Tasks tab where they carry an assignee,
-// a due date and a status that the cross-client surfaces can read. A note
-// could carry none of those. The type remains in NoteType because rows written
-// before 2026-09-26 still say action_item and still have to render.
-const TYPE_OPTIONS: { value: NoteType; label: string }[] = [
-  { value: "session_recap", label: "Session Recap" },
-  { value: "other", label: "Other" },
-]
-
-const PRIORITY_OPTIONS: { value: NotePriority; label: string }[] = [
-  { value: "urgent", label: "Urgent" },
-  { value: "this_week", label: "This Week" },
-  { value: "when_ready", label: "When Ready" },
-]
-
+// Session Recap or Other, with an optional topic. Action Item is not offered:
+// work to do is a task, added with the page's Add Task button.
 const DEFAULT_TYPE: NoteType = "session_recap"
-const DEFAULT_PRIORITY: NotePriority = "this_week"
+
+export type NoteSubmitInput = {
+  type: NoteType
+  body: string
+  /** Files the note under Phase, Deliverable or Milestone. null = no topic. */
+  topic: NoteTopic | null
+}
 
 type Props = {
   open: boolean
@@ -40,16 +32,12 @@ type Props = {
   onSaved: () => void
   // POST handler injected by the parent so this component stays
   // ignorant of clientId/auth plumbing. Returns true on success.
-  onSubmit: (input: {
-    type: NoteType
-    body: string
-    priority: NotePriority | null
-  }) => Promise<{ ok: true } | { ok: false; error: string }>
+  onSubmit: (input: NoteSubmitInput) => Promise<{ ok: true } | { ok: false; error: string }>
 }
 
 export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
   const [type, setType] = useState<NoteType>(DEFAULT_TYPE)
-  const [priority, setPriority] = useState<NotePriority>(DEFAULT_PRIORITY)
+  const [topic, setTopic] = useState<NoteTopic | "">("")
   const [body, setBody] = useState("")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -59,7 +47,7 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
   useEffect(() => {
     if (open) {
       setType(DEFAULT_TYPE)
-      setPriority(DEFAULT_PRIORITY)
+      setTopic("")
       setBody("")
       setError(null)
       setSaving(false)
@@ -91,11 +79,7 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
     }
     setSaving(true)
     setError(null)
-    const res = await onSubmit({
-      type,
-      body: trimmed,
-      priority: type === "action_item" ? priority : null,
-    })
+    const res = await onSubmit({ type, body: trimmed, topic: topic || null })
     setSaving(false)
     if (!res.ok) {
       setError(res.error)
@@ -193,83 +177,10 @@ export function AddNotePanel({ open, onClose, onSaved, onSubmit }: Props) {
         >
           <div>
             <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 8 }}>TYPE</span>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {TYPE_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setType(opt.value)}
-                  style={{
-                    fontSize: TYPE.micro,
-                    fontWeight: 900,
-                    padding: "6px 12px",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    textTransform: "uppercase",
-                    letterSpacing: 0.6,
-                    border: type === opt.value ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
-                    background: type === opt.value ? "rgba(254,176,106,0.1)" : T.GLASS,
-                    color: type === opt.value ? T.INK_EMPHASIS : T.DIM,
-                  }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+            <NoteTypeChips value={type} onChange={setType} />
           </div>
 
-          {type === "action_item" && (
-            <div>
-              <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 8 }}>PRIORITY</span>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {PRIORITY_OPTIONS.map((opt) => {
-                  const active = priority === opt.value
-                  const accentBorder =
-                    opt.value === "urgent"
-                      ? "rgba(248,113,113,0.4)"
-                      : opt.value === "this_week"
-                      ? "rgba(254,176,106,0.4)"
-                      : "rgba(81,173,229,0.4)"
-                  const accentBg =
-                    opt.value === "urgent"
-                      ? "rgba(248,113,113,0.1)"
-                      : opt.value === "this_week"
-                      ? "rgba(254,176,106,0.1)"
-                      : "rgba(81,173,229,0.1)"
-                  const accentColor =
-                    opt.value === "urgent"
-                      ? "#f87171"
-                      : opt.value === "this_week"
-                      ? T.INK_EMPHASIS
-                      : T.INK_LINK
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setPriority(opt.value)}
-                      style={{
-                        fontSize: TYPE.micro,
-                        fontWeight: 900,
-                        padding: "6px 12px",
-                        borderRadius: 8,
-                        cursor: "pointer",
-                        textTransform: "uppercase",
-                        letterSpacing: 0.6,
-                        border: active ? `1px solid ${accentBorder}` : `1px solid ${T.BORDER_SOFT}`,
-                        background: active ? accentBg : T.GLASS,
-                        color: active ? accentColor : T.DIM,
-                      }}
-                    >
-                      {opt.label}
-                    </button>
-                  )
-                })}
-              </div>
-              <p style={{ fontSize: TYPE.label, color: T.DIM, marginTop: 4 }}>
-                Feeds the Needs Attention list on the dashboard
-              </p>
-            </div>
-          )}
+          <NoteTopicSelect id="add-note-topic" value={topic} onChange={setTopic} />
 
           <div>
             <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>NOTE</span>

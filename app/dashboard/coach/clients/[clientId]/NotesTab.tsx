@@ -12,46 +12,36 @@ import {
   btnSecondary,
 } from "../../../../../lib/dashboard-theme"
 import { SavingSpinner } from "../../SavingSpinner"
+import {
+  LegacyTaskLine,
+  NOTE_TYPE_BADGE,
+  NOTE_TYPE_LABEL,
+  NoteTopicChip,
+  NoteTopicSelect,
+  NoteTypeChips,
+  useScrollToNoteHash,
+  type NoteTaskSummary,
+  type NoteTopic,
+  type StoredNoteType,
+} from "../../_notes/noteUi"
 
-export type NoteType = "session_recap" | "action_item" | "other"
+export type NoteType = StoredNoteType
 export type NotePriority = "urgent" | "this_week" | "when_ready"
 
 export type NoteRow = {
   id: string
   type: NoteType
+  topic?: NoteTopic | null
   body: string
   priority: NotePriority | null
   completed_at: string | null
   created_at: string
   updated_at: string
+  /** An old action item's task (lib/notes/actionItems.ts). Null when it has none. */
+  task?: NoteTaskSummary | null
 }
 
-const TYPE_LABEL: Record<NoteType, string> = {
-  session_recap: "Session Recap",
-  action_item: "Action Item",
-  other: "Other",
-}
-
-const TYPE_BADGE_STYLE: Record<NoteType, { bg: string; color: string }> = {
-  session_recap: { bg: "rgba(81,173,229,0.12)", color: T.INK_LINK },
-  action_item: { bg: "rgba(254,176,106,0.12)", color: T.INK_EMPHASIS },
-  other: { bg: T.BORDER_SOFT, color: T.MUTED },
-}
-
-const PRIORITY_LABEL: Record<NotePriority, string> = {
-  urgent: "Urgent",
-  this_week: "This Week",
-  when_ready: "When Ready",
-}
-
-const PRIORITY_BADGE_STYLE: Record<NotePriority, { bg: string; color: string }> = {
-  urgent: { bg: "rgba(248,113,113,0.15)", color: T.ERROR },
-  this_week: { bg: "rgba(254,176,106,0.15)", color: T.INK_EMPHASIS },
-  when_ready: { bg: "rgba(81,173,229,0.12)", color: T.INK_LINK },
-}
-
-const DEFAULT_ACTION_ITEM_PRIORITY: NotePriority = "this_week"
-
+// Old action items show under All; the type is not offered as a filter.
 const FILTER_OPTIONS: { value: "" | NoteType; label: string }[] = [
   { value: "", label: "All" },
   { value: "session_recap", label: "Session Recap" },
@@ -75,7 +65,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editBody, setEditBody] = useState("")
   const [editType, setEditType] = useState<NoteType>("session_recap")
-  const [editPriority, setEditPriority] = useState<NotePriority>(DEFAULT_ACTION_ITEM_PRIORITY)
+  const [editTopic, setEditTopic] = useState<NoteTopic | "">("")
   const [savingEdit, setSavingEdit] = useState(false)
   const [busyNoteId, setBusyNoteId] = useState<string | null>(null)
 
@@ -106,18 +96,21 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId, filter, refreshKey])
 
+  // A task's Go button lands on #note-<id>; scroll there once the list exists.
+  useScrollToNoteHash(!loading && notes.length > 0)
+
   function startEdit(n: NoteRow) {
     setEditingId(n.id)
     setEditBody(n.body)
     setEditType(n.type)
-    setEditPriority(n.priority ?? DEFAULT_ACTION_ITEM_PRIORITY)
+    setEditTopic(n.topic ?? "")
   }
 
   function cancelEdit() {
     setEditingId(null)
     setEditBody("")
     setEditType("session_recap")
-    setEditPriority(DEFAULT_ACTION_ITEM_PRIORITY)
+    setEditTopic("")
   }
 
   async function saveEdit(noteId: string) {
@@ -127,11 +120,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
     try {
       const res = await authFetch(`/api/coach/clients/${clientId}/note-feed/${noteId}`, {
         method: "PUT",
-        body: JSON.stringify({
-          body: trimmed,
-          type: editType,
-          priority: editType === "action_item" ? editPriority : null,
-        }),
+        body: JSON.stringify({ body: trimmed, type: editType, topic: editTopic || null }),
         headers: { "Content-Type": "application/json" },
       })
       const j = await res.json().catch(() => null)
@@ -145,28 +134,6 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
       setError("Network error saving note")
     }
     setSavingEdit(false)
-  }
-
-  async function toggleCompletion(n: NoteRow) {
-    if (n.type !== "action_item") return
-    setBusyNoteId(n.id)
-    const next = n.completed_at ? null : new Date().toISOString()
-    try {
-      const res = await authFetch(`/api/coach/clients/${clientId}/note-feed/${n.id}`, {
-        method: "PUT",
-        body: JSON.stringify({ completed_at: next }),
-        headers: { "Content-Type": "application/json" },
-      })
-      const j = await res.json().catch(() => null)
-      if (!res.ok || !j?.ok) {
-        setError(j?.error || "Failed to update completion")
-      } else {
-        await load()
-      }
-    } catch {
-      setError("Network error")
-    }
-    setBusyNoteId(null)
   }
 
   async function deleteNote(noteId: string) {
@@ -229,16 +196,16 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
         <p style={{ color: T.MUTED, fontSize: TYPE.secondary }}>Loading…</p>
       ) : notes.length === 0 ? (
         <p style={{ color: T.MUTED, fontSize: TYPE.secondary }}>
-          {filter ? `No ${(TYPE_LABEL[filter as NoteType] ?? "note").toLowerCase()} notes` : "No notes yet"}
+          {filter ? `No ${(NOTE_TYPE_LABEL[filter as NoteType] ?? "note").toLowerCase()} notes` : "No notes yet"}
         </p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {notes.map((n) => {
             const isEditing = editingId === n.id
             const isActionItem = n.type === "action_item"
-            const isCompleted = !!n.completed_at
-            const typeBadge = TYPE_BADGE_STYLE[n.type]
-            const priorityBadge = n.priority ? PRIORITY_BADGE_STYLE[n.priority] : null
+            // An old action item reads as done when its task is.
+            const isCompleted = isActionItem && (n.task ? n.task.status !== "open" : !!n.completed_at)
+            const typeBadge = NOTE_TYPE_BADGE[n.type]
 
             const created = n.created_at ? new Date(n.created_at) : null
             const createdLabel = created
@@ -255,6 +222,7 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
             return (
               <div
                 key={n.id}
+                id={`note-${n.id}`}
                 style={{
                   ...card,
                   padding: 18,
@@ -263,16 +231,6 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
               >
                 {/* Header row: badge, completion checkbox, date, edit/delete */}
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
-                  {isActionItem && (
-                    <input
-                      type="checkbox"
-                      checked={isCompleted}
-                      disabled={busyNoteId === n.id}
-                      onChange={() => toggleCompletion(n)}
-                      style={{ accentColor: T.WRN_ORANGE, width: 16, height: 16, cursor: "pointer" }}
-                      aria-label={isCompleted ? "Mark incomplete" : "Mark complete"}
-                    />
-                  )}
                   <span
                     style={{
                       background: typeBadge.bg,
@@ -285,29 +243,10 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
                       borderRadius: 999,
                     }}
                   >
-                    {TYPE_LABEL[n.type]}
+                    {NOTE_TYPE_LABEL[n.type]}
                   </span>
-                  {isActionItem && priorityBadge && n.priority && (
-                    <span
-                      style={{
-                        background: priorityBadge.bg,
-                        color: priorityBadge.color,
-                        fontSize: TYPE.label,
-                        fontWeight: 900,
-                        letterSpacing: 0.8,
-                        textTransform: "uppercase",
-                        padding: "3px 10px",
-                        borderRadius: 999,
-                      }}
-                    >
-                      {PRIORITY_LABEL[n.priority]}
-                    </span>
-                  )}
-                  {isCompleted && (
-                    <span style={{ fontSize: TYPE.micro, color: T.SUCCESS, fontWeight: 700 }}>
-                      ✓ Completed {new Date(n.completed_at!).toLocaleDateString()}
-                    </span>
-                  )}
+                  <NoteTopicChip topic={n.topic} />
+                  {isActionItem && <LegacyTaskLine task={n.task} />}
                   {createdLabel && (
                     <span style={{ fontSize: TYPE.micro, color: T.DIM, marginLeft: "auto" }}>
                       {createdLabel}
@@ -318,64 +257,10 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
 
                 {isEditing ? (
                   <div>
-                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-                      {[
-                        { value: "session_recap" as const, label: "Session Recap" },
-                        { value: "other" as const, label: "Other" },
-                      ].map((opt) => (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          onClick={() => setEditType(opt.value)}
-                          style={{
-                            fontSize: TYPE.label,
-                            fontWeight: 900,
-                            padding: "4px 10px",
-                            borderRadius: 6,
-                            cursor: "pointer",
-                            textTransform: "uppercase",
-                            letterSpacing: 0.5,
-                            border: editType === opt.value ? `1px solid rgba(254,176,106,0.4)` : `1px solid ${T.BORDER_SOFT}`,
-                            background: editType === opt.value ? "rgba(254,176,106,0.1)" : T.GLASS,
-                            color: editType === opt.value ? T.INK_EMPHASIS : T.DIM,
-                          }}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 10 }}>
+                      <NoteTypeChips compact value={editType} onChange={setEditType} />
+                      <NoteTopicSelect id={`edit-topic-${n.id}`} value={editTopic} onChange={setEditTopic} />
                     </div>
-                    {editType === "action_item" && (
-                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
-                        {[
-                          { value: "urgent" as const, label: "Urgent", color: T.ERROR, border: "rgba(248,113,113,0.4)", bg: "rgba(248,113,113,0.1)" },
-                          { value: "this_week" as const, label: "This Week", color: T.INK_EMPHASIS, border: "rgba(254,176,106,0.4)", bg: "rgba(254,176,106,0.1)" },
-                          { value: "when_ready" as const, label: "When Ready", color: T.INK_LINK, border: "rgba(81,173,229,0.4)", bg: "rgba(81,173,229,0.1)" },
-                        ].map((opt) => {
-                          const active = editPriority === opt.value
-                          return (
-                            <button
-                              key={opt.value}
-                              type="button"
-                              onClick={() => setEditPriority(opt.value)}
-                              style={{
-                                fontSize: TYPE.label,
-                                fontWeight: 900,
-                                padding: "4px 10px",
-                                borderRadius: 6,
-                                cursor: "pointer",
-                                textTransform: "uppercase",
-                                letterSpacing: 0.5,
-                                border: active ? `1px solid ${opt.border}` : `1px solid ${T.BORDER_SOFT}`,
-                                background: active ? opt.bg : T.GLASS,
-                                color: active ? opt.color : T.DIM,
-                              }}
-                            >
-                              {opt.label}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    )}
                     <textarea
                       style={{ ...textarea, minHeight: 100, fontSize: TYPE.secondary }}
                       value={editBody}

@@ -13,7 +13,7 @@
 // migration.
 //
 // Routes:
-//   POST   — create a note (body required; type optional)
+//   POST   — create a note (body required; type and topic optional)
 //   GET    — list active (non-soft-deleted) notes; optional ?type filter
 //
 // Per-note operations live in ./[noteId]/route.ts.
@@ -22,16 +22,16 @@ import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { resolveDelegation } from "@/lib/collab/delegation"
+import { withNoteTasks } from "@/lib/notes/actionItems"
+import { NOTE_COLUMNS, parseNoteCreate } from "@/lib/notes/model"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
+// The ?type filter accepts the retired action_item too: those rows still exist.
 const NOTE_TYPES = ["session_recap", "action_item", "other"] as const
 type NoteType = (typeof NOTE_TYPES)[number]
 
-const NOTE_PRIORITIES = ["urgent", "this_week", "when_ready"] as const
-type NotePriority = (typeof NOTE_PRIORITIES)[number]
-const DEFAULT_ACTION_ITEM_PRIORITY: NotePriority = "this_week"
 
 function getSupabaseAdmin() {
   const url = process.env.SUPABASE_URL
@@ -163,7 +163,7 @@ export async function GET(
     // is owned by this coach).
     let q = supabase
       .from("coach_client_notes")
-      .select("id, type, body, priority, completed_at, created_at, updated_at")
+      .select("id, type, topic, body, priority, completed_at, created_at, updated_at")
       .eq("coach_client_id", access.id)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
@@ -173,7 +173,7 @@ export async function GET(
     const { data, error } = await q
     if (error) throw new Error(`Notes list failed: ${error.message}`)
 
-    return withCorsJson(req, { ok: true, notes: data ?? [] })
+    return withCorsJson(req, { ok: true, notes: await withNoteTasks(supabase, data ?? []) })
   } catch (err: any) {
     const msg = err?.message || String(err)
     const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500
@@ -205,35 +205,10 @@ export async function POST(
       return withCorsJson(req, { ok: false, error: "Invalid JSON body" }, 400)
     }
 
-    const noteBody = typeof body.body === "string" ? body.body.trim() : ""
-    if (!noteBody) return withCorsJson(req, { ok: false, error: "body is required" }, 400)
-
-    // Type defaults to 'session_recap' if absent. Explicit non-null
-    // values must be one of the three valid types.
-    let type: NoteType = "session_recap"
-    if (body.type !== undefined && body.type !== null && body.type !== "") {
-      if (!(NOTE_TYPES as readonly string[]).includes(body.type)) {
-        return withCorsJson(req, { ok: false, error: "Invalid type" }, 400)
-      }
-      type = body.type as NoteType
-    }
-
-    // Priority is required for action_item, must be NULL for other
-    // types. CHECK constraints on the table enforce this; we resolve
-    // here so the caller doesn't have to know about constraint shapes.
-    // Behavior parity with the existing client-keyed route: if priority
-    // is sent on a non-action_item type, silently ignore it (do not
-    // 400). Tightening this is a separate cross-route concern.
-    let priority: NotePriority | null = null
-    if (type === "action_item") {
-      if (body.priority === undefined || body.priority === null || body.priority === "") {
-        priority = DEFAULT_ACTION_ITEM_PRIORITY
-      } else if ((NOTE_PRIORITIES as readonly string[]).includes(body.priority)) {
-        priority = body.priority as NotePriority
-      } else {
-        return withCorsJson(req, { ok: false, error: "Invalid priority" }, 400)
-      }
-    }
+    // Recap or Other, with an optional topic. Action Item is refused: work to
+    // do is a task (lib/notes/model.ts).
+    const parsed = parseNoteCreate(body)
+    if (!parsed.ok) return withCorsJson(req, { ok: false, error: parsed.error }, 400)
 
     // client_profile_id is denormalized for index-only filtered queries
     // (per the table's schema comment). For prospects access.client_profile_id
@@ -245,16 +220,13 @@ export async function POST(
         coach_client_id: access.id,
         coach_profile_id: profileId,
         client_profile_id: access.client_profile_id,
-        type,
-        body: noteBody,
-        priority,
+        ...parsed.value,
       })
-      .select("id, type, body, priority, completed_at, created_at, updated_at")
+      .select(NOTE_COLUMNS)
       .single()
 
     if (insertErr) throw new Error(`Note insert failed: ${insertErr.message}`)
-
-    return withCorsJson(req, { ok: true, note: inserted }, 201)
+    return withCorsJson(req, { ok: true, note: { ...inserted, task: null } }, 201)
   } catch (err: any) {
     const msg = err?.message || String(err)
     const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500

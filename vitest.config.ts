@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url"
 import { defineConfig } from "vitest/config"
 
 // Component-test runner for the CLIENT-STATE layer (React components with
@@ -24,6 +25,12 @@ export default defineConfig({
     include: ["app/**/*.test.tsx", "lib/**/*.test.tsx"],
     exclude: ["node_modules/**", ".next/**", "tests/**", "signal-mobile/**"],
     restoreMocks: true,
+  },
+  // The "@/" alias from tsconfig.json ("@/*" -> "./*"). Without it any
+  // component importing "@/components/..." (TaskFormModal does) cannot load
+  // under vitest at all.
+  resolve: {
+    alias: { "@": fileURLToPath(new URL(".", import.meta.url)) },
   },
   // No jsx transform config needed: vitest 4 transforms via oxc, which picks up
   // `jsx: "react-jsx"` from tsconfig.json. (Setting `esbuild.jsx` here is

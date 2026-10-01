@@ -17,8 +17,8 @@ import {
   selectDarkOption,
 } from "../../../../../lib/dashboard-theme"
 import ProfilePersonasTab, { type ClientProfileFull, type ClientPersonaFull } from "./ProfilePersonasTab"
-import { NotesTab, type NoteType, type NotePriority } from "./NotesTab"
-import { AddNotePanel } from "./AddNotePanel"
+import { NotesTab } from "./NotesTab"
+import { AddNotePanel, type NoteSubmitInput } from "./AddNotePanel"
 import { TaskList } from "../../_tasks/TaskList"
 import { TaskFormModal } from "../../_tasks/TaskFormModal"
 
@@ -41,6 +41,7 @@ import { InfoCard, type InfoGroup } from "../../InfoCard"
 import { formatDate } from "../../formatDate"
 import { DashboardView } from "./dashboard/DashboardView"
 import { EngagementsTab } from "./EngagementsTab"
+import { ClientTopicNotes } from "./ClientTopicNotes"
 import { LibraryTab } from "./LibraryTab"
 import { HistoryTab } from "./HistoryTab"
 import { WorkbooksTab } from "./WorkbooksTab"
@@ -2092,10 +2093,15 @@ export default function CoachClientPage() {
 
       {/* TAB 5 — Engagements (attached package snapshots) */}
       {tab === "engagements" && (
-        <EngagementsTab
-          coachClientId={coachClientId}
-          clientName={clientProfile?.name || clientProfile?.email || "this client"}
-        />
+        <>
+          {/* Notes filed under Phase, Deliverable or Milestone, on the
+              engagement they are about. Each opens the note on the Notes tab. */}
+          <ClientTopicNotes clientId={clientId} refreshKey={notesRefreshKey} />
+          <EngagementsTab
+            coachClientId={coachClientId}
+            clientName={clientProfile?.name || clientProfile?.email || "this client"}
+          />
+        </>
       )}
 
       {/* Workbooks — interview workbooks; its content area uses the workbook style */}
@@ -2156,11 +2162,11 @@ export default function CoachClientPage() {
           setNotesRefreshKey((k) => k + 1)
           setNeedsAttentionRefreshKey((k) => k + 1)
         }}
-        onSubmit={async ({ type, body, priority }: { type: NoteType; body: string; priority: NotePriority | null }) => {
+        onSubmit={async (input: NoteSubmitInput) => {
           try {
             const res = await authFetch(`/api/coach/clients/${clientId}/note-feed`, {
               method: "POST",
-              body: JSON.stringify({ type, body, priority }),
+              body: JSON.stringify(input),
             })
             const j = await res.json().catch(() => null)
             if (!res.ok || !j?.ok) {

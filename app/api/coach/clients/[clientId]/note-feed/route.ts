@@ -6,7 +6,7 @@
 // coach_clients.private_notes.
 //
 // Routes:
-//   POST   — create a note (body required; type optional)
+//   POST   — create a note (body required; type and topic optional)
 //   GET    — list active (non-soft-deleted) notes; optional ?type filter
 //
 // Per-note operations live in ./[noteId]/route.ts.
@@ -16,16 +16,16 @@ import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { coachClientIdsForClient } from "../../../../_lib/coachClientIds"
 import { resolveDelegation } from "@/lib/collab/delegation"
+import { withNoteTasks } from "@/lib/notes/actionItems"
+import { NOTE_COLUMNS, parseNoteCreate } from "@/lib/notes/model"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
+// The ?type filter accepts the retired action_item too: those rows still exist.
 const NOTE_TYPES = ["session_recap", "action_item", "other"] as const
 type NoteType = (typeof NOTE_TYPES)[number]
 
-const NOTE_PRIORITIES = ["urgent", "this_week", "when_ready"] as const
-type NotePriority = (typeof NOTE_PRIORITIES)[number]
-const DEFAULT_ACTION_ITEM_PRIORITY: NotePriority = "this_week"
 
 function getSupabaseAdmin() {
   const url = process.env.SUPABASE_URL
@@ -146,7 +146,7 @@ export async function GET(
     const ccIds = await coachClientIdsForClient(supabase, clientProfileId)
     let q = supabase
       .from("coach_client_notes")
-      .select("id, type, body, priority, completed_at, created_at, updated_at, coach_profile_id")
+      .select("id, type, topic, body, priority, completed_at, created_at, updated_at, coach_profile_id")
       .in("coach_client_id", ccIds)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })
@@ -170,11 +170,11 @@ export async function GET(
       const { data: authors } = await supabase.from("client_profiles").select("id, name").in("id", authorIds)
       for (const a of authors ?? []) authorNameById.set(a.id as string, (a.name as string | null) ?? null)
     }
-    const notes = notesRows.map((n: any) => ({
+    const notes = await withNoteTasks(supabase, notesRows.map((n: any) => ({
       ...n,
       author_name: authorNameById.get(n.coach_profile_id as string) ?? null,
       is_self: n.coach_profile_id === profileId,
-    }))
+    })))
 
     return withCorsJson(req, { ok: true, notes })
   } catch (err: any) {
@@ -208,42 +208,10 @@ export async function POST(
       return withCorsJson(req, { ok: false, error: "Invalid JSON body" }, 400)
     }
 
-    const noteBody = typeof body.body === "string" ? body.body.trim() : ""
-    if (!noteBody) return withCorsJson(req, { ok: false, error: "body is required" }, 400)
-
-    // Type defaults to 'session_recap' if absent. Explicit non-null values
-    // must be one of the three valid types — null/empty is no longer
-    // accepted (decision 2026-05-09: notes are always typed).
-    let type: NoteType = "session_recap"
-    if (body.type !== undefined && body.type !== null && body.type !== "") {
-      if (!(NOTE_TYPES as readonly string[]).includes(body.type)) {
-        return withCorsJson(req, { ok: false, error: "Invalid type" }, 400)
-      }
-      type = body.type as NoteType
-    }
-
-    // NO NEW ACTION ITEMS. An action item is a task since 2026-09-26: tasks
-    // carry an assignee, a due date and a status, and the dashboard, Required
-    // Actions and the client's Tasks tab all read them. A note written with
-    // this type would be invisible to every one of those.
-    //
-    // Refused rather than silently rewritten to "other", because a coach who
-    // sent this meant "something to do" and deserves to be told where that now
-    // lives. Existing rows keep the type and still render; only creation and
-    // conversion are closed.
-    if (type === "action_item") {
-      return withCorsJson(req, {
-        ok: false,
-        error: "Action items are tasks now. Add it on the client's Tasks tab.",
-      }, 400)
-    }
-
-    // Priority was only ever meaningful for action_item, and that type can no
-    // longer be created here, so it is always NULL. The column and its CHECK
-    // constraints stay for the rows written before 2026-09-26. A task's
-    // equivalent is its due date, which is a claim about when something is
-    // late rather than about how it felt when it was written.
-    const priority: NotePriority | null = null
+    // Recap or Other, with an optional topic. Action Item is refused: work to
+    // do is a task (lib/notes/model.ts).
+    const parsed = parseNoteCreate(body)
+    if (!parsed.ok) return withCorsJson(req, { ok: false, error: parsed.error }, 400)
 
     const { data: inserted, error: insertErr } = await supabase
       .from("coach_client_notes")
@@ -251,16 +219,13 @@ export async function POST(
         coach_client_id: access.id,
         coach_profile_id: profileId,
         client_profile_id: clientProfileId,
-        type,
-        body: noteBody,
-        priority,
+        ...parsed.value,
       })
-      .select("id, type, body, priority, completed_at, created_at, updated_at")
+      .select(NOTE_COLUMNS)
       .single()
 
     if (insertErr) throw new Error(`Note insert failed: ${insertErr.message}`)
-
-    return withCorsJson(req, { ok: true, note: inserted }, 201)
+    return withCorsJson(req, { ok: true, note: { ...inserted, task: null } }, 201)
   } catch (err: any) {
     const msg = err?.message || String(err)
     const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500

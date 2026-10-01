@@ -26,11 +26,13 @@ export type TaskFormModalProps = {
   /** Pre-select this client on a new task (the client page passes its own). */
   presetClientId?: string
   /**
-   * A new task on a prospect: the relationship it belongs to, and its name.
+   * A new task on a prospect (or a converted client with no account yet):
+   * the relationship it belongs to, its name, and what to call it (default
+   * "Prospect").
    * A prospect has no profile for the client select to offer, so the field is
    * shown fixed instead and the task is saved against coach_client_id.
    */
-  presetCoachClient?: { id: string; name: string }
+  presetCoachClient?: { id: string; name: string; label?: string }
   /** Pre-select this assignee on a new task. The client page passes "me". */
   presetAssigneeId?: string
   /**
@@ -251,7 +253,7 @@ export function TaskFormModal(props: TaskFormModalProps) {
 
         {props.presetCoachClient ? (
           <div style={fieldWrap}>
-            <span style={fieldLabel}>Prospect</span>
+            <span style={fieldLabel}>{props.presetCoachClient.label ?? "Prospect"}</span>
             <p style={{ margin: 0, fontSize: 14, color: T.TEXT }}>{props.presetCoachClient.name}</p>
           </div>
         ) : (
