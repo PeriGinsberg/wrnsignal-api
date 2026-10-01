@@ -153,6 +153,19 @@ async function main() {
   }
   {
     const db = await seedOldActionItem()
+    const task = taskOf(db)!
+    task.deleted_at = new Date().toISOString()   // deleted from the task list
+    const [card] = await withNoteTasks(db.client, [noteRow(db)] as Array<Row & { id: string; type: string }>)
+    ok("a deleted task still reaches the card, flagged deleted, not as 'no task'",
+      card.task?.id === task.id && card.task?.deleted === true)
+  }
+  {
+    const db = await seedOldActionItem()
+    const [card] = await withNoteTasks(db.client, [noteRow(db)] as Array<Row & { id: string; type: string }>)
+    ok("a live task is not flagged deleted", card.task?.deleted === false)
+  }
+  {
+    const db = await seedOldActionItem()
     await deleteNote(db.client, "n-1")
     ok("deleting the note soft-deletes it", !!noteRow(db).deleted_at)
     ok("and leaves its open task open", taskOf(db)?.status === "open")

@@ -39,6 +39,8 @@ export type NoteTaskSummary = {
   due_has_time: boolean
   assignee_profile_id: string
   assignee_name: string | null
+  /** The task was deleted from the task list. The note still shows it, so it can say so. */
+  deleted: boolean
 }
 
 /**
@@ -68,13 +70,16 @@ export async function noteTaskSummaries(
   const out = new Map<string, NoteTaskSummary>()
   if (!noteIds.length) return out
   const { data, error } = await db.from("coach_tasks")
-    .select("id, status, due_at, due_has_time, assignee_profile_id, legacy_note_id")
-    .in("legacy_note_id", noteIds).is("deleted_at", null)
+    // Deleted tasks included: without them a note whose task was deleted
+    // read as having none ("Old action item"), which is not what happened.
+    // legacy_note_id is UNIQUE, so there is at most one row per note.
+    .select("id, status, due_at, due_has_time, assignee_profile_id, legacy_note_id, deleted_at")
+    .in("legacy_note_id", noteIds)
   if (error) {
     console.error("[notes] reading action item tasks failed:", error.message)
     return out
   }
-  const rows = (data ?? []) as Array<Omit<NoteTaskSummary, "assignee_name"> & { legacy_note_id: string }>
+  const rows = (data ?? []) as Array<Omit<NoteTaskSummary, "assignee_name" | "deleted"> & { legacy_note_id: string; deleted_at: string | null }>
   const ids = [...new Set(rows.map((r) => r.assignee_profile_id))]
   const names = new Map<string, string | null>()
   if (ids.length) {
@@ -89,6 +94,7 @@ export async function noteTaskSummaries(
       due_has_time: r.due_has_time,
       assignee_profile_id: r.assignee_profile_id,
       assignee_name: names.get(r.assignee_profile_id) ?? null,
+      deleted: r.deleted_at !== null,
     })
   }
   return out

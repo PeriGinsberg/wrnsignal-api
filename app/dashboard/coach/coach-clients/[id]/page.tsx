@@ -419,8 +419,8 @@ function ClientNotesSection({
           {filteredNotes.map((n) => {
             const isEditing = editingId === n.id
             const isActionItem = n.type === "action_item"
-            // An old action item reads as done when its task is.
-            const isCompleted = isActionItem && (n.task ? n.task.status !== "open" : !!n.completed_at)
+            // An old action item reads as done when its task is done, cancelled or deleted.
+            const isCompleted = isActionItem && (n.task ? n.task.deleted || n.task.status !== "open" : !!n.completed_at)
             const typeBadge = NOTE_TYPE_BADGE[n.type]
             const created = n.created_at ? new Date(n.created_at) : null
             const createdLabel = created

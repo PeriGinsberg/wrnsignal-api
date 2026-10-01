@@ -124,9 +124,17 @@ describe("LegacyTaskLine", () => {
   it("says what the old action item's task is doing", () => {
     render(<LegacyTaskLine task={{
       id: "t1", status: "done", due_at: new Date(2026, 9, 1, 12).toISOString(),
-      due_has_time: false, assignee_profile_id: "c2", assignee_name: "Erin Coach",
+      due_has_time: false, assignee_profile_id: "c2", assignee_name: "Erin Coach", deleted: false,
     }} />)
     expect(screen.getByText("Now a task, done · Due Thu, Oct 1 · Erin")).toBeTruthy()
+  })
+  it("says when the task was deleted, instead of implying it never had one", () => {
+    render(<LegacyTaskLine task={{
+      id: "t2", status: "open", due_at: null, due_has_time: false,
+      assignee_profile_id: "c2", assignee_name: "Erin Coach", deleted: true,
+    }} />)
+    expect(screen.getByText("Its task was deleted")).toBeTruthy()
+    expect(screen.queryByText(/Now a task/)).toBeNull()
   })
   it("offers no checkbox", () => {
     render(<LegacyTaskLine task={null} />)

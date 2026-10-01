@@ -122,7 +122,7 @@ export function RecentNotesSection({ authFetch, clientId, refreshKey, onNavigate
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {notes.map((n) => {
             const isActionItem = n.type === "action_item"
-            const isComplete = isActionItem && (n.task ? n.task.status !== "open" : !!n.completed_at)
+            const isComplete = isActionItem && (n.task ? n.task.deleted || n.task.status !== "open" : !!n.completed_at)
             const typeBadge = TYPE_BADGE[n.type]
             const priorityBadge = n.priority ? PRIORITY_BADGE[n.priority] : null
             const created = new Date(n.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })

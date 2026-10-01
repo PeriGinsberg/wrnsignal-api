@@ -141,6 +141,9 @@ export function LegacyTaskLine({ task }: { task: NoteTaskSummary | null | undefi
   if (!task) {
     return <span style={{ fontSize: TYPE.micro, color: T.DIM, fontWeight: 700 }}>Old action item</span>
   }
+  if (task.deleted) {
+    return <span style={{ fontSize: TYPE.micro, color: T.DIM, fontWeight: 700 }}>Its task was deleted</span>
+  }
   const due = task.due_at
     ? ` · Due ${new Date(task.due_at).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}`
     : ""
