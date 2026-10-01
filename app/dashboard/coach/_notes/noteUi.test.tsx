@@ -2,12 +2,12 @@
 //
 // Pinned (2026-10-01): Action Item is not a type anyone can pick; the topic
 // dropdown offers Phase, Deliverable and Milestone; the Add Note panel sends
-// the topic; the tracker list shows topic notes newest first or by topic and
-// stays out of the way when there are none; an old action item says what its task
+// the topic; the tracker list filters topic notes by topic and sorts them
+// (newest, oldest, by topic) and stays out of the way when there are none; an old action item says what its task
 // is doing instead of offering a tick.
 
 import { describe, it, expect, vi, afterEach } from "vitest"
-import { render, screen, cleanup, fireEvent, waitFor } from "@testing-library/react"
+import { render, screen, cleanup, fireEvent, waitFor, within } from "@testing-library/react"
 import { LegacyTaskLine, NoteTopicSelect, NoteTypeChips, TopicNotesBoard, firstLine } from "./noteUi"
 import { AddNotePanel } from "../clients/[clientId]/AddNotePanel"
 
@@ -72,25 +72,44 @@ describe("TopicNotesBoard", () => {
     { id: "d", topic: null, type: "session_recap" as const, body: "No topic here", created_at: "2026-10-01T12:00:00Z" },
   ]
   const order = () => screen.getAllByRole("link").map((a) => a.textContent)
+  const sortBy = (v: string) => fireEvent.change(screen.getByLabelText("Sort notes"), { target: { value: v } })
+  const filterBy = (v: string) => fireEvent.change(screen.getByLabelText("Filter by topic"), { target: { value: v } })
 
-  it("lists topic notes newest first, each linking to its note", () => {
+  it("lists topic notes newest first by default, each linking to its note", () => {
     render(<TopicNotesBoard notes={notes} noteHref={(id) => `#note-${id}`} />)
     expect(order()).toEqual(["Offer accepted", "Search phase", "Resume v2 sent", "Kickoff done"])
     expect(screen.getByRole("link", { name: "Kickoff done" }).getAttribute("href")).toBe("#note-b")
     expect(screen.queryByText("No topic here")).toBeNull()
-    expect(screen.getByRole("radio", { name: "Date" }).getAttribute("aria-checked")).toBe("true")
+    expect((screen.getByLabelText("Sort notes") as HTMLSelectElement).value).toBe("newest")
+    expect((screen.getByLabelText("Filter by topic") as HTMLSelectElement).value).toBe("")
   })
-  it("sorts by topic, Phase then Deliverable then Milestone, newest first within each", () => {
+  it("sorts oldest first, and by topic (Phase, Deliverable, Milestone; newest within)", () => {
     render(<TopicNotesBoard notes={notes} noteHref={(id) => id} />)
-    fireEvent.click(screen.getByRole("radio", { name: "Topic" }))
+    sortBy("oldest")
+    expect(order()).toEqual(["Kickoff done", "Resume v2 sent", "Search phase", "Offer accepted"])
+    sortBy("topic")
     expect(order()).toEqual(["Search phase", "Kickoff done", "Resume v2 sent", "Offer accepted"])
-    fireEvent.click(screen.getByRole("radio", { name: "Date" }))
-    expect(order()).toEqual(["Offer accepted", "Search phase", "Resume v2 sent", "Kickoff done"])
+  })
+  it("filters to one topic, and keeps the chosen sort", () => {
+    render(<TopicNotesBoard notes={notes} noteHref={(id) => id} />)
+    filterBy("phase")
+    expect(order()).toEqual(["Search phase", "Kickoff done"])
+    sortBy("oldest")
+    expect(order()).toEqual(["Kickoff done", "Search phase"])
+    filterBy("")
+    expect(order()).toEqual(["Kickoff done", "Resume v2 sent", "Search phase", "Offer accepted"])
+  })
+  it("says so when a filter matches nothing", () => {
+    render(<TopicNotesBoard notes={notes.filter((n) => n.topic !== "deliverable")} noteHref={(id) => id} />)
+    filterBy("deliverable")
+    expect(screen.getByText("No deliverable notes yet.")).toBeTruthy()
   })
   it("shows each note's topic", () => {
     render(<TopicNotesBoard notes={notes} noteHref={(id) => id} />)
-    expect(screen.getAllByText("Phase")).toHaveLength(2)
-    expect(screen.getByText("Milestone")).toBeTruthy()
+    // Within the list only: the filter dropdown names every topic too.
+    const list = within(screen.getByRole("list"))
+    expect(list.getAllByText("Phase")).toHaveLength(2)
+    expect(list.getByText("Milestone")).toBeTruthy()
   })
   it("renders nothing when no note has a topic", () => {
     const { container } = render(<TopicNotesBoard notes={[notes[4]]} noteHref={(id) => id} />)

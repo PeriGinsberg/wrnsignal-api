@@ -6,7 +6,7 @@
 //
 // A note is a Session Recap or Other, optionally filed under a topic: Phase,
 // Deliverable or Milestone. Topic notes also show on the record's tracker
-// (TopicNotesBoard), newest first or sorted by topic. Work to do is a task,
+// (TopicNotesBoard), filterable by topic and sortable. Work to do is a task,
 // added with the record's Add Task button.
 
 import { useEffect, useState } from "react"
@@ -160,79 +160,94 @@ export type TopicNote = {
   created_at: string
 }
 
-export type TopicNoteSort = "date" | "topic"
+export type TopicNoteSort = "newest" | "oldest" | "topic"
+
+export const TOPIC_NOTE_SORT_OPTIONS: { value: TopicNoteSort; label: string }[] = [
+  { value: "newest", label: "Newest first" },
+  { value: "oldest", label: "Oldest first" },
+  { value: "topic", label: "By topic" },
+]
 
 /**
- * The order the tracker list shows. "date": newest first. "topic": Phase,
- * Deliverable, Milestone, newest first within each. Notes without a topic are
- * not on the tracker, so they never reach here.
+ * The tracker list's filter and order. `topic` "" keeps every topic.
+ * "topic" order is Phase, Deliverable, Milestone, newest first within each.
+ * Notes without a topic are not on the tracker, so they never reach here.
  */
-export function sortTopicNotes<N extends TopicNote>(notes: N[], by: TopicNoteSort): N[] {
-  const newest = (a: N, b: N) => Date.parse(b.created_at) - Date.parse(a.created_at)
+export function filterSortTopicNotes<N extends TopicNote>(
+  notes: N[],
+  opts: { topic: NoteTopic | ""; sort: TopicNoteSort },
+): N[] {
+  const time = (n: N) => Date.parse(n.created_at)
   const rank = (n: N) => NOTE_TOPIC_OPTIONS.findIndex((o) => o.value === n.topic)
-  return [...notes].sort(by === "topic" ? (a, b) => rank(a) - rank(b) || newest(a, b) : newest)
+  const kept = opts.topic ? notes.filter((n) => n.topic === opts.topic) : [...notes]
+  if (opts.sort === "oldest") return kept.sort((a, b) => time(a) - time(b))
+  if (opts.sort === "topic") return kept.sort((a, b) => rank(a) - rank(b) || time(b) - time(a))
+  return kept.sort((a, b) => time(b) - time(a))
 }
 
+const controlLabel = { ...label, color: T.INK_LINK, display: "flex", alignItems: "center", gap: 6 } as const
+const controlSelect = { ...selectDark, fontSize: TYPE.micro, padding: "4px 8px", width: "auto" } as const
+
 /**
- * The record's topic notes on its tracker, as one list: newest first, or
- * grouped by topic. Each links to the note in the full list (`noteHref`).
- * Renders nothing when no note has a topic, so a tracker without any stays as
- * it was.
+ * The record's topic notes on its tracker, as one list with a topic filter
+ * and a sort (newest first by default). Each links to the note in the full
+ * list (`noteHref`). Renders nothing when no note has a topic, so a tracker
+ * without any stays as it was.
  */
 export function TopicNotesBoard(props: { notes: TopicNote[]; noteHref: (id: string) => string }) {
-  const [sortBy, setSortBy] = useState<TopicNoteSort>("date")
+  const [topic, setTopic] = useState<NoteTopic | "">("")
+  const [sort, setSort] = useState<TopicNoteSort>("newest")
   const filed = props.notes.filter((n) => n.topic)
   if (!filed.length) return null
-  const sorted = sortTopicNotes(filed, sortBy)
+  const shown = filterSortTopicNotes(filed, { topic, sort })
   return (
-    <section aria-label="Notes by topic" style={{ ...card, padding: 18 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+    <section aria-label="Topic notes" style={{ ...card, padding: 18 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12, flexWrap: "wrap" }}>
         <div style={{ ...eyebrow, color: T.INK_EMPHASIS }}>TOPIC NOTES</div>
-        <div role="radiogroup" aria-label="Sort notes by" style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
-          {(["date", "topic"] as const).map((k) => {
-            const on = sortBy === k
-            return (
-              <button
-                key={k}
-                type="button"
-                role="radio"
-                aria-checked={on}
-                onClick={() => setSortBy(k)}
-                style={{
-                  fontSize: TYPE.label,
-                  fontWeight: 900,
-                  padding: "4px 10px",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                  textTransform: "uppercase",
-                  letterSpacing: 0.5,
-                  border: on ? "1px solid rgba(254,176,106,0.4)" : `1px solid ${T.BORDER_SOFT}`,
-                  background: on ? "rgba(254,176,106,0.1)" : T.GLASS,
-                  color: on ? T.INK_EMPHASIS : T.DIM,
-                }}
-              >
-                {k === "date" ? "Date" : "Topic"}
-              </button>
-            )
-          })}
+        <div style={{ display: "flex", gap: 14, marginLeft: "auto", flexWrap: "wrap" }}>
+          <label style={controlLabel}>
+            FILTER
+            <select aria-label="Filter by topic" style={controlSelect} value={topic}
+              onChange={(e) => setTopic(e.target.value as NoteTopic | "")}>
+              <option value="" style={selectDarkOption}>All topics</option>
+              {NOTE_TOPIC_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value} style={selectDarkOption}>{o.label}</option>
+              ))}
+            </select>
+          </label>
+          <label style={controlLabel}>
+            SORT
+            <select aria-label="Sort notes" style={controlSelect} value={sort}
+              onChange={(e) => setSort(e.target.value as TopicNoteSort)}>
+              {TOPIC_NOTE_SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value} style={selectDarkOption}>{o.label}</option>
+              ))}
+            </select>
+          </label>
         </div>
       </div>
-      <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
-        {sorted.map((n) => (
-          <li key={n.id} style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-            <NoteTopicChip topic={n.topic} />
-            <a
-              href={props.noteHref(n.id)}
-              style={{ color: T.TEXT, textDecoration: "none", fontSize: TYPE.secondary, lineHeight: "18px", flex: "1 1 220px", minWidth: 0 }}
-            >
-              {firstLine(n.body)}
-            </a>
-            <span style={{ fontSize: TYPE.micro, color: T.DIM, whiteSpace: "nowrap" }}>
-              {NOTE_TYPE_LABEL[n.type]} · {new Date(n.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-            </span>
-          </li>
-        ))}
-      </ul>
+      {shown.length === 0 ? (
+        <p style={{ fontSize: TYPE.secondary, color: T.DIM, margin: 0 }}>
+          No {topic ? NOTE_TOPIC_LABEL[topic as NoteTopic].toLowerCase() : "topic"} notes yet.
+        </p>
+      ) : (
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+          {shown.map((n) => (
+            <li key={n.id} style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+              <NoteTopicChip topic={n.topic} />
+              <a
+                href={props.noteHref(n.id)}
+                style={{ color: T.TEXT, textDecoration: "none", fontSize: TYPE.secondary, lineHeight: "18px", flex: "1 1 220px", minWidth: 0 }}
+              >
+                {firstLine(n.body)}
+              </a>
+              <span style={{ fontSize: TYPE.micro, color: T.DIM, whiteSpace: "nowrap" }}>
+                {NOTE_TYPE_LABEL[n.type]} · {new Date(n.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }
