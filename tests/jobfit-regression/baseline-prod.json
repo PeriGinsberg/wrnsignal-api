@@ -191677,7 +191677,7 @@
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
-        "jobFamily": "Marketing",
+        "jobFamily": "Consulting",
         "jobIndustry": null,
         "jobTitle": "Consulting Intern",
         "location": {
@@ -231678,8 +231678,8 @@
     "schema_version": 2,
     "id": "prod-ad572717-c75c-496f-919e-7a4c349b6a9b",
     "label": "prod ad572717 — Analyst, Market Access Consulting @ Precision AQ (2026-06-05)",
-    "decision": "Apply",
-    "score": 81,
+    "decision": "Priority Apply",
+    "score": 97,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -231909,13 +231909,7 @@
         "match_key": "word"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_FAMILY_MISMATCH",
-        "severity": "medium",
-        "weight": -12
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -231942,7 +231936,7 @@
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
-        "jobFamily": "Marketing",
+        "jobFamily": "Consulting",
         "jobIndustry": null,
         "jobTitle": "Analyst, Market Access Consulting",
         "location": {
@@ -232055,17 +232049,17 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
@@ -232073,8 +232067,8 @@
           "note": "0"
         }
       ],
-      "raw_score": 81,
-      "clamped_score": 81
+      "raw_score": 97,
+      "clamped_score": 97
     }
   },
   "prod-aea2cc9d-22ef-42aa-9e98-63d4143a02bd": {
@@ -312425,8 +312419,8 @@
     "schema_version": 2,
     "id": "prod-e37ae047-388e-406f-96d7-018c1cb6ef38",
     "label": "prod e37ae047 — Analyst, Market Access Consulting @ Precision AQ (2026-06-05)",
-    "decision": "Apply",
-    "score": 81,
+    "decision": "Priority Apply",
+    "score": 97,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -312656,13 +312650,7 @@
         "match_key": "word"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_FAMILY_MISMATCH",
-        "severity": "medium",
-        "weight": -12
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -312689,7 +312677,7 @@
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
-        "jobFamily": "Marketing",
+        "jobFamily": "Consulting",
         "jobIndustry": null,
         "jobTitle": "Analyst, Market Access Consulting",
         "location": {
@@ -312802,17 +312790,17 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
@@ -312820,8 +312808,8 @@
           "note": "0"
         }
       ],
-      "raw_score": 81,
-      "clamped_score": 81
+      "raw_score": 97,
+      "clamped_score": 97
     }
   },
   "prod-e3e5c93f-1864-4003-81fa-5a8a4f434701": {

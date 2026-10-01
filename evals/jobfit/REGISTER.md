@@ -32,14 +32,14 @@ Update at the end of the session.
 
 | Metric | Count |
 |---|---|
-| Cases run | 3 |
+| Cases run | 4 |
 | Verdicts CORRECT | 0 |
-| Verdicts BUG | 3 |
+| Verdicts BUG | 4 |
 | False-fires | 10 |
 | False-clears | 1 (unverified — see DEF-002) |
-| Wrong-verdicts (top-line APPLY/REVIEW/PASS wrong) | 2 |
+| Wrong-verdicts (top-line APPLY/REVIEW/PASS wrong) | 3 |
 | Known-bug repeats (family-mismatch etc.) | 0 |
-| New defects opened | 13 (DEF-005…013; DEF-008 closed NOT-A-DEFECT) |
+| New defects opened | 17 (DEF-005…017; DEF-008 closed NOT-A-DEFECT) |
 
 **Detector fire tally** (how often each detector fired, and how often that fire was wrong):
 
@@ -85,6 +85,10 @@ Severity key: **S1** = wrong top-line verdict, user acts on bad advice. **S2** =
 | DEF-004 | `client_commercial_work` requiredness | mis-typed | S3 | 1 | C001 | Sourced from "Maintain accurate time records and participate in… client-facing meetings" — a duty line — but typed `requiredness: core`, severity high. Directionally right, severity inflated from a weak line | Weight requiredness by line strength; admin/logistics duty lines should not reach `core` | OPEN |
 | DEF-008 | job `strength` vs snippet length (`extract.ts` `jobRuleStrength` / `scoreJobLine`) | — | — | 1 | C002 follow-on | Hypothesised that `strength` is contaminated by snippet length — raw char bonuses (`+1` at ≥20, `+2` at ≥30, `−2` at <16) plus segmentation-sensitive `hits` accumulation — so that fixing DEF-005 made requirements look weaker and pushed prod-7adf78ff Review→Pass | **CLOSED — NOT A DEFECT.** Probed the two units directly. The length term *cancels* (both pre- and post-split snippets clear 30 chars, so `+3` applies in both runs); the delta was `hits`-driven. More importantly the drop was the engine getting **more honest, not less**: pre-fix, `analysis_reporting` (strength 6) was anchored to a recruiting blurb — *"Growing together We are seeking a highly skilled Reporting Analyst…"* — and `operations_execution` (strength 10, `core`) to a logistics line with leaked CSS — *"…Minnetonka, MN location. a { text-decoration: none; color: #464feb"*. Post-fix they anchor to real requirement text (*"Analyze operational data to identify areas for process improvement…"*). Lower strength on junk lines is correct behaviour. The real cause of the 7adf78ff flip is DEF-003 + DEF-009 | **CLOSED** |
 | DEF-009 | `software_engineering` CAPABILITY_RULE (`extract.ts:1366`) | false-fire | S2 | 1 | C002 follow-on | Fires `core` at strength 9 on a **Data Analyst** JD (prod-7adf78ff, UnitedHealth). `jobPhrases` contains bare `"api"` and `"cloud"` with no word boundaries, no `requiresNearby`, no negative context — the canonical instance of architectural debt #1. A quantitative-analytics qualifications block ("3+ years… statistics, business analytics or computer science…") is enough to trip it, and once `core` it drives a high-severity `RISK_MISSING_PROOF` **and** an uncovered-capability penalty. Amplified by DEF-003, which counts it twice | Pre-compile `jobPhrases` to word-boundary regexes and gate the generic tokens (`api`, `cloud`, `backend`, `frontend`) on software-context co-occurrence (engineer/developer/codebase/deploy/repository). Do **not** widen to `computer science`, which is a degree-field phrase, not a job duty. Blocked on the broader bare-word refactor (debt #1) unless fixed narrowly for this rule first | **FIXED** (narrowly, as anticipated) @ the C004 commit: `api` / `cloud` / `backend` / `frontend` now carry `requiresNearby: SOFTWARE_ENGINEERING_ANCHORS`; the unambiguous phrases (`software engineer`, `microservices`, `devops`, …) stay ungated. First anchor list was too narrow and cost 3 legitimate technical matches, so it also carries data-platform vocabulary (database/databases, data pipeline(s), data platform(s), snowflake, databricks, data warehouse, etl) in singular AND plural, since anchors match on word boundaries. Second hit: C004 | **FIXED** |
+| DEF-014 | `jobTitleIsConsulting` title regex (`extract.ts:4200-4201`) → family cascade (`extract.ts:4328`) | wrong-verdict | **S1** | 1 | C005 | Title "2027 Group Internal **Consulting** Graduate Talent Program" is not recognised: the regex only knows compounds (consultant, consulting analyst, strategy analyst…). Cascade falls to tag inference, whose only tags come from two junk units → `jobFamily: Operations`. Profile targets Consulting, so `computeBaseScore` takes −12 instead of +10 (`scoring.ts:847,854`), a 22-point swing: Review/66 instead of Apply. Title-only counterfactual → Apply/88 | Accept a bare `consulting` token in the title (internal consulting, consulting program/graduate/associate/intern). "Consulting Engineer" is safe: the engineering title wins earlier in the cascade. Audit every prod-corpus title containing "consulting" before shipping | **FIXED on dev, uncommitted (2026-10-01).** Bare `consulting` is tested against the TITLE only (`titleOnly`), never `jobTitleSlice`, which carries 1500 chars of body and would catch company blurbs; titles that also say engineer/engineering are excluded ("Consulting Engineer" was `Other` before and stays so). Regression: core 0 drift; prod 3 HARD, all adjudicated correct: Dekra "Consulting Intern" Marketing→Consulting (decision unchanged), Precision AQ "Analyst, Market Access Consulting" ×2 Marketing→Consulting, false RISK_FAMILY_MISMATCH removed, Apply/81→Priority Apply/97 (the 97 is DEF-017). Baseline re-frozen. Test: `app/api/jobfit/jobFamilyAndBoilerplate.test.ts` |
+| DEF-015 | Non-requirement note read as a requirement: `SECTION_HEADER_RULES` (`extract.ts:1816`) + `drafting_documentation` bare `"documentation"` jobPhrase (`extract.ts:1379`) | false-fire (WHY) | S2 | 1 | C005 | "Program Details:" and the trailing "Note:" paragraph have no header rule, so they fold into the preceding Requirements section. The immigration line "UBS will not … sign any documentation in support of … immigration sponsorship (OPT/CPT)" becomes `drafting_documentation` **core**, matched direct (weight 103) to the résumé skills line "policy drafting". It is the case's top WHY. Here it hides DEF-016: remove it and the score falls 88 → 74 | Treat sponsorship/work-authorization lines as non-requirement text, alongside `EEO_BOILERPLATE` (`extract.ts:~1960`), segment-scoped like `stripLegalBoilerplate`. Separately, the bare `"documentation"` jobPhrase is the same bare-word class as DEF-009/DEF-011 | **FIXED on dev, uncommitted (2026-10-01).** Work-authorization / visa-sponsorship sentences added to `EEO_BOILERPLATE`, so `stripLegalBoilerplate` drops them segment by segment. Every pattern needs immigration/visa context ("sponsorship sales", "event sponsorships", "opt in" untouched). Corpus effect: zero. No frozen prod run had built a unit from this text, so C005 is the first sighting. Header rules for "Program Details" / "Note" not added (the sentence filter makes them cosmetic). The bare `"documentation"` jobPhrase is still open, as part of the bare-word class |
+| DEF-016 | CAPABILITY_RULES coverage for consulting / graduate-program JDs (`strategy_problem_solving` `extract.ts:1170-1193`, `minMatches: 2`) + `isTrainingProgram` (`extract.ts:4734`) | coverage gap | S2 | 1 | C005 | The JD's actual work and requirements produce **zero** units: "structure complex challenges, develop actionable solutions, support execution across transformation and change initiatives", "experience working in a project-based environment", "strategic thinker with strong communication skills", "evidence … responsible use of AI". `strategy_problem_solving` needs 2 phrase hits in one segment, and no segment carries both "consulting" and "strategy"; there is no change/transformation key. `isTrainingProgram` also misses "Graduate Talent Program … professional and technical training … rotations" (its patterns want "training program", "gain exposure **in**"). With DEF-014 and DEF-015 both fixed, the case still lands Review/74 on one adjacent match | Add consulting/change-delivery vocabulary (structure problems, actionable solutions, transformation, change initiatives, project-based) and an AI-use requirement key. Extend `isTrainingProgram` to "graduate program / talent program / rotations / targeted training". Same shape of gap as the §5 "events" question: the JD's core function is invisible to the rules | OPEN |
+| DEF-017 | Priority Apply on tool-only evidence (`computeBaseScore` `scoring.ts:843`, Priority Apply gate `decision.ts:8,49`) | wrong-verdict (over) | S2 | 1 | prod ad572717 / e37ae047 (surfaced by the DEF-014 fix) | Precision AQ "Analyst, Market Access Consulting" reaches Priority Apply/97 with three WHY codes, all office tools (Excel, PowerPoint, Word, direct), plus the target-title bonus and the family match. Before DEF-014 the false −12 family mismatch held it at Apply/81 and hid how thin the evidence is. Pre-existing scoring generosity, not caused by DEF-014 | Require at least one non-tool direct WHY (function/deliverable) for Priority Apply, or stop tool matches counting toward `directCount`. Audit the corpus for other Priority Apply rows whose direct WHYs are all `match_kind: tool` before choosing | OPEN |
 
 ---
 
@@ -480,10 +484,68 @@ NET: the reported symptom (experience) and the actual defect (family classificat
 
 ---
 
+### CASE C005 — S.Z. → UBS, 2027 Group Internal Consulting Graduate Talent Program
+
+```
+CASE ID:        C005
+DATE:           2026-10-01
+RUN ID:         000c3c78-321f-436d-960f-3c093aace889  (prod, 2026-10-01 13:20, persona "Consulting Resume")
+RÉSUMÉ:         S.Z. — Duke B.A. Psychology, expected May 2027, GPA 3.935. Workforce integration
+                analysis project (AI-directed roster merge + Excel reconciliation), legal intern
+                (led an enterprise AI use policy, presented to the Board), research assistant, Pendo
+                product-strategy project; chapter president
+JD:             UBS — 2027 Group Internal Consulting Graduate Talent Program (2.5k chars, has newlines)
+SHIPPED RESULT: Review / 66  (raw 66, penalty 0, gate none)
+detector fires: none. risk_codes [], risk_structured [] — the empty risk bullets are the ENGINE's
+                output, not a renderer drop
+case files:     evals/jobfit/cases/C005/ (gitignored, contains PII)
+pull:           tests/jobfit-regression/pull-prod-case.ts --run 000c3c78-… --case C005
+repro:          tests/jobfit-regression/_sami-repro.local.ts (dev reproduces prod exactly: Review/66)
+
+REPORTED AS:    "scored 66 with Review and no risk bullets"
+
+VERDICT CHECK:  bug — wrong-verdict (S1), under-scored. Expected Apply.
+  She meets every stated requirement: graduating May 2027 (window Dec 2026–Jun 2027), GPA 3.935
+  (≥ 3.0), project-based work, and explicit responsible-AI evidence (directed AI tooling and then
+  verified it; authored an AI use policy). Profile targets Consulting.
+
+WHAT THE ENGINE ACTUALLY SAW: two requirement_units, both junk.
+  - drafting_documentation / core — from the OPT/CPT sponsorship note ("sign any documentation"),
+    matched DIRECT (weight 103) to the skills line "policy drafting"                    → DEF-015
+  - stakeholder_coordination / supporting — from "You'll build … stakeholder management … skills",
+    i.e. what she will LEARN, matched adjacent to the Pendo bullet
+  Nothing from the Requirements block or the role duties                                → DEF-016
+  Sections: [overview] (Your Role / Your Team unrecognised) + [qualifications] (Requirements, with
+  Program Details and the Note folded in).
+
+ROOT CAUSE OF THE VERDICT: DEF-014. The title regex misses bare "consulting", so jobFamily falls to
+  tag inference = Operations (tags operations_general + communications_pr, both from the junk units).
+  Profile targets [Consulting, Analytics] → no family match → −12 instead of +10.
+
+COUNTERFACTUALS (dev engine, same résumé/profile):
+  A. as prod                                         Operations  Review/66  why: drafting(direct), stakeholder(adj)  risks: none
+  B. title the regex recognises ("Consulting Analyst - …")   Consulting  Apply/88   same 2 units
+  C. B + sponsorship note removed                    Consulting  Review/74  why: stakeholder(adj)  risks: RISK_LIMITED_MATCH_EVIDENCE
+  → Fixing DEF-014 alone gives the right band for the wrong reason: B's 88 is propped up by the
+    DEF-015 junk WHY. Fixing DEF-014 + DEF-015 without DEF-016 drops to Review/74. All three are
+    needed for an honest Apply.
+
+NOT BUGS: no experience gate or seniority fire (yearsRequired null, isSeniorRole false). The
+  sponsorship line produced no risk, which is right for this candidate. RISK_FAMILY_MISMATCH did
+  not fire (the −12 is the base-score family term, not that risk).
+
+LAYER: extraction-jd (title family, section headers, capability coverage). Scoring math and
+  renderer are behaving as designed on the bad inputs.
+```
+
+---
+
 ## 5. OPEN QUESTIONS / PAYLOAD GAPS
 
 Things to resolve or capture better while testing:
 
+- [ ] **Base-score components are not in the payload (found on C005).** `score_breakdown.components` lists only decision labels and `penalty_sum`, so a 66 with zero penalties gives no hint that 22 points went to a family miss. The terms in `computeBaseScore` (`scoring.ts:843-928`: family match ±, title-match bonus, direct/adjacent/tool counts, coverage, training bonus, floors) should each be a component. Until then every under-score needs a local repro to attribute.
+- [ ] **`jobfit_runs.job_title` / `company_name` are null on run 000c3c78** even though the title reached the engine (`job_signals.jobTitle`). Find which write path leaves them empty; title-based triage queries miss these rows.
 - [ ] **🔴 BLOCKING — the true state of `JOBFIT_DETECTORS_PAID` in prod is contradictory.** My session notes and Claude's read of the evidence disagree, and **every ownership conclusion depends on which is right.** Resolve before running any further ownership case.
   - *Evidence that PAID detectors were ON for C002:* `RISK_SCOPE_INVERSION` fired, and that code exists **only** at `riskDetectors.ts:168`, which is unreachable unless `applyRiskDetectors` is set — and the only thing that sets it is `detectorFlagsForPath` (`jobfitEvaluator.ts:90-95`), which requires a `JOBFIT_DETECTORS*` flag.
   - *Evidence pointing the other way:* my own notes record the flags as off/unflipped around that window, and all three were explicitly turned **off** immediately after C002.

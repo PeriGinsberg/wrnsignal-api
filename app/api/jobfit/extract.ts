@@ -1991,6 +1991,19 @@ const EEO_BOILERPLATE: RegExp[] = [
   /\bbackground check\b/i,
   /\bdrug (screen|test)/i,
   /\bat-will employ/i,
+  // Work authorization and visa sponsorship. An eligibility notice, not a
+  // capability: UBS's "will not ... sign any documentation in support of any
+  // other form of immigration sponsorship including optional practical
+  // training (OPT)" became a core drafting_documentation requirement, matched
+  // direct to a résumé's "policy drafting" and shown as the top WHY
+  // (REGISTER DEF-015). Every pattern needs immigration/visa context, so
+  // "sponsorship sales" and "manage event sponsorships" are untouched; bare
+  // OPT/CPT is not matched ("opt in").
+  /\b(immigration|visa|employment-based) sponsorship\b/i,
+  /\bsponsor(ship|s)?\b.{0,40}\b(visas?|immigration|h-?1b|work (authori[sz]ation|permits?))\b/i,
+  /\b(optional|curricular) practical training\b/i,
+  /\b(work|employment) authori[sz]ation\b/i,
+  /\b(authori[sz]ed|eligible|legally (able|permitted)) to work (in|for)\b/i,
 ]
 
 export function isLegalBoilerplate(line: string): boolean {
@@ -4197,8 +4210,20 @@ export function extractJobSignals(
   const jobTitleIsAnalytics =
     /\b(data analyst|business analyst|business intelligence|bi analyst|bi developer|analytics analyst|analytics associate|analytics engineer|analytics coordinator|analytics intern|data scientist|quantitative analyst|quant analyst|research analyst|insights analyst|insights associate|reporting analyst|decision science)\b/i.test(jobTitleSlice)
 
+  // Bare "consulting" counts only in the TITLE itself, never in jobTitleSlice:
+  // the slice carries the first 1500 chars of the body, where "consulting"
+  // turns up in company blurbs ("we provide consulting services"). Without it,
+  // "2027 Group Internal Consulting Graduate Talent Program" fell through to
+  // tag inference and was classed Operations, costing a consulting-targeted
+  // candidate the family match (Review/66 instead of Apply; REGISTER DEF-014).
+  // A title that also says engineer/engineering is left out ("Consulting
+  // Engineer", "Engineering Consulting Intern"): those are engineering-firm
+  // roles, and the engineering title list has no bare "engineer" to catch
+  // them, so they keep whatever they classified as before.
+  const titleOnly = userTitleNorm || norm(jobTitle || "")
   const jobTitleIsConsulting =
-    /\b(consultant|consulting analyst|management consultant|strategy consultant|associate consultant|business consultant|advisory analyst|advisory associate|strategy analyst|strategy associate|transformation analyst|change management|process consultant|implementation consultant)\b/i.test(jobTitleSlice)
+    /\b(consultant|consulting analyst|management consultant|strategy consultant|associate consultant|business consultant|advisory analyst|advisory associate|strategy analyst|strategy associate|transformation analyst|change management|process consultant|implementation consultant)\b/i.test(jobTitleSlice) ||
+    (/\bconsulting\b/i.test(titleOnly) && !/\bengineer(s|ing)?\b/i.test(titleOnly))
 
   // Seniority detection — Manager/Director/Senior/Lead/VP signals a level above
   // early-career. Test the clean user-provided title (userTitleNorm) AND the
