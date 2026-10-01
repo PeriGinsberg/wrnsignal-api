@@ -61,6 +61,15 @@ suite("the prospect workflow", () => {
     ["booking_form_submitted", { submitted_by: "student" }, "Booking form submitted"],
     ["booking_form_submitted", { submitted_by: "parent", submitter_name: "Pat Rivera" }, "Form submitted by parent (Pat Rivera)"],
     ["booking_form_submitted", { submitted_by: "student", matched_existing: true }, "Booking form submitted (updated this record)"],
+    ["consult_booked", { date: "2026-10-09", via: "calendly", time_label: "Fri, Oct 9, 2:00 PM EDT" },
+      "Consult booked on Calendly for Oct 9, 2026 (Fri, Oct 9, 2:00 PM EDT)"],
+    ["consult_booked", { date: "2026-10-12", from_date: "2026-10-07", rescheduled: true, via: "calendly" },
+      "Consult rescheduled on Calendly from Oct 7, 2026 to Oct 12, 2026"],
+    ["consult_booked", { date: "2026-10-09" }, "Consult booked for Oct 9, 2026"],
+    ["consult_cancelled", { via: "calendly", time_label: "Fri, Oct 9, 2:00 PM EDT", reason: "Something came up", canceled_by: "invitee" },
+      "Consult cancelled on Calendly (was Fri, Oct 9, 2:00 PM EDT). Reason: Something came up"],
+    ["consult_cancelled", { via: "calendly", canceled_by: "host" }, "Consult cancelled on Calendly by you"],
+    ["prospect_created", { via: "calendly" }, "Prospect created from a Calendly booking"],
   ]
   for (const [type, context, expected] of cases) {
     it(`${type} reads as written`, () => {

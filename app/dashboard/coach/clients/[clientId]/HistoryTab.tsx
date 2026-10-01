@@ -58,7 +58,7 @@ function historyDay(d: unknown): string | null {
 }
 
 export const LABELS: Record<CoachClientEventType, (e: CoachClientEvent) => string> = {
-  prospect_created: () => "Prospect created",
+  prospect_created: (e) => e.context?.via === "calendly" ? "Prospect created from a Calendly booking" : "Prospect created",
   stage_changed: (e) => {
     const stage = e.context?.stage_label ?? e.context?.stage_key
     return stage ? `Moved to stage: ${stage}` : "Moved to a new stage"
@@ -80,10 +80,25 @@ export const LABELS: Record<CoachClientEventType, (e: CoachClientEvent) => strin
   },
   prospect_reopened: (e) =>
     e.context?.previous_reason_label ? `Reopened (was lost: ${e.context.previous_reason_label})` : "Reopened",
+  // From Calendly the line says so and carries the time; a reschedule names
+  // the date it moved from.
   consult_booked: (e) => {
     const when = historyDay(e.context?.date)
-    const verb = e.context?.rescheduled ? "Consult rescheduled" : "Consult booked"
-    return when ? `${verb} for ${when}` : verb
+    const from = historyDay(e.context?.from_date)
+    const where = e.context?.via === "calendly" ? " on Calendly" : ""
+    const time = e.context?.time_label ? ` (${e.context.time_label})` : ""
+    if (e.context?.rescheduled) {
+      if (from && when) return `Consult rescheduled${where} from ${from} to ${when}${time}`
+      return when ? `Consult rescheduled${where} for ${when}${time}` : `Consult rescheduled${where}`
+    }
+    return when ? `Consult booked${where} for ${when}${time}` : `Consult booked${where}`
+  },
+  consult_cancelled: (e) => {
+    const who = e.context?.canceled_by === "host" ? " by you" : ""
+    const where = e.context?.via === "calendly" ? " on Calendly" : ""
+    const when = e.context?.time_label ? ` (was ${e.context.time_label})` : ""
+    const reason = e.context?.reason ? `. Reason: ${e.context.reason}` : ""
+    return `Consult cancelled${where}${who}${when}${reason}`
   },
   consult_saved: (e) => {
     const n = Array.isArray(e.context?.changed) ? e.context.changed.length : 0

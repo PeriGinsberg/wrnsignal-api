@@ -14,6 +14,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import { createTask, setTaskStatus, updateTask, TASK_COLUMNS } from "../tasks/service"
 import { prospectLink } from "../tasks/links"
 import { logProspectEvent } from "./history"
+import { emitProspectEvent } from "./automation"
 import { advanceIfPresent } from "./stages"
 import {
   LOST_REASON_LABEL,
@@ -120,6 +121,7 @@ export async function markProspectLost(
       via: args.via ?? "status",
     },
   })
+  await emitProspectEvent(db, "prospect.lost", args.coachClientId)
   return { ok: true, data: { lost_at: lostAt } }
 }
 
@@ -385,13 +387,26 @@ export const PREP_TASK_PREFIX = "Prep for consult with "
  */
 export async function bookConsult(
   db: SupabaseClient,
-  args: { coachClientId: string; actingIds: string[]; day: string; actor: string },
-): Promise<WorkflowResult<{ task_id: string; rescheduled: boolean }>> {
+  args: {
+    coachClientId: string
+    actingIds: string[]
+    day: string
+    /** Who did it: the coach, or null for SIGNAL (a Calendly booking). */
+    actor: string | null
+    /** Who the prep task goes to. Defaults to the actor. */
+    assignee?: string
+    /** Extra History context, e.g. { via: "calendly", time_label }. */
+    history?: Record<string, unknown>
+  },
+): Promise<WorkflowResult<{ task_id: string; rescheduled: boolean; previous_date: string | null }>> {
   const day = optDay(args.day, "date")
   if (!day.ok || !day.value) return fail(day.ok ? "Choose the date of the call." : day.error)
   const p = await loadProspect(db, args.coachClientId)
   if (!p) return fail("Prospect not found", 404)
   if (!isOpenProspect(p) || p.prospect_status === "lost") return fail("Reopen the prospect before booking a consult.", 409)
+  const assignee = args.assignee ?? args.actor
+  if (!assignee) return fail("No one to give the prep task to.", 500)
+  const previousDate = (await getConsult(db, args.coachClientId)).scheduled_for
 
   const err = await writeConsult(db, args.coachClientId, { scheduled_for: day.value, outcome: null, outcome_at: null, minutes_logged: null })
   if (err) return fail(`Failed to record the booking: ${err}`, 500)
@@ -413,7 +428,7 @@ export async function bookConsult(
       title: `${PREP_TASK_PREFIX}${displayName(p)}`,
       coach_client_id: args.coachClientId,
       client_profile_id: p.client_profile_id,
-      assignee_profile_id: args.actor,
+      assignee_profile_id: assignee,
       due_at: dayToDueAt(day.value),
       due_has_time: false,
       source: "auto",
@@ -427,9 +442,62 @@ export async function bookConsult(
     coachClientId: args.coachClientId,
     eventType: "consult_booked",
     actor: args.actor,
-    context: { date: day.value, rescheduled: !!existing },
+    context: {
+      date: day.value,
+      rescheduled: !!existing,
+      ...(previousDate && previousDate !== day.value ? { from_date: previousDate } : {}),
+      ...(args.history ?? {}),
+    },
   })
-  return { ok: true, data: { task_id: taskId, rescheduled: !!existing } }
+  // Cancels the waiting "no consult booked yet" follow-up, if there is one.
+  await emitProspectEvent(db, "consult.booked", args.coachClientId, { date: day.value })
+  return { ok: true, data: { task_id: taskId, rescheduled: !!existing, previous_date: previousDate } }
+}
+
+// ── Consult cancelled ────────────────────────────────────────────────────────
+
+export const CANCELLED_TASK_PREFIX = "Consult cancelled: follow up with "
+
+/**
+ * The consult was cancelled (from Calendly). The date comes off the record,
+ * and the open prep task becomes the nudge to rebook, due `today`, rather than
+ * vanishing: "Consult cancelled: follow up with [name] to rebook". The stage
+ * is left where it is; the coach moves it back if the prospect does not rebook.
+ */
+export async function cancelConsult(
+  db: SupabaseClient,
+  args: { coachClientId: string; today: string; actor: string | null; history?: Record<string, unknown> },
+): Promise<WorkflowResult<{ task_id: string | null; previous_date: string | null }>> {
+  const p = await loadProspect(db, args.coachClientId)
+  if (!p) return fail("Prospect not found", 404)
+  const previousDate = (await getConsult(db, args.coachClientId)).scheduled_for
+  const err = await writeConsult(db, args.coachClientId, { scheduled_for: null })
+  if (err) return fail(`Failed to record the cancellation: ${err}`, 500)
+
+  const { data: open, error: findErr } = await db.from("coach_tasks").select("id")
+    .eq("coach_client_id", args.coachClientId).eq("status", "open").is("deleted_at", null)
+    .ilike("title", `${PREP_TASK_PREFIX}%`).limit(1)
+  if (findErr) return fail(findErr.message, 500)
+  const prep = (open ?? [])[0] as { id: string } | undefined
+  let taskId: string | null = null
+  if (prep) {
+    const r = await updateTask(db, prep.id, {
+      title: `${CANCELLED_TASK_PREFIX}${displayName(p)} to rebook`,
+      due_at: dayToDueAt(args.today),
+      due_has_time: false,
+      link: prospectLink(args.coachClientId),
+    }, args.actor)
+    if (!r.ok) return fail(r.error, r.status)
+    taskId = r.data.id
+  }
+
+  await logProspectEvent(db, {
+    coachClientId: args.coachClientId,
+    eventType: "consult_cancelled",
+    actor: args.actor,
+    context: { date: previousDate, ...(args.history ?? {}) },
+  })
+  return { ok: true, data: { task_id: taskId, previous_date: previousDate } }
 }
 
 // ── Outcomes ─────────────────────────────────────────────────────────────────

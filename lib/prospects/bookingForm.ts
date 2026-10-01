@@ -15,7 +15,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { logProspectEvent } from "./history"
 import { advanceIfPresent } from "./stages"
-import { prefillConsult, reopenProspect } from "./workflow"
+import { getConsult, prefillConsult, reopenProspect } from "./workflow"
+import { emitProspectEvent } from "./automation"
 import {
   SERVICES,
   isPickableLeadSource,
@@ -331,6 +332,15 @@ export async function submitBookingForm(
       answers: answersSnapshot(input),
     },
   })
+
+  // Starts the 3-day "no consult booked yet" follow-up, which a booking
+  // cancels. Not when a consult is already on the books for today or later:
+  // there is nothing to follow up.
+  const booked = (await getConsult(db, id)).scheduled_for
+  const today = new Date().toISOString().slice(0, 10)
+  if (!booked || booked < today) {
+    await emitProspectEvent(db, "booking_form.submitted", id, { name: student.name })
+  }
 
   return { ok: true, coach_client_id: id, created, reopened, redirect: calendlyRedirect(input) }
 }

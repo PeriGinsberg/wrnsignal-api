@@ -21,8 +21,9 @@ import { fallbackLink, resolveLinkTemplate } from "@/lib/tasks/links"
 import { coachesWhoCanReach } from "@/lib/tasks/scope"
 import { sendTaskReopenedEmail } from "../email/sendTaskEmails"
 import type { Task } from "../tasks/model"
+import { cancelTimersFor, scheduleTimer } from "./timers"
 
-export type RuleAction = "create_task" | "complete_task" | "reopen_task"
+export type RuleAction = "create_task" | "complete_task" | "reopen_task" | "schedule"
 
 export type AutomationRule = {
   id: string
@@ -44,6 +45,11 @@ export type AutomationRule = {
    * campaign and therefore carries neither id.
    */
   match_scope?: "chain" | "client"
+  /** schedule only: wait this many days, then fire fires_event_key, unless an
+   *  event in cancel_on_event_keys arrives first. See lib/automation/timers.ts. */
+  delay_days?: number | null
+  fires_event_key?: string | null
+  cancel_on_event_keys?: string[] | null
 }
 
 export type AutomationEvent = {
@@ -54,7 +60,7 @@ export type AutomationEvent = {
   occurred_at: string
 }
 
-export type Outcome = "created" | "completed" | "reopened" | "no_match" | "no_rule" | "error"
+export type Outcome = "created" | "completed" | "reopened" | "scheduled" | "no_match" | "no_rule" | "error"
 
 export type RunResult = { eventId: string; outcome: Outcome; detail?: string }
 
@@ -149,6 +155,12 @@ async function applyRule(
   rule: AutomationRule,
   ev: AutomationEvent,
 ): Promise<{ outcome: Outcome; detail?: string }> {
+  if (rule.action === "schedule") {
+    const r = await scheduleTimer(db, { id: rule.id, delay_days: rule.delay_days ?? null,
+      fires_event_key: rule.fires_event_key ?? null, cancel_on_event_keys: rule.cancel_on_event_keys ?? [] }, ev)
+    return r.ok ? { outcome: "scheduled", detail: r.id } : { outcome: "error", detail: r.error }
+  }
+
   if (rule.action === "create_task") {
     if (!rule.template_id) return { outcome: "error", detail: "create_task rule has no template" }
 
@@ -170,7 +182,7 @@ async function applyRule(
     // better outcome than the chain stopping.
     const coachClientId = ev.payload?.coach_client_id ?? null
     const { data: rel } = coachClientId
-      ? await db.from("coach_clients").select("coach_profile_id").eq("id", coachClientId).maybeSingle()
+      ? await db.from("coach_clients").select("coach_profile_id, name").eq("id", coachClientId).maybeSingle()
       : ev.client_profile_id
         ? await db.from("coach_clients").select("coach_profile_id")
             .eq("client_profile_id", ev.client_profile_id).eq("status", "active").limit(1).maybeSingle()
@@ -233,10 +245,16 @@ async function applyRule(
       resolveLinkTemplate(tmpl.link_template as string | null, {
         clientId: ev.client_profile_id,
         briefId: ev.payload?.brief_id ?? null,
+        coachClientId,
       }) ?? fallbackLink(ev.client_profile_id)
+    // {name} in a template title is the prospect or client's name as the
+    // record has it when the task is made, not as the event carried it.
+    const who = (coachClientId && rel?.name ? String(rel.name).trim() : "") ||
+      (typeof ev.payload?.name === "string" ? ev.payload.name.trim() : "") || "this prospect"
+    const title = String(tmpl.title).split("{name}").join(who)
 
     const created = await createTask(db, {
-      title: String(tmpl.title),
+      title,
       link,
       description: tmpl.description ?? null,
       client_profile_id: ev.client_profile_id,
@@ -296,6 +314,10 @@ async function applyRule(
  * never be the record of a deliberate no-op.
  */
 export async function runEvent(db: SupabaseClient, ev: AutomationEvent): Promise<RunResult> {
+  // First, whatever this event is the "unless" for: a booked consult cancels
+  // the waiting no-booking follow-up even though it has no rules of its own.
+  await cancelTimersFor(db, ev)
+
   const { data: rules } = await db
     .from("coach_automation_rules").select("*")
     .eq("event_key", ev.event_key).eq("active", true)

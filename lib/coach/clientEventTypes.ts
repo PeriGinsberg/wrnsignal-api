@@ -76,6 +76,9 @@ export const COACH_CLIENT_EVENT_TYPES = [
   // The public booking form (Phase 2). Context keeps every answer as given,
   // and who filled it in: a parent's submission says so.
   "booking_form_submitted",
+  // Phase 3: a consult cancelled on Calendly. Context: the date it was for, the
+  // reason they gave, and who cancelled (the invitee or the host).
+  "consult_cancelled",
 ] as const
 
 export type CoachClientEventType = (typeof COACH_CLIENT_EVENT_TYPES)[number]

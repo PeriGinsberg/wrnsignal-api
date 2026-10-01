@@ -128,6 +128,8 @@ export function makeFakeDb(seed: Record<string, Row[]>): FakeDb {
       is(c: string, v: any) { preds.push((r) => (r[c] ?? null) === v); return api },
       lt(c: string, v: any) { preds.push((r) => r[c] != null && r[c] < v); return api },
       gt(c: string, v: any) { preds.push((r) => r[c] != null && r[c] > v); return api },
+      lte(c: string, v: any) { preds.push((r) => r[c] != null && r[c] <= v); return api },
+      gte(c: string, v: any) { preds.push((r) => r[c] != null && r[c] >= v); return api },
       ilike(c: string, pattern: string) {
         const re = new RegExp("^" + pattern.split("%").map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join(".*") + "$", "i")
         preds.push((r) => typeof r[c] === "string" && re.test(r[c]))

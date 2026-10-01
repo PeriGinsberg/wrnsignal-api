@@ -441,12 +441,17 @@ export async function GET(
     }
 
     const stageProgress = await fetchStageProgress(supabase, id)
+    // The booked consult's date, so the page can show it and the Consult
+    // booked dialog can start from it rather than from today.
+    const { data: consult } = await supabase
+      .from("prospect_consults").select("scheduled_for").eq("coach_client_id", id).maybeSingle()
 
     return withCorsJson(req, {
       ok: true,
       prospect: {
         ...buildProspectListItem(row, lastActivity, resolvedName),
         stage_progress: stageProgress,
+        consult_scheduled_for: (consult?.scheduled_for as string | null) ?? null,
         notes,
       },
     })

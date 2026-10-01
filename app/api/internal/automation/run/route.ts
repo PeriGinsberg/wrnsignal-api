@@ -13,6 +13,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { drain } from "@/lib/automation/run"
+import { fireDueTimers } from "@/lib/automation/timers"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -36,7 +37,12 @@ export async function GET(req: NextRequest) {
 
   try {
     const db = getSupabaseAdmin()
+    // Drain, fire what has come due, drain again. The first drain applies any
+    // queued cancellation (a consult booked moments ago) before its timer can
+    // fire; the second applies what the fired timers emitted.
     const results = await drain(db)
+    const timersFired = await fireDueTimers(db)
+    if (timersFired) results.push(...(await drain(db)))
 
     const byOutcome: Record<string, number> = {}
     for (const r of results) byOutcome[r.outcome] = (byOutcome[r.outcome] ?? 0) + 1
@@ -56,6 +62,7 @@ export async function GET(req: NextRequest) {
       processed: results.length,
       outcomes: byOutcome,
       errors: errors.map((e) => ({ event: e.eventId, detail: e.detail })),
+      timers_fired: timersFired,
       still_queued: stuck ?? 0,
     })
   } catch (err: any) {

@@ -125,11 +125,11 @@ export function practiceRoundLink(roundId: string): string {
  */
 export function resolveLinkTemplate(
   pattern: string | null | undefined,
-  ctx: { clientId?: string | null; briefId?: string | null },
+  ctx: { clientId?: string | null; briefId?: string | null; coachClientId?: string | null },
 ): string | null {
   if (!pattern) return null
   let out = pattern
-  for (const [token, value] of [["clientId", ctx.clientId], ["briefId", ctx.briefId]] as const) {
+  for (const [token, value] of [["clientId", ctx.clientId], ["briefId", ctx.briefId], ["coachClientId", ctx.coachClientId]] as const) {
     const needle = `{${token}}`
     if (!out.includes(needle)) continue
     // A template asking for a value this task does not have resolves to

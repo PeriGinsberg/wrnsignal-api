@@ -187,6 +187,15 @@ describe("prospect page", () => {
     expect(sent("/api/coach/prospects/cc-1/consult/booked")[0].body).toEqual({ date: "2026-10-09" })
   })
 
+  it("a booked consult shows its date, and changing it starts from that date", async () => {
+    current = prospect({ consult_scheduled_for: "2026-10-04" })
+    render(<ProspectPage />)
+    expect(await screen.findByText("Sun, Oct 4, 2026")).toBeTruthy()
+    fireEvent.click(screen.getByRole("button", { name: "Change consult date" }))
+    const dialog = screen.getByRole("dialog", { name: "Change consult date" })
+    expect((within(dialog).getByLabelText("DATE OF THE CALL") as HTMLInputElement).value).toBe("2026-10-04")
+  })
+
   it("Open consult goes to the consult screen", async () => {
     render(<ProspectPage />)
     expect((await screen.findByRole("link", { name: "Open consult" })).getAttribute("href")).toBe("/dashboard/coach/prospects/cc-1/consult")

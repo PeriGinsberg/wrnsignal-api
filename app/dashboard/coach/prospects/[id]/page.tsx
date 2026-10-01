@@ -56,6 +56,13 @@ import {
   type ParentValue,
 } from "../../_prospects/leadSourceUi"
 import { ChainConfirmDialog, LostReasonFields, lostInputValid, todayInput, type LostInput } from "../../_prospects/dialogs"
+
+/** "Sun, Oct 4, 2026" for a date-only YYYY-MM-DD, read at noon UTC so no timezone moves it. */
+function bookedDayLabel(day: string): string {
+  return new Date(`${day}T12:00:00Z`).toLocaleDateString("en-US", {
+    weekday: "short", month: "short", day: "numeric", year: "numeric", timeZone: "UTC",
+  })
+}
 import { LOST_REASON_LABEL, isLostReason, takesReferredBy } from "../../../../../lib/prospects/model"
 import {
   LegacyTaskLine,
@@ -180,6 +187,8 @@ type Prospect = {
   current_stage_key: string | null
   prospect_status: ProspectStatus | null
   stage_progress: StageProgress[]
+  /** The booked consult's date (YYYY-MM-DD), or null when none is booked. */
+  consult_scheduled_for?: string | null
   // v0.2 capture fields (all nullable).
   linkedin_url: string | null
   current_title: string | null
@@ -1721,11 +1730,16 @@ export default function ProspectDetailPage() {
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 14 }}>
           <button
             type="button"
-            onClick={() => { setBookDay(todayInput()); setDialog({ kind: "booked" }) }}
+            onClick={() => { setBookDay(prospect.consult_scheduled_for || todayInput()); setDialog({ kind: "booked" }) }}
             style={{ ...btnSecondary, fontSize: 12, padding: "7px 14px" }}
           >
-            Consult booked
+            {prospect.consult_scheduled_for ? "Change consult date" : "Consult booked"}
           </button>
+          {prospect.consult_scheduled_for && (
+            <span style={{ alignSelf: "center", fontSize: 13, color: T.INK_LINK }}>
+              Consult booked for <strong>{bookedDayLabel(prospect.consult_scheduled_for)}</strong>
+            </span>
+          )}
           <a
             href={`/dashboard/coach/prospects/${prospect.id}/consult`}
             style={{ ...btnSecondary, fontSize: 12, padding: "7px 14px", textDecoration: "none", display: "inline-flex", alignItems: "center" }}
@@ -1827,7 +1841,7 @@ export default function ProspectDetailPage() {
       )}
       {dialog?.kind === "booked" && (
         <ChainConfirmDialog
-          title="Consult booked"
+          title={prospect.consult_scheduled_for ? "Change consult date" : "Consult booked"}
           steps={[
             "Records the date of the consult call.",
             "Moves the prospect to Consult Scheduled, if that stage is in your pipeline.",
