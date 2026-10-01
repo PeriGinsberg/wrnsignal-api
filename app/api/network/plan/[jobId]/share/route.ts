@@ -11,6 +11,7 @@ import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { errorStatus } from "../../../../_lib/routeError"
 import { getSupabaseAdmin } from "@/lib/collab/identity"
 import { resolveRequestScope } from "@/lib/collab/scope"
+import { planActionRefusal } from "@/lib/networking-plan/access"
 import { sharePlanJob, type PlanJob } from "@/lib/networking-plan/job"
 
 export const runtime = "nodejs"
@@ -24,6 +25,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ job
     const { jobId } = await params
     const supabase = getSupabaseAdmin()
     const scope = await resolveRequestScope(req, supabase, { require: "write" })
+    // Coach only. A client resolves as the owner of their own board, which
+    // passes the board check below; see lib/networking-plan/access.ts.
+    const refusal = planActionRefusal(scope)
+    if (refusal) return withCorsJson(req, { ok: false, error: refusal }, 403)
 
     const { data: job } = await supabase
       .from("networking_plan_jobs").select("*").eq("id", jobId).maybeSingle()
