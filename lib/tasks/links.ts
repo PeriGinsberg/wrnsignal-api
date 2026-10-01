@@ -86,6 +86,20 @@ export function workbookLink(clientId: string, workbookId: string): string {
   return `${clientLink(clientId, "workbooks")}&workbook=${encodeURIComponent(workbookId)}`
 }
 
+/**
+ * The note an action-item task came from, scrolled to.
+ *
+ * A prospect has no client record yet, so its notes live on the prospect page
+ * (keyed by the relationship); a client's live on the Notes tab. The #note-
+ * anchor is what both lists render on each card.
+ */
+export function noteLink(note: { id: string; coach_client_id: string; client_profile_id: string | null }): string {
+  const anchor = `#note-${note.id}`
+  return note.client_profile_id
+    ? `${clientLink(note.client_profile_id, "notes")}${anchor}`
+    : `/dashboard/coach/prospects/${note.coach_client_id}${anchor}`
+}
+
 /** One practice round, on the coach's side: playback and the feedback boxes. */
 export function practiceRoundLink(roundId: string): string {
   return `/dashboard/coach/practice/${roundId}`

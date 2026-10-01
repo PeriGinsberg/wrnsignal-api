@@ -19,7 +19,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import { cleanTaskLink } from "./links"
 import { sendTaskAssignedEmail } from "../email/sendTaskEmails"
 import { logCoachClientEvent } from "../../app/api/_lib/coachClientEvents"
-import { coachClientIdForTask } from "./scope"
+import { coachClientIdForTask, coachesWhoCanReach, UNREACHABLE_ASSIGNEE, type TaskClient } from "./scope"
 import {
   completionPatch,
   type Task,
@@ -68,6 +68,29 @@ export async function assertAssignableCoach(
       status: 400,
     }
   }
+  return { ok: true, data: true }
+}
+
+/**
+ * Can this coach open the client the task is about?
+ *
+ * Checked on create, on reassign and when an edit moves a task to another
+ * client, so a task never sits with somebody its own Go button refuses. A task
+ * with no client passes: it belongs to whoever holds it. See
+ * coachesWhoCanReach in ./scope.ts.
+ */
+export async function assertAssigneeCanReach(
+  db: SupabaseClient,
+  profileId: string,
+  client: TaskClient,
+): Promise<ServiceResult<true>> {
+  let allowed: Set<string> | null
+  try {
+    allowed = await coachesWhoCanReach(db, client)
+  } catch (e: any) {
+    return { ok: false, error: e?.message ?? String(e), status: 500 }
+  }
+  if (allowed && !allowed.has(profileId)) return { ok: false, error: UNREACHABLE_ASSIGNEE, status: 400 }
   return { ok: true, data: true }
 }
 
@@ -167,6 +190,13 @@ export type CreateTaskInput = {
    * Always a same-origin /dashboard path.
    */
   link?: string | null
+  /**
+   * The action-item note this task was made from. Named for the 2026-09-26
+   * backfill that introduced it; set now only on the workbook-review task
+   * SIGNAL makes for its own note. UNIQUE, so a note has at most one task. See
+   * lib/notes/actionItems.ts.
+   */
+  legacy_note_id?: string | null
 }
 
 export async function createTask(
@@ -213,6 +243,12 @@ export async function createTask(
     coachClientId = await coachClientIdForTask(db, input.client_profile_id)
   }
 
+  const reach = await assertAssigneeCanReach(db, input.assignee_profile_id, {
+    client_profile_id: input.client_profile_id ?? null,
+    coach_client_id: coachClientId,
+  })
+  if (!reach.ok) return reach
+
   const { data, error } = await db.from("coach_tasks").insert({
     title: input.title.trim(),
     description: input.description?.trim() || null,
@@ -229,6 +265,7 @@ export async function createTask(
     chain_id: input.chain_id ?? null,
     brief_id: input.brief_id ?? null,
     link,
+    legacy_note_id: input.legacy_note_id ?? null,
   }).select(TASK_COLUMNS).single()
 
   if (error) return { ok: false, error: error.message, status: 500 }
@@ -262,6 +299,20 @@ export async function updateTask(
   // sentence, and an edit that silently strips a bad link is worse than one
   // that says the link was not usable.
   const clean: Record<string, unknown> = { ...patch }
+
+  // MOVING A TASK TO ANOTHER CLIENT must not strand it with an assignee who
+  // cannot open that client. The unchanged column is read from the row.
+  if ("client_profile_id" in patch || "coach_client_id" in patch) {
+    const { data: cur } = await db.from("coach_tasks")
+      .select("assignee_profile_id, client_profile_id, coach_client_id")
+      .eq("id", taskId).is("deleted_at", null).maybeSingle()
+    if (!cur) return { ok: false, error: "That task no longer exists.", status: 404 }
+    const reach = await assertAssigneeCanReach(db, cur.assignee_profile_id, {
+      client_profile_id: "client_profile_id" in patch ? patch.client_profile_id : cur.client_profile_id,
+      coach_client_id: "coach_client_id" in patch ? patch.coach_client_id : cur.coach_client_id,
+    })
+    if (!reach.ok) return reach
+  }
   if ("link" in patch) {
     const link = cleanTaskLink(patch.link)
     if (patch.link && !link) {
@@ -314,17 +365,42 @@ export async function setTaskStatus(
       ...(opts.decision ? { decision: opts.decision } : {}),
       updated_at: new Date().toISOString(),
     })
-    .eq("id", taskId).is("deleted_at", null)
+    // CONDITIONAL ON THE STATUS WE READ. Two coaches ticking the same task at
+    // the same moment both read "open"; without this both updates land, both
+    // write an event and both emit task.completed, and the chain advances
+    // twice. With it, the second update matches nothing and is resolved below.
+    .eq("id", taskId).eq("status", prev.status).is("deleted_at", null)
     .select(TASK_COLUMNS).maybeSingle()
 
   if (error) return { ok: false, error: error.message, status: 500 }
-  if (!data) return { ok: false, error: "That task no longer exists.", status: 404 }
+  if (!data) {
+    const { data: now } = await db.from("coach_tasks")
+      .select(TASK_COLUMNS).eq("id", taskId).is("deleted_at", null).maybeSingle()
+    if (!now) return { ok: false, error: "That task no longer exists.", status: 404 }
+    const current = now as unknown as Task
+    // Someone else got there first with the same change: the no-op above.
+    if (current.status === status) return { ok: true, data: current }
+    return { ok: false, error: "That task changed while you were saving it. Reload and try again.", status: 409 }
+  }
 
   const task = data as unknown as Task
   const kind: TaskEventKind =
     status === "done" ? "completed" : status === "cancelled" ? "cancelled" : "reopened"
   await recordEvent(db, task.id, kind, actor, opts.note ?? null,
     opts.decision ? { decision: opts.decision } : undefined)
+
+  // A TASK MADE FROM AN ACTION-ITEM NOTE KEEPS THE NOTE'S TICK IN STEP. Done
+  // stamps the note complete, reopening clears it; cancelling leaves it. No
+  // screen ticks those notes any more, but SQL reads the stamp:
+  // workbook_send_to_coach refreshes its "sent the workbook for review" note
+  // while it is open and writes a new one once it is complete, so a review
+  // ticked off here must close the note or the next send lands on a done task.
+  if (task.legacy_note_id && (status === "done" || status === "open")) {
+    const { error: noteErr } = await db.from("coach_client_notes")
+      .update({ completed_at: status === "done" ? task.completed_at : null, updated_at: new Date().toISOString() })
+      .eq("id", task.legacy_note_id).eq("type", "action_item")
+    if (noteErr) console.error("[tasks] note completion sync failed:", noteErr.message)
+  }
 
   // CANCELLED GETS NO HISTORY LINE. A coach saying "this is not happening" is
   // a decision about their own list, not a thing that happened to the client.
@@ -364,8 +440,12 @@ export async function reassignTask(
   if (!coachCheck.ok) return coachCheck
 
   const { data: before } = await db.from("coach_tasks")
-    .select("assignee_profile_id").eq("id", taskId).is("deleted_at", null).maybeSingle()
+    .select("assignee_profile_id, client_profile_id, coach_client_id")
+    .eq("id", taskId).is("deleted_at", null).maybeSingle()
   if (!before) return { ok: false, error: "That task no longer exists.", status: 404 }
+
+  const reach = await assertAssigneeCanReach(db, toProfileId, before as TaskClient)
+  if (!reach.ok) return reach
 
   const from = (before as { assignee_profile_id: string }).assignee_profile_id
   if (from === toProfileId) {

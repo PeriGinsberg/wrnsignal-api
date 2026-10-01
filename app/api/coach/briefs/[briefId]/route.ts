@@ -45,7 +45,9 @@ async function mayActOn(
 ): Promise<boolean> {
   const { actingIds } = await resolveDelegation(db, actorProfileId)
   const { data } = await db.from("coach_clients")
-    .select("id").eq("id", coachClientId).in("coach_profile_id", actingIds).maybeSingle()
+    // Active only, matching the brief list: a revoked coach keeps no campaign.
+    .select("id").eq("id", coachClientId).in("coach_profile_id", actingIds)
+    .eq("status", "active").maybeSingle()
   return !!data
 }
 
@@ -145,6 +147,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ br
     // started against a brief whose write then failed would hand Erin a task
     // pointing at nothing.
     let started: string | null = null
+    let chainError: string | null = null
     if (submitting) {
       // The coach is the actor here: submitting a brief is a decision somebody
       // made, unlike everything the chain does afterwards.
@@ -165,9 +168,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ br
       // will wait for a task that is not coming.
       const created = results.find((r) => r.outcome === "created")
       started = created ? "started" : (results[0]?.outcome ?? "no_rule")
+      // The sentence the runner wrote, when a step could not be assigned (for
+      // one, nobody the chain may choose works with this client). The brief
+      // is saved either way; the coach is told who has to act. The runner's
+      // summary reads "action:outcome(detail); ...", so the sentence is pulled
+      // out of the errored step.
+      const errored = results.find((r) => r.outcome === "error")?.detail ?? null
+      chainError = errored ? (errored.match(/:(?:error|threw)\((.*?)\)(?:;|$)/)?.[1] ?? errored) : null
     }
 
-    return withCorsJson(req, { ok: true, brief: data, chain: started }, 200)
+    return withCorsJson(req, { ok: true, brief: data, chain: started, chain_error: chainError }, 200)
   } catch (err: any) {
     const msg = err?.message || String(err)
     console.error("[coach/briefs PATCH]", err?.stack || msg)

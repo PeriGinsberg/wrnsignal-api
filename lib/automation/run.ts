@@ -18,6 +18,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { createTask, emitTaskEvent, setTaskStatus, type ServiceResult } from "../tasks/service"
 import { fallbackLink, resolveLinkTemplate } from "@/lib/tasks/links"
+import { coachesWhoCanReach } from "@/lib/tasks/scope"
 import { sendTaskReopenedEmail } from "../email/sendTaskEmails"
 import type { Task } from "../tasks/model"
 
@@ -167,17 +168,41 @@ async function applyRule(
     // row that is not assignable, should not swallow the task: the default is
     // still a real coach who can act on it and reassign it, which is a far
     // better outcome than the chain stopping.
+    const coachClientId = ev.payload?.coach_client_id ?? null
+    const { data: rel } = coachClientId
+      ? await db.from("coach_clients").select("coach_profile_id").eq("id", coachClientId).maybeSingle()
+      : ev.client_profile_id
+        ? await db.from("coach_clients").select("coach_profile_id")
+            .eq("client_profile_id", ev.client_profile_id).eq("status", "active").limit(1).maybeSingle()
+        : { data: null as any }
+    const leadCoach: string | null = rel?.coach_profile_id ? String(rel.coach_profile_id) : null
+
     let assignee = String(tmpl.default_assignee_profile_id)
     if (tmpl.assign_to_lead_coach === true) {
-      const coachClientId = ev.payload?.coach_client_id ?? null
-      const { data: rel } = coachClientId
-        ? await db.from("coach_clients").select("coach_profile_id").eq("id", coachClientId).maybeSingle()
-        : ev.client_profile_id
-          ? await db.from("coach_clients").select("coach_profile_id")
-              .eq("client_profile_id", ev.client_profile_id).eq("status", "active").limit(1).maybeSingle()
-          : { data: null as any }
-      if (rel?.coach_profile_id) assignee = String(rel.coach_profile_id)
+      if (leadCoach) assignee = leadCoach
       else console.warn(`[automation] ${tmpl.key}: no lead coach found, using the template default`)
+    }
+
+    // THE DEFAULT PERSON MAY NOT WORK WITH THIS CLIENT. The chain names fixed
+    // people ("Erin builds every campaign"), which holds only while every
+    // client is in their book. For one that is not, the task goes to the
+    // client's own coach, who can open it and reassign it. If nobody the chain
+    // could choose can open the client, the event is recorded as an error with
+    // a sentence saying so, rather than a task landing where it cannot be done.
+    const allowed = await coachesWhoCanReach(db, {
+      client_profile_id: ev.client_profile_id,
+      coach_client_id: coachClientId,
+    })
+    if (allowed && !allowed.has(assignee)) {
+      if (leadCoach && allowed.has(leadCoach)) {
+        console.warn(`[automation] ${tmpl.key}: default assignee cannot open this client, using the client's coach`)
+        assignee = leadCoach
+      } else {
+        return {
+          outcome: "error",
+          detail: `${tmpl.key}: no coach the chain can assign to works with this client. Assign the task by hand.`,
+        }
+      }
     }
 
     // The due offset lives on the template and is usually +1 day. It is a
@@ -311,15 +336,55 @@ export async function runEvent(db: SupabaseClient, ev: AutomationEvent): Promise
 }
 
 /**
+ * How long a claim holds. A runner that dies mid-event leaves its claim behind;
+ * after this the event is free again, well inside the half-hourly cron. See
+ * 20260929_automation_event_claims.sql.
+ */
+export const CLAIM_TTL_MS = 10 * 60 * 1000
+
+/** Claims taken before this instant have expired. */
+export function claimCutoff(now: Date): string {
+  return new Date(now.getTime() - CLAIM_TTL_MS).toISOString()
+}
+
+/**
+ * Take one event for this runner. True only for the runner that got it.
+ *
+ * ONE CONDITIONAL UPDATE IS THE LOCK. Postgres row-locks the event for the
+ * UPDATE, and a second runner blocked on that lock re-checks the WHERE once it
+ * is released, finds claimed_at set, and matches nothing. So when the inline
+ * drain and the cron reach the same event, exactly one of them applies its
+ * rules. Before this, both did, and the chain could create a task twice.
+ */
+export async function claimEvent(db: SupabaseClient, eventId: string, now = new Date()): Promise<boolean> {
+  const { data, error } = await db
+    .from("coach_automation_events")
+    .update({ claimed_at: now.toISOString() })
+    .eq("id", eventId)
+    .is("processed_at", null)
+    .or(`claimed_at.is.null,claimed_at.lt.${claimCutoff(now)}`)
+    .select("id")
+  if (error) {
+    console.error("[automation] could not claim event:", eventId, error.message)
+    return false
+  }
+  return (data ?? []).length === 1
+}
+
+/**
  * Drain the queue.
  *
  * Oldest first, because the chain depends on order: completing task one has to
  * be processed before the event that its completion produced.
+ *
+ * Each event is claimed before it is run, so a second runner working the same
+ * queue at the same moment skips it rather than applying it again.
  */
 export async function runPending(db: SupabaseClient, limit = 50): Promise<RunResult[]> {
   const { data, error } = await db
     .from("coach_automation_events").select("*")
     .is("processed_at", null)
+    .or(`claimed_at.is.null,claimed_at.lt.${claimCutoff(new Date())}`)
     .order("occurred_at", { ascending: true })
     .limit(limit)
 
@@ -330,6 +395,7 @@ export async function runPending(db: SupabaseClient, limit = 50): Promise<RunRes
 
   const out: RunResult[] = []
   for (const ev of (data ?? []) as unknown as AutomationEvent[]) {
+    if (!(await claimEvent(db, ev.id))) continue
     out.push(await runEvent(db, ev))
   }
   return out

@@ -25,6 +25,21 @@ export type TaskListProps = {
   assignee?: string
   /** Restrict to one client. */
   client?: string
+  /**
+   * Restrict to one relationship, for the prospect page. A prospect has no
+   * profile for `client` to name, and every task on it carries coach_client_id.
+   */
+  coachClient?: string
+  /**
+   * Show a "New task" button that opens the form fixed to this prospect. The
+   * prospect counterpart of newTaskClientId.
+   */
+  newTaskCoachClient?: { id: string; name: string }
+  /**
+   * Called after this list changes a task. The prospect page uses it to
+   * re-read its notes, because ticking an action item's task ticks the note.
+   */
+  onChanged?: () => void
   emptyText?: string
   /**
    * Show a "New task" button that opens the form with this client pre-filled.
@@ -56,6 +71,9 @@ const STATUS_TABS: { key: string; label: string }[] = [
 export function TaskList({
   assignee = "me",
   client,
+  coachClient,
+  newTaskCoachClient,
+  onChanged,
   emptyText = "No open tasks.",
   newTaskClientId,
   editable = false,
@@ -80,6 +98,7 @@ export function TaskList({
     try {
       const p = new URLSearchParams({ assignee, status, view: "all" })
       if (client) p.set("client", client)
+      if (coachClient) p.set("coach_client", coachClient)
       const j = await apiJson<{ tasks: Task[]; templates?: Record<string, { key: string; decision_options: string[] | null }> }>(
         `/api/coach/tasks?${p.toString()}`)
       setTasks(j.tasks)
@@ -89,7 +108,7 @@ export function TaskList({
       setError(e?.message ?? String(e))
       setTasks([])
     }
-  }, [assignee, client, status])
+  }, [assignee, client, coachClient, status])
 
   useEffect(() => { void load() }, [load])
 
@@ -119,6 +138,7 @@ export function TaskList({
         method: "PATCH",
         body: JSON.stringify({ status: next ? "done" : "open" }),
       })
+      onChanged?.()
     } catch (e: any) {
       setTasks(before)
       setError(e?.message ?? String(e))
@@ -155,6 +175,7 @@ export function TaskList({
       // list has to show it. The route drains the queue before answering, so
       // by the time this runs the new row exists.
       await load()
+      onChanged?.()
     } catch (e: any) {
       setTasks(before)
       setError(e?.message ?? String(e))
@@ -169,6 +190,7 @@ export function TaskList({
     setTasks((ts) => (ts ?? []).filter((t) => t.id !== task.id))
     try {
       await apiJson(`/api/coach/tasks/${task.id}`, { method: "DELETE" })
+      onChanged?.()
     } catch (e: any) {
       setTasks(before)
       setError(e?.message ?? String(e))
@@ -179,7 +201,11 @@ export function TaskList({
 
   if (tasks === null) return null
 
-  const clientName = (id: string | null) => (id && clients.find((c) => c.id === id)?.name) || null
+  const clientName = (t: Task) =>
+    (t.client_profile_id && clients.find((c) => c.id === t.client_profile_id)?.name)
+    // A prospect has no profile, so its name comes from the page that owns it.
+    || (newTaskCoachClient && t.coach_client_id === newTaskCoachClient.id ? newTaskCoachClient.name : null)
+    || null
   const assigneeName = (id: string | null) => {
     const full = (id && assignees.find((a) => a.id === id)?.name) || null
     return full ? full.split(/\s+/)[0] : null
@@ -230,7 +256,7 @@ export function TaskList({
         </p>
       )}
 
-      {newTaskClientId && (
+      {(newTaskClientId || newTaskCoachClient) && (
         <button
           style={{ ...btnSecondary, padding: "6px 14px", marginBottom: 12 }}
           onClick={() => setCreating(true)}
@@ -247,7 +273,7 @@ export function TaskList({
               <TaskRow
                 key={t.id}
                 task={t}
-                clientName={clientName(t.client_profile_id)}
+                clientName={clientName(t)}
                 assigneeName={assigneeName(t.assignee_profile_id)}
                 busy={busy === t.id}
                 onToggleDone={toggleDone}
@@ -267,8 +293,9 @@ export function TaskList({
           assignees={assignees}
           clients={clients}
           presetClientId={creating ? newTaskClientId : undefined}
+          presetCoachClient={creating ? newTaskCoachClient : undefined}
           onClose={() => { setCreating(false); setEditing(null) }}
-          onSaved={() => { void load() }}
+          onSaved={() => { void load(); onChanged?.() }}
           onDeleted={(id) => setTasks((ts) => (ts ?? []).filter((x) => x.id !== id))}
         />
       )}

@@ -10,6 +10,8 @@ import { workbookError } from "../../../../../../_lib/workbookError"
 import { must } from "../../../../../../_lib/must"
 import { logCoachClientEvent } from "../../../../../../_lib/coachClientEvents"
 import { coachWorkbookScope, rpcError } from "@/lib/workbook/server"
+import { getSupabaseAdmin } from "../../../../../../_lib/coachAuth"
+import { closeTasksForNotes } from "@/lib/notes/actionItems"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -40,6 +42,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cli
 
     const { data, error } = await supabase.rpc("workbook_send_to_client", { p_workbook: workbookId })
     if (error) throw rpcError("send workbook", error)
+
+    // The RPC completed the "sent the workbook for review" note in SQL; its
+    // task (made when the client sent it) closes here, where the task layer
+    // runs. Service role: the notes and tasks are the coach's, not this JWT's.
+    try {
+      const admin = getSupabaseAdmin()
+      const { data: sends } = await admin.from("workbook_sends")
+        .select("coach_note_id").eq("workbook_id", workbookId).eq("direction", "to_coach")
+      const noteIds = (sends ?? []).map((s: { coach_note_id: string | null }) => s.coach_note_id).filter(Boolean) as string[]
+      await closeTasksForNotes(admin, noteIds, scope.actorId)
+    } catch (e: any) {
+      console.error("[workbooks/send-back] closing the review task failed:", e?.message ?? e)
+    }
 
     if (scope.linkId) {
       await logCoachClientEvent({

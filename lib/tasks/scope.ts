@@ -169,3 +169,54 @@ export function taskIsReachable(
   }
   return false
 }
+
+// ---------------------------------------------------------------------------
+// Who a task on this client may be handed to
+// ---------------------------------------------------------------------------
+//
+// THE OTHER HALF OF THE REACH RULE. The list hides a task from a coach outside
+// the client's book; nothing stopped the task being assigned to that coach in
+// the first place. The assignee picker listed every coach on the platform, and
+// the Networking chain hands every campaign to fixed people, so work could land
+// with somebody whose Go button then returned Forbidden and whose overdue
+// digest nagged them about a task their list would not show.
+//
+// Same rows as resolveTaskReach, read from the client's side: every coach with
+// an active relationship to this client, plus every coach delegating for one of
+// them. A task with no client is reachable by whoever it is assigned to, so any
+// coach may take it and this returns null.
+
+export type TaskClient = { client_profile_id?: string | null; coach_client_id?: string | null }
+
+export async function coachesWhoCanReach(
+  db: SupabaseClient,
+  client: TaskClient,
+): Promise<Set<string> | null> {
+  const parts: string[] = []
+  if (client.client_profile_id) parts.push(`client_profile_id.eq.${client.client_profile_id}`)
+  if (client.coach_client_id) parts.push(`id.eq.${client.coach_client_id}`)
+  if (!parts.length) return null
+
+  const { data, error } = await db
+    .from("coach_clients").select("coach_profile_id")
+    .or(parts.join(","))
+    .eq("status", "active")
+  if (error) throw new Error(`could not read the client's coaches: ${error.message}`)
+  const principals = [...new Set((data ?? []).map((r: { coach_profile_id: string }) => r.coach_profile_id))]
+  if (!principals.length) return new Set()
+
+  const { data: dels, error: dErr } = await db
+    .from("coach_delegates").select("delegate_coach_profile_id")
+    .in("principal_coach_profile_id", principals)
+    .eq("status", "active")
+  if (dErr) throw new Error(`could not read the client's delegates: ${dErr.message}`)
+
+  return new Set([
+    ...principals,
+    ...(dels ?? []).map((r: { delegate_coach_profile_id: string }) => r.delegate_coach_profile_id),
+  ])
+}
+
+/** The refusal for handing a task to a coach who cannot open its client. */
+export const UNREACHABLE_ASSIGNEE =
+  "That coach cannot open this client, so they could not act on the task. Choose a coach who works with this client."

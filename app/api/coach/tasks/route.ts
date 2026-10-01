@@ -94,6 +94,10 @@ export async function GET(req: NextRequest) {
     // Applied before the search or() below, because two or() calls on one
     // query would AND into a shape neither of them means.
     if (client) sel = sel.or((await clientTaskFilter(db, client))!)
+    // ONE RELATIONSHIP, for the prospect page. A prospect has no profile, so
+    // `client` cannot name it; every task on it carries coach_client_id.
+    const coachClient = q.get("coach_client")
+    if (coachClient) sel = sel.eq("coach_client_id", coachClient)
     if (source === "manual" || source === "auto") sel = sel.eq("source", source)
 
     if (statusParam && statusParam !== "all") {

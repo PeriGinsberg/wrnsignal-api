@@ -197,6 +197,12 @@ export function CampaignBriefModal({
       const j = await res.json().catch(() => null)
       if (!res.ok || !j?.ok) throw new Error(j?.error || `That did not save (${res.status})`)
       onSaved()
+      // Submitted, but the chain could not hand the first step to anyone who
+      // works with this client. Kept open so the coach reads who has to act.
+      if (j.chain_error) {
+        setError(`Campaign submitted, but no task was assigned. ${j.chain_error}`)
+        return
+      }
       onClose()
     } catch (e: any) {
       setError(e?.message ?? String(e))

@@ -25,6 +25,12 @@ export type TaskFormModalProps = {
   clients: Array<{ id: string; name: string }>
   /** Pre-select this client on a new task (the client page passes its own). */
   presetClientId?: string
+  /**
+   * A new task on a prospect: the relationship it belongs to, and its name.
+   * A prospect has no profile for the client select to offer, so the field is
+   * shown fixed instead and the task is saved against coach_client_id.
+   */
+  presetCoachClient?: { id: string; name: string }
   /** Pre-select this assignee on a new task. The client page passes "me". */
   presetAssigneeId?: string
   /**
@@ -135,7 +141,8 @@ export function TaskFormModal(props: TaskFormModalProps) {
         title,
         description: description.trim() || null,
         assignee_profile_id: assignee,
-        client_profile_id: clientId || null,
+        client_profile_id: props.presetCoachClient ? null : clientId || null,
+        ...(props.presetCoachClient ? { coach_client_id: props.presetCoachClient.id } : {}),
         due_at: fromLocalInput(due, hasTime)?.toISOString() ?? null,
         due_has_time: hasTime,
         link: link.trim() || null,
@@ -242,13 +249,20 @@ export function TaskFormModal(props: TaskFormModalProps) {
           </select>
         </div>
 
-        <div style={fieldWrap}>
-          <label style={fieldLabel} htmlFor="task-client">Client (optional)</label>
-          <select id="task-client" style={selectDark} value={clientId} onChange={(e) => setClientId(e.target.value)}>
-            <option value="" style={selectDarkOption}>No client</option>
-            {clients.map((c) => <option key={c.id} value={c.id} style={selectDarkOption}>{c.name}</option>)}
-          </select>
-        </div>
+        {props.presetCoachClient ? (
+          <div style={fieldWrap}>
+            <span style={fieldLabel}>Prospect</span>
+            <p style={{ margin: 0, fontSize: 14, color: T.TEXT }}>{props.presetCoachClient.name}</p>
+          </div>
+        ) : (
+          <div style={fieldWrap}>
+            <label style={fieldLabel} htmlFor="task-client">Client (optional)</label>
+            <select id="task-client" style={selectDark} value={clientId} onChange={(e) => setClientId(e.target.value)}>
+              <option value="" style={selectDarkOption}>No client</option>
+              {clients.map((c) => <option key={c.id} value={c.id} style={selectDarkOption}>{c.name}</option>)}
+            </select>
+          </div>
+        )}
 
         <div style={fieldWrap}>
           <label style={fieldLabel} htmlFor="task-due">Due</label>

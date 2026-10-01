@@ -455,7 +455,8 @@ export default function CoachClientPage() {
     let alive = true
     void (async () => {
       try {
-        const res = await authFetch("/api/coach/tasks/assignees")
+        // Only coaches who can open this client: anyone else is refused on save.
+        const res = await authFetch(`/api/coach/tasks/assignees?client_profile_id=${encodeURIComponent(clientId)}`)
         const j = await res.json().catch(() => null)
         if (!alive || !res.ok || !j?.ok) return
         setTaskAssignees(j.assignees ?? [])
@@ -463,7 +464,7 @@ export default function CoachClientPage() {
       } catch { /* dropdown stays empty */ }
     })()
     return () => { alive = false }
-  }, [])
+  }, [clientId])
 
   // Deep-link landing behavior for arrivals from
   // /dashboard/coach/applications-recent. Two URL hints drive two
