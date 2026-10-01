@@ -5,11 +5,11 @@
 // half is lib/notes/model.ts.
 //
 // A note is a Session Recap or Other, optionally filed under a topic: Phase,
-// Deliverable or Milestone. Topic notes also show on the record's tracker,
-// grouped by topic (TopicNotesBoard). Work to do is a task, added with the
-// record's Add Task button.
+// Deliverable or Milestone. Topic notes also show on the record's tracker
+// (TopicNotesBoard), newest first or sorted by topic. Work to do is a task,
+// added with the record's Add Task button.
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { T, card, eyebrow, label, selectDark, selectDarkOption } from "../../../../lib/dashboard-theme"
 import { TYPE } from "../../../../lib/theme/surfaces"
 import type { NoteTaskSummary } from "../../../../lib/notes/actionItems"
@@ -160,48 +160,79 @@ export type TopicNote = {
   created_at: string
 }
 
+export type TopicNoteSort = "date" | "topic"
+
 /**
- * The record's topic notes on its tracker, under Phase, Deliverable and
- * Milestone. Each links to the note in the full list (`noteHref`). Renders
- * nothing when no note has a topic, so a tracker without any stays as it was.
+ * The order the tracker list shows. "date": newest first. "topic": Phase,
+ * Deliverable, Milestone, newest first within each. Notes without a topic are
+ * not on the tracker, so they never reach here.
+ */
+export function sortTopicNotes<N extends TopicNote>(notes: N[], by: TopicNoteSort): N[] {
+  const newest = (a: N, b: N) => Date.parse(b.created_at) - Date.parse(a.created_at)
+  const rank = (n: N) => NOTE_TOPIC_OPTIONS.findIndex((o) => o.value === n.topic)
+  return [...notes].sort(by === "topic" ? (a, b) => rank(a) - rank(b) || newest(a, b) : newest)
+}
+
+/**
+ * The record's topic notes on its tracker, as one list: newest first, or
+ * grouped by topic. Each links to the note in the full list (`noteHref`).
+ * Renders nothing when no note has a topic, so a tracker without any stays as
+ * it was.
  */
 export function TopicNotesBoard(props: { notes: TopicNote[]; noteHref: (id: string) => string }) {
+  const [sortBy, setSortBy] = useState<TopicNoteSort>("date")
   const filed = props.notes.filter((n) => n.topic)
   if (!filed.length) return null
+  const sorted = sortTopicNotes(filed, sortBy)
   return (
     <section aria-label="Notes by topic" style={{ ...card, padding: 18 }}>
-      <div style={{ ...eyebrow, color: T.INK_EMPHASIS, marginBottom: 12 }}>NOTES BY TOPIC</div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
-        {NOTE_TOPIC_OPTIONS.map((t) => {
-          const group = filed.filter((n) => n.topic === t.value)
-          return (
-            <div key={t.value} data-topic={t.value}>
-              <h4 style={{ ...label, color: T.INK_LINK, margin: "0 0 8px" }}>
-                {t.label.toUpperCase()} <span style={{ color: T.DIM }}>({group.length})</span>
-              </h4>
-              {group.length === 0 ? (
-                <p style={{ fontSize: TYPE.micro, color: T.DIM, margin: 0 }}>None yet</p>
-              ) : (
-                <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 8 }}>
-                  {group.map((n) => (
-                    <li key={n.id}>
-                      <a
-                        href={props.noteHref(n.id)}
-                        style={{ color: T.TEXT, textDecoration: "none", fontSize: TYPE.secondary, lineHeight: "18px", display: "block" }}
-                      >
-                        {firstLine(n.body)}
-                      </a>
-                      <span style={{ fontSize: TYPE.micro, color: T.DIM }}>
-                        {NOTE_TYPE_LABEL[n.type]} · {new Date(n.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )
-        })}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+        <div style={{ ...eyebrow, color: T.INK_EMPHASIS }}>TOPIC NOTES</div>
+        <div role="radiogroup" aria-label="Sort notes by" style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
+          {(["date", "topic"] as const).map((k) => {
+            const on = sortBy === k
+            return (
+              <button
+                key={k}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => setSortBy(k)}
+                style={{
+                  fontSize: TYPE.label,
+                  fontWeight: 900,
+                  padding: "4px 10px",
+                  borderRadius: 6,
+                  cursor: "pointer",
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
+                  border: on ? "1px solid rgba(254,176,106,0.4)" : `1px solid ${T.BORDER_SOFT}`,
+                  background: on ? "rgba(254,176,106,0.1)" : T.GLASS,
+                  color: on ? T.INK_EMPHASIS : T.DIM,
+                }}
+              >
+                {k === "date" ? "Date" : "Topic"}
+              </button>
+            )
+          })}
+        </div>
       </div>
+      <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+        {sorted.map((n) => (
+          <li key={n.id} style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+            <NoteTopicChip topic={n.topic} />
+            <a
+              href={props.noteHref(n.id)}
+              style={{ color: T.TEXT, textDecoration: "none", fontSize: TYPE.secondary, lineHeight: "18px", flex: "1 1 220px", minWidth: 0 }}
+            >
+              {firstLine(n.body)}
+            </a>
+            <span style={{ fontSize: TYPE.micro, color: T.DIM, whiteSpace: "nowrap" }}>
+              {NOTE_TYPE_LABEL[n.type]} · {new Date(n.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+            </span>
+          </li>
+        ))}
+      </ul>
     </section>
   )
 }

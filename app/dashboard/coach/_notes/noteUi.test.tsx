@@ -2,12 +2,12 @@
 //
 // Pinned (2026-10-01): Action Item is not a type anyone can pick; the topic
 // dropdown offers Phase, Deliverable and Milestone; the Add Note panel sends
-// the topic; the tracker board groups topic notes under their topic and stays
-// out of the way when there are none; an old action item says what its task
+// the topic; the tracker list shows topic notes newest first or by topic and
+// stays out of the way when there are none; an old action item says what its task
 // is doing instead of offering a tick.
 
 import { describe, it, expect, vi, afterEach } from "vitest"
-import { render, screen, cleanup, fireEvent, waitFor, within } from "@testing-library/react"
+import { render, screen, cleanup, fireEvent, waitFor } from "@testing-library/react"
 import { LegacyTaskLine, NoteTopicSelect, NoteTypeChips, TopicNotesBoard, firstLine } from "./noteUi"
 import { AddNotePanel } from "../clients/[clientId]/AddNotePanel"
 
@@ -65,24 +65,35 @@ describe("AddNotePanel", () => {
 
 describe("TopicNotesBoard", () => {
   const notes = [
-    { id: "a", topic: "phase" as const, type: "session_recap" as const, body: "Kickoff done\nmore", created_at: "2026-10-01T12:00:00Z" },
-    { id: "b", topic: "milestone" as const, type: "other" as const, body: "Offer accepted", created_at: "2026-10-01T12:00:00Z" },
-    { id: "c", topic: "phase" as const, type: "other" as const, body: "Search phase", created_at: "2026-10-01T12:00:00Z" },
+    { id: "a", topic: "milestone" as const, type: "session_recap" as const, body: "Offer accepted\nmore", created_at: "2026-09-30T12:00:00Z" },
+    { id: "b", topic: "phase" as const, type: "other" as const, body: "Kickoff done", created_at: "2026-09-10T12:00:00Z" },
+    { id: "c", topic: "deliverable" as const, type: "other" as const, body: "Resume v2 sent", created_at: "2026-09-20T12:00:00Z" },
+    { id: "e", topic: "phase" as const, type: "other" as const, body: "Search phase", created_at: "2026-09-25T12:00:00Z" },
     { id: "d", topic: null, type: "session_recap" as const, body: "No topic here", created_at: "2026-10-01T12:00:00Z" },
   ]
-  it("groups notes under their topic and links each to the note", () => {
-    const { container } = render(<TopicNotesBoard notes={notes} noteHref={(id) => `#note-${id}`} />)
-    const phase = container.querySelector('[data-topic="phase"]') as HTMLElement
-    const deliverable = container.querySelector('[data-topic="deliverable"]') as HTMLElement
-    const milestone = container.querySelector('[data-topic="milestone"]') as HTMLElement
-    expect(within(phase).getAllByRole("link").map((a) => a.textContent)).toEqual(["Kickoff done", "Search phase"])
-    expect(within(phase).getByRole("link", { name: "Kickoff done" }).getAttribute("href")).toBe("#note-a")
-    expect(within(deliverable).getByText("None yet")).toBeTruthy()
-    expect(within(milestone).getAllByRole("link").map((a) => a.textContent)).toEqual(["Offer accepted"])
+  const order = () => screen.getAllByRole("link").map((a) => a.textContent)
+
+  it("lists topic notes newest first, each linking to its note", () => {
+    render(<TopicNotesBoard notes={notes} noteHref={(id) => `#note-${id}`} />)
+    expect(order()).toEqual(["Offer accepted", "Search phase", "Resume v2 sent", "Kickoff done"])
+    expect(screen.getByRole("link", { name: "Kickoff done" }).getAttribute("href")).toBe("#note-b")
     expect(screen.queryByText("No topic here")).toBeNull()
+    expect(screen.getByRole("radio", { name: "Date" }).getAttribute("aria-checked")).toBe("true")
+  })
+  it("sorts by topic, Phase then Deliverable then Milestone, newest first within each", () => {
+    render(<TopicNotesBoard notes={notes} noteHref={(id) => id} />)
+    fireEvent.click(screen.getByRole("radio", { name: "Topic" }))
+    expect(order()).toEqual(["Search phase", "Kickoff done", "Resume v2 sent", "Offer accepted"])
+    fireEvent.click(screen.getByRole("radio", { name: "Date" }))
+    expect(order()).toEqual(["Offer accepted", "Search phase", "Resume v2 sent", "Kickoff done"])
+  })
+  it("shows each note's topic", () => {
+    render(<TopicNotesBoard notes={notes} noteHref={(id) => id} />)
+    expect(screen.getAllByText("Phase")).toHaveLength(2)
+    expect(screen.getByText("Milestone")).toBeTruthy()
   })
   it("renders nothing when no note has a topic", () => {
-    const { container } = render(<TopicNotesBoard notes={[notes[3]]} noteHref={(id) => id} />)
+    const { container } = render(<TopicNotesBoard notes={[notes[4]]} noteHref={(id) => id} />)
     expect(container.innerHTML).toBe("")
   })
   it("caps a long first line", () => {
