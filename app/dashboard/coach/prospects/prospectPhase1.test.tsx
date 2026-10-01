@@ -14,6 +14,7 @@ vi.mock("../../../../lib/supabase-browser", () => ({
 }))
 
 import AddProspectModal from "./AddProspectModal"
+import ProspectsList from "./page"
 import ProspectPage from "./[id]/page"
 
 const STAGES = [
@@ -57,6 +58,12 @@ beforeEach(() => {
     const body = init?.body ? JSON.parse(String(init.body)) : null
     calls.push({ url, method, body })
     if (url === "/api/coach/prospects" && method === "POST") return json({ ok: true, prospect: { id: "cc-new" } }, 201)
+    if (url === "/api/coach/prospects" && method === "GET") {
+      return json({ ok: true, prospects: [
+        { ...prospect(), id: "cc-2", name: "Lost Lucy", prospect_status: "lost", lost_reason: "other", lost_reason_detail: "Moved abroad", current_stage_key: null },
+        { ...prospect(), id: "cc-3", name: "Active Al", prospect_status: "active", current_stage_key: null },
+      ] })
+    }
     if (url === "/api/coach/prospects/cc-1" && method === "GET") return json({ ok: true, prospect: current })
     if (url === "/api/coach/pipeline") return json({ ok: true, stages: STAGES })
     if (url === "/api/coach/prospects/cc-1/status") {
@@ -103,6 +110,17 @@ describe("Add Prospect", () => {
     expect(add.disabled).toBe(true)
     fireEvent.change(screen.getByLabelText("PLEASE SPECIFY"), { target: { value: "Career fair" } })
     expect(add.disabled).toBe(false)
+  })
+})
+
+describe("prospects list", () => {
+  it("shows a lost prospect's reason beside the Lost pill", async () => {
+    render(<ProspectsList />)
+    await screen.findByText("Active Al") // the list opens on Active
+    fireEvent.click(screen.getAllByRole("button", { name: "Lost" })[0])
+    expect(await screen.findByText("Lost Lucy")).toBeTruthy()
+    expect(screen.getByTitle("Lost reason").textContent).toBe("Other: Moved abroad")
+    expect(screen.getAllByTitle("Lost reason")).toHaveLength(1)
   })
 })
 

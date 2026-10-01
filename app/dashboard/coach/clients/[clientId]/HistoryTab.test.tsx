@@ -58,6 +58,9 @@ suite("the prospect workflow", () => {
     ["consult_saved", { changed: ["why_now", "services"] }, "Consult saved, 2 fields updated"],
     ["consult_completed", { package_name: "Run the Search", minutes: 45 }, "Consult complete (package: Run the Search, 45 min)"],
     ["consult_no_show", null, "Consult no-show"],
+    ["booking_form_submitted", { submitted_by: "student" }, "Booking form submitted"],
+    ["booking_form_submitted", { submitted_by: "parent", submitter_name: "Pat Rivera" }, "Form submitted by parent (Pat Rivera)"],
+    ["booking_form_submitted", { submitted_by: "student", matched_existing: true }, "Booking form submitted (updated this record)"],
   ]
   for (const [type, context, expected] of cases) {
     it(`${type} reads as written`, () => {

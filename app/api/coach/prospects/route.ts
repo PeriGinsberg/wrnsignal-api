@@ -117,6 +117,8 @@ type CoachClientRow = {
   // (Polish B — surfaced on the list rows). Both nullable.
   current_stage_key: string | null
   prospect_status: string | null
+  lost_reason: string | null
+  lost_reason_detail: string | null
   phase_initial_contact_made: boolean
   phase_initial_contact_made_at: string | null
   phase_discovery_call_scheduled: boolean
@@ -145,6 +147,8 @@ const PROSPECT_SELECT_COLS = [
   "client_profile_id",
   "current_stage_key",
   "prospect_status",
+  "lost_reason",
+  "lost_reason_detail",
   "phase_initial_contact_made",
   "phase_initial_contact_made_at",
   "phase_discovery_call_scheduled",
@@ -267,6 +271,9 @@ function buildProspectListItem(
     client_profile_id: row.client_profile_id,
     current_stage_key: row.current_stage_key,
     prospect_status: row.prospect_status,
+    // Shown beside the Lost pill on the list (Phase 1).
+    lost_reason: row.lost_reason,
+    lost_reason_detail: row.lost_reason_detail,
     last_activity_at: lastActivityAt,
     // Schema has no created_at on coach_clients; invited_at is the
     // temporal anchor (DEFAULT now() at INSERT). Aliased here so the

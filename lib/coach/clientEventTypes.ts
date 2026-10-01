@@ -73,6 +73,9 @@ export const COACH_CLIENT_EVENT_TYPES = [
   "consult_saved",
   "consult_completed",
   "consult_no_show",
+  // The public booking form (Phase 2). Context keeps every answer as given,
+  // and who filled it in: a parent's submission says so.
+  "booking_form_submitted",
 ] as const
 
 export type CoachClientEventType = (typeof COACH_CLIENT_EVENT_TYPES)[number]

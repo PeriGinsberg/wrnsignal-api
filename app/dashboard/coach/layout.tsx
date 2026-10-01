@@ -1,9 +1,8 @@
 // app/dashboard/coach/layout.tsx
 //
 // Nested route layout for every Coaches Center page. Renders a persistent
-// "Coaches Center Beta" banner above the page content, signaling pilot
-// status to coaches (and prospective Beta Coaches viewing a demo) and
-// framing expectations on polish.
+// "Coaches Center" title above the page content. (It said "Coaches Center
+// Beta" during the pilot; the word was dropped 2026-10-02.)
 //
 // Wraps every route under /dashboard/coach/* automatically via Next.js
 // App Router nested-layout inheritance — no per-page wiring needed. The
@@ -46,7 +45,7 @@ export default function CoachLayout({ children }: { children: ReactNode }) {
           lineHeight: 1.2,
         }}
       >
-        Coaches Center Beta
+        Coaches Center
       </div>
       {children}
     </div>

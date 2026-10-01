@@ -211,6 +211,29 @@ async function writeConsult(db: SupabaseClient, coachClientId: string, patch: Pa
   return error ? error.message : null
 }
 
+/**
+ * Fill consult fields that are still empty, and nothing else. Used by the
+ * public booking form: what the prospect said prefills the consult, but never
+ * overwrites what a coach already wrote. Returns the keys it filled.
+ */
+export async function prefillConsult(
+  db: SupabaseClient,
+  coachClientId: string,
+  patch: Partial<ConsultRow>,
+): Promise<{ filled: string[]; error: string | null }> {
+  const current = await getConsult(db, coachClientId) as unknown as Record<string, unknown>
+  const fill: Record<string, unknown> = {}
+  for (const [k, v] of Object.entries(patch)) {
+    if (v === null || v === undefined || (Array.isArray(v) && !v.length)) continue
+    const cur = current[k]
+    const empty = cur === null || cur === undefined || cur === "" || (Array.isArray(cur) && !cur.length)
+    if (empty) fill[k] = v
+  }
+  if (!Object.keys(fill).length) return { filled: [], error: null }
+  const error = await writeConsult(db, coachClientId, fill as Partial<ConsultRow>)
+  return { filled: Object.keys(fill), error }
+}
+
 /** The prospect fields the consult screen's top section may edit. */
 export const CONSULT_PROSPECT_FIELDS = [
   "name", "invited_email", "phone",

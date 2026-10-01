@@ -36,7 +36,7 @@ import {
 import { SavingSpinner } from "../../SavingSpinner"
 import { LoadingShell } from "../../LoadingShell"
 import { leadSourceStyle } from "../../_prospects/leadSourceUi"
-import { leadSourceLabel } from "../../../../../lib/prospects/model"
+import { leadSourceLabel, takesReferredBy } from "../../../../../lib/prospects/model"
 import { TaskList } from "../../_tasks/TaskList"
 import { useRecordNoteTaskActions } from "../../_notes/RecordNoteTaskActions"
 import {
@@ -116,6 +116,11 @@ type CoachClientRecord = {
   phone: string | null
   source_category: string | null
   source_detail: string | null
+  referred_by_name?: string | null
+  referred_by_email?: string | null
+  parent_name?: string | null
+  parent_email?: string | null
+  parent_phone?: string | null
   phases: Record<PhaseKey, PhasePair>
   lifecycle_status: string
   client_profile_id: string | null
@@ -946,6 +951,12 @@ export default function CoachClientPostConversionPage() {
           )}
           {record.source_detail && <InfoRow label="SOURCE DETAIL" value={record.source_detail} />}
           {record.invited_email && <InfoRow label="EMAIL" value={record.invited_email} />}
+          {takesReferredBy(record.source_category) && (record.referred_by_name || record.referred_by_email) && (
+            <InfoRow label="REFERRED BY" value={[record.referred_by_name, record.referred_by_email].filter(Boolean).join(" · ")} />
+          )}
+          {(record.parent_name || record.parent_email || record.parent_phone) && (
+            <InfoRow label="PARENT / GUARDIAN" value={[record.parent_name, record.parent_email, record.parent_phone].filter(Boolean).join(" · ")} />
+          )}
           {record.phone && (
             <InfoRow
               label="PHONE"

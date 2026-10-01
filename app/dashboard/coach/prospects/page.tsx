@@ -16,7 +16,7 @@ import { useRouter } from "next/navigation"
 import { getSupabaseBrowser } from "../../../../lib/supabase-browser"
 import { T, btnSecondary, card, eyebrow } from "../../../../lib/dashboard-theme"
 import { leadSourceStyle } from "../_prospects/leadSourceUi"
-import { leadSourceLabel } from "../../../../lib/prospects/model"
+import { leadSourceLabel, lostReasonText } from "../../../../lib/prospects/model"
 import { BackToDashboard } from "../BackToDashboard"
 import { LoadingShell } from "../LoadingShell"
 import {
@@ -77,6 +77,8 @@ type Prospect = {
   lifecycle_status: string
   current_stage_key: string | null
   prospect_status: ProspectStatus | null
+  lost_reason?: string | null
+  lost_reason_detail?: string | null
   last_activity_at: string | null
   created_at: string | null
 }
@@ -265,8 +267,13 @@ function ProspectRow({
         <StageLabel stageKey={prospect.current_stage_key} labelByKey={labelByKey} />
       </div>
 
-      <div style={{ flexShrink: 0, minWidth: 84 }}>
+      <div style={{ flexShrink: 0, minWidth: 84, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3 }}>
         <StatusPill status={prospect.prospect_status} />
+        {prospect.prospect_status === "lost" && lostReasonText(prospect) && (
+          <span title="Lost reason" style={{ fontSize: TYPE.micro, color: T.MUTED, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {lostReasonText(prospect)}
+          </span>
+        )}
       </div>
 
       <div style={{ flexShrink: 0, minWidth: 180, fontSize: TYPE.secondary, color: T.MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>

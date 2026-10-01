@@ -95,6 +95,13 @@ export const LABELS: Record<CoachClientEventType, (e: CoachClientEvent) => strin
     return parts.length ? `Consult complete (${parts.join(", ")})` : "Consult complete"
   },
   consult_no_show: () => "Consult no-show",
+  booking_form_submitted: (e) => {
+    const again = e.context?.matched_existing ? " (updated this record)" : ""
+    if (e.context?.submitted_by === "parent") {
+      return `Form submitted by parent${e.context?.submitter_name ? ` (${e.context.submitter_name})` : ""}${again}`
+    }
+    return `Booking form submitted${again}`
+  },
   converted_to_client: () => "Converted to client",
   proposal_sent: () => "Proposal sent",
   proposal_approved: () => "Proposal approved",

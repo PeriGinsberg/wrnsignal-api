@@ -82,6 +82,12 @@ export function isLostReason(v: unknown): v is LostReason {
   return typeof v === "string" && (LOST_REASONS as readonly string[]).includes(v)
 }
 
+/** "Price", or "Other: moved abroad". Null when no reason is recorded (older lost rows). */
+export function lostReasonText(p: { lost_reason?: string | null; lost_reason_detail?: string | null }): string | null {
+  if (!p.lost_reason || !isLostReason(p.lost_reason)) return null
+  return p.lost_reason === "other" && p.lost_reason_detail ? `Other: ${p.lost_reason_detail}` : LOST_REASON_LABEL[p.lost_reason]
+}
+
 // ── Consult ──────────────────────────────────────────────────────────────────
 
 export const SEARCH_GOALS = ["internship", "first_job", "early_career_change", "seasoned_change", "other"] as const

@@ -23,8 +23,13 @@ const RECORD = {
   name: "Jamie Rivera",
   invited_email: "jamie@example.com",
   phone: null,
-  source_category: null,
+  source_category: "past_client",
   source_detail: null,
+  referred_by_name: "Dana Lee",
+  referred_by_email: null,
+  parent_name: "Pat Rivera",
+  parent_email: "pat@example.com",
+  parent_phone: null,
   phases: {},
   lifecycle_status: "Active",
   client_profile_id: null,
@@ -102,6 +107,14 @@ describe("converted-client page", () => {
     await waitFor(() => expect(calls.some((c) => c.method === "POST" && c.url === "/api/coach/prospects/cc-1/notes")).toBe(true))
     const post = calls.find((c) => c.method === "POST" && c.url === "/api/coach/prospects/cc-1/notes")!
     expect(post.body).toEqual({ type: "session_recap", body: "Resume v2 sent", topic: "deliverable" })
+  })
+
+  it("shows the parent contact and who referred them", async () => {
+    render(<Page />)
+    expect(await screen.findByText("PARENT / GUARDIAN")).toBeTruthy()
+    expect(screen.getByText("Pat Rivera · pat@example.com")).toBeTruthy()
+    expect(screen.getByText("REFERRED BY")).toBeTruthy()
+    expect(screen.getByText("Dana Lee")).toBeTruthy()
   })
 
   it("shows an existing note's topic", async () => {

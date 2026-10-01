@@ -21,7 +21,7 @@ export async function logProspectEvent(
       context: args.context ?? null,
     })
     if (error) console.warn("[prospects/history] insert failed:", error.message)
-  } catch (e: any) {
-    console.warn("[prospects/history] insert threw:", e?.message || String(e))
+  } catch (e) {
+    console.warn("[prospects/history] insert threw:", e instanceof Error ? e.message : String(e))
   }
 }

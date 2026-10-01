@@ -509,6 +509,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // below for why that is now a visible state instead of a silent one.
   const [handoffDegraded, setHandoffDegraded] = useState(false)
   const [isCoach, setIsCoach] = useState(false)
+  // Who is signed in, shown under ACCOUNT in the coach nav. A coach has one
+  // account, but testing across several made "which one am I?" unanswerable.
+  const [signedInEmail, setSignedInEmail] = useState<string | null>(null)
   // The client whose board a coach is currently looking at, read off the URL
   // rather than threaded down, for the same reason authFetch reads it: the
   // networking pages already treat the query string as their state.
@@ -767,10 +770,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const token = session?.access_token || sessionStorage.getItem("signal_handoff_token")
         if (!token) return
         setAuthToken(token)
+        setSignedInEmail(session?.user?.email ?? null)
         const res = await fetch("/api/profile", { headers: { Authorization: `Bearer ${token}` } })
         if (!res.ok) return
         const j = await res.json()
         setIsCoach(!!j.profile?.is_coach)
+        if (!session?.user?.email && j.profile?.email) setSignedInEmail(j.profile.email)
         setCoached(!!j.profile?.coached)
       } catch {}
     }
@@ -1218,6 +1223,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   }}>
                     {group.header}
                   </div>
+                  {/* The signed-in account, between ACCOUNT and Log out. */}
+                  {group.header === "ACCOUNT" && signedInEmail && (
+                    <div
+                      title={`Signed in as ${signedInEmail}`}
+                      data-testid="signed-in-email"
+                      style={{
+                        padding: "0 8px", marginBottom: 6, fontSize: 12, color: "rgba(255,255,255,0.72)",
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      }}
+                    >
+                      {signedInEmail}
+                    </div>
+                  )}
                   {group.items.map((item) => {
                     const active = isItemActive(item, pathname)
                     // A parent stays lit for its whole section, so Networking
