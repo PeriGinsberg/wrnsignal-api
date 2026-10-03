@@ -103,6 +103,7 @@ export async function GET(req: NextRequest) {
       .from("coach_client_engagement_deliverables")
       .select("id, name, sort_order, created_at, speaking_point, why_this_matters")
       .eq("engagement_id", engagement.id)
+      .eq("not_needed", false)
     if (delivErr) throw new Error(`Deliverables lookup failed: ${delivErr.message}`)
     const delivs = ((delivData ?? []) as DelivRow[]).sort(byOrder)
     if (delivs.length === 0) return empty()
@@ -110,12 +111,15 @@ export async function GET(req: NextRequest) {
     // EVERY owner — see note 1 in the header.
     const { data: actData, error: actErr } = await supabase
       .from("coach_client_engagement_activities")
-      .select("id, name, status, owner, due_date, sort_order, created_at, is_signoff, engagement_deliverable_id")
+      .select("id, name, status, state, owner, due_date, sort_order, created_at, is_signoff, engagement_deliverable_id")
       .in("engagement_deliverable_id", delivs.map((d) => d.id))
+      .neq("state", "not_needed")
     if (actErr) throw new Error(`Activities lookup failed: ${actErr.message}`)
 
     const actsByDeliv = new Map<string, ProofActivity[]>()
-    for (const a of (actData ?? []) as ActRow[]) {
+    for (const a of (actData ?? []) as (ActRow & { state?: string })[]) {
+      // A client task reaches the client only once their coach releases it.
+      if (a.owner === "client" && a.state !== "waiting_on_client" && a.state !== "done") continue
       const list = actsByDeliv.get(a.engagement_deliverable_id) ?? []
       list.push({
         id: a.id,

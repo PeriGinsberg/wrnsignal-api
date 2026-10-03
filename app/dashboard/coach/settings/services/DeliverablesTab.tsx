@@ -46,11 +46,11 @@ type Milestone = {
 
 type PhaseOption = { id: string; label: string; active: boolean }
 
-type ActivityOwner = "coach" | "client" | "both"
+// Every task is a Coach task or a Client task ("both" was retired 2026-10-05).
+type ActivityOwner = "coach" | "client"
 const OWNER_OPTIONS: { key: ActivityOwner; label: string }[] = [
   { key: "coach", label: "Coach" },
   { key: "client", label: "Client" },
-  { key: "both", label: "Both" },
 ]
 
 // A draft activity row in the form. `key` is a stable local id for React keys +

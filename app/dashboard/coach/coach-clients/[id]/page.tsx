@@ -38,7 +38,7 @@ import { LoadingShell } from "../../LoadingShell"
 import { leadSourceStyle } from "../../_prospects/leadSourceUi"
 import { leadSourceLabel, takesReferredBy } from "../../../../../lib/prospects/model"
 import { TaskList } from "../../_tasks/TaskList"
-import { PhaseStepper } from "../../_phases/PhaseStepper"
+import { ClientPlan } from "../../_plan/ClientPlan"
 import { useRecordNoteTaskActions } from "../../_notes/RecordNoteTaskActions"
 import {
   LegacyTaskLine,
@@ -925,7 +925,7 @@ export default function CoachClientPostConversionPage() {
         </div>
       </div>
 
-      <PhaseStepper coachClientId={record.id} />
+      <ClientPlan coachClientId={record.id} />
 
       {/* Client Information card — read-only summary of the prospect-stage data */}
       <Section title="Client Information">

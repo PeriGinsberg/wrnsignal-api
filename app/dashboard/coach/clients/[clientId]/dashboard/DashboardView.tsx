@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { SinceLastVisitStrip } from "./SinceLastVisitStrip"
 import { MetricsTiles, type ClientDashboardMetrics } from "./MetricsTiles"
-import { PhaseStepper } from "../../../_phases/PhaseStepper"
+import { ClientPlan } from "../../../_plan/ClientPlan"
 import { NeedsAttentionSection } from "./NeedsAttentionSection"
 import { RecentNotesSection } from "./RecentNotesSection"
 import { MetricsWindowToggle, useMetricsWindow } from "../../../MetricsWindowToggle"
@@ -70,7 +70,7 @@ export function DashboardView({
 
       <MetricsTiles metrics={metrics} metricsWindow={metricsWindow} onTileClick={onTileClick} />
 
-      <PhaseStepper coachClientId={coachClientId} />
+      <ClientPlan coachClientId={coachClientId} />
 
       <NeedsAttentionSection
         authFetch={authFetch}

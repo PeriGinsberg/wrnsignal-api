@@ -22,8 +22,9 @@ import { useState } from "react"
 import { SPACE, TYPE } from "../../../../../lib/theme/surfaces"
 import { T, btnPrimary, btnSecondary, selectDarkInk, selectDarkOption } from "../../../../../lib/dashboard-theme"
 
-const OWNERS = ["coach", "client", "both"] as const
-const OWNER_LABEL: Record<string, string> = { coach: "Coach", client: "Client", both: "Both" }
+// Every task is a Coach task or a Client task ("both" was retired 2026-10-05).
+const OWNERS = ["coach", "client"] as const
+const OWNER_LABEL: Record<string, string> = { coach: "Coach", client: "Client" }
 
 const NAME_MAX = 200
 const PROSE_MAX = 600

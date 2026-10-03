@@ -1,7 +1,7 @@
 // app/api/me/activities/route.ts
 //
 // CLIENT-FACING read of the coached client's OWN engagement activities — the
-// things they're responsible for (owner 'client' or 'both'). Mirrors
+// client tasks their coach has released (Waiting on client) or that are done. Mirrors
 // /api/me/documents: plain-client identity (getBearerToken → getAuthedUser →
 // getProfileId), then the Slice-1 coached gate (getActiveCoachRelationship), then
 // a scoped walk down the engagement chain. NOT coachAuth (no is_coach / no
@@ -122,18 +122,21 @@ export async function GET(req: NextRequest) {
       .from("coach_client_engagement_deliverables")
       .select("id, name, sort_order, created_at")
       .in("engagement_id", engIds)
+      .eq("not_needed", false)
     if (delivErr) throw new Error(`Deliverables lookup failed: ${delivErr.message}`)
     const delivs = (delivData ?? []) as DelivRow[]
     if (delivs.length === 0) return empty()
     const delivById = new Map(delivs.map((d) => [d.id, d]))
 
-    // Activities the client owns ('client' or 'both') — the owner filter is the
-    // line between "mine to do" and the coach's own steps.
+    // Client tasks their coach has RELEASED (Waiting on client), and those
+    // finished. Upcoming and Not needed tasks, and every coach task, stay on
+    // the coach's side: releasing is what makes a task appear here.
     const { data: actData, error: actErr } = await supabase
       .from("coach_client_engagement_activities")
       .select("id, name, status, owner, due_date, sort_order, created_at, engagement_deliverable_id")
       .in("engagement_deliverable_id", [...delivById.keys()])
-      .in("owner", ["client", "both"])
+      .eq("owner", "client")
+      .in("state", ["waiting_on_client", "done"])
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true })
     if (actErr) throw new Error(`Activities lookup failed: ${actErr.message}`)

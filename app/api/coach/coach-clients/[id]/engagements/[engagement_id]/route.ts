@@ -24,7 +24,7 @@ import {
   getApiEngagementById,
 } from "../../../../../_lib/coachEngagements"
 import { logCoachClientEvent } from "../../../../../_lib/coachClientEvents"
-import { autoStartPhases } from "@/lib/phases/service"
+import { activateOnApproval } from "@/lib/plan/service"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -153,10 +153,10 @@ export async function PATCH(
         context: { name: engagement?.name },
       })
     }
-    // Approving puts its phases in the plan; any with tasks already started
-    // become In progress.
+    // Approving makes the package the client's plan: its first task becomes
+    // Active (unless work is already under way), and its phases follow.
     if (body.proposal_status === "approved") {
-      await autoStartPhases(supabase, id, "package approved with tasks already started")
+      await activateOnApproval(supabase, id, engagement_id)
     }
 
     return withCorsJson(req, { ok: true, engagement })

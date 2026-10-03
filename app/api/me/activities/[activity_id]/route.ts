@@ -29,8 +29,7 @@ import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
 import { getActiveCoachRelationship } from "../../../_lib/coachedClient"
 import { ACTIVITY_STATUSES, isValidActivityStatus } from "../../../_lib/coachEngagements"
-import { logCoachClientEvent } from "../../../_lib/coachClientEvents"
-import { autoStartPhases } from "@/lib/phases/service"
+import { clientSetDone } from "@/lib/plan/service"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -125,7 +124,7 @@ export async function PATCH(
 
     // (3) Owner re-check — a client may only write 'client'/'both' activities,
     //     even on their own engagement. Never trust the caller's id choice.
-    if (activity.owner !== "client" && activity.owner !== "both") {
+    if (activity.owner !== "client") {
       return withCorsJson(req, { ok: false, error: "Activity not found" }, 404)
     }
 
@@ -149,38 +148,18 @@ export async function PATCH(
       return withCorsJson(req, { ok: false, error: "Activity not found" }, 404)
     }
 
-    const priorStatus = activity.status as string
-
-    // Write ONLY status on ONLY this activity (chain verified above).
-    const { error: upErr } = await supabase
-      .from("coach_client_engagement_activities")
-      .update({ status: nextStatus })
-      .eq("id", activity_id)
-    if (upErr) {
-      return withCorsJson(req, { ok: false, error: `Failed to update activity status: ${upErr.message}` }, 500)
-    }
-
-    // Best-effort event — ONLY on a transition INTO complete (de-dup on prior),
-    // attributed to the client. Lands in coach_client_events for rel.id (the
-    // coach's History source). Mirrors the coach route; never throws.
-    if (nextStatus === "complete" && priorStatus !== "complete") {
-      await logCoachClientEvent({
-        coachClientId: rel.id,
-        eventType: "activity_completed",
-        actorProfileId: profileId,
-        context: { name: activity.name, engagement_name: engagement.name, by_client: true },
-      })
-    }
-
-    // A task that has started moves its phase to In progress, if nobody has
-    // set that phase's status yet. Never fails the tick.
-    if (nextStatus === "in_progress" || nextStatus === "complete") {
-      await autoStartPhases(supabase, rel.id, `task "${activity.name}" started`)
-    }
+    // The client can only finish (or un-finish) a task their coach has
+    // released. Done activates the next task, logs History and the client's
+    // streak, and moves the phase along: see clientSetDone.
+    const r = await clientSetDone(supabase, {
+      coachClientId: rel.id, taskId: activity_id, done: nextStatus === "complete", actor: profileId,
+    })
+    if (!r.ok) return withCorsJson(req, { ok: false, error: r.error }, r.status === 404 ? 404 : r.status)
+    const shownStatus = r.data === "done" ? "complete" : "in_progress"
 
     return withCorsJson(req, {
       ok: true,
-      activity: { id: activity.id, name: activity.name, status: nextStatus, owner: activity.owner },
+      activity: { id: activity.id, name: activity.name, status: shownStatus, owner: activity.owner },
     })
   } catch (err: any) {
     const msg = err?.message || String(err)

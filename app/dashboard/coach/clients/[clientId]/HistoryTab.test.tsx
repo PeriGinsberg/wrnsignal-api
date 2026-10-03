@@ -74,6 +74,12 @@ suite("the prospect workflow", () => {
       "Phase Build: moved from Not started to In progress (a task started)"],
     ["phase_status_changed", { phase_label: "Know", from_label: "Complete", to_label: "In progress", auto: false },
       "Phase Know: moved from Complete to In progress"],
+    ["plan_changed", { action: "task_state", task: "Polish", deliverable: "Resume", from_label: "Upcoming", to_label: "Active", auto: true, reason: "the task before it finished" },
+      'Task "Polish" (Resume): Upcoming to Active, the task before it finished'],
+    ["plan_changed", { action: "task_state", task: "Review", deliverable: "Resume", from_label: "Waiting on client", to_label: "Done", by_client: true },
+      'Task "Review" (Resume): Waiting on client to Done, by the client'],
+    ["plan_changed", { action: "deliverable_not_needed", deliverable: "LinkedIn" }, 'Deliverable "LinkedIn" marked Not needed'],
+    ["plan_changed", { action: "task_added", task: "Extra", deliverable: "Resume" }, 'Task "Extra" added (Resume)'],
   ]
   for (const [type, context, expected] of cases) {
     it(`${type} reads as written`, () => {

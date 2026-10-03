@@ -93,6 +93,27 @@ export const LABELS: Record<CoachClientEventType, (e: CoachClientEvent) => strin
     }
     return when ? `Consult booked${where} for ${when}${time}` : `Consult booked${where}`
   },
+  plan_changed: (e) => {
+    const c = e.context ?? {}
+    const task = c.task ? `"${c.task}"` : "A task"
+    const where = c.deliverable ? ` (${c.deliverable})` : ""
+    switch (c.action) {
+      case "task_state": {
+        const why = c.auto ? `, ${c.reason ?? "automatically"}` : c.by_client ? ", by the client" : ""
+        return `Task ${task}${where}: ${c.from_label ?? c.from} to ${c.to_label ?? c.to}${why}`
+      }
+      case "task_added": return `Task ${task} added${where}`
+      case "task_removed": return `Task ${task} removed${where}`
+      case "task_assigned": return `Task ${task}${where} reassigned`
+      case "task_due": return c.due_date ? `Task ${task}${where} due ${historyDay(c.due_date) ?? c.due_date}` : `Task ${task}${where}: due date cleared`
+      case "tasks_reordered": return `Tasks reordered in ${c.deliverable ?? "a deliverable"}`
+      case "deliverable_added": return `Deliverable "${c.deliverable}" added to the plan`
+      case "deliverable_removed": return `Deliverable "${c.deliverable}" removed from the plan`
+      case "deliverable_not_needed": return `Deliverable "${c.deliverable}" marked Not needed`
+      case "deliverable_restored": return `Deliverable "${c.deliverable}" restored`
+      default: return "Plan changed"
+    }
+  },
   phase_status_changed: (e) => {
     const phase = e.context?.phase_label ?? "A phase"
     const to = e.context?.to_label ?? e.context?.to ?? "a new status"

@@ -134,15 +134,16 @@ async function board(db: SupabaseClient, coachClientId: string): Promise<Board[]
   if (e1) throw new Error(`Failed to read engagements: ${e1.message}`)
   const engIds = ((engs ?? []) as { id: string }[]).map((e) => e.id)
 
-  const delivs: { id: string; phase_id: string | null }[] = []
+  // A deliverable marked Not needed is out of the plan.
+  const delivs: { id: string; phase_id: string | null; not_needed?: boolean }[] = []
   if (engIds.length) {
-    const { data, error } = await db.from("coach_client_engagement_deliverables").select("id, phase_id").in("engagement_id", engIds)
+    const { data, error } = await db.from("coach_client_engagement_deliverables").select("id, phase_id, not_needed").in("engagement_id", engIds)
     if (error) throw new Error(`Failed to read deliverables: ${error.message}`)
-    delivs.push(...((data ?? []) as typeof delivs))
+    delivs.push(...((data ?? []) as typeof delivs).filter((d) => !d.not_needed))
   }
-  const acts: { engagement_deliverable_id: string; status: string }[] = []
+  const acts: { engagement_deliverable_id: string; state: string }[] = []
   if (delivs.length) {
-    const { data, error } = await db.from("coach_client_engagement_activities").select("engagement_deliverable_id, status")
+    const { data, error } = await db.from("coach_client_engagement_activities").select("engagement_deliverable_id, state")
       .in("engagement_deliverable_id", delivs.map((d) => d.id))
     if (error) throw new Error(`Failed to read tasks: ${error.message}`)
     acts.push(...((data ?? []) as typeof acts))
@@ -155,9 +156,10 @@ async function board(db: SupabaseClient, coachClientId: string): Promise<Board[]
 
   return phases.map((p) => {
     const mine = new Set(delivs.filter((d) => d.phase_id === p.id).map((d) => d.id))
-    const tasks = acts.filter((a) => mine.has(a.engagement_deliverable_id))
-    const done = tasks.filter((a) => a.status === "complete").length
-    const started = tasks.filter((a) => a.status === "in_progress" || a.status === "complete").length
+    // Not needed tasks are not counted; Skipped counts as finished.
+    const tasks = acts.filter((a) => mine.has(a.engagement_deliverable_id) && a.state !== "not_needed")
+    const done = tasks.filter((a) => a.state === "done" || a.state === "skipped").length
+    const started = tasks.filter((a) => a.state === "active" || a.state === "waiting_on_client" || a.state === "done").length
     const s = stored.get(p.id) ?? null
     const in_plan = mine.size > 0
     const status: PhaseStatus = !in_plan ? "not_in_plan" : s?.status ?? "not_started"

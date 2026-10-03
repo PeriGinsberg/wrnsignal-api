@@ -50,10 +50,10 @@ function seed(extra: Partial<Record<string, Row[]>> = {}) {
       { id: "d-prove", engagement_id: "eng-draft", phase_id: "ph-prove", source_milestone_id: "m-prove" },
     ],
     coach_client_engagement_activities: [
-      { id: "a1", engagement_deliverable_id: "d-know", status: "not_started" },
-      { id: "a2", engagement_deliverable_id: "d-know", status: "not_started" },
-      { id: "a3", engagement_deliverable_id: "d-build", status: "not_started" },
-      { id: "a4", engagement_deliverable_id: "d-prove", status: "complete" },
+      { id: "a1", engagement_deliverable_id: "d-know", state: "upcoming" },
+      { id: "a2", engagement_deliverable_id: "d-know", state: "upcoming" },
+      { id: "a3", engagement_deliverable_id: "d-build", state: "upcoming" },
+      { id: "a4", engagement_deliverable_id: "d-prove", state: "done" },
     ],
     client_phase_status: [],
     coach_client_events: [],
@@ -64,8 +64,8 @@ type Db = ReturnType<typeof seed>
 const phases = async (db: Db) => (await getClientPhases(db.client as any, CC))!
 const statusOf = async (db: Db, label: string) => (await phases(db)).find((p) => p.label === label)!
 const history = (db: Db) => db.tables.coach_client_events.filter((e) => e.event_type === "phase_status_changed")
-const setTask = (db: Db, id: string, status: string) => {
-  db.tables.coach_client_engagement_activities.find((a) => a.id === id)!.status = status
+const setTask = (db: Db, id: string, state: string) => {
+  db.tables.coach_client_engagement_activities.find((a) => a.id === id)!.state = state
 }
 
 async function main() {
@@ -176,7 +176,7 @@ async function main() {
     await autoStartPhases(db.client as any, CC, "test")
     ok("no task started, nothing moves", (await statusOf(db, "Know")).status === "not_started" && history(db).length === 0)
 
-    setTask(db, "a1", "in_progress")
+    setTask(db, "a1", "active")
     await autoStartPhases(db.client as any, CC, 'task "a1" started')
     ok("a task moving to in progress moves its phase to In progress", (await statusOf(db, "Know")).status === "in_progress")
     ok("only that phase", (await statusOf(db, "Build")).status === "not_started")
@@ -184,13 +184,13 @@ async function main() {
     ok("History says SIGNAL did it, and why", h?.actor_profile_id === null && h?.context.auto === true
       && h?.context.reason === 'task "a1" started')
 
-    setTask(db, "a1", "not_started")
+    setTask(db, "a1", "upcoming")
     await autoStartPhases(db.client as any, CC, "test")
     ok("a task going back does not move the phase back", (await statusOf(db, "Know")).status === "in_progress")
   }
   {
     const db = seed()
-    setTask(db, "a3", "complete")
+    setTask(db, "a3", "done")
     await autoStartPhases(db.client as any, CC, "test")
     ok("a task moving straight to complete also starts the phase", (await statusOf(db, "Build")).status === "in_progress")
     const b = await statusOf(db, "Build")
@@ -203,7 +203,7 @@ async function main() {
     const db = seed()
     await setPhaseStatus(db.client as any, { coachClientId: CC, phaseId: "ph-know", status: "in_progress", actor: COACH })
     await setPhaseStatus(db.client as any, { coachClientId: CC, phaseId: "ph-know", status: "not_started", actor: COACH })
-    setTask(db, "a1", "in_progress")
+    setTask(db, "a1", "active")
     await autoStartPhases(db.client as any, CC, "test")
     ok("SIGNAL leaves a phase alone once the coach has set it", (await statusOf(db, "Know")).status === "not_started")
   }

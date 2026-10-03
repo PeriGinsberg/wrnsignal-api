@@ -9,10 +9,10 @@
 //   PATCH  /api/coach/coach-clients/[ccId]/engagements/[engagement_id]  { proposal_status }
 //   DELETE /api/coach/coach-clients/[ccId]/engagements/[engagement_id]
 //
-// Two editable status systems, kept distinct by palette AND placement: the
-// proposal lifecycle (draft/sent/approved/declined) is a colored control at the
-// engagement-card header; activity completion (not_started/in_progress/complete)
-// is a colored 3-way control on each activity row inside a deliverable. On any
+// The proposal lifecycle (draft/sent/approved/declined) is a colored control at
+// the engagement-card header. Each task shows its plan state read-only: tasks
+// are worked in the Plan on the Dashboard tab, where the activation and release
+// rules apply (lib/plan/service.ts). On any
 // write failure show a banner AND resync. The server (toApiEngagement) is the
 // source of truth for pricing + status — no client-side recompute. Dollars only.
 //
@@ -24,6 +24,7 @@ import { SPACE, TYPE } from "../../../../../lib/theme/surfaces"
 import { T, btnPrimary, btnSecondary } from "../../../../../lib/dashboard-theme"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
 import { NoteVisibilityIcon } from "../../NoteVisibilityIcon"
+import { TASK_STATE_LABEL, type TaskState } from "@/lib/plan/model"
 import {
   ActivityEditRow, AddActivityRow, DeliverableProse, ProofProjectToggle,
 } from "./EngagementEditing"
@@ -34,7 +35,7 @@ import {
 const VIS_TEAL = "#2CA58D"
 const VIS_GOLD = "#E1A92E"
 
-type EngActivity = { id: string; name: string; owner: string; status: string; due_date: string | null; is_signoff: boolean; sort_order: number }
+type EngActivity = { id: string; name: string; owner: string; status: string; state?: TaskState; due_date: string | null; is_signoff: boolean; sort_order: number }
 type EngDeliverable = {
   id: string
   name: string
@@ -98,17 +99,6 @@ const PROPOSAL_META: Record<ProposalStatus, { label: string; color: string; bg: 
   sent: { label: "Sent", color: T.INK_LINK, bg: "rgba(81,173,229,0.12)", border: "rgba(81,173,229,0.30)" },
   approved: { label: "Approved", color: T.SUCCESS, bg: T.SUCCESS_BG, border: "rgba(0,179,179,0.30)" },
   declined: { label: "Declined", color: T.ERROR, bg: T.ERROR_BG, border: "rgba(255,120,120,0.30)" },
-}
-
-// Activity completion status — now an interactive colored 3-way control on each
-// activity row. Its OWN palette (muted → amber → green) keeps it distinct from
-// the proposal control's blue/green/red, and it lives at a different level
-// (nested inside a deliverable, not the card header). App tokens, no new colors.
-const ACTIVITY_STATUS_ORDER = ["not_started", "in_progress", "complete"] as const
-const ACTIVITY_STATUS_META: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  not_started: { label: "Not started", color: T.MUTED, bg: T.NAV_DEFAULT_BG, border: T.BORDER_SOFT },
-  in_progress: { label: "In progress", color: T.INK_EMPHASIS, bg: "rgba(254,176,106,0.14)", border: T.NAV_ACTIVE_BORDER },
-  complete: { label: "Complete", color: T.SUCCESS, bg: T.SUCCESS_BG, border: "rgba(0,179,179,0.30)" },
 }
 
 function countActivities(e: Engagement): number {
@@ -254,35 +244,9 @@ export function EngagementsTab({
     }
   }
 
-  // Set one activity's completion status. The route returns the fresh engagement;
-  // reconcile local state from it. Banner + resync on failure.
-  async function setActivityStatus(engagementId: string, activityId: string, status: string) {
-    if (!base || settingActivityId) return
-    setSettingActivityId(activityId)
-    setActionError(null)
-    try {
-      const res = await authFetch(`${base}/${engagementId}/activities/${activityId}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status }),
-      })
-      const j = await res.json().catch(() => ({}))
-      if (!res.ok || !j?.ok) {
-        setActionError(j?.error || `Couldn't update activity (${res.status})`)
-        await resync()
-        return
-      }
-      setItems((prev) => prev.map((e) => (e.id === engagementId ? (j.engagement as Engagement) : e)))
-    } catch {
-      setActionError("Network error — try again")
-      await resync()
-    } finally {
-      setSettingActivityId(null)
-    }
-  }
-
   // Set one activity's due date (YYYY-MM-DD, or null to clear). Same route + return
   // shape as the status write; reconcile from the fresh engagement, banner + resync
-  // on failure. Shares the settingActivityId in-flight lock with the status control.
+  // on failure. Uses the settingActivityId in-flight lock.
   async function setActivityDueDate(engagementId: string, activityId: string, dueDate: string | null) {
     if (!base || settingActivityId) return
     setSettingActivityId(activityId)
@@ -528,7 +492,6 @@ export function EngagementsTab({
               onToggle={() => setExpandedId((prev) => (prev === e.id ? null : e.id))}
               onDetach={() => void detach(e.id)}
               onSetStatus={(s) => void setStatus(e.id, s)}
-              onSetActivityStatus={(activityId, status) => void setActivityStatus(e.id, activityId, status)}
               onSetActivityDueDate={(activityId, dueDate) => void setActivityDueDate(e.id, activityId, dueDate)}
               onPatchActivity={(activityId, patch, confirm) => patchActivity(e.id, activityId, patch, confirm)}
               onDeleteActivity={(activityId, confirm) => deleteActivity(e.id, activityId, confirm)}
@@ -600,7 +563,7 @@ export function EngagementsTab({
 function EngagementCard({
   e, coachClientId, expanded, detaching, proposalBusy, settingActivityId, showConvertNudge,
   onPatchActivity, onDeleteActivity, onAddActivity, onReorderActivities, onSaveProse, onSetProofProject,
-  onToggle, onDetach, onSetStatus, onSetActivityStatus, onSetActivityDueDate,
+  onToggle, onDetach, onSetStatus, onSetActivityDueDate,
 }: {
   e: Engagement
   coachClientId: string
@@ -618,7 +581,6 @@ function EngagementCard({
   onToggle: () => void
   onDetach: () => void
   onSetStatus: (s: ProposalStatus) => void
-  onSetActivityStatus: (activityId: string, status: string) => void
   onSetActivityDueDate: (activityId: string, dueDate: string | null) => void
 }) {
   // Hover affordance for the proposal control (same pattern as the prospect
@@ -733,7 +695,6 @@ function EngagementCard({
                 onAddActivity={onAddActivity}
                 onReorderActivities={onReorderActivities}
                 onSaveProse={onSaveProse}
-                onSetActivityStatus={onSetActivityStatus}
                 onSetActivityDueDate={onSetActivityDueDate}
               />
             ))
@@ -746,14 +707,13 @@ function EngagementCard({
 
 // ── Deliverable sub-block: inset surface + coral left accent + nested activities ──
 function DeliverableBlock({
-  d, coachClientId, engagementId, settingActivityId, onSetActivityStatus, onSetActivityDueDate,
+  d, coachClientId, engagementId, settingActivityId, onSetActivityDueDate,
   isProofProject, onPatchActivity, onDeleteActivity, onAddActivity, onReorderActivities, onSaveProse,
 }: {
   d: EngDeliverable
   coachClientId: string
   engagementId: string
   settingActivityId: string | null
-  onSetActivityStatus: (activityId: string, status: string) => void
   onSetActivityDueDate: (activityId: string, dueDate: string | null) => void
   isProofProject: boolean
   onPatchActivity: (activityId: string, patch: Record<string, unknown>, confirm?: boolean) => Promise<string | null>
@@ -861,12 +821,14 @@ function DeliverableBlock({
                     busy={settingActivityId === a.id}
                     onSet={(due) => onSetActivityDueDate(a.id, due)}
                   />
-                  {/* Interactive colored completion control (compact; sits to the right). */}
-                  <ActivityStatusControl
-                    value={a.status}
-                    busy={settingActivityId === a.id}
-                    onSet={(s) => onSetActivityStatus(a.id, s)}
-                  />
+                  {/* The task's state. Tasks are worked in the Plan (Dashboard tab),
+                      where the activation and release rules apply. */}
+                  <span
+                    title="Work this task in the Plan, on the Dashboard tab"
+                    style={{ fontSize: 11, fontWeight: 800, color: T.TEXT, border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 999, padding: "3px 9px", whiteSpace: "nowrap" }}
+                  >
+                    {a.state ? TASK_STATE_LABEL[a.state] : a.status}
+                  </span>
                 </div>
                 {/* Per-activity notes — lazy-loaded on open via the CRUD route. */}
                 <ActivityNotes
@@ -911,55 +873,6 @@ function ActivityDueDateControl({
         cursor: busy ? "default" : "pointer",
       }}
     />
-  )
-}
-
-// ── Compact 3-way activity status control (mirrors the proposal control's
-//    hover / active / in-flight interaction; smaller, on the activity row) ──
-function ActivityStatusControl({
-  value, busy, onSet,
-}: {
-  value: string
-  busy: boolean
-  onSet: (status: string) => void
-}) {
-  const [hovered, setHovered] = useState<string | null>(null)
-  return (
-    <div
-      role="group"
-      aria-label="Activity status"
-      style={{ marginLeft: "auto", display: "inline-flex", flexShrink: 0, borderRadius: 7, border: `1px solid ${T.BORDER_SOFT}`, overflow: "hidden", opacity: busy ? 0.6 : 1 }}
-    >
-      {ACTIVITY_STATUS_ORDER.map((st, i) => {
-        const active = value === st
-        const m = ACTIVITY_STATUS_META[st]
-        const isHover = hovered === st && !active && !busy
-        return (
-          <button
-            key={st}
-            type="button"
-            disabled={busy || active}
-            onClick={() => onSet(st)}
-            onMouseEnter={() => { if (!active && !busy) setHovered(st) }}
-            onMouseLeave={() => setHovered((h) => (h === st ? null : h))}
-            aria-pressed={active}
-            style={{
-              background: active ? m.bg : isHover ? T.BORDER_SOFT : "transparent",
-              color: active ? m.color : isHover ? T.TEXT : T.MUTED,
-              border: "none",
-              borderLeft: i === 0 ? "none" : `1px solid ${isHover ? T.BORDER : T.BORDER_SOFT}`,
-              padding: "4px 9px",
-              fontSize: TYPE.micro, fontWeight: 800, letterSpacing: 0.3, textTransform: "uppercase",
-              cursor: busy ? "default" : "pointer",
-              whiteSpace: "nowrap",
-              transition: "background 130ms ease, color 130ms ease, border-color 130ms ease",
-            }}
-          >
-            {m.label}
-          </button>
-        )
-      })}
-    </div>
   )
 }
 

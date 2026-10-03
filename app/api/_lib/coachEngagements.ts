@@ -87,7 +87,7 @@ export function isValidActivityDueDate(v: unknown): v is string | null {
 }
 
 // ── Activity owner (on a snapshot activity) ──
-export const ACTIVITY_OWNERS = ["coach", "client", "both"] as const
+export const ACTIVITY_OWNERS = ["coach", "client"] as const
 export type ActivityOwner = (typeof ACTIVITY_OWNERS)[number]
 export function isValidActivityOwner(v: unknown): v is ActivityOwner {
   return typeof v === "string" && (ACTIVITY_OWNERS as readonly string[]).includes(v)
@@ -335,16 +335,17 @@ type EngActivityRow = {
   name: string
   owner: string
   status: string
+  state: string
   due_date: string | null
   is_signoff: boolean
   sort_order: number
   created_at: string
 }
 const ENG_ACTIVITY_SELECT =
-  "id, engagement_deliverable_id, name, owner, status, due_date, is_signoff, sort_order, created_at"
+  "id, engagement_deliverable_id, name, owner, status, state, due_date, is_signoff, sort_order, created_at"
 
 function toApiEngActivity(a: EngActivityRow) {
-  return { id: a.id, name: a.name, owner: a.owner, status: a.status, due_date: a.due_date, is_signoff: a.is_signoff, sort_order: a.sort_order }
+  return { id: a.id, name: a.name, owner: a.owner, status: a.status, state: a.state, due_date: a.due_date, is_signoff: a.is_signoff, sort_order: a.sort_order }
 }
 
 function toApiEngDeliverable(d: EngDeliverableRow, activities: ReturnType<typeof toApiEngActivity>[]) {

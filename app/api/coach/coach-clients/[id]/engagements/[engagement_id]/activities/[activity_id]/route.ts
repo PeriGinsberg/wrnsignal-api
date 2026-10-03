@@ -38,7 +38,7 @@ import {
 } from "../../../../../../../_lib/coachEngagements"
 import { logCoachClientEvent } from "../../../../../../../_lib/coachClientEvents"
 import { type ProofActivity } from "@/lib/proofProject"
-import { autoStartPhases } from "@/lib/phases/service"
+import { applyLegacyStatus } from "@/lib/plan/service"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -174,36 +174,34 @@ export async function PATCH(
       status?: string; due_date?: string | null; name?: string
       owner?: string; is_signoff?: boolean
     } = {}
-    if (hasStatus) patch.status = nextStatus as string
+    // status is not written here: it goes through the plan rules below.
     if (hasDueDate) patch.due_date = body.due_date as string | null
     if (hasName) patch.name = nextName as string
     if (hasOwner) patch.owner = body.owner as string
     if (hasSignoff) patch.is_signoff = body.is_signoff as boolean
-    const { error: upErr } = await supabase
-      .from("coach_client_engagement_activities")
-      .update(patch)
-      .eq("id", activity_id)
-    if (upErr) {
-      return withCorsJson(req, { ok: false, error: `Failed to update activity: ${upErr.message}` }, 500)
+    if (Object.keys(patch).length) {
+      const { error: upErr } = await supabase
+        .from("coach_client_engagement_activities")
+        .update(patch)
+        .eq("id", activity_id)
+      if (upErr) {
+        return withCorsJson(req, { ok: false, error: `Failed to update activity: ${upErr.message}` }, 500)
+      }
+    }
+    // The old three-way status maps onto the plan's states (complete -> Done,
+    // in progress -> Active, or Waiting on client for a client task, not
+    // started -> Upcoming), so this control obeys the same rules as the Plan:
+    // finishing activates the next task, History records it, phases follow.
+    if (hasStatus && nextStatus !== priorStatus) {
+      const r = await applyLegacyStatus(supabase, {
+        coachClientId: id, taskId: activity_id, status: nextStatus as "not_started" | "in_progress" | "complete", actor: coachProfileId,
+      })
+      if (!r.ok) return withCorsJson(req, { ok: false, error: r.error }, r.status)
     }
 
     // Best-effort event log — ONLY on a transition INTO complete (not a re-complete,
     // not other statuses, not a due_date-only edit). The helper never throws; a
     // logging failure can't fail the PATCH.
-    if (nextStatus === "complete" && priorStatus !== "complete") {
-      await logCoachClientEvent({
-        coachClientId: id,
-        eventType: "activity_completed",
-        actorProfileId: coachProfileId,
-        context: { name: activity.name, engagement_name: engagement.name },
-      })
-    }
-
-    // A task that has started moves its phase to In progress, if nobody has
-    // set that phase's status yet. Never fails the edit.
-    if (nextStatus === "in_progress" || nextStatus === "complete") {
-      await autoStartPhases(supabase, id, `task "${activity.name}" started`)
-    }
 
     // Return the fresh engagement so the UI re-renders with the new status.
     const updated = await getApiEngagementById(supabase, id, engagement_id)
@@ -254,7 +252,7 @@ export async function DELETE(
 
     const { data: activity, error: actErr } = await supabase
       .from("coach_client_engagement_activities")
-      .select("id, engagement_deliverable_id, is_signoff")
+      .select("id, name, engagement_deliverable_id, is_signoff")
       .eq("id", activity_id)
       .maybeSingle()
     if (actErr) return withCorsJson(req, { ok: false, error: `Failed to read activity: ${actErr.message}` }, 500)
@@ -282,6 +280,12 @@ export async function DELETE(
     if (delErr) {
       return withCorsJson(req, { ok: false, error: `Failed to delete activity: ${delErr.message}` }, 500)
     }
+    await logCoachClientEvent({
+      coachClientId: id,
+      eventType: "plan_changed",
+      actorProfileId: coachProfileId,
+      context: { action: "task_removed", task: activity.name },
+    })
 
     const updated = await getApiEngagementById(supabase, id, engagement_id)
     return withCorsJson(req, { ok: true, engagement: updated })

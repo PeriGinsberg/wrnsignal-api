@@ -18,7 +18,7 @@ import { resolveDelegation } from "@/lib/collab/delegation"
 // Reuse the generic coach-route auth/scoping helpers (the recent worked example).
 export { getSupabaseAdmin, resolveCoach, errStatus } from "./coachAuth"
 
-export const ACTIVITY_OWNERS = ["coach", "client", "both"] as const
+export const ACTIVITY_OWNERS = ["coach", "client"] as const
 export type ActivityOwner = (typeof ACTIVITY_OWNERS)[number]
 
 // Validate owner at the API edge with a clean 400 (the DB CHECK

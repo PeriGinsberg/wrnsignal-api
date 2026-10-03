@@ -20,6 +20,7 @@
 
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../../../../_lib/cors"
+import { logCoachClientEvent } from "../../../../../../_lib/coachClientEvents"
 import {
   getSupabaseAdmin,
   resolveCoach,
@@ -100,7 +101,7 @@ export async function POST(
         engagement_deliverable_id: owned.deliverableId,
         name,
         owner: body.owner,
-        status: "not_started", // a new task always starts untouched
+        state: "upcoming", // a new task always starts Upcoming (status follows it)
         due_date: dueProvided ? body.due_date : null,
         is_signoff: wantsSignoff,
         sort_order: nextOrder,
@@ -110,6 +111,10 @@ export async function POST(
     if (insErr) {
       return withCorsJson(req, { ok: false, error: `Failed to add activity: ${insErr.message}` }, 500)
     }
+    await logCoachClientEvent({
+      coachClientId: id, eventType: "plan_changed", actorProfileId: coachProfileId,
+      context: { action: "task_added", task: name, task_type: body.owner },
+    })
 
     const engagement = await getApiEngagementById(supabase, id, engagement_id)
     return withCorsJson(req, { ok: true, activity_id: inserted?.id ?? null, engagement })
@@ -174,6 +179,10 @@ export async function PATCH(
         return withCorsJson(req, { ok: false, error: `Failed to reorder: ${upErr.message}` }, 500)
       }
     }
+    await logCoachClientEvent({
+      coachClientId: id, eventType: "plan_changed", actorProfileId: coachProfileId,
+      context: { action: "tasks_reordered" },
+    })
 
     const engagement = await getApiEngagementById(supabase, id, engagement_id)
     return withCorsJson(req, { ok: true, engagement })

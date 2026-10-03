@@ -44,7 +44,13 @@ function circleStyle(status: ClientPhase["status"]): React.CSSProperties {
   }
 }
 
-export function PhaseStepper({ coachClientId }: { coachClientId: string | null }) {
+export function PhaseStepper({ coachClientId, refreshKey = 0, onChanged }: {
+  coachClientId: string | null
+  /** Bump to reload, e.g. after the Plan below changed a task. */
+  refreshKey?: number
+  /** Told when the coach changes a phase here. */
+  onChanged?: () => void
+}) {
   const [phases, setPhases] = useState<ClientPhase[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [picking, setPicking] = useState<ClientPhase | null>(null)
@@ -64,7 +70,7 @@ export function PhaseStepper({ coachClientId }: { coachClientId: string | null }
     }
   }, [coachClientId])
 
-  useEffect(() => { void load() }, [load])
+  useEffect(() => { void load() }, [load, refreshKey])
 
   async function save(phase: ClientPhase, to: SettablePhaseStatus) {
     setSaving(true)
@@ -78,6 +84,7 @@ export function PhaseStepper({ coachClientId }: { coachClientId: string | null }
       setPhases(j.phases as ClientPhase[])
       setPicking(null)
       setConfirming(null)
+      onChanged?.()
     } catch {
       setError("Couldn't save the phase")
     } finally {
