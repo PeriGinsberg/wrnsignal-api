@@ -4,9 +4,11 @@
 //
 // Lifted VERBATIM from the inline copies duplicated across the coach API
 // routes (e.g. the since-deleted app/api/coach/client-runs/[client_profile_id]
-// route and app/api/coach/recommend-job/route.ts, which were byte-identical). This is a
-// pure centralization refactor — the queries, error messages, ordering, and
-// the profile email-attach side effect are unchanged.
+// route and app/api/coach/recommend-job/route.ts, which were byte-identical). It
+// began as a pure centralization refactor. One behaviour has since changed on
+// purpose: the email fall-through only claims an UNOWNED profile and refuses
+// one another login owns (see getProfileId). Route files that still carry
+// their own copy of this lookup do not have that refusal.
 //
 // Resolution: Bearer JWT -> auth.users.id -> client_profiles row.
 // resolveCaller() returns { profileId, isCoach }.
@@ -50,22 +52,26 @@ export async function getAuthedUser(req: Request) {
 }
 
 /**
- * refuseOwnedEmailMatch: when the caller's login has no profile but their
- * email matches a profile that ANOTHER login already owns, refuse (403)
- * instead of re-pointing that profile at the caller. The default re-points it,
- * which hands one person's profile, runs and board to whoever signs in with
- * an email that profile still carries (after the owner's login email changed,
- * for example). getAuthedProfileText always refused this; routes moved onto
- * lib/collab/scope.ts opt in so they keep refusing. An UNOWNED profile
- * (user_id null, e.g. a coach-created client signing in for the first time)
- * is still attached either way.
+ * The caller's profile: by login, then by email.
+ *
+ * THE EMAIL FALL-THROUGH ONLY EVER CLAIMS AN UNOWNED PROFILE. A profile whose
+ * email matches but which another login already owns is refused (403), never
+ * re-pointed at the caller. Re-pointing it handed one person's profile, runs,
+ * tracker and board to whoever signed in with an email that profile still
+ * carried, for example after the owner's login email was changed by hand and
+ * the profile was not. getAuthedProfileText (JobFit) always refused this case;
+ * now everything that resolves a caller through here does too.
+ *
+ * An unowned profile (user_id null) is still claimed by the first login with
+ * its email, and the claim is conditional on it still being unowned, so two
+ * logins racing for it cannot both win.
  *
  * supabase: injectable for the tests; defaults to the service-role client.
  */
 export async function getProfileId(
   userId: string,
   email: string | null,
-  opts: { refuseOwnedEmailMatch?: boolean; supabase?: SupabaseClient } = {},
+  opts: { supabase?: SupabaseClient } = {},
 ) {
   const supabase = opts.supabase ?? getSupabaseAdmin()
   const { data, error } = await supabase
@@ -84,17 +90,22 @@ export async function getProfileId(
       .maybeSingle()
     if (emailErr) throw new Error(`Profile email lookup failed: ${emailErr.message}`)
     if (byEmail) {
-      if (byEmail.user_id && byEmail.user_id !== userId && opts.refuseOwnedEmailMatch) {
+      // byEmail.user_id cannot equal userId here: the by-login lookup above
+      // would have returned it. So any owner at all is someone else.
+      if (byEmail.user_id) {
         // "Forbidden" in the message is what routeError's errorStatus maps to
         // 403 (ForbiddenError lives in scope.ts, which imports this file).
         throw new Error("Forbidden: profile email conflict: a profile with this email belongs to a different login")
       }
-      if (byEmail.user_id !== userId) {
-        const { error: attachErr } = await supabase
-          .from("client_profiles")
-          .update({ user_id: userId, updated_at: new Date().toISOString() })
-          .eq("id", byEmail.id)
-        if (attachErr) throw new Error(`Profile attach failed: ${attachErr.message}`)
+      const { data: claimed, error: attachErr } = await supabase
+        .from("client_profiles")
+        .update({ user_id: userId, updated_at: new Date().toISOString() })
+        .eq("id", byEmail.id)
+        .is("user_id", null)
+        .select("id")
+      if (attachErr) throw new Error(`Profile attach failed: ${attachErr.message}`)
+      if (!claimed?.length) {
+        throw new Error("Forbidden: profile email conflict: this profile was claimed by a different login")
       }
       return byEmail.id as string
     }
@@ -109,10 +120,9 @@ export async function getProfileId(
 // former inline verifyCoach.
 export async function resolveCaller(
   req: Request,
-  opts: { refuseOwnedEmailMatch?: boolean } = {},
 ): Promise<{ profileId: string; isCoach: boolean }> {
   const { userId, email } = await getAuthedUser(req)
-  const profileId = await getProfileId(userId, email, opts)
+  const profileId = await getProfileId(userId, email)
   const supabase = getSupabaseAdmin()
   const { data } = await supabase
     .from("client_profiles")
