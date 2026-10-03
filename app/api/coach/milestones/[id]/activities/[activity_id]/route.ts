@@ -81,7 +81,7 @@ export async function PATCH(
 
     // (1) Parent deliverable must belong to this coach.
     if (!(await isMilestoneOwnedByCoach(supabase, coachProfileId, id))) {
-      return withCorsJson(req, { ok: false, error: "Milestone not found" }, 404)
+      return withCorsJson(req, { ok: false, error: "Deliverable not found" }, 404)
     }
 
     // (2) Match the activity on BOTH id and milestone_id = [id]. An activity that
@@ -119,7 +119,7 @@ export async function DELETE(
 
     // (1) Parent deliverable must belong to this coach.
     if (!(await isMilestoneOwnedByCoach(supabase, coachProfileId, id))) {
-      return withCorsJson(req, { ok: false, error: "Milestone not found" }, 404)
+      return withCorsJson(req, { ok: false, error: "Deliverable not found" }, 404)
     }
 
     // (2) Match on BOTH id and milestone_id = [id] (see PATCH note).

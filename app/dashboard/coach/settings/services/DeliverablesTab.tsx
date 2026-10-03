@@ -40,7 +40,11 @@ type Milestone = {
   time_estimate_days: number | null
   fee: number | null
   activity_count?: number // from the list endpoint; count only
+  // The phase this deliverable belongs to (Settings > Services > Phases), or null.
+  phase_id: string | null
 }
+
+type PhaseOption = { id: string; label: string; active: boolean }
 
 type ActivityOwner = "coach" | "client" | "both"
 const OWNER_OPTIONS: { key: ActivityOwner; label: string }[] = [
@@ -123,6 +127,7 @@ async function readMilestone(id: string): Promise<Milestone | null> {
         time_estimate_days: m.time_estimate_days ?? null,
         fee: m.fee ?? null,
         activity_count: Array.isArray(m.activities) ? m.activities.length : 0,
+        phase_id: m.phase_id ?? null,
       }
     }
   } catch {
@@ -210,6 +215,9 @@ export function DeliverablesTab() {
   const [cTime, setCTime] = useState("")
   const [cFee, setCFee] = useState("")
   const [cActivities, setCActivities] = useState<ActivityDraft[]>([])
+  const [cPhase, setCPhase] = useState("")
+  // The coach's phases, for each deliverable's Phase dropdown.
+  const [phases, setPhases] = useState<PhaseOption[]>([])
   const [creating, setCreating] = useState(false)
 
   // Inline edit. eOrigActivities is the snapshot fetched on open, for diffing.
@@ -220,6 +228,7 @@ export function DeliverablesTab() {
   const [eTime, setETime] = useState("")
   const [eFee, setEFee] = useState("")
   const [eActivities, setEActivities] = useState<ActivityDraft[]>([])
+  const [ePhase, setEPhase] = useState("")
   const [eOrigActivities, setEOrigActivities] = useState<ActivityDraft[]>([])
   const [eActivitiesLoading, setEActivitiesLoading] = useState(false)
   const [savingEdit, setSavingEdit] = useState(false)
@@ -248,6 +257,17 @@ export function DeliverablesTab() {
   }, [])
 
   useEffect(() => { void load() }, [load])
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await authFetch("/api/coach/phases")
+        const j = await res.json().catch(() => ({}))
+        if (res.ok && j?.ok) setPhases(j.phases as PhaseOption[])
+      } catch {
+        /* the dropdown just offers "No phase" */
+      }
+    })()
+  }, [])
 
   // Silent re-fetch used to resync after a write error (no full-screen loading
   // flip — the list stays visible and is corrected to server truth).
@@ -284,6 +304,7 @@ export function DeliverablesTab() {
           category: cCat.trim() || undefined,
           time_estimate_days: timeParsed.value,
           fee: feeParsed.value,
+          phase_id: cPhase || null,
         }),
       })
       const j = await res.json().catch(() => ({}))
@@ -298,7 +319,7 @@ export function DeliverablesTab() {
       const actErr = await syncActivities(newId, cActivities, [])
       // Reset the create form regardless: re-submitting would duplicate the
       // already-created deliverable.
-      setCName(""); setCDesc(""); setCCat(""); setCTime(""); setCFee(""); setCActivities([])
+      setCName(""); setCDesc(""); setCCat(""); setCTime(""); setCFee(""); setCActivities([]); setCPhase("")
       if (actErr) {
         setActionError(actErr)
         await resync()
@@ -324,6 +345,7 @@ export function DeliverablesTab() {
     setECat(m.category ?? "")
     setETime(m.time_estimate_days != null ? String(m.time_estimate_days) : "")
     setEFee(m.fee != null ? String(m.fee) : "")
+    setEPhase(m.phase_id ?? "")
     // The list row carries only activity_count — fetch the full ordered array.
     setEActivities([])
     setEOrigActivities([])
@@ -353,7 +375,7 @@ export function DeliverablesTab() {
   }
   function cancelEdit() {
     setEditingId(null)
-    setEName(""); setEDesc(""); setECat(""); setETime(""); setEFee("")
+    setEName(""); setEDesc(""); setECat(""); setETime(""); setEFee(""); setEPhase("")
     setEActivities([]); setEOrigActivities([]); setEActivitiesLoading(false)
   }
 
@@ -380,6 +402,7 @@ export function DeliverablesTab() {
           category: eCat.trim() ? eCat.trim() : null,
           time_estimate_days: timeParsed.value,
           fee: feeParsed.value,
+          phase_id: ePhase || null,
         }),
       })
       const j = await res.json().catch(() => ({}))
@@ -511,6 +534,7 @@ export function DeliverablesTab() {
               >
                 <DeliverableForm
                   name={eName} description={eDesc} category={eCat}
+                  phase={ePhase} phases={phases} onPhase={setEPhase}
                   timeEstimate={eTime} fee={eFee}
                   activities={eActivities} activitiesLoading={eActivitiesLoading}
                   onName={setEName} onDescription={setEDesc} onCategory={setECat}
@@ -525,6 +549,7 @@ export function DeliverablesTab() {
               <Row
                 key={m.id}
                 m={m}
+                phaseLabel={phases.find((p) => p.id === m.phase_id)?.label ?? null}
                 toggling={togglingId === m.id}
                 deleting={deletingId === m.id}
                 confirming={confirmDeleteId === m.id}
@@ -546,6 +571,7 @@ export function DeliverablesTab() {
         </div>
         <DeliverableForm
           name={cName} description={cDesc} category={cCat}
+          phase={cPhase} phases={phases} onPhase={setCPhase}
           timeEstimate={cTime} fee={cFee}
           activities={cActivities} activitiesLoading={false}
           onName={setCName} onDescription={setCDesc} onCategory={setCCat}
@@ -562,10 +588,11 @@ export function DeliverablesTab() {
 
 // ── Display row ──
 function Row({
-  m, toggling, deleting, confirming,
+  m, phaseLabel, toggling, deleting, confirming,
   onToggle, onEdit, onAskDelete, onConfirmDelete, onCancelDelete,
 }: {
   m: Milestone
+  phaseLabel: string | null
   toggling: boolean
   deleting: boolean
   confirming: boolean
@@ -588,6 +615,9 @@ function Row({
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
           <span style={{ fontSize: 14, color: T.TEXT, fontWeight: 600 }}>{m.name}</span>
+          <span title="Phase" style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: phaseLabel ? "#08203F" : T.DIM, border: `1px solid ${phaseLabel ? "#08203F" : T.BORDER_SOFT}`, borderRadius: 6, padding: "1px 5px" }}>
+            {phaseLabel ? `Phase: ${phaseLabel}` : "No phase"}
+          </span>
           {m.category && (
             <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.INK_LINK, border: `1px solid ${T.WRN_BLUE}`, borderRadius: 6, padding: "1px 5px" }}>
               {m.category}
@@ -649,7 +679,7 @@ function Row({
 
 // ── Shared create/edit form (name/desc/category + time/fee + activities) ──
 function DeliverableForm({
-  name, description, category, timeEstimate, fee,
+  name, description, category, phase, phases, onPhase, timeEstimate, fee,
   activities, activitiesLoading,
   onName, onDescription, onCategory, onTimeEstimate, onFee, onActivitiesChange,
   onInvalid, onSubmit, submitLabel, busy, onCancel,
@@ -657,6 +687,9 @@ function DeliverableForm({
   name: string
   description: string
   category: string
+  phase: string
+  phases: PhaseOption[]
+  onPhase: (v: string) => void
   timeEstimate: string
   fee: string
   activities: ActivityDraft[]
@@ -748,6 +781,15 @@ function DeliverableForm({
         onChange={(e) => onCategory(e.target.value)}
         onKeyDown={onKeyDown}
       />
+      <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <span style={fieldLabel}>Phase</span>
+        <select style={input} value={phase} onChange={(e) => onPhase(e.target.value)} aria-label="Phase">
+          <option value="">No phase</option>
+          {phases.filter((p) => p.active || p.id === phase).map((p) => (
+            <option key={p.id} value={p.id}>{p.label}{p.active ? "" : " (off)"}</option>
+          ))}
+        </select>
+      </label>
 
       {/* Time + fee, side by side; both optional. */}
       <div style={{ display: "flex", gap: 8 }}>

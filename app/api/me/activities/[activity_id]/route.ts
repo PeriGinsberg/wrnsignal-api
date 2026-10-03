@@ -30,6 +30,7 @@ import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
 import { getActiveCoachRelationship } from "../../../_lib/coachedClient"
 import { ACTIVITY_STATUSES, isValidActivityStatus } from "../../../_lib/coachEngagements"
 import { logCoachClientEvent } from "../../../_lib/coachClientEvents"
+import { autoStartPhases } from "@/lib/phases/service"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -169,6 +170,12 @@ export async function PATCH(
         actorProfileId: profileId,
         context: { name: activity.name, engagement_name: engagement.name, by_client: true },
       })
+    }
+
+    // A task that has started moves its phase to In progress, if nobody has
+    // set that phase's status yet. Never fails the tick.
+    if (nextStatus === "in_progress" || nextStatus === "complete") {
+      await autoStartPhases(supabase, rel.id, `task "${activity.name}" started`)
     }
 
     return withCorsJson(req, {

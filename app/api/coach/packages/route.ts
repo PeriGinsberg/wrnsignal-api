@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
         !Array.isArray(body.deliverable_ids) ||
         !body.deliverable_ids.every((x: any) => typeof x === "string" && UUID_RE.test(x))
       ) {
-        return withCorsJson(req, { ok: false, error: "deliverable_ids must be an array of milestone UUIDs" }, 400)
+        return withCorsJson(req, { ok: false, error: "deliverable_ids must be an array of deliverable ids" }, 400)
       }
       deliverableIds = [...new Set(body.deliverable_ids as string[])]
     }

@@ -79,6 +79,9 @@ export const COACH_CLIENT_EVENT_TYPES = [
   // Phase 3: a consult cancelled on Calendly. Context: the date it was for, the
   // reason they gave, and who cancelled (the invitee or the host).
   "consult_cancelled",
+  // Client phases: a phase's status moved. Context: the phase's label, from and
+  // to, and auto=true when SIGNAL moved it (a task in the phase started).
+  "phase_status_changed",
 ] as const
 
 export type CoachClientEventType = (typeof COACH_CLIENT_EVENT_TYPES)[number]

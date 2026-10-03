@@ -46,7 +46,7 @@ export async function POST(
       body.milestone_ids.length === 0 ||
       !body.milestone_ids.every((x: any) => typeof x === "string" && UUID_RE.test(x))
     ) {
-      return withCorsJson(req, { ok: false, error: "milestone_ids must be a non-empty array of milestone UUIDs" }, 400)
+      return withCorsJson(req, { ok: false, error: "milestone_ids must be a non-empty array of deliverable ids" }, 400)
     }
     const milestoneIds = [...new Set(body.milestone_ids as string[])]
 

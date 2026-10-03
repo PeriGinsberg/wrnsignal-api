@@ -19,6 +19,7 @@ import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
 import { resolveDelegation } from "@/lib/collab/delegation"
+import { fillDeliverablePhase, isOwnPhase } from "@/lib/phases/service"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -33,12 +34,13 @@ type MilestoneRow = {
   active: boolean
   time_estimate_days: number | null
   fee_cents: number | null
+  phase_id: string | null
   created_at: string
   updated_at: string
 }
 
 const MILESTONE_SELECT =
-  "id, coach_profile_id, name, description, category, sort_order, active, time_estimate_days, fee_cents, created_at, updated_at"
+  "id, coach_profile_id, name, description, category, sort_order, active, time_estimate_days, fee_cents, phase_id, created_at, updated_at"
 
 // ── Auth helpers (inlined per coach-route convention; copied from
 //    app/api/coach/milestones/route.ts) ──
@@ -104,6 +106,8 @@ function toApiMilestone(r: MilestoneRow) {
     name: r.name,
     description: r.description,
     category: r.category,
+    // The phase this deliverable belongs to (coach_phases.id), or null.
+    phase_id: r.phase_id ?? null,
     sort_order: r.sort_order,
     active: r.active,
     time_estimate_days: r.time_estimate_days,
@@ -168,10 +172,10 @@ export async function GET(
       .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .maybeSingle()
     if (mErr) {
-      return withCorsJson(req, { ok: false, error: `Failed to read milestone: ${mErr.message}` }, 500)
+      return withCorsJson(req, { ok: false, error: `Failed to read deliverable: ${mErr.message}` }, 500)
     }
     if (!milestone) {
-      return withCorsJson(req, { ok: false, error: "Milestone not found" }, 404)
+      return withCorsJson(req, { ok: false, error: "Deliverable not found" }, 404)
     }
 
     const { data: acts, error: aErr } = await supabase
@@ -204,6 +208,7 @@ const PATCH_ALLOWED = new Set([
   "sort_order",
   "time_estimate_days",
   "fee",
+  "phase_id",
 ])
 
 export async function PATCH(
@@ -276,11 +281,19 @@ export async function PATCH(
       updates.fee_cents = parsed.cents
     }
 
+    const supabase = getSupabaseAdmin()
+    if ("phase_id" in body) {
+      const v = body.phase_id === "" ? null : body.phase_id
+      if (!(await isOwnPhase(supabase, (await resolveDelegation(supabase, coachProfileId)).actingIds, v))) {
+        return withCorsJson(req, { ok: false, error: "phase_id must be one of your phases, or null" }, 400)
+      }
+      updates.phase_id = v
+    }
+
     if (Object.keys(updates).length === 0) {
       return withCorsJson(req, { ok: false, error: "No updatable fields supplied" }, 400)
     }
 
-    const supabase = getSupabaseAdmin()
     // Match BOTH id and coach_profile_id → a row owned by another coach (or a
     // nonexistent id) matches nothing → 404 (not found / not owned).
     const { data: updated, error: upErr } = await supabase
@@ -291,11 +304,13 @@ export async function PATCH(
       .select(MILESTONE_SELECT)
       .maybeSingle()
     if (upErr) {
-      return withCorsJson(req, { ok: false, error: `Failed to update milestone: ${upErr.message}` }, 500)
+      return withCorsJson(req, { ok: false, error: `Failed to update deliverable: ${upErr.message}` }, 500)
     }
     if (!updated) {
-      return withCorsJson(req, { ok: false, error: "Milestone not found" }, 404)
+      return withCorsJson(req, { ok: false, error: "Deliverable not found" }, 404)
     }
+    // Clients' existing copies of this deliverable with no phase take the new one.
+    if ("phase_id" in updates) await fillDeliverablePhase(supabase, id, updates.phase_id)
 
     return withCorsJson(req, { ok: true, milestone: toApiMilestone(updated as MilestoneRow) })
   } catch (e: any) {
@@ -331,10 +346,10 @@ export async function DELETE(
       .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
       .maybeSingle()
     if (ownErr) {
-      return withCorsJson(req, { ok: false, error: `Failed to read milestone: ${ownErr.message}` }, 500)
+      return withCorsJson(req, { ok: false, error: `Failed to read deliverable: ${ownErr.message}` }, 500)
     }
     if (!owned) {
-      return withCorsJson(req, { ok: false, error: "Milestone not found" }, 404)
+      return withCorsJson(req, { ok: false, error: "Deliverable not found" }, 404)
     }
 
     // RESTRICT guard: refuse with 409 if this deliverable is used in any package.
@@ -372,10 +387,10 @@ export async function DELETE(
       .select("id")
       .maybeSingle()
     if (delErr) {
-      return withCorsJson(req, { ok: false, error: `Failed to delete milestone: ${delErr.message}` }, 500)
+      return withCorsJson(req, { ok: false, error: `Failed to delete deliverable: ${delErr.message}` }, 500)
     }
     if (!deleted) {
-      return withCorsJson(req, { ok: false, error: "Milestone not found" }, 404)
+      return withCorsJson(req, { ok: false, error: "Deliverable not found" }, 404)
     }
 
     return withCorsJson(req, { ok: true, deleted: (deleted as { id: string }).id })

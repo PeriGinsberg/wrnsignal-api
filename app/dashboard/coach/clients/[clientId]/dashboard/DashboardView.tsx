@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { SinceLastVisitStrip } from "./SinceLastVisitStrip"
 import { MetricsTiles, type ClientDashboardMetrics } from "./MetricsTiles"
-import { MethodologyPlaceholder } from "./MethodologyPlaceholder"
+import { PhaseStepper } from "../../../_phases/PhaseStepper"
 import { NeedsAttentionSection } from "./NeedsAttentionSection"
 import { RecentNotesSection } from "./RecentNotesSection"
 import { MetricsWindowToggle, useMetricsWindow } from "../../../MetricsWindowToggle"
@@ -11,6 +11,8 @@ import { MetricsWindowToggle, useMetricsWindow } from "../../../MetricsWindowTog
 type Props = {
   authFetch: (url: string, opts?: RequestInit) => Promise<Response>
   clientId: string
+  /** The coach_clients id, which the Phase stepper is keyed on. */
+  coachClientId: string | null
   notesRefreshKey: number
   needsAttentionRefreshKey: number
   onTileClick: (filterStatus: "all" | "interviewing" | "offer" | "rejected") => void
@@ -27,6 +29,7 @@ type Props = {
 export function DashboardView({
   authFetch,
   clientId,
+  coachClientId,
   notesRefreshKey,
   needsAttentionRefreshKey,
   onTileClick,
@@ -67,7 +70,7 @@ export function DashboardView({
 
       <MetricsTiles metrics={metrics} metricsWindow={metricsWindow} onTileClick={onTileClick} />
 
-      <MethodologyPlaceholder />
+      <PhaseStepper coachClientId={coachClientId} />
 
       <NeedsAttentionSection
         authFetch={authFetch}

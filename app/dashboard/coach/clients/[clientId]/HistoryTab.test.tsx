@@ -70,6 +70,10 @@ suite("the prospect workflow", () => {
       "Consult cancelled on Calendly (was Fri, Oct 9, 2:00 PM EDT). Reason: Something came up"],
     ["consult_cancelled", { via: "calendly", canceled_by: "host" }, "Consult cancelled on Calendly by you"],
     ["prospect_created", { via: "calendly" }, "Prospect created from a Calendly booking"],
+    ["phase_status_changed", { phase_label: "Build", from_label: "Not started", to_label: "In progress", auto: true },
+      "Phase Build: moved from Not started to In progress (a task started)"],
+    ["phase_status_changed", { phase_label: "Know", from_label: "Complete", to_label: "In progress", auto: false },
+      "Phase Know: moved from Complete to In progress"],
   ]
   for (const [type, context, expected] of cases) {
     it(`${type} reads as written`, () => {

@@ -912,6 +912,7 @@ export default function CoachClientPage() {
         <DashboardView
           authFetch={authFetch}
           clientId={clientId}
+          coachClientId={coachClientId}
           notesRefreshKey={notesRefreshKey}
           needsAttentionRefreshKey={needsAttentionRefreshKey}
           onTileClick={handleTileClick}

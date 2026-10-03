@@ -18,6 +18,7 @@ import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { owningCoachId as owningCoachIdFor, resolveDelegation } from "@/lib/collab/delegation"
+import { isOwnPhase } from "@/lib/phases/service"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -32,12 +33,13 @@ type MilestoneRow = {
   active: boolean
   time_estimate_days: number | null
   fee_cents: number | null
+  phase_id: string | null
   created_at: string
   updated_at: string
 }
 
 const MILESTONE_SELECT =
-  "id, coach_profile_id, name, description, category, sort_order, active, time_estimate_days, fee_cents, created_at, updated_at"
+  "id, coach_profile_id, name, description, category, sort_order, active, time_estimate_days, fee_cents, phase_id, created_at, updated_at"
 
 // ── Auth helpers (inlined per coach-route convention; copied from
 //    app/api/coach/pipeline/route.ts) ──
@@ -103,6 +105,8 @@ function toApiMilestone(r: MilestoneRow) {
     name: r.name,
     description: r.description,
     category: r.category,
+    // The phase this deliverable belongs to (coach_phases.id), or null.
+    phase_id: r.phase_id ?? null,
     sort_order: r.sort_order,
     active: r.active,
     time_estimate_days: r.time_estimate_days,
@@ -154,7 +158,7 @@ export async function GET(req: NextRequest) {
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true })
     if (error) {
-      return withCorsJson(req, { ok: false, error: `Failed to read milestones: ${error.message}` }, 500)
+      return withCorsJson(req, { ok: false, error: `Failed to read deliverable: ${error.message}` }, 500)
     }
     const rows = (data as MilestoneRow[]) ?? []
 
@@ -230,6 +234,11 @@ export async function POST(req: NextRequest) {
 
     const supabase = getSupabaseAdmin()
 
+    const phaseId = body.phase_id === undefined || body.phase_id === "" ? null : body.phase_id
+    if (!(await isOwnPhase(supabase, (await resolveDelegation(supabase, coachProfileId)).actingIds, phaseId))) {
+      return withCorsJson(req, { ok: false, error: "phase_id must be one of your phases, or null" }, 400)
+    }
+
     // Next sort_order = this coach's current max + 1 (scoped to the coach).
     const { data: maxRow, error: maxErr } = await supabase
       .from("coach_milestones")
@@ -253,11 +262,12 @@ export async function POST(req: NextRequest) {
         sort_order: nextSortOrder,
         time_estimate_days: timeParsed.days,
         fee_cents: feeParsed.cents,
+        phase_id: phaseId,
       })
       .select(MILESTONE_SELECT)
       .single()
     if (insErr || !inserted) {
-      return withCorsJson(req, { ok: false, error: `Failed to create milestone: ${insErr?.message ?? "unknown error"}` }, 500)
+      return withCorsJson(req, { ok: false, error: `Failed to create deliverable: ${insErr?.message ?? "unknown error"}` }, 500)
     }
 
     return withCorsJson(req, { ok: true, milestone: toApiMilestone(inserted as MilestoneRow) }, 201)

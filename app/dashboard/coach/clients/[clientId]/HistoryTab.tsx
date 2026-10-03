@@ -93,6 +93,13 @@ export const LABELS: Record<CoachClientEventType, (e: CoachClientEvent) => strin
     }
     return when ? `Consult booked${where} for ${when}${time}` : `Consult booked${where}`
   },
+  phase_status_changed: (e) => {
+    const phase = e.context?.phase_label ?? "A phase"
+    const to = e.context?.to_label ?? e.context?.to ?? "a new status"
+    const from = e.context?.from_label ? ` from ${e.context.from_label}` : ""
+    const why = e.context?.auto ? " (a task started)" : ""
+    return `Phase ${phase}: moved${from} to ${to}${why}`
+  },
   consult_cancelled: (e) => {
     const who = e.context?.canceled_by === "host" ? " by you" : ""
     const where = e.context?.via === "calendly" ? " on Calendly" : ""

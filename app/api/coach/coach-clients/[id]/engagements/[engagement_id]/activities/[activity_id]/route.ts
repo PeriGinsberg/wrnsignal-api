@@ -38,6 +38,7 @@ import {
 } from "../../../../../../../_lib/coachEngagements"
 import { logCoachClientEvent } from "../../../../../../../_lib/coachClientEvents"
 import { type ProofActivity } from "@/lib/proofProject"
+import { autoStartPhases } from "@/lib/phases/service"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -196,6 +197,12 @@ export async function PATCH(
         actorProfileId: coachProfileId,
         context: { name: activity.name, engagement_name: engagement.name },
       })
+    }
+
+    // A task that has started moves its phase to In progress, if nobody has
+    // set that phase's status yet. Never fails the edit.
+    if (nextStatus === "in_progress" || nextStatus === "complete") {
+      await autoStartPhases(supabase, id, `task "${activity.name}" started`)
     }
 
     // Return the fresh engagement so the UI re-renders with the new status.

@@ -64,7 +64,7 @@ export async function POST(
 
     // Ownership guard: the parent deliverable must belong to this coach.
     if (!(await isMilestoneOwnedByCoach(supabase, coachProfileId, id))) {
-      return withCorsJson(req, { ok: false, error: "Milestone not found" }, 404)
+      return withCorsJson(req, { ok: false, error: "Deliverable not found" }, 404)
     }
 
     // Default sort_order = this deliverable's current max + 1 (scoped to it).
