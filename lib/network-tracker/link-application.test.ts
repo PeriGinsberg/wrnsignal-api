@@ -244,6 +244,37 @@ async function main() {
     const out = await linkApplicationToCompany(fake.client, MINE, { applicationId: "app-1", companyName: "  Initech  " })
     ok("a new company is created", out.ok === true && out.created === true)
     ok("...with the name trimmed", fake.tables.network_companies[0].name === "Initech")
+    ok("...and no attribution when the caller passed none", fake.tables.network_companies[0].created_by_role === undefined)
+  }
+  {
+    // A coach linking for a client: the company lands on the CLIENT's board
+    // (profileId is the scope's subject) and says a coach added it.
+    const fake = makeFake({
+      signal_applications: [{ id: "app-1", profile_id: MINE, company_id: null }],
+      network_companies: [],
+    })
+    const out = await linkApplicationToCompany(fake.client, MINE, {
+      applicationId: "app-1",
+      companyName: "Initech",
+      createdBy: { created_by_role: "coach", created_by_id: "coach-1" },
+    })
+    const made = fake.tables.network_companies[0]
+    ok("a coach's by-name link creates the company on the client's board", out.ok === true && made.client_profile_id === MINE)
+    ok("...attributed to the coach", made.created_by_role === "coach" && made.created_by_id === "coach-1")
+  }
+  {
+    // Attribution is for a company the call CREATES; matching an existing one
+    // must not rewrite who added it.
+    const fake = makeFake({
+      signal_applications: [{ id: "app-1", profile_id: MINE, company_id: null }],
+      network_companies: [{ id: "co-1", name: "Globex", client_profile_id: MINE, created_by_role: "client" }],
+    })
+    await linkApplicationToCompany(fake.client, MINE, {
+      applicationId: "app-1",
+      companyName: "Globex",
+      createdBy: { created_by_role: "coach", created_by_id: "coach-1" },
+    })
+    ok("matching an existing company leaves its attribution alone", fake.tables.network_companies[0].created_by_role === "client")
   }
 
   console.log("\n23505 is a success, not an error")

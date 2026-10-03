@@ -90,7 +90,8 @@ const PROFILE_SELECT = "id,user_id,email,profile_text,resume_text,profile_struct
 async function resolveResumeText(
   profileId: string,
   baseResumeText: string,
-  personaId: string | null
+  personaId: string | null,
+  strictPersona = false
 ): Promise<{ resumeText: string; activePersonaId: string | null; personaSource: ResumeSource }> {
   // 1) Explicit personaId
   if (personaId) {
@@ -106,6 +107,11 @@ async function resolveResumeText(
         personaSource: "explicit_persona",
       }
     }
+    // A coach acting for a client named a persona that is someone else's.
+    // Falling through would quietly run on another resume; refuse instead. A
+    // persona that no longer exists still falls through, to THIS profile's
+    // default, which is the client's own.
+    if (strictPersona && explicit && explicit.profile_id !== profileId) throw new PersonaNotOwnedError()
     // Explicit ID didn't resolve. Don't error — fall through to default
     // persona. Log so we can see how often this happens (likely a stale
     // selectedPersonaId in client state after a persona was deleted).
@@ -146,10 +152,11 @@ async function resolveResumeText(
 // return shape. Used at every termination point of getAuthedProfileText.
 async function buildAuthedProfile(
   personaId: string | null,
-  row: ClientProfileRow
+  row: ClientProfileRow,
+  strictPersona = false
 ): Promise<AuthedProfile> {
   const baseResume = row.resume_text || ""
-  const resolved = await resolveResumeText(row.id, baseResume, personaId)
+  const resolved = await resolveResumeText(row.id, baseResume, personaId, strictPersona)
   return {
     profileId: row.id,
     profileText: row.profile_text || "",
@@ -162,6 +169,39 @@ async function buildAuthedProfile(
     activePersonaId: resolved.activePersonaId,
     personaSource: resolved.personaSource,
   }
+}
+
+/** A persona_id that does not belong to the profile being acted on. 400. */
+export class PersonaNotOwnedError extends Error {
+  readonly status = 400
+  constructor() {
+    super("persona_id does not belong to this client")
+    this.name = "PersonaNotOwnedError"
+  }
+}
+
+/**
+ * The same profile text as getAuthedProfileText, for a profile that has
+ * already been authorised (lib/collab/scope.ts). Reads by id and never by the
+ * caller's token, so a coach acting for a client gets the CLIENT's profile and
+ * persona, never their own. Never creates or attaches a row.
+ *
+ * strictPersona: refuse a persona that is not this profile's instead of
+ * falling through to the default. On for a coach, off for the client's own
+ * calls, which keep today's fallthrough for a stale persona in Framer state.
+ */
+export async function getProfileTextById(
+  profileId: string,
+  opts: { personaId?: string | null; strictPersona: boolean },
+): Promise<AuthedProfile> {
+  const { data, error } = await supabaseAdmin
+    .from("client_profiles")
+    .select(PROFILE_SELECT)
+    .eq("id", profileId)
+    .maybeSingle<ClientProfileRow>()
+  if (error) throw new Error(`Profile lookup failed: ${error.message}`)
+  if (!data?.id) throw new Error("Profile not found")
+  return await buildAuthedProfile(opts.personaId ?? null, data, opts.strictPersona)
 }
 
 function isDuplicateConstraint(err: any, constraintName?: string) {

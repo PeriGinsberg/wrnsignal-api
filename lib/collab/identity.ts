@@ -49,8 +49,25 @@ export async function getAuthedUser(req: Request) {
   }
 }
 
-export async function getProfileId(userId: string, email: string | null) {
-  const supabase = getSupabaseAdmin()
+/**
+ * refuseOwnedEmailMatch: when the caller's login has no profile but their
+ * email matches a profile that ANOTHER login already owns, refuse (403)
+ * instead of re-pointing that profile at the caller. The default re-points it,
+ * which hands one person's profile, runs and board to whoever signs in with
+ * an email that profile still carries (after the owner's login email changed,
+ * for example). getAuthedProfileText always refused this; routes moved onto
+ * lib/collab/scope.ts opt in so they keep refusing. An UNOWNED profile
+ * (user_id null, e.g. a coach-created client signing in for the first time)
+ * is still attached either way.
+ *
+ * supabase: injectable for the tests; defaults to the service-role client.
+ */
+export async function getProfileId(
+  userId: string,
+  email: string | null,
+  opts: { refuseOwnedEmailMatch?: boolean; supabase?: SupabaseClient } = {},
+) {
+  const supabase = opts.supabase ?? getSupabaseAdmin()
   const { data, error } = await supabase
     .from("client_profiles")
     .select("id, user_id")
@@ -67,6 +84,11 @@ export async function getProfileId(userId: string, email: string | null) {
       .maybeSingle()
     if (emailErr) throw new Error(`Profile email lookup failed: ${emailErr.message}`)
     if (byEmail) {
+      if (byEmail.user_id && byEmail.user_id !== userId && opts.refuseOwnedEmailMatch) {
+        // "Forbidden" in the message is what routeError's errorStatus maps to
+        // 403 (ForbiddenError lives in scope.ts, which imports this file).
+        throw new Error("Forbidden: profile email conflict: a profile with this email belongs to a different login")
+      }
       if (byEmail.user_id !== userId) {
         const { error: attachErr } = await supabase
           .from("client_profiles")
@@ -87,9 +109,10 @@ export async function getProfileId(userId: string, email: string | null) {
 // former inline verifyCoach.
 export async function resolveCaller(
   req: Request,
+  opts: { refuseOwnedEmailMatch?: boolean } = {},
 ): Promise<{ profileId: string; isCoach: boolean }> {
   const { userId, email } = await getAuthedUser(req)
-  const profileId = await getProfileId(userId, email)
+  const profileId = await getProfileId(userId, email, opts)
   const supabase = getSupabaseAdmin()
   const { data } = await supabase
     .from("client_profiles")

@@ -59,7 +59,14 @@ export async function authFetch(url: string, opts: RequestInit = {}): Promise<Re
   // feature that nothing here has tested. So the REQUEST must be a network API
   // call AND the PAGE must be a networking page. A coach's tracker view keeps
   // behaving exactly as it does today.
-  const isNetworkApi = url.startsWith("/api/network/")
+  //
+  // One deliberate exception: the company-scoped applications read
+  // (/api/applications?company_id=), which the message composer's job picker
+  // uses and which now accepts a subject. Only that read; the bare tracker
+  // list at /api/applications stays the caller's own.
+  const isNetworkApi =
+    url.startsWith("/api/network/") ||
+    (url.startsWith("/api/applications?") && url.includes("company_id="))
   const onNetworkPage =
     typeof window !== "undefined" && window.location.pathname.startsWith("/dashboard/network")
   const subject = isNetworkApi && onNetworkPage ? subjectId() : null

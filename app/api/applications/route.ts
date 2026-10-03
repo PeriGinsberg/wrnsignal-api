@@ -4,6 +4,8 @@ import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { logStatusChange } from "../_lib/applicationStatusHistory"
 import { getHistoryBoundary, applyHistoryBoundary } from "../_lib/clientHistoryBoundary"
+import { errorStatus } from "../_lib/routeError"
+import { resolveRequestScope } from "@/lib/collab/scope"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -88,15 +90,31 @@ const COMPANY_SCOPED_COLUMNS =
 
 export async function GET(req: NextRequest) {
   try {
-    const { userId, email } = await getAuthedUser(req)
-    const profileId = await getProfileId(userId, email)
+    const params = new URL(req.url).searchParams
+    const companyId = params.get("company_id")
     const supabase = getSupabaseAdmin()
+
+    // A coach reading a client's applications at one company: the networking
+    // board's message composer picks from them, and so does the coach's
+    // link-to-company control. ONLY the narrow company read, through
+    // lib/collab/scope.ts (view access or better, ForbiddenError otherwise).
+    // The full list below is the client's own tracker and stays owner-only.
+    let profileId: string
+    if (params.get("client_profile_id")) {
+      if (!companyId) {
+        return withCorsJson(req, { ok: false, error: "client_profile_id is only accepted with company_id" }, 400)
+      }
+      const scope = await resolveRequestScope(req, supabase, { require: "read" })
+      profileId = scope.subjectId
+    } else {
+      const { userId, email } = await getAuthedUser(req)
+      profileId = await getProfileId(userId, email)
+    }
     const boundaryAt = await getHistoryBoundary(supabase, profileId)
 
     // Scoped read for the networking surfaces: the applications at one company.
     // Still filtered by profile_id, so a company_id belonging to someone else
     // returns an empty list rather than their applications.
-    const companyId = new URL(req.url).searchParams.get("company_id")
     if (companyId) {
       const scoped = supabase
         .from("signal_applications")
@@ -185,8 +203,9 @@ export async function GET(req: NextRequest) {
     return withCorsJson(req, { ok: true, applications: apps })
   } catch (err: any) {
     const msg = err?.message || String(err)
-    const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500
-    return withCorsJson(req, { ok: false, error: msg }, status)
+    // errorStatus matches ForbiddenError by type, so a coach without access
+    // answers 403, not 500.
+    return withCorsJson(req, { ok: false, error: msg }, errorStatus(err))
   }
 }
 

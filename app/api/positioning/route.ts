@@ -85,7 +85,9 @@
 import crypto from "crypto"
 import OpenAI from "openai"
 import { createClient } from "@supabase/supabase-js"
-import { getAuthedProfileText } from "../_lib/authProfile"
+import { resolveRunSubject } from "../_lib/runSubject"
+import { errorStatus } from "../_lib/routeError"
+import { createdBy } from "@/lib/collab/scope"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { computeKeywordCoverage } from "../_lib/keywordCoverage"
 
@@ -328,21 +330,21 @@ export async function OPTIONS(req: Request) {
  */
 export async function POST(req: Request) {
   try {
-    // Read body first so we can pass persona_id to getAuthedProfileText.
     const body = await req.json()
-    const jobText = String(body?.job || "").trim()
-    const personaIdFromBody =
-      typeof body?.persona_id === "string" && body.persona_id.trim().length > 0
-        ? body.persona_id.trim()
-        : null
+
+    // Whose profile this runs on, and the inputs. The caller themselves, or a
+    // client the caller coaches with full access (?client_profile_id=), in
+    // which case the job, JobFit result and persona come from the client's own
+    // JobFit run for body.application_id. See app/api/_lib/runSubject.ts.
+    const subject = await resolveRunSubject(req, supabaseAdmin, body, { withPositioning: false })
+    const { scope, jobText } = subject
 
     // JobFit signal (Flavor 2 bullet eval). Optional in the request body.
     // When present we switch bullet eval to substantive JobFit-informed
     // reframes; when absent we fall back to keyword injection (today's
     // behavior). Defensive: jobfit_result may be null, a V4 result without
     // these fields, or partial — extract what's there, decide on presence.
-    const jobfitResult =
-      (body && typeof body === "object" ? body.jobfit_result : null) ?? null
+    const jobfitResult = subject.jobfitResult
     const riskStructured: any[] = Array.isArray(jobfitResult?.risk_structured)
       ? jobfitResult.risk_structured
       : []
@@ -353,21 +355,18 @@ export async function POST(req: Request) {
     const jobfitSignalPresent =
       riskStructured.length > 0 || positioningReframe.length > 0
 
-    if (!jobText) {
-      return withCorsJson(req, { error: "Missing job" }, 400)
-    }
-
     // IMPORTANT — column split. profileText is the intake-form header
     // ("Name: ...\nJob type: ...\nTarget roles: ..." — typically <300 chars).
     // resumeText is the actual resume body, resolved from a persona via
     // getAuthedProfileText's read order (explicit persona → default persona →
     // base profile). See top-of-file architectural pattern note for history.
+    // profileId is the SUBJECT's: the client's, when a coach is acting.
     const {
       profileId,
       profileText,
       resumeText,
       activePersonaId,
-    } = await getAuthedProfileText(req, { personaId: personaIdFromBody })
+    } = subject.profile
     // personaSource is logged inside resolveResumeText when it falls back
     // to base_profile_fallback — no need to log again at the route level.
 
@@ -908,6 +907,8 @@ Return JSON only. No markdown. No extra text.
       fingerprint_hash,
       fingerprint_code,
       result_json: finalResult,
+      // Who ran it: the client, or the coach acting for them.
+      ...createdBy(scope),
     })
 
     if (insertErr) {
@@ -948,14 +949,14 @@ Return JSON only. No markdown. No extra text.
     )
   } catch (err: any) {
     const detail = err?.message || String(err)
-    const lower = String(detail).toLowerCase()
-    const status = lower.includes("unauthorized")
-      ? 401
-      : lower.includes("profile not found")
-        ? 404
-        : lower.includes("access disabled")
+    // Errors that know their status first (ForbiddenError 403, a foreign
+    // persona 400, a missing application 404), then the shared mapping.
+    const status =
+      typeof err?.status === "number"
+        ? err.status
+        : String(detail).toLowerCase().includes("access disabled")
           ? 403
-          : 500
+          : errorStatus(err)
 
     return withCorsJson(req, { error: "Positioning failed", detail }, status)
   }
