@@ -21,6 +21,7 @@ import {
 } from "../../lib/plan/service"
 import { taskTitle } from "../../lib/plan/model"
 import { getClientPhases } from "../../lib/phases/service"
+import { onTodoEdited, onTodoStatus } from "../../lib/plan/service"
 
 let pass = 0
 let fail = 0
@@ -64,6 +65,7 @@ function seed(over: { proposal?: string; extra?: Partial<Record<string, Row[]>> 
     ],
     client_phase_status: [],
     coach_client_events: [],
+    coach_tasks: [],
     ...(over.extra ?? {}),
   })
 }
@@ -238,6 +240,62 @@ async function main() {
     ok("assignee and due date change, each logged", t(db, "t1").assignee_profile_id === "coach-2" && t(db, "t1").due_date === "2026-10-20"
       && plan(db).filter((e) => e.context.action === "task_assigned" || e.context.action === "task_due").length === 2)
     ok("a bad date is refused", !(await updateTaskDetails(db.client as any, { coachClientId: CC, taskId: "t1", dueDate: "soon", actor: COACH })).ok)
+  }
+
+  console.log("\nthe To-Do list")
+  {
+    const db = seed()
+    const todos = () => db.tables.coach_tasks
+    const open = () => todos().filter((x) => x.status === "open")
+    await activateOnApproval(db.client as any, CC, "eng-1")
+    ok("an Active task gets one open To-Do item for its assignee", open().length === 1
+      && open()[0].title === "Draft resume" && open()[0].assignee_profile_id === COACH && open()[0].plan_activity_id === "t1")
+    ok("linked to the client record, as an automatic task", open()[0].link === "/dashboard/coach/coach-clients/cc-1" && open()[0].source === "auto"
+      && open()[0].coach_client_id === CC)
+
+    await act(db, "t1", "done")
+    ok("Done on the plan closes it as done", todos().find((x) => x.plan_activity_id === "t1")?.status === "done")
+    ok("and the next task's item appears: \"Release: [task]\"", open().length === 1 && open()[0].title === "Release: Review the draft")
+
+    await act(db, "t2", "release")
+    ok("releasing closes the Release item (the client has it now)", open().length === 0
+      && todos().find((x) => x.plan_activity_id === "t2")?.status === "cancelled")
+
+    await act(db, "t4", "activate")
+    await updateTaskDetails(db.client as any, { coachClientId: CC, taskId: "t4", dueDate: "2026-10-20", actor: COACH })
+    ok("a due date on the plan reaches the To-Do item", open()[0].due_at === "2026-10-20T12:00:00.000Z")
+    await setDeliverableNeeded(db.client as any, { coachClientId: CC, deliverableId: "d-linkedin", notNeeded: true, actor: COACH })
+    ok("a Not needed deliverable takes its items off the list", open().length === 0)
+    await setDeliverableNeeded(db.client as any, { coachClientId: CC, deliverableId: "d-linkedin", notNeeded: false, actor: COACH })
+    ok("and restoring it puts them back", open().length === 1 && open()[0].plan_activity_id === "t4")
+    await removeTask(db.client as any, { coachClientId: CC, taskId: "t4", actor: COACH })
+    ok("removing the task cancels its item", open().length === 0)
+  }
+  {
+    const db = seed()
+    const todos = () => db.tables.coach_tasks
+    await activateOnApproval(db.client as any, CC, "eng-1")
+    const item = todos()[0]
+    item.status = "done" // the coach ticks it on the To-Do list
+    await onTodoStatus(db.client as any, item as any, "done", COACH)
+    ok("ticking the To-Do item finishes the plan task", t(db, "t1").state === "done" && t(db, "t2").state === "active")
+    const rel = todos().find((x) => x.plan_activity_id === "t2" && x.status === "open")!
+    rel.status = "done"
+    await onTodoStatus(db.client as any, rel as any, "done", COACH)
+    ok("ticking a \"Release:\" item releases the client task", t(db, "t2").state === "waiting_on_client")
+
+    item.status = "open" // reopened on the To-Do list
+    await onTodoStatus(db.client as any, item as any, "open", COACH)
+    ok("reopening it puts the plan task back to Active", t(db, "t1").state === "active")
+    ok("without a second open item", todos().filter((x) => x.plan_activity_id === "t1" && x.status === "open").length === 1)
+
+    await onTodoEdited(db.client as any, { plan_activity_id: "t1", coach_client_id: CC, due_at: "2026-11-02T12:00:00.000Z" }, COACH)
+    await onTodoEdited(db.client as any, { plan_activity_id: "t1", coach_client_id: CC, assignee_profile_id: "coach-2" }, COACH)
+    ok("a due date or new assignee set on the To-Do goes back to the plan", t(db, "t1").due_date === "2026-11-02" && t(db, "t1").assignee_profile_id === "coach-2")
+
+    const before = t(db, "t1").state
+    await onTodoStatus(db.client as any, item as any, "cancelled", COACH)
+    ok("dismissing the item leaves the plan alone", t(db, "t1").state === before)
   }
 
   console.log(`\n${pass} passed, ${fail} failed`)

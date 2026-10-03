@@ -26,20 +26,17 @@ import {
   T, input, textarea, btnPrimary, btnSecondary, card, eyebrow, label,
 } from "../../../lib/dashboard-theme"
 import { TaskCard } from "./_tasks/TaskCard"
+import { ClientsByPhaseBlock, FollowUpsBlock, usePlanBlocks } from "./_plan/HomeBlocks"
 import { LifecycleStatusPill, type LifecycleStatus } from "./LifecycleStatusPill"
 import { onCoachRowEnter, onCoachRowLeave, COACH_ROW_DEFAULT_BG, COACH_ROW_TRANSITION } from "./coachRowHover"
-import { DismissSignalButton, useDismissSignal } from "./DismissSignalButton"
 import { SavingSpinner } from "./SavingSpinner"
 import { LoadingShell } from "./LoadingShell"
 import { MetricsWindowToggle, useMetricsWindow, windowSubtitle } from "./MetricsWindowToggle"
 import { TodaysSchedule } from "./_TodaysSchedule/TodaysSchedule"
 
-// Feature flag — set to true to restore the Engagement Signals card on Coach
-// Home (paired right column next to Action Items). When false, Action Items
-// expands to full row width via the grid template switch below. All Engagement
-// Signals data, component code, dismiss wiring, and helpers stay in place;
-// only the render is gated. Restore is a one-line flip.
-const SHOW_ENGAGEMENT_SIGNALS = false
+// The Engagement Signals card was retired 2026-10-06: Coach Home's top row is
+// now the plan's three blocks (My active tasks, Follow-ups due, Clients by
+// phase). The signals data is still returned by /api/coach/home.
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -132,23 +129,6 @@ type Prospect = {
 // ──────────────────────────────────────────────────────────────
 // Constants
 // ──────────────────────────────────────────────────────────────
-
-const RULE_LABEL: Record<ActionItem["kind"], string> = {
-  no_login: "Inactive",
-  rec_pending_review: "Awaiting review",
-  moved_interviewing: "Status change",
-  moved_rejected: "Rejection",
-  offer_no_followup: "Offer",
-  poor_fit_no_rec: "Low-fit app",
-}
-const RULE_COLOR: Record<ActionItem["kind"], string> = {
-  no_login: T.INK_EMPHASIS,
-  rec_pending_review: T.INK_LINK,
-  moved_interviewing: T.WRN_PINK,
-  moved_rejected: T.ERROR,
-  offer_no_followup: T.SUCCESS,
-  poor_fit_no_rec: T.INK_EMPHASIS,
-}
 
 // Avatar palette — 5 colors, dark-theme adapted (translucent bg + brighter text).
 // Picked by deterministic djb2 hash of client name → mod 5.
@@ -486,118 +466,6 @@ function MetricsBar({ tiles }: { tiles: Tile[] }) {
     }}>
       {tiles.map((t) => <MetricTile key={t.label} tile={t} />)}
     </div>
-  )
-}
-
-// ──────────────────────────────────────────────────────────────
-// Section D — Requires action (collapsible)
-// ──────────────────────────────────────────────────────────────
-
-function ActionRow({
-  item,
-  onClick,
-  onDismiss,
-}: {
-  item: ActionItem
-  onClick: () => void
-  onDismiss?: (item: ActionItem) => void
-}) {
-  // Local hover state drives the dismiss button visibility (Phase 3.2).
-  // Imperative bg mutation via onCoachRowEnter/Leave still runs alongside
-  // for the row-level bg color shift — the two are independent.
-  const [hovered, setHovered] = useState(false)
-  return (
-    <div
-      onClick={onClick}
-      onMouseEnter={(e) => { onCoachRowEnter(e); setHovered(true) }}
-      onMouseLeave={(e) => { onCoachRowLeave(e); setHovered(false) }}
-      style={{
-        display: "flex", alignItems: "center", gap: 12,
-        padding: "12px 14px",
-        background: COACH_ROW_DEFAULT_BG,
-        border: `1px solid ${T.BORDER_SOFT}`,
-        borderRadius: 10,
-        cursor: "pointer",
-        transition: COACH_ROW_TRANSITION,
-      }}
-    >
-      <span style={{
-        fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase",
-        color: RULE_COLOR[item.kind], background: `${RULE_COLOR[item.kind]}1f`,
-        padding: "3px 8px", borderRadius: 6, flexShrink: 0,
-      }}>
-        {RULE_LABEL[item.kind]}
-      </span>
-      <span style={{ fontSize: 13, color: T.TEXT, flex: 1 }}>{item.message}</span>
-      <span style={{ fontSize: 11, color: T.DIM, flexShrink: 0 }}>{item.days_elapsed}d</span>
-      {onDismiss && (
-        <DismissSignalButton
-          onClick={() => onDismiss(item)}
-          visible={hovered}
-        />
-      )}
-    </div>
-  )
-}
-
-function EngagementSignalsSection({ items, onItemClick, onShowAll, noBottomMargin }: {
-  items: ActionItem[]
-  onItemClick: (clientId: string) => void
-  onShowAll: () => void
-  noBottomMargin?: boolean
-}) {
-  // Local copy of items so optimistic dismissal can remove rows without
-  // round-tripping through the parent state. Resyncs when parent refetches
-  // (items prop reference changes).
-  const [localItems, setLocalItems] = useState<ActionItem[]>(items)
-  useEffect(() => { setLocalItems(items) }, [items])
-
-  const { dismiss, toastNode } = useDismissSignal<ActionItem>({
-    authFetch,
-    onLocalRemove: (id) => setLocalItems((prev) => prev.filter((x) => x.id !== id)),
-    onLocalRestore: (s) => setLocalItems((prev) => [...prev, s]),
-  })
-
-  const visible = localItems.slice(0, COLLAPSED_LIMIT)
-  const hasMore = localItems.length > COLLAPSED_LIMIT
-
-  return (
-    <Section
-      icon={<IconBell />}
-      title="Engagement Signals"
-      titleHref="/dashboard/coach/tasks"
-      count={localItems.length}
-      accentColor={T.SECTION_SIGNALS}
-      noBottomMargin={noBottomMargin}
-    >
-      {localItems.length === 0 ? (
-        <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>Nothing flagged from activity right now.</p>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {visible.map((item) => (
-            <ActionRow
-              key={item.id}
-              item={item}
-              onClick={() => onItemClick(item.client_profile_id)}
-              onDismiss={dismiss}
-            />
-          ))}
-          {hasMore && (
-            <button
-              onClick={onShowAll}
-              style={{
-                background: "none", border: "none", color: T.INK_EMPHASIS,
-                fontSize: 12, fontWeight: 700, cursor: "pointer",
-                padding: "8px 0 0", textAlign: "left", marginTop: 4,
-              }}
-            >
-              Show all {localItems.length} →
-            </button>
-          )}
-        </div>
-      )}
-      {toastNode}
-    </Section>
   )
 }
 
@@ -952,6 +820,8 @@ export default function CoachHomePage() {
   // mount + writes on change. Shared key across Coach Home + Client
   // Dashboard so the coach's preference is global.
   const [metricsWindow, setMetricsWindow] = useMetricsWindow()
+  // Coach Home's plan blocks (follow-ups due, clients by phase).
+  const planBlocks = usePlanBlocks()
 
   // Phase 5 amendment — gates setLoading so that only the GENUINE
   // first-mount fetch renders the LoadingShell. Subsequent refetches
@@ -1046,11 +916,50 @@ export default function CoachHomePage() {
 
   if (!data) return null
 
-  const goToClient = (id: string) => router.push(`/dashboard/coach/clients/${id}`)
 
   return (
     <div>
       <HeaderStrip firstName={data.coach.firstName} />
+
+      {/* The plan's three blocks, at the top (2026-10-06). They replace the
+          task card and engagement signals. My active tasks is every open
+          To-Do item assigned to me, plan tasks included, by due date. */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+          gap: 20,
+          alignItems: "start",
+          marginBottom: 20,
+        }}
+      >
+        <Section
+          icon={<IconClipboardCheck />}
+          title="My active tasks"
+          titleHref="/dashboard/coach/tasks"
+          accentColor={T.SECTION_ACTION_ITEMS}
+          noBottomMargin
+        >
+          <TaskCard order="due" />
+        </Section>
+        <Section
+          icon={<IconBell />}
+          title="Follow-ups due"
+          count={planBlocks.data?.follow_ups.length}
+          accentColor={T.SECTION_SCHEDULE}
+          noBottomMargin
+        >
+          <FollowUpsBlock items={planBlocks.data?.follow_ups ?? null} error={planBlocks.error} />
+        </Section>
+        <Section
+          icon={<IconClipboardCheck />}
+          title="Clients by phase"
+          accentColor={T.SECTION_CLIENTS}
+          noBottomMargin
+        >
+          <ClientsByPhaseBlock buckets={planBlocks.data?.clients_by_phase ?? null} error={planBlocks.error} />
+        </Section>
+      </div>
 
       {/* Phase 5 — segmented time-window toggle, right-aligned above
           the metrics bar. Controls the four windowed tiles (Total
@@ -1062,50 +971,6 @@ export default function CoachHomePage() {
       </div>
 
       <MetricsBar tiles={tiles} />
-
-      {/* Action Items + Engagement Signals — paired side-by-side. Each
-          column is its own section with its own accent color (orange =
-          coach-authored work, blue = system signal). Equal width at
-          desktop via repeat(auto-fit, minmax(360px, 1fr)); collapses to
-          a single stacked column when the viewport can't fit two 360px
-          columns. align-items: start keeps column heights independent
-          (taller column extends below shorter without padding the short
-          one). noBottomMargin on the inner sections so the grid's gap
-          handles spacing instead of compounding with the section's own
-          marginBottom. */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: SHOW_ENGAGEMENT_SIGNALS
-            ? "repeat(auto-fit, minmax(360px, 1fr))"
-            : "1fr",
-          gap: 20,
-          alignItems: "start",
-          marginBottom: 20,
-        }}
-      >
-        {/* ONE card, not two. Action Items and tasks were the same thing
-            described twice; an action item IS a task, and since 2026-09-25 the
-            surface is called Tasks everywhere. */}
-        <Section
-          icon={<IconClipboardCheck />}
-          title="Tasks"
-          titleHref="/dashboard/coach/tasks"
-          accentColor={T.SECTION_ACTION_ITEMS}
-          noBottomMargin
-        >
-          <TaskCard />
-        </Section>
-
-        {SHOW_ENGAGEMENT_SIGNALS && (
-          <EngagementSignalsSection
-            items={data.requiresAction}
-            onItemClick={goToClient}
-            onShowAll={() => router.push("/dashboard/coach/tasks")}
-            noBottomMargin
-          />
-        )}
-      </div>
 
       <TodaysSchedule isCalendarBetaEnabled={data.calendar_beta_enabled} />
       <MyClientsSection

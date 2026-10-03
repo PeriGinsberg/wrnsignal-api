@@ -18,6 +18,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { cleanTaskLink } from "./links"
 import { sendTaskAssignedEmail } from "../email/sendTaskEmails"
+import { onTodoEdited, onTodoStatus } from "../plan/service"
 import { logCoachClientEvent } from "../../app/api/_lib/coachClientEvents"
 import { coachClientIdForTask, coachesWhoCanReach, UNREACHABLE_ASSIGNEE, type TaskClient } from "./scope"
 import {
@@ -39,7 +40,7 @@ export type ServiceResult<T> = { ok: true; data: T } | { ok: false; error: strin
 export const TASK_COLUMNS =
   "id, title, description, client_profile_id, coach_client_id, assignee_profile_id, " +
   "created_by_profile_id, due_at, due_has_time, status, completed_at, source, template_id, " +
-  "chain_id, brief_id, decision, legacy_note_id, link, created_at, updated_at, deleted_at"
+  "chain_id, brief_id, decision, legacy_note_id, plan_activity_id, link, created_at, updated_at, deleted_at"
 
 /**
  * Is this profile a coach who may be handed work?
@@ -328,7 +329,12 @@ export async function updateTask(
 
   if (error) return { ok: false, error: error.message, status: 500 }
   if (!data) return { ok: false, error: "That task no longer exists.", status: 404 }
-  return { ok: true, data: data as unknown as Task }
+  const updated = data as unknown as Task
+  // The To-Do side of a plan task: a new due date goes back to the plan.
+  if (updated.plan_activity_id && "due_at" in patch) {
+    await onTodoEdited(db, { plan_activity_id: updated.plan_activity_id, coach_client_id: updated.coach_client_id, due_at: updated.due_at }, actor)
+  }
+  return { ok: true, data: updated }
 }
 
 /**
@@ -402,9 +408,15 @@ export async function setTaskStatus(
     if (noteErr) console.error("[tasks] note completion sync failed:", noteErr.message)
   }
 
+  // A PLAN TASK'S TO-DO ITEM moves its plan task, which writes its own
+  // History line, so this one would say the same thing twice.
+  if (task.plan_activity_id) {
+    await onTodoStatus(db, { plan_activity_id: task.plan_activity_id, coach_client_id: task.coach_client_id }, status, actor)
+  }
+
   // CANCELLED GETS NO HISTORY LINE. A coach saying "this is not happening" is
   // a decision about their own list, not a thing that happened to the client.
-  if (status === "done" || status === "open") {
+  if (!task.plan_activity_id && (status === "done" || status === "open")) {
     await logTaskEvent(db, task, status === "done" ? "task_completed" : "task_reopened", actor, {
       ...(opts.decision ? { decision: opts.decision } : {}),
       // The reason a task came back is the whole value of the reopen line.
@@ -474,7 +486,12 @@ export async function reassignTask(
   })
 
   await sendTaskAssignedEmail(db, taskId, actor, { reassignment: true })
-  return { ok: true, data: data as unknown as Task }
+  const moved = data as unknown as Task
+  // The To-Do side of a plan task: the plan task follows its new assignee.
+  if (moved.plan_activity_id) {
+    await onTodoEdited(db, { plan_activity_id: moved.plan_activity_id, coach_client_id: moved.coach_client_id, assignee_profile_id: toProfileId }, actor)
+  }
+  return { ok: true, data: moved }
 }
 
 /** Soft delete, matching coach_client_notes. The row stays; the list stops showing it. */

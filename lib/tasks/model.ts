@@ -41,6 +41,8 @@ export type Task = {
   brief_id: string | null
   decision: string | null
   legacy_note_id: string | null
+  /** Set when this To-Do item is the To-Do side of a client's plan task. */
+  plan_activity_id?: string | null
   /** Where the work is done: a same-origin /dashboard path, or null. */
   link: string | null
   created_at: string

@@ -19,6 +19,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { logProspectEvent } from "../prospects/history"
 import { autoStartPhases } from "../phases/service"
+import { syncTodo } from "./todo"
 import {
   TASK_STATE_LABEL,
   hasStarted,
@@ -153,6 +154,8 @@ async function setState(
   if (to === "waiting_on_client") patch.released_at = now
   const { error } = await db.from("coach_client_engagement_activities").update(patch).eq("id", task.id)
   if (error) return error.message
+  // Active means a To-Do item for the assignee; anything else closes it.
+  await syncTodo(db, task.id)
   await log(db, ctx.coachClientId, context.auto ? null : ctx.actor, {
     action: "task_state",
     task: task.name,
@@ -349,6 +352,7 @@ export async function updateTaskDetails(
   if (!Object.keys(patch).length) return fail("Nothing to change.")
   const { error } = await db.from("coach_client_engagement_activities").update(patch).eq("id", args.taskId)
   if (error) return fail(`Failed to update the task: ${error.message}`, 500)
+  await syncTodo(db, args.taskId)
   await log(db, args.coachClientId, args.actor, {
     action: args.assignee !== undefined ? "task_assigned" : "task_due",
     task: where.task.name, deliverable: where.deliverable.name,
@@ -367,6 +371,8 @@ export async function setDeliverableNeeded(
   if (d.not_needed === args.notNeeded) return { ok: true, data: true }
   const { error } = await db.from("coach_client_engagement_deliverables").update({ not_needed: args.notNeeded }).eq("id", d.id)
   if (error) return fail(`Failed to update the deliverable: ${error.message}`, 500)
+  // A Not needed deliverable's Active tasks leave the To-Do list (and come back on restore).
+  for (const t of await deliverableTasks(db, d.id)) await syncTodo(db, t.id)
   await log(db, args.coachClientId, args.actor, { action: args.notNeeded ? "deliverable_not_needed" : "deliverable_restored", deliverable: d.name })
   return { ok: true, data: true }
 }
@@ -387,6 +393,7 @@ export async function removeTask(
 ): Promise<Result<true>> {
   const where = await locate(db, args.coachClientId, args.taskId)
   if (!where) return fail("Task not found", 404)
+  await cancelTodo(db, args.taskId)
   const { error } = await db.from("coach_client_engagement_activities").delete().eq("id", args.taskId)
   if (error) return fail(`Failed to remove the task: ${error.message}`, 500)
   await log(db, args.coachClientId, args.actor, { action: "task_removed", task: where.task.name, deliverable: where.deliverable.name })
@@ -403,6 +410,7 @@ export async function removeDeliverable(
 ): Promise<Result<true>> {
   const d = await ownDeliverable(db, args.coachClientId, args.deliverableId)
   if (!d) return fail("Deliverable not found", 404)
+  for (const t of await deliverableTasks(db, d.id)) await cancelTodo(db, t.id)
   const { error } = await db.from("coach_client_engagement_deliverables").delete().eq("id", d.id)
   if (error) return fail(`Failed to remove the deliverable: ${error.message}`, 500)
   // The fake test database has no cascade; the real one does.
@@ -493,4 +501,61 @@ export async function addDeliverableFromLibrary(
   }
   await log(db, args.coachClientId, args.actor, { action: "deliverable_added", deliverable: lib.name, tasks: rows.length })
   return { ok: true, data: true }
+}
+
+// ── The To-Do side ───────────────────────────────────────────────────────────
+
+/** A plan task is going away: its open To-Do item is cancelled first (the link would be lost with it). */
+async function cancelTodo(db: SupabaseClient, activityId: string): Promise<void> {
+  const now = new Date().toISOString()
+  await db.from("coach_tasks").update({ status: "cancelled", completed_at: null, updated_at: now })
+    .eq("plan_activity_id", activityId).eq("status", "open")
+}
+
+/**
+ * A coach ticked or reopened a plan task's To-Do item. Ticking it does what
+ * the item says: "Release: [task]" releases the client task, anything else is
+ * Done (and the next task activates). Reopening puts the task back to Active.
+ * Dismissing (cancelling) the item leaves the plan as it is.
+ */
+export async function onTodoStatus(
+  db: SupabaseClient,
+  todo: { plan_activity_id: string | null; coach_client_id: string | null },
+  status: "open" | "done" | "cancelled",
+  actor: string | null,
+): Promise<void> {
+  if (!todo.plan_activity_id || !todo.coach_client_id || status === "cancelled") return
+  try {
+    const where = await locate(db, todo.coach_client_id, todo.plan_activity_id)
+    if (!where) return
+    const { task, deliverable } = where
+    if (status === "done") {
+      if (task.state !== "active" || !actor) return
+      await applyTaskAction(db, {
+        coachClientId: todo.coach_client_id, taskId: task.id, action: task.owner === "client" ? "release" : "done", actor,
+      })
+      return
+    }
+    if (task.state === "active" || task.state === "upcoming" || task.state === "not_needed") return
+    await setState(db, { coachClientId: todo.coach_client_id, actor }, task, "active", {
+      deliverable: deliverable.name, reason: "reopened on the To-Do list",
+    })
+  } catch (e) {
+    console.error("[plan] To-Do sync failed:", e instanceof Error ? e.message : String(e))
+  }
+}
+
+/** A coach changed a plan task's To-Do item: its due date or assignee follows on the plan. */
+export async function onTodoEdited(
+  db: SupabaseClient,
+  todo: { plan_activity_id: string | null; coach_client_id: string | null; due_at?: string | null; assignee_profile_id?: string },
+  actor: string | null,
+): Promise<void> {
+  if (!todo.plan_activity_id || !todo.coach_client_id || !actor) return
+  if (todo.due_at !== undefined) {
+    await updateTaskDetails(db, { coachClientId: todo.coach_client_id, taskId: todo.plan_activity_id, dueDate: todo.due_at ? todo.due_at.slice(0, 10) : null, actor })
+  }
+  if (todo.assignee_profile_id !== undefined) {
+    await updateTaskDetails(db, { coachClientId: todo.coach_client_id, taskId: todo.plan_activity_id, assignee: todo.assignee_profile_id, actor })
+  }
 }

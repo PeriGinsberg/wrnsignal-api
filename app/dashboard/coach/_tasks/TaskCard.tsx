@@ -20,7 +20,14 @@ import type { Task } from "../../../../lib/tasks/model"
 import { TaskRow, TaskRowHeader, TaskRowStyles } from "./TaskRow"
 import { apiJson } from "./taskClient"
 
-export function TaskCard() {
+const DUE_LIMIT = 10
+
+/**
+ * `order="due"` is Coach Home's "My active tasks": every open task assigned to
+ * me (plan tasks included), by due date, the first ten. The default is the
+ * capped card the server builds with ?card=1.
+ */
+export function TaskCard({ order = "card" }: { order?: "card" | "due" } = {}) {
   const router = useRouter()
   const [tasks, setTasks] = useState<Task[] | null>(null)
   const [total, setTotal] = useState(0)
@@ -43,15 +50,22 @@ export function TaskCard() {
 
   const load = useCallback(async () => {
     try {
-      const j = await apiJson<{ tasks: Task[]; total: number }>("/api/coach/tasks?card=1")
-      setTasks(j.tasks)
-      setTotal(j.total)
+      if (order === "due") {
+        // The list API already returns my open tasks by due date, undated last.
+        const j = await apiJson<{ tasks: Task[]; total: number }>("/api/coach/tasks")
+        setTasks(j.tasks.slice(0, DUE_LIMIT))
+        setTotal(j.total)
+      } else {
+        const j = await apiJson<{ tasks: Task[]; total: number }>("/api/coach/tasks?card=1")
+        setTasks(j.tasks)
+        setTotal(j.total)
+      }
       setError(null)
     } catch (e: any) {
       setError(e?.message ?? String(e))
       setTasks([])
     }
-  }, [])
+  }, [order])
 
   useEffect(() => { void load() }, [load])
   useEffect(() => { void loadClients() }, [loadClients])
