@@ -3,8 +3,8 @@
 // Shared "who is calling" chain for coach-collaboration routes.
 //
 // Lifted VERBATIM from the inline copies duplicated across the coach API
-// routes (e.g. app/api/coach/client-runs/[client_profile_id]/route.ts and
-// app/api/coach/recommend-job/route.ts, which were byte-identical). This is a
+// routes (e.g. the since-deleted app/api/coach/client-runs/[client_profile_id]
+// route and app/api/coach/recommend-job/route.ts, which were byte-identical). This is a
 // pure centralization refactor — the queries, error messages, ordering, and
 // the profile email-attach side effect are unchanged.
 //
