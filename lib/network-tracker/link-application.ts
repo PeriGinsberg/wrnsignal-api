@@ -50,6 +50,12 @@ export type LinkInput = {
   companyId?: string | null
   /** Find-or-create by name. Ownership is STRUCTURAL, never checked. */
   companyName?: string | null
+  /**
+   * Stamped on a company this call CREATES (the by-name path), from
+   * lib/collab/scope.ts createdBy(). A coach can link for a client now, and a
+   * company they add to the client's board must say a coach added it.
+   */
+  createdBy?: { created_by_role: "client" | "coach"; created_by_id: string }
 }
 
 /** Trimmed, and empty means absent. Mirrors the routes' String(x||"").trim(). */
@@ -73,6 +79,7 @@ async function resolveCompanyByName(
   supabase: SupabaseClient,
   profileId: string,
   name: string,
+  createdBy?: LinkInput["createdBy"],
 ): Promise<{ id: string; name: string; created: boolean } | { error: string }> {
   // ilike with no wildcards is case-insensitive EQUALITY, which is the same
   // comparison lower(name) makes in the unique index.
@@ -87,7 +94,7 @@ async function resolveCompanyByName(
 
   const { data: made, error: insertErr } = await supabase
     .from("network_companies")
-    .insert({ client_profile_id: profileId, name })
+    .insert({ client_profile_id: profileId, name, ...(createdBy ?? {}) })
     .select("id, name")
     .single()
 
@@ -185,7 +192,7 @@ export async function linkApplicationToCompany(
     }
     resolved = { id: co.id as string, name: co.name as string, created: false }
   } else {
-    const r = await resolveCompanyByName(supabase, profileId, companyName)
+    const r = await resolveCompanyByName(supabase, profileId, companyName, input.createdBy)
     if ("error" in r) return { ok: false, status: 500, error: r.error }
     resolved = r
   }

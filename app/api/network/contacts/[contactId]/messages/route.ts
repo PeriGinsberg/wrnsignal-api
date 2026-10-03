@@ -48,6 +48,17 @@ async function ownedContact(supabase: any, contactId: string) {
 
 /** The sent path, shared by "compose and send at once" and "send this draft".
  *  Mirrors POST /actions step for step; the engine is not re-implemented. */
+/**
+ * The job a message is about must be the same client's. The FK accepts any
+ * signal_applications id, and once a coach can pick jobs for a client that
+ * would let a message on one client's board point at another client's job.
+ */
+async function applicationOnBoard(supabase: any, applicationId: string, subjectId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from("signal_applications").select("id").eq("id", applicationId).eq("profile_id", subjectId).maybeSingle()
+  return !!data
+}
+
 async function applySend(supabase: any, c: any, type: string, sentAt: Date) {
   if (!isPipelineAction(type)) return null
   // must(): same reason as the three engine routes. This one also runs on the
@@ -111,6 +122,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ con
     // stale form state and not a user asking for something.
     const subject = channel === "email" && typeof b?.subject === "string" ? (b.subject.trim() || null) : null
     const applicationId = typeof b?.application_id === "string" && b.application_id ? b.application_id : null
+    if (applicationId && !(await applicationOnBoard(supabase, applicationId, scope.subjectId)))
+      return withCorsJson(req, { ok: false, error: "That job is not on this board" }, 403)
 
     const when = new Date()
     const { data: row, error: insErr } = await supabase.from("network_actions").insert({
@@ -178,7 +191,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ co
       if (b.channel === "linkedin") patch.subject = null
     }
     if (typeof b?.subject === "string") patch.subject = b.subject.trim() || null
-    if (b && "application_id" in b) patch.application_id = b.application_id || null
+    if (b && "application_id" in b) {
+      const appId = typeof b.application_id === "string" && b.application_id ? b.application_id : null
+      if (appId && !(await applicationOnBoard(supabase, appId, scope.subjectId)))
+        return withCorsJson(req, { ok: false, error: "That job is not on this board" }, 403)
+      patch.application_id = appId
+    }
     if (typeof b?.type === "string" && ACTION_TYPES.has(b.type)) patch.type = b.type
 
     const sending = b?.status === "sent"

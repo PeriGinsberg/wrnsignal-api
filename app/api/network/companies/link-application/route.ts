@@ -33,7 +33,7 @@
 
 import { type NextRequest } from "next/server"
 import { getSupabaseAdmin } from "@/lib/collab/identity"
-import { resolveOwnerScope } from "@/lib/collab/scope"
+import { createdBy, resolveRequestScope } from "@/lib/collab/scope"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
 import { routeError } from "../../../_lib/routeError"
 import { linkApplicationToCompany } from "../../../../../lib/network-tracker/link-application"
@@ -52,10 +52,16 @@ export async function POST(req: NextRequest) {
       return withCorsJson(req, { ok: false, error: "Invalid JSON body" }, 400)
     }
 
-    // Owner-only, and resolved AFTER the body check above so an invalid
-    // body still answers 400 rather than 401. Framer calls this endpoint.
-    const scope = await resolveOwnerScope(req)
+    // The client, or a coach with FULL access to them (?client_profile_id=),
+    // so a coach can link a client's job to a company on the client's board.
+    // resolveRequestScope throws ForbiddenError (403) on anything less, and the
+    // lib then checks BOTH the application and the company against
+    // scope.subjectId, so a coach cannot cross-link two clients' records.
+    // Framer sends no ?client_profile_id=, so its calls stay the client's own.
+    // Resolved AFTER the body check above so an invalid body still answers 400
+    // rather than 401.
     const supabase = getSupabaseAdmin()
+    const scope = await resolveRequestScope(req, supabase, { require: "write" })
 
     // ABSENT AND EXPLICITLY NULL ARE DIFFERENT REQUESTS, and collapsing them
     // with `?? null` would make every link-by-name request read as an unlink.
@@ -70,6 +76,7 @@ export async function POST(req: NextRequest) {
       applicationId: String(body.application_id ?? ""),
       companyId,
       companyName: body.company_name == null ? null : String(body.company_name),
+      createdBy: createdBy(scope),
     })
 
     if (!outcome.ok) {

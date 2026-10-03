@@ -60,6 +60,13 @@ const COACH_WRITABLE: Array<[string, string, string]> = [
   // documented in docs/network-tracker/coach-contacts-import.md.
   ["import/preview/route.ts", "POST", "dry-run an import"],
   ["import/commit/route.ts", "POST", "run an import"],
+  // Joined with coach parity (2026-10): a coach links a client's job to a
+  // company on the client's board, which is also how a job reaches the
+  // client's contacts there. Owner-only before because it writes to
+  // signal_applications; lib/network-tracker/link-application.ts checks BOTH
+  // the application and the company against the scope's subject, so a coach
+  // cannot cross-link two clients' records.
+  ["companies/link-application/route.ts", "POST", "link a job to a company"],
 ]
 
 console.log("a coach holding 'full' can act on the client's board")
@@ -81,7 +88,6 @@ const OWNER_ONLY: Array<[string, string, string]> = [
   ["companies/[companyId]/route.ts", "DELETE", "deleting a company loses which firm people belonged to"],
   ["contacts/delete/route.ts", "POST", "bulk delete, same reason at scale"],
   ["contacts/[contactId]/reminder/route.ts", "POST", "a snooze is the client's decision about their own week"],
-  ["companies/link-application/route.ts", "POST", "writes to signal_applications, out of scope here"],
 ]
 
 console.log("\nand what it stays unable to do")
@@ -101,6 +107,11 @@ for (const [file, verb] of [
   ok(`${verb} ${file} stamps created_by on the insert`,
     handler(read(file), verb).includes("...createdBy(scope)"))
 }
+
+// link-application creates a company only on its by-name path, inside the lib,
+// so the route hands the attribution down rather than spreading it itself.
+ok("POST companies/link-application/route.ts hands created_by to the company it may create",
+  handler(read("companies/link-application/route.ts"), "POST").includes("createdBy: createdBy(scope)"))
 
 for (const [file, verb] of [
   ["contacts/[contactId]/route.ts", "PATCH"],

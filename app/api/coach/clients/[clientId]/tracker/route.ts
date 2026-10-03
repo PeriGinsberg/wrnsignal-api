@@ -112,7 +112,7 @@ export async function GET(
     // Fetch client applications
     const { data: applications, error: appsErr } = await supabase
       .from("signal_applications")
-      .select("*, signal_interviews(id), client_personas(name), jobfit_runs!jobfit_run_id(job_description)")
+      .select("*, signal_interviews(id), client_personas(name), jobfit_runs!jobfit_run_id(job_description), linked_company:network_companies(id, name)")
       .eq("profile_id", clientProfileId)
       .order("created_at", { ascending: false })
 
@@ -167,6 +167,9 @@ export async function GET(
       // when a coverletter_run exists for this app's jobfit_run_id.
       has_jobfit: !!app.jobfit_run_id,
       has_cover_letter: app.jobfit_run_id ? coverLetterRunIds.has(app.jobfit_run_id) : false,
+      // The networking-board company this job is linked to (company_id), for
+      // the coach's link-to-company control. null when unlinked.
+      linked_company: app.linked_company ?? null,
       signal_interviews: undefined,
       client_personas: undefined,
       jobfit_runs: undefined,
