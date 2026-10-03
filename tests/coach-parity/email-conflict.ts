@@ -7,12 +7,10 @@
 // profile looks like after its owner's login email changed without the profile
 // following. Then B calls the routes.
 //
-//   Positioning / Cover Letter  must refuse (403) and leave the profile alone.
-//   A network route             is printed, not asserted: it shares
-//                               getProfileId's default, which re-points the
-//                               profile at B. That is the open hole reported
-//                               alongside this test; when it is fixed at the
-//                               source, that line will read REFUSED.
+//   Positioning, Cover Letter and a network route must all refuse (403) and
+//   leave the profile alone: getProfileId refuses an email match on a profile
+//   another login owns, by default. tests/identity/signin-paths.ts covers the
+//   sign-in paths that must keep working.
 //
 // Creds from process.env only (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
 // NEXT_PUBLIC_SUPABASE_ANON_KEY). Dev only. Everything it creates is deleted
@@ -77,11 +75,8 @@ async function main() {
     }
 
     const net = await fetch(`${BASE}/api/network/companies`, { headers: { Authorization: `Bearer ${jwt}` } })
-    const after = await owner()
-    console.log(`\nINFO (not asserted): GET /api/network/companies as B -> ${net.status}; ` +
-      (after === b.user.id
-        ? "the profile was RE-POINTED at B (network routes share the open hole)"
-        : "REFUSED, the profile still belongs to O"))
+    check("/api/network/companies: refused with 403", net.status === 403, net.status)
+    check("/api/network/companies: the profile still belongs to O", (await owner()) === o.user.id)
   } finally {
     if (created.profile) await db.from("client_profiles").delete().eq("id", created.profile)
     for (const id of created.users) await db.auth.admin.deleteUser(id)
