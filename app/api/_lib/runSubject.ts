@@ -43,7 +43,10 @@ export async function resolveRunSubject(
   body: any,
   opts: { withPositioning: boolean },
 ): Promise<RunSubject> {
-  const scope = await resolveRequestScope(req, supabase, { require: "write" })
+  // strictIdentity: these routes used getAuthedProfileText, which refused a
+  // login whose email matches a profile another login owns. Kept refusing;
+  // the default would re-point that profile at the caller.
+  const scope = await resolveRequestScope(req, supabase, { require: "write", strictIdentity: true })
   const actingForClient = scope.actorRole === "coach"
   const applicationId =
     typeof body?.application_id === "string" && body.application_id.trim() ? body.application_id.trim() : null

@@ -159,8 +159,11 @@ export async function resolveScope(
  * around resolveCaller that network routes should reach for, so that "who is
  * calling" has exactly one entry point per surface.
  */
-export async function resolveActor(req: Request): Promise<ActorContext> {
-  const { profileId, isCoach } = await resolveCaller(req)
+export async function resolveActor(
+  req: Request,
+  opts: { strictIdentity?: boolean } = {},
+): Promise<ActorContext> {
+  const { profileId, isCoach } = await resolveCaller(req, { refuseOwnedEmailMatch: opts.strictIdentity })
   return { actorId: profileId, isCoach }
 }
 
@@ -206,9 +209,19 @@ export async function resolveOwnerScope(req: Request): Promise<Scope> {
 export async function resolveRequestScope(
   req: Request,
   supabase: SupabaseClient,
-  opts: { require: "read" | "write"; subjectOverride?: string | null },
+  opts: {
+    require: "read" | "write"
+    subjectOverride?: string | null
+    /**
+     * Refuse (403) a caller whose login has no profile but whose email matches
+     * a profile another login owns, instead of re-pointing that profile at
+     * them. See getProfileId in identity.ts. Off by default, which is how
+     * every network route still behaves.
+     */
+    strictIdentity?: boolean
+  },
 ): Promise<Scope> {
-  const actor = await resolveActor(req)
+  const actor = await resolveActor(req, { strictIdentity: opts.strictIdentity })
   const fromQuery = new URL(req.url).searchParams.get("client_profile_id")
   return resolveScope(supabase, actor, {
     subject: opts.subjectOverride ?? fromQuery,
