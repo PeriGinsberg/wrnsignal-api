@@ -1,7 +1,8 @@
 // app/api/coach/clients/[clientId]/applications/[applicationId]/detail/route.ts
 //
 // Per-job full detail for the coach Job Tracker side panel: the FULL jobfit
-// result_json and the FULL cover-letter content for ONE application's job.
+// result_json, the latest positioning (v1, positioning_runs) and the FULL
+// cover-letter content for ONE application's job, each with who generated it.
 //
 // SECURITY — authority is derived from the APPLICATION'S OWN owner, never from
 // the clientId in the URL (IDOR-safe):
@@ -73,6 +74,9 @@ export async function GET(
     // 6. Content — every query scoped to ownerClientId (defense in depth).
     let jobfit: any = null
     let coverLetter: any = null
+    let coverLetterBy: string | null = null
+    let positioning: any = null
+    let positioningBy: string | null = null
 
     if (app.jobfit_run_id) {
       const { data: jf } = await supabase
@@ -89,15 +93,29 @@ export async function GET(
             : jf.result_json ?? null
       }
 
+      // Newest by updated_at: a re-run onto an existing row keeps created_at.
       const { data: cl } = await supabase
         .from("coverletter_runs")
-        .select("result_json")
+        .select("result_json, created_by_role")
+        .eq("jobfit_run_id", app.jobfit_run_id)
+        .eq("client_profile_id", ownerClientId)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      coverLetter = cl?.result_json ?? null
+      coverLetterBy = cl?.created_by_role ?? null
+
+      // v1 positioning only. positioning_runs_v2 was abandoned and is empty on prod.
+      const { data: pos } = await supabase
+        .from("positioning_runs")
+        .select("result_json, created_by_role")
         .eq("jobfit_run_id", app.jobfit_run_id)
         .eq("client_profile_id", ownerClientId)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle()
-      coverLetter = cl?.result_json ?? null
+      positioning = pos?.result_json ?? null
+      positioningBy = pos?.created_by_role ?? null
     }
 
     return withCorsJson(
@@ -108,6 +126,14 @@ export async function GET(
         client_profile_id: ownerClientId,
         jobfit,        // full result_json (+ jobfit_run_id), or null
         coverLetter,   // full { letter, contact, context_used }, or null if not generated
+        positioning,   // full positioning result_json, or null if not generated
+        // "coach", "client", or null for a run from before who-ran-it was recorded
+        // (only the client could make those).
+        coverLetterBy,
+        positioningBy,
+        // Running Positioning or Cover Letter writes, which needs FULL access;
+        // a view or annotate coach can read the results but not run them.
+        can_run: access.access_level === "full" && !!app.jobfit_run_id,
       },
       200,
     )

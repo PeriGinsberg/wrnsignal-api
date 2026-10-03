@@ -2,7 +2,9 @@
 import crypto from "crypto"
 import OpenAI from "openai"
 import { createClient } from "@supabase/supabase-js"
-import { getAuthedProfileText } from "../_lib/authProfile"
+import { resolveRunSubject } from "../_lib/runSubject"
+import { errorStatus } from "../_lib/routeError"
+import { createdBy } from "@/lib/collab/scope"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
 import { getHistoryBoundary, applyHistoryBoundary } from "../_lib/clientHistoryBoundary"
 import { getCandidateTargeting } from "@/lib/candidateTargeting"
@@ -389,20 +391,21 @@ export async function POST(req: Request) {
     // split bug as positioning. See app/api/positioning/route.ts top-of-
     // file comment for the full architectural context.
     const body = await req.json().catch(() => ({}))
-    const jobText = String(body?.job || "").trim()
-    if (!jobText) return withCorsJson(req, { error: "Missing job" }, 400)
 
-    const personaIdFromBody =
-      typeof body?.persona_id === "string" && body.persona_id.trim().length > 0
-        ? body.persona_id.trim()
-        : null
+    // Whose profile this runs on, and the inputs. The caller themselves, or a
+    // client the caller coaches with full access (?client_profile_id=), in
+    // which case the job, JobFit result, persona and positioning come from the
+    // client's own runs for body.application_id. See app/api/_lib/runSubject.ts.
+    // profileId below is the SUBJECT's: the client's, when a coach is acting.
+    const subject = await resolveRunSubject(req, supabaseAdmin, body, { withPositioning: true })
+    const { scope, jobText } = subject
 
     const {
       profileId,
       profileText,
       resumeText,
       activePersonaId,
-    } = await getAuthedProfileText(req, { personaId: personaIdFromBody })
+    } = subject.profile
 
     // Wrong-status fix (2026-05-29): compute student-vs-graduated verdict
     // from gradDate (extractor → Haiku) + candidate_targeting.career_stage
@@ -425,11 +428,12 @@ export async function POST(req: Request) {
       `[coverletter] grad date extraction cost cents=${centsForUsage(extractionResult.usage)} input_tokens=${extractionResult.usage.input_tokens} output_tokens=${extractionResult.usage.output_tokens} latency_ms=${extractionResult.latencyMs} extracted_raw=${JSON.stringify(extractionResult.result?.raw ?? null)} computed_status=${candidateStatus} career_stage=${targetingResult.row?.career_stage ?? "null"}`
     )
 
-    // Accept jobfit_result from the frontend (sent alongside job)
-    const jobfitResult = body?.jobfit_result ?? null
+    // jobfit_result from the frontend (sent alongside job), or from the
+    // client's own JobFit run on the application_id path.
+    const jobfitResult = subject.jobfitResult
 
-    const jobfitContext = summarizeJobFit(body?.jobfit ?? jobfitResult)
-    const positioningContext = summarizePositioning(body?.positioning)
+    const jobfitContext = summarizeJobFit(body?.application_id ? jobfitResult : body?.jobfit ?? jobfitResult)
+    const positioningContext = summarizePositioning(subject.positioning)
 
     // Extract the V5 cover letter strategy block (empty string if not present)
     const coverLetterStrategyBlock = extractCoverLetterStrategy(jobfitResult)
@@ -723,6 +727,10 @@ Return JSON only. No markdown. No commentary.
           fingerprint_hash,
           fingerprint_code,
           result_json: finalResult,
+          // Who ran it. On a re-run that lands on an existing row this
+          // rewrites the actor too, so it always names whoever made the
+          // letter now stored.
+          ...createdBy(scope),
         },
         { onConflict: "client_profile_id,fingerprint_hash" }
       )
@@ -765,15 +773,14 @@ Return JSON only. No markdown. No commentary.
     )
   } catch (err: any) {
     const detail = err?.message || String(err)
-    const lower = String(detail).toLowerCase()
-
-    const status = lower.includes("unauthorized")
-      ? 401
-      : lower.includes("profile not found")
-        ? 404
-        : lower.includes("access disabled")
+    // Errors that know their status first (ForbiddenError 403, a foreign
+    // persona 400, a missing application 404), then the shared mapping.
+    const status =
+      typeof err?.status === "number"
+        ? err.status
+        : String(detail).toLowerCase().includes("access disabled")
           ? 403
-          : 500
+          : errorStatus(err)
 
     return withCorsJson(req, { error: "Coverletter failed", detail }, status)
   }

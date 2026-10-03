@@ -48,6 +48,7 @@ import { LibraryTab } from "./LibraryTab"
 import { HistoryTab } from "./HistoryTab"
 import { WorkbooksTab } from "./WorkbooksTab"
 import { JobDetailPanel, type PanelSection } from "./JobDetailPanel"
+import { LinkCompanyControl } from "./LinkCompanyControl"
 import { describeClientStatus } from "@/lib/coachRecommendations"
 import { PracticeTab } from "./PracticeTab"
 
@@ -94,6 +95,8 @@ type ClientApplication = {
   created_at: string | null
   has_jobfit?: boolean
   has_cover_letter?: boolean
+  /** The networking-board company this job is linked to, or null. */
+  linked_company?: { id: string; name: string } | null
   coach_annotations: any[]
 }
 
@@ -1200,7 +1203,9 @@ export default function CoachClientPage() {
                       {isOpen && (
                         <div style={{ marginTop: 14, borderTop: `1px solid ${T.BORDER_SOFT}`, paddingTop: 14 }}>
                           {/* Per-job detail links — open the side panel focused on the
-                              clicked section. Cover Letter shows only when one was run. */}
+                              clicked section. With a JobFit run, Positioning and Cover
+                              Letter always show: the panel is where a coach runs them.
+                              Without one, Cover Letter shows only when one was run. */}
                           {(app.has_jobfit || app.has_cover_letter) && (
                             <div style={{ display: "flex", gap: 16, marginBottom: 12 }}>
                               {app.has_jobfit && (
@@ -1211,7 +1216,15 @@ export default function CoachClientPage() {
                                   Full Jobfit
                                 </button>
                               )}
-                              {app.has_cover_letter && (
+                              {app.has_jobfit && (
+                                <button
+                                  onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("positioning"); setJobPanelOpen(true) }}
+                                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: TYPE.secondary, fontWeight: 700, color: T.WRN_TEAL, textDecoration: "underline" }}
+                                >
+                                  Positioning
+                                </button>
+                              )}
+                              {(app.has_jobfit || app.has_cover_letter) && (
                                 <button
                                   onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("coverletter"); setJobPanelOpen(true) }}
                                   style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: TYPE.secondary, fontWeight: 700, color: T.INK_EMPHASIS, textDecoration: "underline" }}
@@ -1221,6 +1234,16 @@ export default function CoachClientPage() {
                               )}
                             </div>
                           )}
+                          <div style={{ marginBottom: 12 }}>
+                            <LinkCompanyControl
+                              clientProfileId={clientId}
+                              applicationId={app.id}
+                              jobCompanyName={app.company_name ?? null}
+                              linked={app.linked_company ?? null}
+                              authFetch={authFetch}
+                              onChanged={() => void loadAll({ silent: true })}
+                            />
+                          </div>
                           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
                             <div style={{ fontSize: TYPE.secondary, color: T.DIM }}>
                               <span style={{ color: T.MUTED, fontWeight: 700 }}>URL: </span>
@@ -2121,7 +2144,7 @@ export default function CoachClientPage() {
       {tab === "history" && <HistoryTab coachClientId={coachClientId} />}
 
       {/* Per-job detail side panel — opened from a Job Tracker row's
-          "Full Jobfit" / "Cover Letter" link. Mounted once; slides in on open. */}
+          "Full Jobfit" / "Positioning" / "Cover Letter" link. Mounted once; slides in on open. */}
       <JobDetailPanel
         open={jobPanelOpen}
         onClose={() => setJobPanelOpen(false)}
