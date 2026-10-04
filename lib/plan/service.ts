@@ -463,8 +463,9 @@ export async function reorderTasks(
 }
 
 /**
- * Add a deliverable from the coach's library to one of the client's approved
- * packages: a copy of it and its tasks (all Upcoming), with its phase. The
+ * Add a deliverable from the coach's library to one of the client's packages
+ * (approved, or a proposal being customized; not a declined one): a copy of it
+ * and its tasks (all Upcoming), with its phase. The
  * library deliverable itself is untouched.
  */
 export async function addDeliverableFromLibrary(
@@ -475,7 +476,8 @@ export async function addDeliverableFromLibrary(
     .eq("id", args.engagementId).maybeSingle()
   const eng = e as { id: string; coach_client_id: string; proposal_status: string } | null
   if (!eng || eng.coach_client_id !== args.coachClientId) return fail("Package not found", 404)
-  if (eng.proposal_status !== "approved") return fail("Add deliverables to an approved package.", 409)
+  // A proposal (draft or sent) is customized before it goes out; a declined one is closed.
+  if (eng.proposal_status === "declined") return fail("This package was declined. Add deliverables to an open one.", 409)
   const { data: m } = await db.from("coach_milestones")
     .select("id, coach_profile_id, name, fee_cents, category, time_estimate_days, phase_id").eq("id", args.milestoneId).maybeSingle()
   const lib = m as { id: string; coach_profile_id: string; name: string; fee_cents: number | null; category: string | null; time_estimate_days: number | null; phase_id: string | null } | null

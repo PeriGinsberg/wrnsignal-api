@@ -323,11 +323,12 @@ type EngDeliverableRow = {
   fee_cents: number | null
   speaking_point: string | null
   why_this_matters: string | null
+  not_needed: boolean
   sort_order: number
   created_at: string
 }
 const ENG_DELIVERABLE_SELECT =
-  "id, engagement_id, name, category, time_estimate_days, fee_cents, speaking_point, why_this_matters, sort_order, created_at"
+  "id, engagement_id, name, category, time_estimate_days, fee_cents, speaking_point, why_this_matters, not_needed, sort_order, created_at"
 
 type EngActivityRow = {
   id: string
@@ -357,6 +358,8 @@ function toApiEngDeliverable(d: EngDeliverableRow, activities: ReturnType<typeof
     fee: d.fee_cents === null ? null : d.fee_cents / 100, // dollars at the edge
     speaking_point: d.speaking_point,
     why_this_matters: d.why_this_matters,
+    // Left out of the price and the SOW; still listed, greyed.
+    not_needed: !!d.not_needed,
     sort_order: d.sort_order,
     activities,
   }
@@ -409,9 +412,11 @@ export async function toApiEngagements(supabase: SupabaseClient, rows: Engagemen
     )
 
     // Pricing over the FROZEN snapshot — integer cents, dollars at the edge.
-    // Identical math to toApiPackage.
-    const subtotalCents = myDelivs.reduce((sum, d) => sum + (d.fee_cents ?? 0), 0)
-    const unpricedCount = myDelivs.filter((d) => d.fee_cents === null).length
+    // Same math as toApiPackage, over the deliverables still needed: a
+    // Not needed deliverable is not charged for (lib/sow/client.ts agrees).
+    const charged = myDelivs.filter((d) => !d.not_needed)
+    const subtotalCents = charged.reduce((sum, d) => sum + (d.fee_cents ?? 0), 0)
+    const unpricedCount = charged.filter((d) => d.fee_cents === null).length
     const discountCents = e.discount_cents // null = no discount
     const effectiveDiscountCents = Math.min(discountCents ?? 0, subtotalCents) // clamp
     const totalCents = subtotalCents - effectiveDiscountCents // >= 0 by construction

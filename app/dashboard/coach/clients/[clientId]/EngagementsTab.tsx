@@ -28,6 +28,7 @@ import { T, btnPrimary, btnSecondary } from "../../../../../lib/dashboard-theme"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
 import { NoteVisibilityIcon } from "../../NoteVisibilityIcon"
 import { TASK_STATE_LABEL, type TaskState } from "@/lib/plan/model"
+import { SowPanel } from "./SowPanel"
 import {
   ActivityEditRow, AddActivityRow, DeliverableProse, ProofProjectToggle,
 } from "./EngagementEditing"
@@ -47,6 +48,8 @@ type EngDeliverable = {
   fee: number | null // DOLLARS; null = unpriced
   speaking_point: string | null
   why_this_matters: string | null
+  // A proposal's deliverable the coach marked Not needed: greyed, not charged, not on the SOW.
+  not_needed?: boolean
   sort_order: number
   activities: EngActivity[]
 }
@@ -155,6 +158,8 @@ export function EngagementsTab({
   const [settingActivityId, setSettingActivityId] = useState<string | null>(null) // activity status in flight
   // A due date was just set on an Upcoming task in an approved package: offer to activate it.
   const [askActivate, setAskActivate] = useState<{ activityId: string; name: string } | null>(null)
+  // Bumped after a package changes, so each SOW panel re-reads its SOW.
+  const [sowKey, setSowKey] = useState(0)
 
   const base = coachClientId ? `/api/coach/coach-clients/${coachClientId}/engagements` : null
 
@@ -283,20 +288,27 @@ export function EngagementsTab({
   // Activate or release one task, through the Plan's route (its rules, its
   // History, its To-Do sync), then re-read the engagements for the new state.
   async function planAction(activityId: string, action: "activate" | "release") {
+    await planPost({ action, task_id: activityId }, activityId)
+  }
+
+  // Any Plan-route write from this tab (a task's activation, or customizing a
+  // proposal's deliverables), then re-read the engagements and their SOWs.
+  async function planPost(body: Record<string, unknown>, lockId: string) {
     if (!coachClientId || settingActivityId) return
-    setSettingActivityId(activityId)
+    setSettingActivityId(lockId)
     setActionError(null)
     try {
       const res = await authFetch(`/api/coach/coach-clients/${coachClientId}/plan`, {
         method: "POST",
-        body: JSON.stringify({ action, task_id: activityId }),
+        body: JSON.stringify(body),
       })
       const j = await res.json().catch(() => ({}))
-      if (!res.ok || !j?.ok) setActionError(j?.error || `Couldn't update the task (${res.status})`)
+      if (!res.ok || !j?.ok) setActionError(j?.error || `Couldn't update the package (${res.status})`)
     } catch {
       setActionError("Network error — try again")
     } finally {
       await resync()
+      setSowKey((k) => k + 1)
       setSettingActivityId(null)
     }
   }
@@ -524,6 +536,8 @@ export function EngagementsTab({
               onSetStatus={(s) => void setStatus(e.id, s)}
               onSetActivityDueDate={(activityId, dueDate) => void setActivityDueDate(e.id, activityId, dueDate)}
               onPlanAction={(activityId, action) => void planAction(activityId, action)}
+              onPlanPost={(body, lockId) => void planPost(body, lockId)}
+              sowKey={sowKey}
               onPatchActivity={(activityId, patch, confirm) => patchActivity(e.id, activityId, patch, confirm)}
               onDeleteActivity={(activityId, confirm) => deleteActivity(e.id, activityId, confirm)}
               onAddActivity={(deliverableId, name, owner) => addActivity(e.id, deliverableId, name, owner)}
@@ -610,7 +624,7 @@ export function EngagementsTab({
 function EngagementCard({
   e, coachClientId, expanded, detaching, proposalBusy, settingActivityId, showConvertNudge,
   onPatchActivity, onDeleteActivity, onAddActivity, onReorderActivities, onSaveProse, onSetProofProject,
-  onToggle, onDetach, onSetStatus, onSetActivityDueDate, onPlanAction,
+  onToggle, onDetach, onSetStatus, onSetActivityDueDate, onPlanAction, onPlanPost, sowKey,
 }: {
   e: Engagement
   coachClientId: string
@@ -630,7 +644,11 @@ function EngagementCard({
   onSetStatus: (s: ProposalStatus) => void
   onSetActivityDueDate: (activityId: string, dueDate: string | null) => void
   onPlanAction: (activityId: string, action: "activate" | "release") => void
+  onPlanPost: (body: Record<string, unknown>, lockId: string) => void
+  sowKey: number
 }) {
+  // A proposal (draft or sent) is customized here and gets its SOW.
+  const proposal = e.proposal_status === "draft" || e.proposal_status === "sent"
   // Hover affordance for the proposal control (same pattern as the prospect
   // status / pipeline controls). Hover is neutral + transient, never the active
   // status color, so a hovered stage can't be mistaken for the selected one.
@@ -746,9 +764,18 @@ function EngagementCard({
                 onSetActivityDueDate={onSetActivityDueDate}
                 approved={e.proposal_status === "approved"}
                 onPlanAction={onPlanAction}
+                proposal={proposal}
+                onPlanPost={onPlanPost}
               />
             ))
           )}
+          {proposal && (
+            <AddLibraryDeliverable
+              busy={!!settingActivityId}
+              onAdd={(milestoneId) => onPlanPost({ action: "add_deliverable", engagement_id: e.id, milestone_id: milestoneId }, e.id)}
+            />
+          )}
+          {proposal && <SowPanel coachClientId={coachClientId} engagementId={e.id} refreshKey={sowKey} />}
         </div>
       )}
     </div>
@@ -759,7 +786,7 @@ function EngagementCard({
 function DeliverableBlock({
   d, coachClientId, engagementId, settingActivityId, onSetActivityDueDate,
   isProofProject, onPatchActivity, onDeleteActivity, onAddActivity, onReorderActivities, onSaveProse,
-  approved, onPlanAction,
+  approved, onPlanAction, proposal, onPlanPost,
 }: {
   d: EngDeliverable
   coachClientId: string
@@ -774,12 +801,16 @@ function DeliverableBlock({
   onSaveProse: (deliverableId: string, patch: { speaking_point?: string | null; why_this_matters?: string | null }) => Promise<void>
   approved: boolean
   onPlanAction: (activityId: string, action: "activate" | "release") => void
+  proposal: boolean
+  onPlanPost: (body: Record<string, unknown>, lockId: string) => void
 }) {
   // Editing is a MODE. The read view is what a coach looks at during a call;
   // delete buttons do not belong there by default.
   const [editing, setEditing] = useState(false)
+  const [confirmRemove, setConfirmRemove] = useState(false)
+  const busy = !!settingActivityId
   return (
-    <div style={{ display: "flex", borderRadius: 10, border: `1px solid ${T.BORDER_SOFT}`, background: T.NAV_DEFAULT_BG, overflow: "hidden" }}>
+    <div data-testid="eng-deliverable" style={{ display: "flex", borderRadius: 10, border: `1px solid ${T.BORDER_SOFT}`, background: T.NAV_DEFAULT_BG, overflow: "hidden", opacity: d.not_needed ? 0.55 : 1 }}>
       {/* Thin coral left-accent bar (inner element → block keeps rounded corners). */}
       <div aria-hidden style={{ width: 3, alignSelf: "stretch", background: T.WRN_ORANGE, flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0, padding: "10px 12px" }}>
@@ -787,6 +818,25 @@ function DeliverableBlock({
           {/* Deliverable name = primary/bright tier. */}
           <span style={{ fontSize: TYPE.secondary, color: T.TEXT, fontWeight: 700 }}>{d.name}</span>
           <span style={{ fontSize: TYPE.secondary, color: d.fee === null ? T.DIM : T.MUTED, fontWeight: 600 }}>{fmtFee(d.fee)}</span>
+          {d.not_needed && <span style={{ fontSize: TYPE.micro, fontWeight: 800, color: T.MUTED }}>Not needed</span>}
+          {/* A proposal is customized before it goes out: these use the Plan's own actions. */}
+          {proposal && !confirmRemove && (
+            <span style={{ display: "inline-flex", gap: 6 }}>
+              <button type="button" style={smallBtn} disabled={busy}
+                onClick={() => onPlanPost({ action: d.not_needed ? "deliverable_restore" : "deliverable_not_needed", deliverable_id: d.id }, d.id)}>
+                {d.not_needed ? "Restore" : "Not needed"}
+              </button>
+              <button type="button" style={smallBtn} disabled={busy} onClick={() => setConfirmRemove(true)}>Remove</button>
+            </span>
+          )}
+          {proposal && confirmRemove && (
+            <span style={{ display: "inline-flex", gap: 6, alignItems: "center", fontSize: TYPE.micro, color: T.TEXT }}>
+              Remove {d.name} and its tasks from this package?
+              <button type="button" style={smallBtn} disabled={busy}
+                onClick={() => { setConfirmRemove(false); onPlanPost({ action: "remove_deliverable", deliverable_id: d.id }, d.id) }}>Remove</button>
+              <button type="button" style={smallBtn} onClick={() => setConfirmRemove(false)}>Cancel</button>
+            </span>
+          )}
           {d.category && (
             <span style={{ fontSize: TYPE.micro, fontWeight: 900, letterSpacing: 0.8, textTransform: "uppercase", color: T.INK_EMPHASIS, background: "rgba(254,176,106,0.10)", border: `1px solid ${T.NAV_ACTIVE_BORDER}`, borderRadius: 6, padding: "1px 6px" }}>
               {d.category}
@@ -909,6 +959,32 @@ function DeliverableBlock({
 // ── Optional per-activity due date — native date picker, app tokens. Empty =
 //    no date (muted); set = blue. Clearing (native ✕) sends "" → null. The input
 //    is both the display and the control; shares the row's in-flight lock. ──
+// A proposal takes deliverables from the coach's library before it goes out.
+function AddLibraryDeliverable({ busy, onAdd }: { busy: boolean; onAdd: (milestoneId: string) => void }) {
+  const [library, setLibrary] = useState<{ id: string; name: string; active: boolean }[]>([])
+  const [pick, setPick] = useState("")
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await authFetch("/api/coach/milestones")
+        const j = await res.json().catch(() => ({}))
+        if (res.ok && j?.ok) setLibrary((j.milestones ?? []).filter((m: { active: boolean }) => m.active))
+      } catch { /* the picker stays empty */ }
+    })()
+  }, [])
+  if (!library.length) return null
+  return (
+    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+      <select aria-label="Deliverable to add" value={pick} onChange={(ev) => setPick(ev.target.value)}
+        style={{ background: T.NAV_DEFAULT_BG, color: T.TEXT, border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 7, padding: "4px 8px", fontSize: TYPE.secondary }}>
+        <option value="">Add a deliverable from your library…</option>
+        {library.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+      </select>
+      <button type="button" style={smallBtn} disabled={busy || !pick} onClick={() => { onAdd(pick); setPick("") }}>+ Add deliverable</button>
+    </div>
+  )
+}
+
 function ActivityDueDateControl({
   value, busy, onSet,
 }: {

@@ -230,9 +230,14 @@ async function main() {
   }
   {
     const db = seed({ proposal: "draft" })
-    ok("deliverables are added to approved packages only",
-      !(await addDeliverableFromLibrary(db.client as any, { coachClientId: CC, engagementId: "eng-1", milestoneId: "m-mock", coachIds: [COACH], actor: COACH })).ok)
+    ok("a proposal (draft) can be customized with a library deliverable",
+      (await addDeliverableFromLibrary(db.client as any, { coachClientId: CC, engagementId: "eng-1", milestoneId: "m-mock", coachIds: [COACH], actor: COACH })).ok)
     ok("and a draft package is not the plan", (await getPlan(db.client as any, CC)).length === 0)
+  }
+  {
+    const db = seed({ proposal: "declined" })
+    ok("a declined package takes no new deliverables",
+      !(await addDeliverableFromLibrary(db.client as any, { coachClientId: CC, engagementId: "eng-1", milestoneId: "m-mock", coachIds: [COACH], actor: COACH })).ok)
   }
   {
     const db = seed()
