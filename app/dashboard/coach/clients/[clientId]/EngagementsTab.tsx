@@ -10,9 +10,12 @@
 //   DELETE /api/coach/coach-clients/[ccId]/engagements/[engagement_id]
 //
 // The proposal lifecycle (draft/sent/approved/declined) is a colored control at
-// the engagement-card header. Each task shows its plan state read-only: tasks
-// are worked in the Plan on the Dashboard tab, where the activation and release
-// rules apply (lib/plan/service.ts). On any
+// the engagement-card header. Each task shows its plan state. In an approved
+// package an Upcoming task can be activated (coach task) or released (client
+// task) right here, through the Plan's own route, so the activation and release
+// rules stay in lib/plan/service.ts; everything else is worked in the Plan on
+// the Dashboard tab. Setting a due date on an Upcoming task offers to activate
+// it. On any
 // write failure show a banner AND resync. The server (toApiEngagement) is the
 // source of truth for pricing + status — no client-side recompute. Dollars only.
 //
@@ -150,6 +153,8 @@ export function EngagementsTab({
   const [detachingId, setDetachingId] = useState<string | null>(null)
   const [settingStatusId, setSettingStatusId] = useState<string | null>(null) // engagement (proposal) in flight
   const [settingActivityId, setSettingActivityId] = useState<string | null>(null) // activity status in flight
+  // A due date was just set on an Upcoming task in an approved package: offer to activate it.
+  const [askActivate, setAskActivate] = useState<{ activityId: string; name: string } | null>(null)
 
   const base = coachClientId ? `/api/coach/coach-clients/${coachClientId}/engagements` : null
 
@@ -249,6 +254,9 @@ export function EngagementsTab({
   // on failure. Uses the settingActivityId in-flight lock.
   async function setActivityDueDate(engagementId: string, activityId: string, dueDate: string | null) {
     if (!base || settingActivityId) return
+    const eng = items.find((e) => e.id === engagementId)
+    const act = eng?.deliverables.flatMap((d) => d.activities).find((a) => a.id === activityId)
+    const offer = !!dueDate && eng?.proposal_status === "approved" && act?.state === "upcoming"
     setSettingActivityId(activityId)
     setActionError(null)
     try {
@@ -263,10 +271,32 @@ export function EngagementsTab({
         return
       }
       setItems((prev) => prev.map((e) => (e.id === engagementId ? (j.engagement as Engagement) : e)))
+      if (offer && act) setAskActivate({ activityId, name: act.name })
     } catch {
       setActionError("Network error — try again")
       await resync()
     } finally {
+      setSettingActivityId(null)
+    }
+  }
+
+  // Activate or release one task, through the Plan's route (its rules, its
+  // History, its To-Do sync), then re-read the engagements for the new state.
+  async function planAction(activityId: string, action: "activate" | "release") {
+    if (!coachClientId || settingActivityId) return
+    setSettingActivityId(activityId)
+    setActionError(null)
+    try {
+      const res = await authFetch(`/api/coach/coach-clients/${coachClientId}/plan`, {
+        method: "POST",
+        body: JSON.stringify({ action, task_id: activityId }),
+      })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) setActionError(j?.error || `Couldn't update the task (${res.status})`)
+    } catch {
+      setActionError("Network error — try again")
+    } finally {
+      await resync()
       setSettingActivityId(null)
     }
   }
@@ -493,6 +523,7 @@ export function EngagementsTab({
               onDetach={() => void detach(e.id)}
               onSetStatus={(s) => void setStatus(e.id, s)}
               onSetActivityDueDate={(activityId, dueDate) => void setActivityDueDate(e.id, activityId, dueDate)}
+              onPlanAction={(activityId, action) => void planAction(activityId, action)}
               onPatchActivity={(activityId, patch, confirm) => patchActivity(e.id, activityId, patch, confirm)}
               onDeleteActivity={(activityId, confirm) => deleteActivity(e.id, activityId, confirm)}
               onAddActivity={(deliverableId, name, owner) => addActivity(e.id, deliverableId, name, owner)}
@@ -501,6 +532,22 @@ export function EngagementsTab({
               onSetProofProject={(next) => void setProofProject(e.id, next)}
             />
           ))}
+        </div>
+      )}
+
+      {askActivate && (
+        <div onClick={() => setAskActivate(null)} style={{ position: "fixed", inset: 0, background: "rgba(8,32,63,0.35)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
+          <div role="dialog" aria-label="Make this task active now?" onClick={(ev) => ev.stopPropagation()} style={{ background: T.CARD, borderRadius: 12, padding: 20, maxWidth: 420, width: "100%", border: `1px solid ${T.BORDER_SOFT}` }}>
+            <p style={{ fontSize: TYPE.secondary, color: T.TEXT, fontWeight: 700, margin: "0 0 4px" }}>Make this task active now?</p>
+            <p style={{ fontSize: TYPE.secondary, color: T.MUTED, margin: "0 0 16px" }}>{askActivate.name}. The due date is saved either way.</p>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button type="button" style={smallBtn} onClick={() => setAskActivate(null)}>No</button>
+              <button type="button" style={{ ...btnPrimary, padding: "7px 14px", fontSize: TYPE.secondary }}
+                onClick={() => { const id = askActivate.activityId; setAskActivate(null); void planAction(id, "activate") }}>
+                Yes
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -563,7 +610,7 @@ export function EngagementsTab({
 function EngagementCard({
   e, coachClientId, expanded, detaching, proposalBusy, settingActivityId, showConvertNudge,
   onPatchActivity, onDeleteActivity, onAddActivity, onReorderActivities, onSaveProse, onSetProofProject,
-  onToggle, onDetach, onSetStatus, onSetActivityDueDate,
+  onToggle, onDetach, onSetStatus, onSetActivityDueDate, onPlanAction,
 }: {
   e: Engagement
   coachClientId: string
@@ -582,6 +629,7 @@ function EngagementCard({
   onDetach: () => void
   onSetStatus: (s: ProposalStatus) => void
   onSetActivityDueDate: (activityId: string, dueDate: string | null) => void
+  onPlanAction: (activityId: string, action: "activate" | "release") => void
 }) {
   // Hover affordance for the proposal control (same pattern as the prospect
   // status / pipeline controls). Hover is neutral + transient, never the active
@@ -696,6 +744,8 @@ function EngagementCard({
                 onReorderActivities={onReorderActivities}
                 onSaveProse={onSaveProse}
                 onSetActivityDueDate={onSetActivityDueDate}
+                approved={e.proposal_status === "approved"}
+                onPlanAction={onPlanAction}
               />
             ))
           )}
@@ -709,6 +759,7 @@ function EngagementCard({
 function DeliverableBlock({
   d, coachClientId, engagementId, settingActivityId, onSetActivityDueDate,
   isProofProject, onPatchActivity, onDeleteActivity, onAddActivity, onReorderActivities, onSaveProse,
+  approved, onPlanAction,
 }: {
   d: EngDeliverable
   coachClientId: string
@@ -721,6 +772,8 @@ function DeliverableBlock({
   onAddActivity: (deliverableId: string, name: string, owner: string) => Promise<void>
   onReorderActivities: (deliverableId: string, ids: string[]) => Promise<void>
   onSaveProse: (deliverableId: string, patch: { speaking_point?: string | null; why_this_matters?: string | null }) => Promise<void>
+  approved: boolean
+  onPlanAction: (activityId: string, action: "activate" | "release") => void
 }) {
   // Editing is a MODE. The read view is what a coach looks at during a call;
   // delete buttons do not belong there by default.
@@ -821,14 +874,24 @@ function DeliverableBlock({
                     busy={settingActivityId === a.id}
                     onSet={(due) => onSetActivityDueDate(a.id, due)}
                   />
-                  {/* The task's state. Tasks are worked in the Plan (Dashboard tab),
-                      where the activation and release rules apply. */}
+                  {/* The task's state. An Upcoming task in an approved package can be
+                      started here, in any order; the rest is worked in the Plan. */}
                   <span
-                    title="Work this task in the Plan, on the Dashboard tab"
+                    title={approved ? "Work this task in the Plan, on the Dashboard tab" : "Approve the package to start its tasks"}
                     style={{ fontSize: 11, fontWeight: 800, color: T.TEXT, border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 999, padding: "3px 9px", whiteSpace: "nowrap" }}
                   >
                     {a.state ? TASK_STATE_LABEL[a.state] : a.status}
                   </span>
+                  {approved && a.state === "upcoming" && (
+                    <button
+                      type="button"
+                      style={{ ...smallBtn, opacity: settingActivityId === a.id ? 0.6 : 1 }}
+                      disabled={!!settingActivityId}
+                      onClick={() => onPlanAction(a.id, a.owner === "client" ? "release" : "activate")}
+                    >
+                      {a.owner === "client" ? "Release" : "Activate"}
+                    </button>
+                  )}
                 </div>
                 {/* Per-activity notes — lazy-loaded on open via the CRUD route. */}
                 <ActivityNotes

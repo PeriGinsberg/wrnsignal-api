@@ -140,6 +140,7 @@ async function main() {
   {
     const db = seed()
     ok("any Upcoming task can be activated, in any order", (await act(db, "t3", "activate")).ok && t(db, "t3").state === "active")
+    ok("and doing so changes no other task", states(db, "t1", "t2", "t4") === "upcoming,upcoming,upcoming")
     ok("an Upcoming client task can be released directly", (await act(db, "t2", "release")).ok && t(db, "t2").state === "waiting_on_client")
     ok("a coach task cannot be released", !(await act(db, "t4", "release")).ok)
     await act(db, "t3", "done")

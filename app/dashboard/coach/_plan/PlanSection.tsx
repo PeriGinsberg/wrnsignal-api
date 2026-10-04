@@ -7,8 +7,10 @@
 //
 // Here the coach works the plan: activate, release, finish, skip or mark a
 // task Not needed, set its assignee and due date, reorder, add and remove
-// tasks and deliverables. The library package never changes. The rules are in
-// lib/plan/service.ts; this only shows what they allow.
+// tasks and deliverables. Any Upcoming task can be activated or released at
+// any time, in any order; setting a due date on one offers to activate it. The
+// library package never changes. The rules are in lib/plan/service.ts; this
+// only shows what they allow.
 
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react"
 import { card, eyebrow } from "../../../../lib/dashboard-theme"
@@ -87,6 +89,8 @@ export function PlanSection({ coachClientId, refreshKey = 0, onChanged }: {
   const [busy, setBusy] = useState(false)
   const [open, setOpen] = useState<Record<string, boolean>>({})
   const [confirm, setConfirm] = useState<{ text: string; body: Record<string, unknown> } | null>(null)
+  // A due date was just set on an Upcoming task: offer to activate it.
+  const [askActivate, setAskActivate] = useState<PlanTask | null>(null)
 
   const load = useCallback(async () => {
     if (!coachClientId) return
@@ -188,6 +192,7 @@ export function PlanSection({ coachClientId, refreshKey = 0, onChanged }: {
                     <DeliverableBlock
                       key={d.id} d={d} assignees={assignees} busy={busy}
                       onSend={send} onConfirm={(text, body) => setConfirm({ text, body })}
+                      onAskActivate={setAskActivate}
                     />
                   ))}
                 </div>
@@ -197,6 +202,22 @@ export function PlanSection({ coachClientId, refreshKey = 0, onChanged }: {
         })
       )}
       {plan && plan.packages.length > 0 && <AddDeliverable plan={plan} busy={busy} onSend={send} />}
+
+      {askActivate && (
+        <div onClick={() => setAskActivate(null)} style={{ position: "fixed", inset: 0, background: "rgba(8,32,63,0.35)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
+          <div role="dialog" aria-label="Make this task active now?" onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, padding: 20, maxWidth: 420, width: "100%" }}>
+            <p style={{ fontSize: 14, fontWeight: 800, color: NAVY, margin: "0 0 4px" }}>Make this task active now?</p>
+            <p style={{ fontSize: 13, color: NAVY, margin: "0 0 16px" }}>{askActivate.name}. The due date is saved either way.</p>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button type="button" style={small} onClick={() => setAskActivate(null)}>No</button>
+              <button type="button" disabled={busy} style={{ ...small, background: NAVY, color: "#FEB06A", border: "none" }}
+                onClick={() => { const id = askActivate.id; setAskActivate(null); void send({ action: "activate", task_id: id }) }}>
+                Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {confirm && (
         <div onClick={() => setConfirm(null)} style={{ position: "fixed", inset: 0, background: "rgba(8,32,63,0.35)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
@@ -213,12 +234,13 @@ export function PlanSection({ coachClientId, refreshKey = 0, onChanged }: {
   )
 }
 
-function DeliverableBlock({ d, assignees, busy, onSend, onConfirm }: {
+function DeliverableBlock({ d, assignees, busy, onSend, onConfirm, onAskActivate }: {
   d: PlanDeliverable
   assignees: Assignee[]
   busy: boolean
   onSend: (body: Record<string, unknown>) => Promise<boolean>
   onConfirm: (text: string, body: Record<string, unknown>) => void
+  onAskActivate: (t: PlanTask) => void
 }) {
   const [newName, setNewName] = useState("")
   const [newType, setNewType] = useState<TaskType>("coach")
@@ -249,7 +271,7 @@ function DeliverableBlock({ d, assignees, busy, onSend, onConfirm }: {
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
         {d.tasks.map((t, i) => (
           <TaskRow key={t.id} t={t} first={i === 0} last={i === d.tasks.length - 1} locked={d.not_needed}
-            assignees={assignees} busy={busy} onSend={onSend} onMove={(dir) => move(i, dir)}
+            assignees={assignees} busy={busy} onSend={onSend} onMove={(dir) => move(i, dir)} onAskActivate={onAskActivate}
             onRemove={() => onConfirm(`Remove "${t.name}" from this client's plan?`, { action: "remove_task", task_id: t.id })} />
         ))}
       </div>
@@ -271,7 +293,7 @@ function DeliverableBlock({ d, assignees, busy, onSend, onConfirm }: {
   )
 }
 
-function TaskRow({ t, first, last, locked, assignees, busy, onSend, onMove, onRemove }: {
+function TaskRow({ t, first, last, locked, assignees, busy, onSend, onMove, onRemove, onAskActivate }: {
   t: PlanTask
   first: boolean
   last: boolean
@@ -281,6 +303,7 @@ function TaskRow({ t, first, last, locked, assignees, busy, onSend, onMove, onRe
   onSend: (body: Record<string, unknown>) => Promise<boolean>
   onMove: (dir: -1 | 1) => void
   onRemove: () => void
+  onAskActivate: (t: PlanTask) => void
 }) {
   const greyed = locked || t.state === "not_needed"
   const options = assignees.some((a) => a.id === t.assignee_profile_id) || !t.assignee_profile_id
@@ -306,7 +329,10 @@ function TaskRow({ t, first, last, locked, assignees, busy, onSend, onMove, onRe
         {options.map((a) => <option key={a.id} value={a.id}>{a.name || a.email || "Coach"}</option>)}
       </select>
       <input type="date" aria-label={`Due date for ${t.name}`} value={t.due_date ?? ""} disabled={busy || locked}
-        onChange={(e) => void onSend({ action: "due", task_id: t.id, due_date: e.target.value || null })}
+        onChange={async (e) => {
+          const due = e.target.value || null
+          if (await onSend({ action: "due", task_id: t.id, due_date: due }) && due && t.state === "upcoming") onAskActivate(t)
+        }}
         style={{ ...fieldStyle, colorScheme: "light" }} />
       {!locked && (
         <span style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>

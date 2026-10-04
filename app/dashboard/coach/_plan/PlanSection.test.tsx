@@ -90,6 +90,42 @@ describe("Plan", () => {
     expect(within(upcoming).queryByRole("button", { name: "Release" })).toBeNull()
   })
 
+  it("a due date on an Upcoming task asks to activate it; Yes activates", async () => {
+    render(<PlanSection coachClientId="cc-1" />)
+    await screen.findByText("Polish")
+    fireEvent.change(screen.getByLabelText("Due date for Polish"), { target: { value: "2026-10-20" } })
+    const dialog = await screen.findByRole("dialog", { name: "Make this task active now?" })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Yes" }))
+    await waitFor(() => expect(posts).toHaveLength(2))
+    expect(posts[1]).toEqual({ action: "activate", task_id: "t3" })
+  })
+
+  it("No just keeps the date", async () => {
+    render(<PlanSection coachClientId="cc-1" />)
+    await screen.findByText("Polish")
+    fireEvent.change(screen.getByLabelText("Due date for Polish"), { target: { value: "2026-10-20" } })
+    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "No" }))
+    expect(screen.queryByRole("dialog")).toBeNull()
+    expect(posts).toEqual([{ action: "due", task_id: "t3", due_date: "2026-10-20" }])
+  })
+
+  it("does not ask for a task that is already under way", async () => {
+    render(<PlanSection coachClientId="cc-1" />)
+    await screen.findByText("Polish")
+    fireEvent.change(screen.getByLabelText("Due date for Review the draft"), { target: { value: "2026-10-20" } })
+    await waitFor(() => expect(posts).toHaveLength(1))
+    expect(screen.queryByRole("dialog")).toBeNull()
+  })
+
+  it("an Upcoming task in a later phase offers Activate once its phase is opened", async () => {
+    render(<PlanSection coachClientId="cc-1" />)
+    await screen.findByText("Polish")
+    fireEvent.click(group("Prove"))
+    const row = (await screen.findByText("Mock round")).closest("[data-testid=task]") as HTMLElement
+    fireEvent.click(within(row).getByRole("button", { name: "Activate" }))
+    await waitFor(() => expect(posts).toEqual([{ action: "activate", task_id: "p1" }]))
+  })
+
   it("sets assignee and due date", async () => {
     render(<PlanSection coachClientId="cc-1" />)
     await screen.findByText("Polish")
