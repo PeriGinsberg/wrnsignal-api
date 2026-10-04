@@ -78,7 +78,7 @@ export async function POST(
     // ── Gate 3+3.5: caller is a coach ──────────────────────────────
     const coach = await getCoachProfile(userId, callerEmail)
     if (!coach) {
-      return withCorsJson(req, { ok: false, error: "Profile not found" }, 500)
+      return withCorsJson(req, { ok: false, error: "Profile not found" }, 404)
     }
     if (!coach.is_coach) {
       return withCorsJson(req, { ok: false, error: "Forbidden: coach access required" }, 403)

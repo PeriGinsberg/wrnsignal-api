@@ -359,7 +359,7 @@ export async function GET(
   try {
     const { userId, email: callerEmail } = await getAuthedUser(req)
     const coach = await getCoachProfile(userId, callerEmail)
-    if (!coach) return withCorsJson(req, { ok: false, error: "Profile not found" }, 500)
+    if (!coach) return withCorsJson(req, { ok: false, error: "Profile not found" }, 404)
     if (!coach.is_coach) return withCorsJson(req, { ok: false, error: "Forbidden: coach access required" }, 403)
     const coachProfileId = coach.id as string
 
@@ -434,7 +434,7 @@ export async function PATCH(
   try {
     const { userId, email: callerEmail } = await getAuthedUser(req)
     const coach = await getCoachProfile(userId, callerEmail)
-    if (!coach) return withCorsJson(req, { ok: false, error: "Profile not found" }, 500)
+    if (!coach) return withCorsJson(req, { ok: false, error: "Profile not found" }, 404)
     if (!coach.is_coach) return withCorsJson(req, { ok: false, error: "Forbidden: coach access required" }, 403)
     const coachProfileId = coach.id as string
 
@@ -727,7 +727,7 @@ export async function DELETE(
   try {
     const { userId, email: callerEmail } = await getAuthedUser(req)
     const coach = await getCoachProfile(userId, callerEmail)
-    if (!coach) return withCorsJson(req, { ok: false, error: "Profile not found" }, 500)
+    if (!coach) return withCorsJson(req, { ok: false, error: "Profile not found" }, 404)
     if (!coach.is_coach) return withCorsJson(req, { ok: false, error: "Forbidden: coach access required" }, 403)
     const coachProfileId = coach.id as string
 

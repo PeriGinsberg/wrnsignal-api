@@ -300,12 +300,10 @@ async function main() {
         check(`${label} coach intruder left the coach profile alone`, await untouched(coachVictim, coachOwner))
       }
 
-      // Never a success. Four coach routes answer "Profile not found" with a
-      // 500 (prospects, prospects/[id], coach-clients/[id]/send-invite and
-      // /setup-account), exactly as in prod before this work; that status is
-      // a separate follow-up, not part of the lookup change.
+      // Never a success, and a client error, not a server error: a login with
+      // no profile is "Profile not found" (404) or refused, never a 500.
       const fresh = await call(r.method, path, freshJwt)
-      check(`${label} new login -> not 2xx`, fresh >= 400, fresh)
+      check(`${label} new login -> 4xx`, fresh >= 400 && fresh < 500, fresh)
     }
     const { count: freshProfiles } = await db.from("client_profiles").select("id", { count: "exact", head: true }).eq("user_id", freshLogin)
     check("the new login was never given or made a profile", freshProfiles === 0, freshProfiles)

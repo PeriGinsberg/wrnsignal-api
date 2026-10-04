@@ -254,7 +254,7 @@ export async function GET(req: NextRequest) {
     const { userId, email: callerEmail } = await getAuthedUser(req)
     // Gate 3+3.5: is_coach
     const coach = await getCoachProfile(userId, callerEmail)
-    if (!coach) return withCorsJson(req, { ok: false, error: "Profile not found" }, 500)
+    if (!coach) return withCorsJson(req, { ok: false, error: "Profile not found" }, 404)
     if (!coach.is_coach) return withCorsJson(req, { ok: false, error: "Forbidden: coach access required" }, 403)
     const coachProfileId = coach.id as string
 
@@ -345,7 +345,7 @@ export async function POST(req: NextRequest) {
     const { userId, email: callerEmail } = await getAuthedUser(req)
     // Gate 3+3.5: is_coach
     const coach = await getCoachProfile(userId, callerEmail)
-    if (!coach) return withCorsJson(req, { ok: false, error: "Profile not found" }, 500)
+    if (!coach) return withCorsJson(req, { ok: false, error: "Profile not found" }, 404)
     if (!coach.is_coach) return withCorsJson(req, { ok: false, error: "Forbidden: coach access required" }, 403)
     const coachProfileId = coach.id as string
 
