@@ -6,7 +6,7 @@
 // the link should open it, not the list, and not the list-then-the-job.
 
 import { describe, it, expect, vi, afterEach } from "vitest"
-import { unreviewedSourcedJobs } from "./page"
+import { unreviewedSourcedJobs } from "./requiredActions"
 
 const REC = {
   id: "rec-1",

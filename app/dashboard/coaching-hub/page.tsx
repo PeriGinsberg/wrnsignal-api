@@ -31,6 +31,7 @@ import {
 import { SectionState } from "./SectionState"
 import { ActivityStatus } from "./ActivityStatus"
 import { PracticeEntry } from "./PracticeEntry"
+import { unreviewedSourcedJobs, type ActionProvider, type RequiredAction } from "./requiredActions"
 
 type SharedDoc = { id: string; title: string; url: string }
 type DocGroup = { category_id: string | null; name: string; documents: SharedDoc[] }
@@ -40,7 +41,7 @@ type PlanNote = { id: string; body: string; action_required: boolean; created_at
 // it server-side — owner='coach' activities never reach this page), but nothing
 // here reads it now that the plan rows carry no coach marker.
 type PlanActivity = { id: string; name: string; status: string; due_date: string | null; notes: PlanNote[] }
-type PlanGroup = { deliverable_id: string; name: string; activities: PlanActivity[] }
+export type PlanGroup = { deliverable_id: string; name: string; activities: PlanActivity[] }
 
 const eyebrow: React.CSSProperties = {
   fontSize: 12, fontWeight: 800, letterSpacing: 1.4, textTransform: "uppercase",
@@ -273,60 +274,6 @@ export default function CoachingHubPage() {
 // Read-and-jump: the card deep-links into the Job Tracker, where Apply/Pass
 // already lives; responding there flips client_status off 'new', so the item
 // clears on the next load. No write path here.
-type RequiredAction = {
-  id: string
-  kind: string
-  label: string
-  title: string
-  subtitle: string | null
-  note: string | null
-  decision: string | null
-  score: number | null
-  href: string
-  sentAt: string | null
-  context?: string
-  doneEndpoint?: string
-}
-
-type ProviderContext = { token: string; groups: PlanGroup[] }
-
-type ActionProvider = {
-  kind: string
-  load: (ctx: ProviderContext) => Promise<RequiredAction[]>
-}
-
-// Provider: unreviewed coach-sourced jobs. Reuses the existing client endpoint
-// /api/coach/my-recommendations (returns all recs for this client); keep only
-// the unanswered ones that have a tracker job to open.
-// Exported for RequiredActionsLink.test.tsx: the mapping is where the
-// destination is decided, and asserting it needs one mocked fetch rather
-// than the whole page's three.
-export const unreviewedSourcedJobs: ActionProvider = {
-  kind: "sourced_job",
-  load: async ({ token }) => {
-    const res = await fetch("/api/coach/my-recommendations", { headers: { Authorization: `Bearer ${token}` } })
-    const j = await res.json().catch(() => ({}))
-    if (!res.ok || !j?.ok) throw new Error(j?.error || `Couldn't load recommendations (${res.status})`)
-    return (j.recommendations || [])
-      .filter((r: any) => r.client_status === "new" && r.application_id)
-      .map((r: any) => ({
-        id: r.id,
-        kind: "sourced_job",
-        label: "Review the job your coach sent",
-        title: r.job_title || "Untitled role",
-        subtitle: r.company_name || null,
-        note: r.coaching_note || null,
-        decision: r.signal_decision || null,
-        score: typeof r.signal_score === "number" ? r.signal_score : null,
-        // Straight to the job. It used to go to /dashboard/tracker?job={id},
-        // which the tracker then client-side redirected to the detail route —
-        // the same one-hop indirection removed from the Dashboard nudges.
-        href: `/dashboard/tracker/${r.application_id}`,
-        sentAt: r.created_at || null,
-      }))
-  },
-}
-
 // Provider: coach action-required activity notes. Sourced from the activities
 // the page already loaded (no extra fetch) — an item appears when a visible
 // note is flagged action_required, its activity isn't complete, and the client
