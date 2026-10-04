@@ -10,6 +10,8 @@ import Stripe from "stripe"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { buildSignalsFromRow, fireConversions } from "../../_lib/conversions"
+import { errorStatus } from "../../_lib/routeError"
+import { getAuthedUser, getProfileRowOrNull } from "@/lib/collab/identity"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -32,25 +34,6 @@ function getSupabaseAdmin() {
   })
 }
 
-function getBearerToken(req: Request) {
-  const h = req.headers.get("authorization") || ""
-  const m = h.match(/^Bearer\s+(.+)$/i)
-  const token = m?.[1]?.trim()
-  if (!token) throw new Error("Unauthorized: missing bearer token")
-  return token
-}
-
-async function getAuthedUser(req: Request) {
-  const token = getBearerToken(req)
-  const supabase = getSupabaseAdmin()
-  const { data, error } = await supabase.auth.getUser(token)
-  if (error || !data?.user?.id) throw new Error("Unauthorized: invalid token")
-  return {
-    userId: data.user.id,
-    email: (data.user.email ?? "").trim().toLowerCase() || null,
-  }
-}
-
 export async function OPTIONS(req: NextRequest) {
   return corsOptionsResponse(req.headers.get("origin"))
 }
@@ -63,20 +46,18 @@ export async function POST(req: NextRequest) {
     const PROFILE_SELECT =
       "id, active, purchase_date, refunded_at, stripe_payment_intent_id, stripe_charge_id"
 
-    let { data: profile } = await supabase
-      .from("client_profiles")
-      .select(PROFILE_SELECT)
-      .eq("user_id", userId)
-      .maybeSingle()
-
-    if (!profile && email) {
-      const byEmail = await supabase
-        .from("client_profiles")
-        .select(PROFILE_SELECT)
-        .eq("email", email)
-        .maybeSingle()
-      profile = byEmail.data
-    }
+    // Whose purchase this is: the shared lookup (lib/collab/identity.ts), by
+    // login then by email. It used to take ANY profile whose email matched,
+    // so a login whose email sat on someone else's profile could refund and
+    // deactivate that person's purchase. A profile another live login owns is
+    // now refused (ForbiddenError, 403).
+    const profile = await getProfileRowOrNull<{
+      active: boolean | null
+      purchase_date: string | null
+      refunded_at: string | null
+      stripe_payment_intent_id: string | null
+      stripe_charge_id: string | null
+    }>(userId, email, PROFILE_SELECT)
 
     if (!profile) {
       return withCorsJson(req, { error: "Profile not found." }, 404)
@@ -209,7 +190,7 @@ export async function POST(req: NextRequest) {
     return withCorsJson(req, { ok: true, refund_id: refund.id })
   } catch (err: any) {
     const msg = err?.message || String(err)
-    const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500
+    const status = errorStatus(msg)
     return withCorsJson(req, { ok: false, error: msg }, status)
   }
 }

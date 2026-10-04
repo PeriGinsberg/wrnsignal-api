@@ -33,18 +33,6 @@ const SHARED = "lib/collab/identity.ts"
 // Files still to convert. Grouped as in the plan; each group's commit deletes
 // its block.
 const PENDING = new Set<string>([
-  // Group B: client dashboard and money
-  "app/api/applications/[id]/history/route.ts",
-  "app/api/feedback/route.ts",
-  "app/api/interviews/[id]/prep/generate/route.ts",
-  "app/api/interviews/[id]/prep/route.ts",
-  "app/api/interviews/[id]/route.ts",
-  "app/api/interviews/route.ts",
-  "app/api/me/activities/[activity_id]/route.ts",
-  "app/api/me/activities/route.ts",
-  "app/api/me/activity-notes/[id]/done/route.ts",
-  "app/api/me/documents/route.ts",
-  "app/api/stripe/refund/route.ts",
   // Group C: Framer and mobile
   "app/api/applications/[id]/route.ts",
   "app/api/applications/route.ts",

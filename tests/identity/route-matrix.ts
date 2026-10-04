@@ -157,6 +157,21 @@ const ROWS: Row[] = [
   coach("GET", () => "/api/coach/prospects", "list", "A"),
   coach("POST", () => "/api/coach/recommend-job", "id", "A"),
   coach("PATCH", () => `/api/coach/recommendations/${NONE}`, "id", "A"),
+
+  // Group B: client dashboard and money
+  client("GET", () => `/api/applications/${NONE}/history`, "id", "B"),
+  coach("POST", () => "/api/feedback", "id", "B"),
+  client("POST", () => `/api/interviews/${NONE}/prep/generate`, "id", "B"),
+  client("GET", () => `/api/interviews/${NONE}/prep`, "id", "B"),
+  client("PUT", () => `/api/interviews/${NONE}`, "id", "B"),
+  client("GET", () => "/api/interviews", "list", "B"),
+  client("PATCH", () => `/api/me/activities/${NONE}`, "id", "B"),
+  client("GET", () => "/api/me/activities", "list", "B"),
+  client("PATCH", () => `/api/me/activity-notes/${NONE}/done`, "id", "B"),
+  client("GET", () => "/api/me/documents", "list", "B"),
+  // The fixture client has no purchase, so the owner gets "no active
+  // purchase" (409) before any Stripe call; nobody is refunded.
+  client("POST", () => "/api/stripe/refund", "id", "B"),
 ]
 
 // ── harness ─────────────────────────────────────────────────────────────────
