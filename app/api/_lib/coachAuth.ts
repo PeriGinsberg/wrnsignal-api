@@ -5,13 +5,16 @@
 // getter in coachClientEvents.ts). Pure auth: bearer → authed user → coach
 // profile → is_coach → resolve coach_profile_id. No feature-specific logic.
 //
-// Imports only ./cors (withCorsJson, used by resolveCoach) and supabase-js.
+// Imports ./cors (withCorsJson, used by resolveCoach), supabase-js, and the
+// shared caller lookup in lib/collab.
 // coachPackages / coachActivities / coachEngagements / coachClientEvents consume
 // these from here (some via re-export so route imports stay unchanged).
 
 import { createClient } from "@supabase/supabase-js"
 import { withCorsJson } from "./cors"
 import { resolveDelegation, type Delegation } from "@/lib/collab/delegation"
+import { getCallerProfileOrNull } from "@/lib/collab/identity"
+import { ForbiddenError } from "@/lib/collab/errors"
 
 export function getSupabaseAdmin() {
   const url = process.env.SUPABASE_URL
@@ -22,53 +25,9 @@ export function getSupabaseAdmin() {
   })
 }
 
-function getBearerToken(req: Request) {
-  const h = req.headers.get("authorization") || ""
-  const m = h.match(/^Bearer\s+(.+)$/i)
-  const token = m?.[1]?.trim()
-  if (!token) throw new Error("Unauthorized: missing bearer token")
-  return token
-}
-
-async function getAuthedUser(req: Request) {
-  const token = getBearerToken(req)
-  const supabase = getSupabaseAdmin()
-  const { data, error } = await supabase.auth.getUser(token)
-  if (error || !data?.user?.id) throw new Error("Unauthorized: invalid token")
-  return {
-    userId: data.user.id,
-    email: (data.user.email ?? "").trim().toLowerCase() || null,
-  }
-}
-
-async function getCoachProfile(userId: string, email: string | null) {
-  const supabase = getSupabaseAdmin()
-  const { data } = await supabase
-    .from("client_profiles")
-    .select("id, name, is_coach, coach_org")
-    .eq("user_id", userId)
-    .maybeSingle()
-  if (data) return data
-  if (email) {
-    const { data: byEmail } = await supabase
-      .from("client_profiles")
-      .select("id, name, is_coach, coach_org, user_id")
-      .eq("email", email)
-      .maybeSingle()
-    if (byEmail) {
-      if (byEmail.user_id !== userId) {
-        await supabase
-          .from("client_profiles")
-          .update({ user_id: userId, updated_at: new Date().toISOString() })
-          .eq("id", byEmail.id)
-      }
-      const { user_id: _u, ...rest } = byEmail as any
-      return rest
-    }
-  }
-  return null
-}
-
+// Who is calling comes from the ONE shared lookup (lib/collab/identity.ts),
+// which never hands a caller a profile another live login owns. This file used
+// to carry its own copy that re-pointed such a profile at the caller.
 // Resolve { coachProfileId, delegation } or return an error Response (401/403/404).
 //
 // `delegation.actingIds` is coachProfileId plus every principal this coach is an
@@ -82,17 +41,32 @@ export async function resolveCoach(
   | { coachProfileId: string; delegation: Delegation; error?: undefined }
   | { coachProfileId?: undefined; delegation?: undefined; error: Response }
 > {
-  const { userId, email } = await getAuthedUser(req)
-  const coach = await getCoachProfile(userId, email)
+  // A conflict (a login whose email is on a profile another live login owns)
+  // comes back as a 403 Response, the shape every caller already returns
+  // as-is. "Unauthorized" still throws, exactly as before.
+  let coach: { id: string; is_coach?: boolean } | null
+  try {
+    coach = await getCallerProfileOrNull<{ name: string | null; is_coach: boolean; coach_org: string | null }>(
+      req,
+      "id, name, is_coach, coach_org",
+    )
+  } catch (e) {
+    if (e instanceof ForbiddenError) return { error: withCorsJson(req, { ok: false, error: e.message }, 403) }
+    throw e
+  }
   if (!coach) return { error: withCorsJson(req, { ok: false, error: "Profile not found" }, 404) }
   if (!coach.is_coach) return { error: withCorsJson(req, { ok: false, error: "Forbidden: coach access required" }, 403) }
   const delegation = await resolveDelegation(getSupabaseAdmin(), coach.id as string)
   return { coachProfileId: coach.id as string, delegation }
 }
 
-// 401 for auth failures (thrown by the helpers above), 500 otherwise.
+// 401 for auth failures, 403 for a refused caller, 500 otherwise.
 export function errStatus(e: any): number {
-  return /unauthorized/i.test(e?.message || String(e)) ? 401 : 500
+  if (e instanceof ForbiddenError) return 403
+  const msg = e?.message || String(e)
+  if (/unauthorized/i.test(msg)) return 401
+  if (/forbidden/i.test(msg)) return 403
+  return 500
 }
 
 export const UUID_RE =

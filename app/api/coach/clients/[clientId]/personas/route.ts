@@ -12,6 +12,9 @@ import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { resolveDelegation } from "@/lib/collab/delegation"
+import { getAuthedUser, getProfileId } from "@/lib/collab/identity"
+import { errorStatus } from "@/app/api/_lib/routeError"
+
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -28,54 +31,6 @@ function getSupabaseAdmin() {
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
-}
-
-function getBearerToken(req: Request) {
-  const h = req.headers.get("authorization") || ""
-  const m = h.match(/^Bearer\s+(.+)$/i)
-  const token = m?.[1]?.trim()
-  if (!token) throw new Error("Unauthorized: missing bearer token")
-  return token
-}
-
-async function getAuthedUser(req: Request) {
-  const token = getBearerToken(req)
-  const supabase = getSupabaseAdmin()
-  const { data, error } = await supabase.auth.getUser(token)
-  if (error || !data?.user?.id) throw new Error("Unauthorized: invalid token")
-  return {
-    userId: data.user.id,
-    email: (data.user.email ?? "").trim().toLowerCase() || null,
-  }
-}
-
-async function getProfileId(userId: string, email: string | null) {
-  const supabase = getSupabaseAdmin()
-  const { data, error } = await supabase
-    .from("client_profiles")
-    .select("id, user_id")
-    .eq("user_id", userId)
-    .maybeSingle()
-  if (error) throw new Error(`Profile lookup failed: ${error.message}`)
-  if (data) return data.id as string
-  if (email) {
-    const { data: byEmail, error: emailErr } = await supabase
-      .from("client_profiles")
-      .select("id, user_id")
-      .eq("email", email)
-      .maybeSingle()
-    if (emailErr) throw new Error(`Profile email lookup failed: ${emailErr.message}`)
-    if (byEmail) {
-      if (byEmail.user_id !== userId) {
-        await supabase
-          .from("client_profiles")
-          .update({ user_id: userId, updated_at: new Date().toISOString() })
-          .eq("id", byEmail.id)
-      }
-      return byEmail.id as string
-    }
-  }
-  throw new Error("Profile not found")
 }
 
 async function verifyCoachAccess(coachProfileId: string, clientProfileId: string, requiredLevel: string, supabase: any) {
@@ -132,7 +87,7 @@ export async function GET(
     return withCorsJson(req, { ok: true, personas: data || [] })
   } catch (err: any) {
     const msg = err?.message || String(err)
-    const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500
+    const status = errorStatus(msg)
     return withCorsJson(req, { ok: false, error: msg }, status)
   }
 }
@@ -225,7 +180,7 @@ export async function POST(
     return withCorsJson(req, { ok: true, persona: inserted }, 201)
   } catch (err: any) {
     const msg = err?.message || String(err)
-    const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500
+    const status = errorStatus(msg)
     return withCorsJson(req, { ok: false, error: msg }, status)
   }
 }

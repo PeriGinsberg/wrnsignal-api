@@ -23,6 +23,18 @@ import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import { resolveDelegation } from "@/lib/collab/delegation"
+import { getAuthedUser, getProfileRowOrNull } from "@/lib/collab/identity"
+import { errorStatus } from "@/app/api/_lib/routeError"
+
+// Who is calling: the shared lookup (lib/collab/identity.ts). The coach's
+// profile id, or null when the caller has no profile or is not a coach. A
+// login whose email is on another live login's profile is refused
+// (ForbiddenError, 403), never matched.
+async function getCoachProfileId(userId: string, email: string | null): Promise<string | null> {
+  const p = await getProfileRowOrNull<{ is_coach: boolean }>(userId, email, "id, is_coach")
+  return p?.is_coach ? p.id : null
+}
+
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -34,44 +46,6 @@ function getSupabaseAdmin() {
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
-}
-
-function getBearerToken(req: Request) {
-  const h = req.headers.get("authorization") || ""
-  const m = h.match(/^Bearer\s+(.+)$/i)
-  const token = m?.[1]?.trim()
-  if (!token) throw new Error("Unauthorized: missing bearer token")
-  return token
-}
-
-async function getAuthedUser(req: Request) {
-  const token = getBearerToken(req)
-  const supabase = getSupabaseAdmin()
-  const { data, error } = await supabase.auth.getUser(token)
-  if (error || !data?.user?.id) throw new Error("Unauthorized: invalid token")
-  return {
-    userId: data.user.id,
-    email: (data.user.email ?? "").trim().toLowerCase() || null,
-  }
-}
-
-async function getCoachProfileId(userId: string, email: string | null): Promise<string | null> {
-  const supabase = getSupabaseAdmin()
-  const { data } = await supabase
-    .from("client_profiles")
-    .select("id, is_coach")
-    .eq("user_id", userId)
-    .maybeSingle()
-  if (data) return data.is_coach ? (data.id as string) : null
-  if (email) {
-    const { data: byEmail } = await supabase
-      .from("client_profiles")
-      .select("id, is_coach")
-      .eq("email", email)
-      .maybeSingle()
-    if (byEmail) return byEmail.is_coach ? (byEmail.id as string) : null
-  }
-  return null
 }
 
 const MS_DAY = 24 * 60 * 60 * 1000
@@ -197,7 +171,7 @@ export async function GET(
     })
   } catch (err: any) {
     const msg = err?.message || String(err)
-    const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500
+    const status = errorStatus(msg)
     return withCorsJson(req, { ok: false, error: msg }, status)
   }
 }

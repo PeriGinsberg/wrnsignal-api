@@ -42,41 +42,9 @@ export function getBearerToken(req: Request): string {
   return token
 }
 
-export async function getAuthedUser(req: Request): Promise<{ userId: string; email: string | null }> {
-  const token = getBearerToken(req)
-  const supabase = getSupabaseAdmin()
-  const { data, error } = await supabase.auth.getUser(token)
-  if (error || !data?.user?.id) throw new Error("Unauthorized: invalid token")
-  return {
-    userId: data.user.id,
-    email: (data.user.email ?? "").trim().toLowerCase() || null,
-  }
-}
-
-/**
- * user_id first, then email as the fallback — the order matters. An account
- * created by a coach invite can have a client_profiles row keyed by email
- * before the auth user exists, so the email branch is what lets a freshly
- * accepted invite resolve at all.
- */
-export async function getProfileId(userId: string, email: string | null): Promise<string> {
-  const supabase = getSupabaseAdmin()
-  const { data, error } = await supabase
-    .from("client_profiles")
-    .select("id, user_id")
-    .eq("user_id", userId)
-    .maybeSingle()
-  if (error) throw new Error(`Profile lookup failed: ${error.message}`)
-  if (data) return data.id as string
-
-  if (email) {
-    const { data: byEmail, error: emailErr } = await supabase
-      .from("client_profiles")
-      .select("id, user_id")
-      .eq("email", email)
-      .maybeSingle()
-    if (emailErr) throw new Error(`Profile email lookup failed: ${emailErr.message}`)
-    if (byEmail) return byEmail.id as string
-  }
-  throw new Error("Profile not found")
-}
+// Who is calling: the ONE shared lookup in lib/collab/identity.ts, re-exported
+// so /api/me routes keep importing from here. getProfileId finds the profile
+// by login, then by email, and never hands a caller a profile another live
+// login owns (ForbiddenError, 403). It used to be a private copy that returned
+// any email-matched profile without checking whose it was.
+export { getAuthedUser, getProfileId } from "@/lib/collab/identity"

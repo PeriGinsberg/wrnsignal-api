@@ -3,6 +3,9 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
+import { getAuthedUser, getProfileId } from "@/lib/collab/identity"
+import { errorStatus } from "@/app/api/_lib/routeError"
+
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -12,32 +15,6 @@ function getSupabaseAdmin() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
-}
-
-function getBearerToken(req: Request) {
-  const h = req.headers.get("authorization") || ""
-  const m = h.match(/^Bearer\s+(.+)$/i)
-  return m?.[1]?.trim() || null
-}
-
-async function getAuthedUser(req: Request) {
-  const token = getBearerToken(req)
-  if (!token) throw new Error("Unauthorized: missing bearer token")
-  const supabase = getSupabaseAdmin()
-  const { data, error } = await supabase.auth.getUser(token)
-  if (error || !data?.user?.id) throw new Error("Unauthorized: invalid token")
-  return { userId: data.user.id, email: (data.user.email ?? "").trim().toLowerCase() || null }
-}
-
-async function getProfileId(userId: string, email: string | null) {
-  const supabase = getSupabaseAdmin()
-  const { data } = await supabase.from("client_profiles").select("id").eq("user_id", userId).maybeSingle()
-  if (data) return data.id as string
-  if (email) {
-    const { data: byEmail } = await supabase.from("client_profiles").select("id").eq("email", email).maybeSingle()
-    if (byEmail) return byEmail.id as string
-  }
-  throw new Error("Profile not found")
 }
 
 export async function OPTIONS(req: NextRequest) {
@@ -85,7 +62,7 @@ export async function PATCH(
     return withCorsJson(req, { ok: true, recommendation: updated })
   } catch (err: any) {
     const msg = err?.message || String(err)
-    const status = msg.includes("Unauthorized") ? 401 : msg.includes("Forbidden") ? 403 : 500
+    const status = errorStatus(msg)
     return withCorsJson(req, { ok: false, error: msg }, status)
   }
 }
