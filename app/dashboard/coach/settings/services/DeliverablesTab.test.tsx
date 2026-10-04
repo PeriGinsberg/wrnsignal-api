@@ -17,6 +17,7 @@ const PHASES = [
 const ITEM = {
   id: "m-1", name: "Resume rewrite", description: null, category: null, sort_order: 1, active: true,
   time_estimate_days: null, fee: null, activity_count: 0, phase_id: "ph-know",
+  sow_bullets: "Full resume rebuild\nATS-friendly structure",
 }
 let sent: Array<{ url: string; method: string; body: any }>
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { "Content-Type": "application/json" } })
@@ -69,5 +70,36 @@ describe("Deliverables: phase", () => {
     fireEvent.click(save)
     await waitFor(() => expect(sent.some((c) => c.method === "PATCH")).toBe(true))
     expect(sent.find((c) => c.method === "PATCH")!.body).toMatchObject({ phase_id: null })
+  })
+})
+
+describe("Deliverables: SOW bullets", () => {
+  it("shows how many SOW bullets a deliverable has", async () => {
+    render(<DeliverablesTab />)
+    expect(await screen.findByText("2 SOW bullets")).toBeTruthy()
+  })
+
+  it("a new deliverable is saved with its bullets", async () => {
+    render(<DeliverablesTab />)
+    await screen.findByText("Phase: Know")
+    fireEvent.change(screen.getByPlaceholderText("Name (required)"), { target: { value: "Mock interview" } })
+    fireEvent.change(screen.getByLabelText("SOW bullets"), { target: { value: "Recorded mock interview\nStructured scorecard" } })
+    fireEvent.click(screen.getByRole("button", { name: "+ Add deliverable" }))
+    await waitFor(() => expect(sent.some((c) => c.method === "POST")).toBe(true))
+    expect(sent.find((c) => c.method === "POST")!.body).toMatchObject({ sow_bullets: "Recorded mock interview\nStructured scorecard" })
+  })
+
+  it("editing loads the bullets and saves changes", async () => {
+    render(<DeliverablesTab />)
+    await screen.findByText("Phase: Know")
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }))
+    const box = screen.getAllByLabelText("SOW bullets")[0] as HTMLTextAreaElement
+    expect(box.value).toBe("Full resume rebuild\nATS-friendly structure")
+    fireEvent.change(box, { target: { value: "" } })
+    const save = screen.getByRole("button", { name: "Save" }) as HTMLButtonElement
+    await waitFor(() => expect(save.disabled).toBe(false))
+    fireEvent.click(save)
+    await waitFor(() => expect(sent.some((c) => c.method === "PATCH")).toBe(true))
+    expect(sent.find((c) => c.method === "PATCH")!.body).toMatchObject({ sow_bullets: null })
   })
 })

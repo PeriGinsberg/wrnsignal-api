@@ -20,6 +20,7 @@ import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
 import { resolveDelegation } from "@/lib/collab/delegation"
 import { fillDeliverablePhase, isOwnPhase } from "@/lib/phases/service"
+import { normalizeBullets } from "@/lib/sow/model"
 import { getAuthedUser, getProfileRowOrNull } from "@/lib/collab/identity"
 import { errorStatus } from "@/app/api/_lib/routeError"
 
@@ -44,12 +45,13 @@ type MilestoneRow = {
   time_estimate_days: number | null
   fee_cents: number | null
   phase_id: string | null
+  sow_bullets: string | null
   created_at: string
   updated_at: string
 }
 
 const MILESTONE_SELECT =
-  "id, coach_profile_id, name, description, category, sort_order, active, time_estimate_days, fee_cents, phase_id, created_at, updated_at"
+  "id, coach_profile_id, name, description, category, sort_order, active, time_estimate_days, fee_cents, phase_id, sow_bullets, created_at, updated_at"
 
 // ── Auth helpers (inlined per coach-route convention; copied from
 //    app/api/coach/milestones/route.ts) ──
@@ -70,6 +72,8 @@ function toApiMilestone(r: MilestoneRow) {
     category: r.category,
     // The phase this deliverable belongs to (coach_phases.id), or null.
     phase_id: r.phase_id ?? null,
+    // Client-facing SOW bullets, one per line, or null.
+    sow_bullets: r.sow_bullets ?? null,
     sort_order: r.sort_order,
     active: r.active,
     time_estimate_days: r.time_estimate_days,
@@ -171,6 +175,7 @@ const PATCH_ALLOWED = new Set([
   "time_estimate_days",
   "fee",
   "phase_id",
+  "sow_bullets",
 ])
 
 export async function PATCH(
@@ -207,6 +212,11 @@ export async function PATCH(
       }
       const v = typeof body.description === "string" ? body.description.trim() : ""
       updates.description = v ? v : null
+    }
+    if ("sow_bullets" in body) {
+      const v = normalizeBullets(body.sow_bullets)
+      if ("error" in v) return withCorsJson(req, { ok: false, error: v.error }, 400)
+      updates.sow_bullets = v.value
     }
     if ("category" in body) {
       if (body.category !== null && typeof body.category !== "string") {

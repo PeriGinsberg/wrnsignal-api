@@ -7,6 +7,7 @@
 import { randomUUID } from "crypto"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { logProspectEvent } from "../prospects/history"
+import { SOW_NOTE_MAX, SOW_SUBTITLE_MAX, normalizeText } from "../sow/model"
 import {
   DEFAULT_PHASES,
   PHASE_LABEL_MAX,
@@ -17,7 +18,7 @@ import {
   type SettablePhaseStatus,
 } from "./model"
 
-const PHASE_COLUMNS = "id, phase_key, label, sort_order, active, is_custom"
+const PHASE_COLUMNS = "id, phase_key, label, sort_order, active, is_custom, sow_subtitle, sow_note"
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string; status: number }
 const fail = (error: string, status = 400): { ok: false; error: string; status: number } => ({ ok: false, error, status })
@@ -48,7 +49,8 @@ export async function ensurePhases(db: SupabaseClient, coachId: string): Promise
   return read()
 }
 
-export type PhaseInput = { id?: string; label: string; active: boolean }
+/** SOW text is optional: a field left out of an entry keeps what is stored. */
+export type PhaseInput = { id?: string; label: string; active: boolean; sow?: { sow_subtitle?: string | null; sow_note?: string | null } }
 
 /**
  * Save the coach's phases as listed: order, labels and on/off. An entry
@@ -71,18 +73,29 @@ export async function savePhases(db: SupabaseClient, coachId: string, input: unk
       if (seen.has(r.id)) return fail("A phase is listed twice.")
       seen.add(r.id)
     }
-    rows.push({ id: r.id as string | undefined, label, active: r.active !== false })
+    const sow: NonNullable<PhaseInput["sow"]> = {}
+    if (r.sow_subtitle !== undefined) {
+      const v = normalizeText(r.sow_subtitle, SOW_SUBTITLE_MAX, "A phase's SOW subtitle")
+      if ("error" in v) return fail(v.error)
+      sow.sow_subtitle = v.value
+    }
+    if (r.sow_note !== undefined) {
+      const v = normalizeText(r.sow_note, SOW_NOTE_MAX, "A phase's SOW closing note")
+      if ("error" in v) return fail(v.error)
+      sow.sow_note = v.value
+    }
+    rows.push({ id: r.id as string | undefined, label, active: r.active !== false, sow })
   }
   if (!rows.some((r) => r.active)) return fail("Keep at least one phase active.")
 
   const now = new Date().toISOString()
   for (const [i, r] of rows.entries()) {
     const { error } = r.id
-      ? await db.from("coach_phases").update({ label: r.label, active: r.active, sort_order: i + 1, updated_at: now })
+      ? await db.from("coach_phases").update({ label: r.label, active: r.active, sort_order: i + 1, updated_at: now, ...r.sow })
           .eq("id", r.id).eq("coach_profile_id", coachId)
       : await db.from("coach_phases").insert({
           coach_profile_id: coachId, phase_key: `custom_${randomUUID().slice(0, 8)}`, label: r.label,
-          active: r.active, sort_order: i + 1, is_custom: true,
+          active: r.active, sort_order: i + 1, is_custom: true, ...r.sow,
         })
     if (error) return fail(`Failed to save phases: ${error.message}`, 500)
   }

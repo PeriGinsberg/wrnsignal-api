@@ -66,6 +66,10 @@ export type Phase = {
   sort_order: number
   active: boolean
   is_custom: boolean
+  /** The SOW stage heading's subtitle, e.g. "Your SIGNAL DNA and Career Paths". */
+  sow_subtitle: string | null
+  /** Shown under the phase's stage on a client's SOW. */
+  sow_note: string | null
 }
 
 /** One phase as a client's stepper shows it. */

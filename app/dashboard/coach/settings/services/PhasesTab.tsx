@@ -4,6 +4,8 @@
 // (settings/prospects/MyPipelineSection.tsx): the coach's phases in order,
 // which they can rename, reorder, switch on or off, and add to. Phases are
 // never deleted, so History keeps their names; switch one off instead.
+// Each phase also carries its SOW text: a subtitle for the stage heading and an
+// optional closing note shown under that stage.
 //
 // GET/PUT /api/coach/phases. The rules are in lib/phases/service.ts.
 
@@ -12,6 +14,7 @@ import { T, input, btnPrimary, btnSecondary } from "../../../../../lib/dashboard
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
 import { SavingSpinner } from "../../SavingSpinner"
 import { PHASE_LABEL_MAX, type Phase } from "@/lib/phases/model"
+import { SOW_NOTE_MAX, SOW_SUBTITLE_MAX } from "@/lib/sow/model"
 
 async function authFetch(url: string, opts: RequestInit = {}): Promise<Response> {
   const { data: { session } } = await getSupabaseBrowser().auth.getSession()
@@ -22,10 +25,13 @@ async function authFetch(url: string, opts: RequestInit = {}): Promise<Response>
   })
 }
 
-type Row = { id?: string; label: string; active: boolean; is_custom: boolean }
+type Row = { id?: string; label: string; active: boolean; is_custom: boolean; sow_subtitle: string; sow_note: string }
 
-const toRows = (list: Phase[]): Row[] => list.map((p) => ({ id: p.id, label: p.label, active: p.active, is_custom: p.is_custom }))
-const snapshot = (rows: Row[]) => JSON.stringify(rows.map((r) => [r.id ?? `new:${r.label}`, r.label, r.active]))
+const toRows = (list: Phase[]): Row[] => list.map((p) => ({
+  id: p.id, label: p.label, active: p.active, is_custom: p.is_custom,
+  sow_subtitle: p.sow_subtitle ?? "", sow_note: p.sow_note ?? "",
+}))
+const snapshot = (rows: Row[]) => JSON.stringify(rows.map((r) => [r.id ?? `new:${r.label}`, r.label, r.active, r.sow_subtitle, r.sow_note]))
 
 export function PhasesTab() {
   const [rows, setRows] = useState<Row[]>([])
@@ -70,7 +76,7 @@ export function PhasesTab() {
   function add() {
     const label = newLabel.trim()
     if (!label) return
-    setRows((prev) => [...prev, { label, active: true, is_custom: true }])
+    setRows((prev) => [...prev, { label, active: true, is_custom: true, sow_subtitle: "", sow_note: "" }])
     setNewLabel("")
     clear()
   }
@@ -82,7 +88,10 @@ export function PhasesTab() {
     try {
       const res = await authFetch("/api/coach/phases", {
         method: "PUT",
-        body: JSON.stringify({ phases: rows.map((r) => ({ ...(r.id ? { id: r.id } : {}), label: r.label.trim(), active: r.active })) }),
+        body: JSON.stringify({ phases: rows.map((r) => ({
+          ...(r.id ? { id: r.id } : {}), label: r.label.trim(), active: r.active,
+          sow_subtitle: r.sow_subtitle.trim() || null, sow_note: r.sow_note.trim() || null,
+        })) }),
       })
       const j = await res.json().catch(() => ({}))
       if (!res.ok || !j?.ok) { setError(j?.error || `Save failed (${res.status})`); return }
@@ -108,9 +117,10 @@ export function PhasesTab() {
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {rows.map((r, i) => (
           <div key={r.id ?? `new-${i}`} data-testid="phase-row" style={{
-            display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: 12,
+            padding: "10px 12px", borderRadius: 12,
             border: `1px solid ${T.BORDER_SOFT}`, background: T.GLASS, opacity: r.active ? 1 : 0.55,
           }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 2, width: 22 }}>
               <Arrow label={`Move ${r.label} up`} disabled={i === 0} onClick={() => move(i, -1)}>▲</Arrow>
               <Arrow label={`Move ${r.label} down`} disabled={i === rows.length - 1} onClick={() => move(i, 1)}>▼</Arrow>
@@ -137,6 +147,25 @@ export function PhasesTab() {
             >
               {r.active ? "Active" : "Off"}
             </button>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8, paddingLeft: 52 }}>
+            <input
+              aria-label={`${r.label} SOW subtitle`}
+              placeholder="SOW subtitle (optional), shown in the stage heading"
+              value={r.sow_subtitle}
+              maxLength={SOW_SUBTITLE_MAX}
+              onChange={(e) => update(i, { sow_subtitle: e.target.value })}
+              style={{ ...input, height: 32 }}
+            />
+            <textarea
+              aria-label={`${r.label} SOW closing note`}
+              placeholder="SOW closing note (optional), shown under this stage"
+              value={r.sow_note}
+              maxLength={SOW_NOTE_MAX}
+              onChange={(e) => update(i, { sow_note: e.target.value })}
+              style={{ ...input, minHeight: 52, resize: "vertical", fontFamily: "inherit", lineHeight: 1.4 }}
+            />
+          </div>
           </div>
         ))}
       </div>

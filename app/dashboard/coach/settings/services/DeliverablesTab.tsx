@@ -25,6 +25,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { T, input, btnPrimary, btnSecondary } from "../../../../../lib/dashboard-theme"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
+import { SOW_BULLETS_MAX, bulletList } from "@/lib/sow/model"
 
 const NAME_MAX = 120
 
@@ -42,6 +43,8 @@ type Milestone = {
   activity_count?: number // from the list endpoint; count only
   // The phase this deliverable belongs to (Settings > Services > Phases), or null.
   phase_id: string | null
+  // Client-facing SOW bullets, one per line, or null.
+  sow_bullets?: string | null
 }
 
 type PhaseOption = { id: string; label: string; active: boolean }
@@ -128,6 +131,7 @@ async function readMilestone(id: string): Promise<Milestone | null> {
         fee: m.fee ?? null,
         activity_count: Array.isArray(m.activities) ? m.activities.length : 0,
         phase_id: m.phase_id ?? null,
+        sow_bullets: m.sow_bullets ?? null,
       }
     }
   } catch {
@@ -211,6 +215,7 @@ export function DeliverablesTab() {
   // Create form. Time/fee held as strings (raw input); parsed at submit.
   const [cName, setCName] = useState("")
   const [cDesc, setCDesc] = useState("")
+  const [cSow, setCSow] = useState("")
   const [cCat, setCCat] = useState("")
   const [cTime, setCTime] = useState("")
   const [cFee, setCFee] = useState("")
@@ -224,6 +229,7 @@ export function DeliverablesTab() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [eName, setEName] = useState("")
   const [eDesc, setEDesc] = useState("")
+  const [eSow, setESow] = useState("")
   const [eCat, setECat] = useState("")
   const [eTime, setETime] = useState("")
   const [eFee, setEFee] = useState("")
@@ -301,6 +307,7 @@ export function DeliverablesTab() {
         body: JSON.stringify({
           name,
           description: cDesc.trim() || undefined,
+          sow_bullets: cSow.trim() || null,
           category: cCat.trim() || undefined,
           time_estimate_days: timeParsed.value,
           fee: feeParsed.value,
@@ -319,7 +326,7 @@ export function DeliverablesTab() {
       const actErr = await syncActivities(newId, cActivities, [])
       // Reset the create form regardless: re-submitting would duplicate the
       // already-created deliverable.
-      setCName(""); setCDesc(""); setCCat(""); setCTime(""); setCFee(""); setCActivities([]); setCPhase("")
+      setCName(""); setCDesc(""); setCSow(""); setCCat(""); setCTime(""); setCFee(""); setCActivities([]); setCPhase("")
       if (actErr) {
         setActionError(actErr)
         await resync()
@@ -342,6 +349,7 @@ export function DeliverablesTab() {
     setEditingId(m.id)
     setEName(m.name)
     setEDesc(m.description ?? "")
+    setESow(m.sow_bullets ?? "")
     setECat(m.category ?? "")
     setETime(m.time_estimate_days != null ? String(m.time_estimate_days) : "")
     setEFee(m.fee != null ? String(m.fee) : "")
@@ -375,7 +383,7 @@ export function DeliverablesTab() {
   }
   function cancelEdit() {
     setEditingId(null)
-    setEName(""); setEDesc(""); setECat(""); setETime(""); setEFee(""); setEPhase("")
+    setEName(""); setEDesc(""); setESow(""); setECat(""); setETime(""); setEFee(""); setEPhase("")
     setEActivities([]); setEOrigActivities([]); setEActivitiesLoading(false)
   }
 
@@ -399,6 +407,7 @@ export function DeliverablesTab() {
         body: JSON.stringify({
           name,
           description: eDesc.trim() ? eDesc.trim() : null,
+          sow_bullets: eSow.trim() ? eSow : null,
           category: eCat.trim() ? eCat.trim() : null,
           time_estimate_days: timeParsed.value,
           fee: feeParsed.value,
@@ -534,6 +543,7 @@ export function DeliverablesTab() {
               >
                 <DeliverableForm
                   name={eName} description={eDesc} category={eCat}
+                  sowBullets={eSow} onSowBullets={setESow}
                   phase={ePhase} phases={phases} onPhase={setEPhase}
                   timeEstimate={eTime} fee={eFee}
                   activities={eActivities} activitiesLoading={eActivitiesLoading}
@@ -571,6 +581,7 @@ export function DeliverablesTab() {
         </div>
         <DeliverableForm
           name={cName} description={cDesc} category={cCat}
+          sowBullets={cSow} onSowBullets={setCSow}
           phase={cPhase} phases={phases} onPhase={setCPhase}
           timeEstimate={cTime} fee={cFee}
           activities={cActivities} activitiesLoading={false}
@@ -621,6 +632,11 @@ function Row({
           {m.category && (
             <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.INK_LINK, border: `1px solid ${T.WRN_BLUE}`, borderRadius: 6, padding: "1px 5px" }}>
               {m.category}
+            </span>
+          )}
+          {bulletList(m.sow_bullets).length > 0 && (
+            <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: T.MUTED, border: `1px solid ${T.BORDER_SOFT}`, borderRadius: 6, padding: "1px 6px" }}>
+              {bulletList(m.sow_bullets).length} SOW {bulletList(m.sow_bullets).length === 1 ? "bullet" : "bullets"}
             </span>
           )}
           {activityCount > 0 && (
@@ -680,6 +696,7 @@ function Row({
 // ── Shared create/edit form (name/desc/category + time/fee + activities) ──
 function DeliverableForm({
   name, description, category, phase, phases, onPhase, timeEstimate, fee,
+  sowBullets, onSowBullets,
   activities, activitiesLoading,
   onName, onDescription, onCategory, onTimeEstimate, onFee, onActivitiesChange,
   onInvalid, onSubmit, submitLabel, busy, onCancel,
@@ -687,6 +704,8 @@ function DeliverableForm({
   name: string
   description: string
   category: string
+  sowBullets: string
+  onSowBullets: (v: string) => void
   phase: string
   phases: PhaseOption[]
   onPhase: (v: string) => void
@@ -774,6 +793,17 @@ function DeliverableForm({
         onChange={(e) => onDescription(e.target.value)}
         onKeyDown={onKeyDown}
       />
+      <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <span style={fieldLabel}>SOW bullets (one per line, shown to the client on their SOW)</span>
+        <textarea
+          style={{ ...input, minHeight: 72, resize: "vertical", fontFamily: "inherit", lineHeight: 1.4 }}
+          aria-label="SOW bullets"
+          placeholder={"Live 1-on-1 resume workshop\nATS-friendly structure"}
+          value={sowBullets}
+          maxLength={SOW_BULLETS_MAX}
+          onChange={(e) => onSowBullets(e.target.value)}
+        />
+      </label>
       <input
         style={input}
         placeholder="Category (optional)"

@@ -61,15 +61,27 @@ describe("Phases settings", () => {
     expect(names()).toEqual(["Build", "Discover", "Prove", "Search", "Land", "Grow"])
     fireEvent.click(screen.getByRole("button", { name: "Save phases" }))
     await waitFor(() => expect(puts).toHaveLength(1))
+    const noSow = { sow_subtitle: null, sow_note: null }
     expect(puts[0].phases).toEqual([
-      { id: "ph-1", label: "Build", active: true },
-      { id: "ph-0", label: "Discover", active: true },
-      { id: "ph-2", label: "Prove", active: true },
-      { id: "ph-3", label: "Search", active: true },
-      { id: "ph-4", label: "Land", active: false },
-      { label: "Grow", active: true },
+      { id: "ph-1", label: "Build", active: true, ...noSow },
+      { id: "ph-0", label: "Discover", active: true, ...noSow },
+      { id: "ph-2", label: "Prove", active: true, ...noSow },
+      { id: "ph-3", label: "Search", active: true, ...noSow },
+      { id: "ph-4", label: "Land", active: false, ...noSow },
+      { label: "Grow", active: true, ...noSow },
     ])
     expect(await screen.findByText("Phases saved.")).toBeTruthy()
+  })
+
+  it("saves each phase's SOW subtitle and closing note", async () => {
+    render(<PhasesTab />)
+    await screen.findByDisplayValue("Know")
+    fireEvent.change(screen.getByLabelText("Know SOW subtitle"), { target: { value: "Your SIGNAL DNA and Career Paths" } })
+    fireEvent.change(screen.getByLabelText("Land SOW closing note"), { target: { value: "Up to 8 hours of live interview support." } })
+    fireEvent.click(screen.getByRole("button", { name: "Save phases" }))
+    await waitFor(() => expect(puts).toHaveLength(1))
+    expect(puts[0].phases[0]).toEqual({ id: "ph-0", label: "Know", active: true, sow_subtitle: "Your SIGNAL DNA and Career Paths", sow_note: null })
+    expect(puts[0].phases[4]).toMatchObject({ label: "Land", sow_note: "Up to 8 hours of live interview support." })
   })
 
   it("has no delete: phases are switched off instead", async () => {
