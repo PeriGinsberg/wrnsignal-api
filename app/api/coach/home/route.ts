@@ -34,6 +34,14 @@ import { resolveDelegation } from "@/lib/collab/delegation"
 import { getAuthedUser, getProfileRowOrNull } from "@/lib/collab/identity"
 import { errorStatus } from "@/app/api/_lib/routeError"
 
+// The greeting's first name. Profiles store names as typed, so the first word
+// alone gave "Coach:" for "Coach: Peri Ginsberg" and "Dupuy," for "Dupuy, Alex".
+function greetingName(name: string | null): string {
+  const cleaned = (name || "").replace(/^\s*coach\s*:\s*/i, "").trim()
+  const given = cleaned.includes(",") ? cleaned.slice(cleaned.indexOf(",") + 1) : cleaned
+  return given.trim().split(/\s+/)[0] || "Coach"
+}
+
 // Who is calling: the shared lookup (lib/collab/identity.ts). The caller's
 // profile, or null when they have none. A login whose email is on another
 // live login's profile is refused (ForbiddenError, 403), never matched.
@@ -825,7 +833,7 @@ export async function GET(req: NextRequest) {
     // Strip internals (_user_id, _appIds) before response.
     const cleanClients = filteredCards.map(({ _user_id, _appIds, ...rest }) => rest)
 
-    const firstName = (coach.name || "").split(/\s+/)[0] || "Coach"
+    const firstName = greetingName(coach.name)
 
     mark("total")
     // One line, one request. Grep it out of `vercel logs` with [coach-home].

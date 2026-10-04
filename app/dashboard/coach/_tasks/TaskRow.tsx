@@ -20,7 +20,9 @@ export const TASK_GRID_COLUMNS = "28px minmax(0, 1fr) 150px 130px 140px 96px 40p
 // work, so an "Open" pill on every row states a constant, and it was costing
 // the title the width it needed: at dashboard column width the titles were
 // rendering as "le...", "ge...", "Fi...".
-export const TASK_GRID_COLUMNS_CONDENSED = "24px minmax(0, 1fr) 104px 80px"
+// Action is its own column so Go sits on its task's row; as a fifth cell in a
+// four-column grid it wrapped onto a line of its own.
+export const TASK_GRID_COLUMNS_CONDENSED = "24px minmax(0, 1fr) 160px 110px 76px"
 
 /** Rendered once per page. Owns the grid and the stack-below-tablet behaviour. */
 export function TaskRowStyles() {
@@ -45,6 +47,9 @@ export function TaskRowStyles() {
       .tsk-grid--condensed .tsk-row, .tsk-row.tsk-grid--condensed { min-height: ${SPACE.rowCondensed}px; }
       .tsk-row + .tsk-row { margin-top: 8px; }
       .tsk-cell-label { display: none; }
+      /* Condensed rows run full page width on Coach Home, so the title and its
+         detail line wrap rather than truncate. Below tablet they truncate. */
+      .tsk-grid--condensed .tsk-line { white-space: normal !important; overflow-wrap: anywhere; }
 
       /* Below tablet the grid becomes a card: each cell on its own line with
          the column header repeated as a label, because a bare initials avatar
@@ -71,13 +76,14 @@ export function TaskRowStyles() {
           min-width: 74px;
         }
         .tsk-actions { justify-content: flex-start; }
+        .tsk-grid--condensed .tsk-line { white-space: nowrap !important; }
       }
     `}</style>
   )
 }
 
 const HEADERS = ["", "Task", "Client", "Assignee", "Due", "Status", "Source", ""]
-const HEADERS_CONDENSED = ["", "Task", "Client", "Due"]
+const HEADERS_CONDENSED = ["", "Task", "Client", "Due", "Action"]
 
 export function TaskRowHeader({ condensed = false }: { condensed?: boolean }) {
   const labels = condensed ? HEADERS_CONDENSED : HEADERS
@@ -431,7 +437,7 @@ export function TaskRow(props: TaskRowProps) {
       )}
 
       <div className="tsk-cell" style={{ minWidth: 0, display: "block" }}>
-        <div style={{
+        <div className="tsk-line" style={{
           fontSize: TYPE.body,
           color: done ? T.MUTED : T.TEXT,
           textDecoration: done ? "line-through" : "none",
@@ -440,7 +446,7 @@ export function TaskRow(props: TaskRowProps) {
           {task.title}
         </div>
         {snippet && (
-          <div style={{
+          <div className="tsk-line" style={{
             fontSize: TYPE.secondary, color: T.MUTED, marginTop: 3,
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>
@@ -455,9 +461,7 @@ export function TaskRow(props: TaskRowProps) {
       <div className="tsk-cell" style={{ minWidth: 0, display: "flex", alignItems: "center", gap: 6 }}>
         <span className="tsk-cell-label">Client</span>
         <Person
-          name={condensed
-            ? (whoName ? whoName.split(/\s+/)[0] : null)
-            : whoName}
+          name={whoName}
           fullName={whoName}
           label="No client"
           href={task.client_profile_id ? `/dashboard/coach/clients/${task.client_profile_id}` : task.record?.href ?? null}
@@ -496,7 +500,12 @@ export function TaskRow(props: TaskRowProps) {
           does this mean" costs the most, because there is no room for the
           description that used to carry the hint. Go only; edit and delete
           stay on the full list. */}
-      {condensed && <GoButton task={task} />}
+      {condensed && (
+        <div className="tsk-cell tsk-actions" style={{ display: "flex", justifyContent: "flex-end" }}>
+          {task.link && <span className="tsk-cell-label">Action</span>}
+          <GoButton task={task} />
+        </div>
+      )}
 
       {!condensed && (
         <div className="tsk-cell tsk-actions" style={{ display: "flex", justifyContent: "flex-end", gap: 2, alignItems: "center" }}>

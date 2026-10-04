@@ -921,13 +921,16 @@ export default function CoachHomePage() {
     <div>
       <HeaderStrip firstName={data.coach.firstName} />
 
-      {/* The plan's three blocks, at the top (2026-10-06). They replace the
-          task card and engagement signals. My active tasks is every open
-          To-Do item assigned to me, plan tasks included, by due date. */}
+      {/* The plan's three blocks, at the top (2026-10-06). Clients by phase
+          and Follow-ups due share the first row; My active tasks runs full
+          width beneath them as a table, so titles and Go fit on one row. The
+          auto-fit grid stacks the pair once two 320px columns no longer fit.
+          My active tasks is every open To-Do item assigned to me, plan tasks
+          included, by due date. */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))",
           gap: 20,
           alignItems: "start",
           marginBottom: 20,
@@ -935,12 +938,11 @@ export default function CoachHomePage() {
       >
         <Section
           icon={<IconClipboardCheck />}
-          title="My active tasks"
-          titleHref="/dashboard/coach/tasks"
-          accentColor={T.SECTION_ACTION_ITEMS}
+          title="Clients by phase"
+          accentColor={T.SECTION_CLIENTS}
           noBottomMargin
         >
-          <TaskCard order="due" />
+          <ClientsByPhaseBlock buckets={planBlocks.data?.clients_by_phase ?? null} error={planBlocks.error} />
         </Section>
         <Section
           icon={<IconBell />}
@@ -951,13 +953,16 @@ export default function CoachHomePage() {
         >
           <FollowUpsBlock items={planBlocks.data?.follow_ups ?? null} error={planBlocks.error} />
         </Section>
+      </div>
+      <div style={{ marginBottom: 20 }}>
         <Section
           icon={<IconClipboardCheck />}
-          title="Clients by phase"
-          accentColor={T.SECTION_CLIENTS}
+          title="My active tasks"
+          titleHref="/dashboard/coach/tasks"
+          accentColor={T.SECTION_ACTION_ITEMS}
           noBottomMargin
         >
-          <ClientsByPhaseBlock buckets={planBlocks.data?.clients_by_phase ?? null} error={planBlocks.error} />
+          <TaskCard order="due" />
         </Section>
       </div>
 
