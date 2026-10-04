@@ -19,6 +19,15 @@ import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
 import { logCoachClientEvent } from "../../_lib/coachClientEvents"
 import { owningCoachId as owningCoachIdFor, resolveDelegation } from "@/lib/collab/delegation"
 import { parseLeadSource, parseParent, type StoredLeadSource } from "@/lib/prospects/model"
+import { getAuthedUser, getProfileRowOrNull } from "@/lib/collab/identity"
+import { errorStatus } from "@/app/api/_lib/routeError"
+
+// Who is calling: the shared lookup (lib/collab/identity.ts). The caller's
+// profile, or null when they have none. A login whose email is on another
+// live login's profile is refused (ForbiddenError, 403), never matched.
+const getCoachProfile = (userId: string, email: string | null) =>
+  getProfileRowOrNull(userId, email, "id, name, is_coach, coach_org")
+
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -176,53 +185,6 @@ function getSupabaseAdmin() {
   })
 }
 
-function getBearerToken(req: Request) {
-  const h = req.headers.get("authorization") || ""
-  const m = h.match(/^Bearer\s+(.+)$/i)
-  const token = m?.[1]?.trim()
-  if (!token) throw new Error("Unauthorized: missing bearer token")
-  return token
-}
-
-async function getAuthedUser(req: Request) {
-  const token = getBearerToken(req)
-  const supabase = getSupabaseAdmin()
-  const { data, error } = await supabase.auth.getUser(token)
-  if (error || !data?.user?.id) throw new Error("Unauthorized: invalid token")
-  return {
-    userId: data.user.id,
-    email: (data.user.email ?? "").trim().toLowerCase() || null,
-  }
-}
-
-async function getCoachProfile(userId: string, email: string | null) {
-  const supabase = getSupabaseAdmin()
-  const { data } = await supabase
-    .from("client_profiles")
-    .select("id, name, is_coach, coach_org")
-    .eq("user_id", userId)
-    .maybeSingle()
-  if (data) return data
-  if (email) {
-    const { data: byEmail } = await supabase
-      .from("client_profiles")
-      .select("id, name, is_coach, coach_org, user_id")
-      .eq("email", email)
-      .maybeSingle()
-    if (byEmail) {
-      if (byEmail.user_id !== userId) {
-        await supabase
-          .from("client_profiles")
-          .update({ user_id: userId, updated_at: new Date().toISOString() })
-          .eq("id", byEmail.id)
-      }
-      const { user_id: _u, ...rest } = byEmail as any
-      return rest
-    }
-  }
-  return null
-}
-
 // ── Response shape transformers (inlined per file) ──
 
 function computeLastActivityAt(row: CoachClientRow, latestNoteCreatedAt: string | null): string | null {
@@ -372,7 +334,7 @@ export async function GET(req: NextRequest) {
     return withCorsJson(req, { ok: true, prospects })
   } catch (err: any) {
     const msg = err?.message || String(err)
-    const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500
+    const status = errorStatus(msg)
     return withCorsJson(req, { ok: false, error: msg }, status)
   }
 }
@@ -554,7 +516,7 @@ export async function POST(req: NextRequest) {
     }, 201)
   } catch (err: any) {
     const msg = err?.message || String(err)
-    const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500
+    const status = errorStatus(msg)
     return withCorsJson(req, { ok: false, error: msg }, status)
   }
 }

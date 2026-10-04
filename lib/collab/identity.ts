@@ -138,14 +138,15 @@ export async function getProfileId(
  * above, then one read by id. For routes that used to select their own columns
  * inside a private lookup (name, is_coach, coach_org, ...).
  *
- * Throws "Unauthorized..." (401), ForbiddenError (403) or "Profile not found"
- * (404), all of which routeError / errorStatus map.
+ * Throws "Profile not found" (404) or ForbiddenError (403), both of which
+ * routeError / errorStatus map. The *Row forms take an already-authenticated
+ * login; the *Caller forms read it from the request ("Unauthorized..." 401).
  */
-export async function getCallerProfile<T extends Record<string, any> = Record<string, any>>(
-  req: Request,
+export async function getProfileRow<T extends Record<string, any> = Record<string, any>>(
+  userId: string,
+  email: string | null,
   columns: string,
 ): Promise<T & { id: string }> {
-  const { userId, email } = await getAuthedUser(req)
   const profileId = await getProfileId(userId, email)
   const { data, error } = await getSupabaseAdmin()
     .from("client_profiles")
@@ -157,21 +158,38 @@ export async function getCallerProfile<T extends Record<string, any> = Record<st
 }
 
 /**
- * The same, but null when the caller simply has no profile, for the coach
- * helpers that answer that case themselves. A CONFLICT IS NEVER NULL: it
- * still throws ForbiddenError, so a refused caller cannot fall through to a
- * route's "no profile" branch.
+ * The same, but null when the login simply has no profile, for the routes
+ * that answer that case themselves. A CONFLICT IS NEVER NULL: it still throws
+ * ForbiddenError, so a refused caller cannot fall through to a route's
+ * "no profile" branch.
  */
-export async function getCallerProfileOrNull<T extends Record<string, any> = Record<string, any>>(
-  req: Request,
+export async function getProfileRowOrNull<T extends Record<string, any> = Record<string, any>>(
+  userId: string,
+  email: string | null,
   columns: string,
 ): Promise<(T & { id: string }) | null> {
   try {
-    return await getCallerProfile<T>(req, columns)
+    return await getProfileRow<T>(userId, email, columns)
   } catch (e: any) {
     if (/^Profile not found$/.test(e?.message ?? "")) return null
     throw e
   }
+}
+
+export async function getCallerProfile<T extends Record<string, any> = Record<string, any>>(
+  req: Request,
+  columns: string,
+): Promise<T & { id: string }> {
+  const { userId, email } = await getAuthedUser(req)
+  return getProfileRow<T>(userId, email, columns)
+}
+
+export async function getCallerProfileOrNull<T extends Record<string, any> = Record<string, any>>(
+  req: Request,
+  columns: string,
+): Promise<(T & { id: string }) | null> {
+  const { userId, email } = await getAuthedUser(req)
+  return getProfileRowOrNull<T>(userId, email, columns)
 }
 
 // Compose the full caller-resolution chain. Sequence and queries mirror the
