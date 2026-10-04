@@ -43,6 +43,7 @@
 import { type SupabaseClient } from "@supabase/supabase-js"
 import { resolveCaller } from "./identity"
 import { resolveDelegation } from "./delegation"
+import { ForbiddenError } from "./errors"
 
 declare const SUBJECT_BRAND: unique symbol
 
@@ -81,14 +82,9 @@ export type Scope = {
   linkId?: string
 }
 
-/** Thrown on deny. Carries the status the routes already return. */
-export class ForbiddenError extends Error {
-  readonly status = 403
-  constructor(message = "Forbidden") {
-    super(message)
-    this.name = "ForbiddenError"
-  }
-}
+// Lives in ./errors so identity.ts can throw it too; re-exported here so every
+// existing import and instanceof check is unchanged.
+export { ForbiddenError }
 
 // read -> view, write -> full. This is not a new policy: every shipped
 // assertBoardAccess call site asked for "view" on a read and "full" on a write,

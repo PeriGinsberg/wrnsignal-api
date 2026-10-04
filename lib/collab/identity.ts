@@ -19,6 +19,7 @@
 // alternative. access.ts owns the coach_clients relationship + level check.
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
+import { ForbiddenError } from "./errors"
 
 // Service-role client. Constructed per-call, exactly as the inline copies did
 // (getAuthedUser / getProfileId each built their own; callers still build one
@@ -52,19 +53,38 @@ export async function getAuthedUser(req: Request) {
 }
 
 /**
+ * Is the login that owns a profile gone? Only a definite "no such login"
+ * (404 user_not_found) counts. Anything else, a timeout, an outage, a
+ * permissions error, answers false, so a hiccup can never hand a profile over.
+ */
+async function ownerLoginGone(supabase: SupabaseClient, ownerUserId: string): Promise<boolean> {
+  const { data, error } = await supabase.auth.admin.getUserById(ownerUserId)
+  if (data?.user) return false
+  const e = error as { status?: number; code?: string } | null
+  return !!e && (e.status === 404 || e.code === "user_not_found")
+}
+
+/**
  * The caller's profile: by login, then by email.
  *
- * THE EMAIL FALL-THROUGH ONLY EVER CLAIMS AN UNOWNED PROFILE. A profile whose
- * email matches but which another login already owns is refused (403), never
- * re-pointed at the caller. Re-pointing it handed one person's profile, runs,
- * tracker and board to whoever signed in with an email that profile still
- * carried, for example after the owner's login email was changed by hand and
- * the profile was not. getAuthedProfileText (JobFit) always refused this case;
- * now everything that resolves a caller through here does too.
+ * THE EMAIL FALL-THROUGH NEVER TAKES A PROFILE FROM A LIVE LOGIN. A profile
+ * whose email matches but which another login owns is refused (ForbiddenError,
+ * 403) and nothing is written. Re-pointing it handed one person's profile,
+ * runs, tracker and board to whoever signed in with an email that profile
+ * still carried, for example after the owner's login email was changed by hand
+ * and the profile was not.
  *
- * An unowned profile (user_id null) is still claimed by the first login with
- * its email, and the claim is conditional on it still being unowned, so two
- * logins racing for it cannot both win.
+ * Two cases may claim it, each conditional on the row still being exactly as
+ * read, so two logins racing for one profile cannot both win:
+ *   - UNOWNED (user_id null): a coach-created client, or an imported profile,
+ *     signing in for the first time.
+ *   - OWNED BY A LOGIN THAT NO LONGER EXISTS: someone whose login was deleted
+ *     and who signed up again with the same email. client_profiles.user_id has
+ *     no foreign key to auth.users, so deleting a login leaves the old id in
+ *     place. Only a definite "user not found" counts (see ownerLoginGone).
+ *
+ * This is the ONE caller lookup. Route files must not carry their own copy;
+ * tests/identity/no-private-caller-lookups.test.ts enforces it.
  *
  * supabase: injectable for the tests; defaults to the service-role client.
  */
@@ -92,26 +112,66 @@ export async function getProfileId(
     if (byEmail) {
       // byEmail.user_id cannot equal userId here: the by-login lookup above
       // would have returned it. So any owner at all is someone else.
-      if (byEmail.user_id) {
-        // "Forbidden" in the message is what routeError's errorStatus maps to
-        // 403 (ForbiddenError lives in scope.ts, which imports this file).
-        throw new Error("Forbidden: profile email conflict: a profile with this email belongs to a different login")
+      const owner = (byEmail.user_id as string | null) ?? null
+      if (owner && !(await ownerLoginGone(supabase, owner))) {
+        throw new ForbiddenError("Forbidden: profile email conflict: a profile with this email belongs to a different login")
       }
-      const { data: claimed, error: attachErr } = await supabase
+      const claim = supabase
         .from("client_profiles")
         .update({ user_id: userId, updated_at: new Date().toISOString() })
         .eq("id", byEmail.id)
-        .is("user_id", null)
+      const { data: claimed, error: attachErr } = await (owner ? claim.eq("user_id", owner) : claim.is("user_id", null))
         .select("id")
       if (attachErr) throw new Error(`Profile attach failed: ${attachErr.message}`)
       if (!claimed?.length) {
-        throw new Error("Forbidden: profile email conflict: this profile was claimed by a different login")
+        throw new ForbiddenError("Forbidden: profile email conflict: this profile was claimed by a different login")
       }
       return byEmail.id as string
     }
   }
 
   throw new Error("Profile not found")
+}
+
+/**
+ * The caller's profile row, with the columns a route needs: the safe lookup
+ * above, then one read by id. For routes that used to select their own columns
+ * inside a private lookup (name, is_coach, coach_org, ...).
+ *
+ * Throws "Unauthorized..." (401), ForbiddenError (403) or "Profile not found"
+ * (404), all of which routeError / errorStatus map.
+ */
+export async function getCallerProfile<T extends Record<string, any> = Record<string, any>>(
+  req: Request,
+  columns: string,
+): Promise<T & { id: string }> {
+  const { userId, email } = await getAuthedUser(req)
+  const profileId = await getProfileId(userId, email)
+  const { data, error } = await getSupabaseAdmin()
+    .from("client_profiles")
+    .select(columns)
+    .eq("id", profileId)
+    .single()
+  if (error || !data) throw new Error(`Profile lookup failed: ${error?.message ?? "no row"}`)
+  return { ...(data as unknown as T), id: profileId }
+}
+
+/**
+ * The same, but null when the caller simply has no profile, for the coach
+ * helpers that answer that case themselves. A CONFLICT IS NEVER NULL: it
+ * still throws ForbiddenError, so a refused caller cannot fall through to a
+ * route's "no profile" branch.
+ */
+export async function getCallerProfileOrNull<T extends Record<string, any> = Record<string, any>>(
+  req: Request,
+  columns: string,
+): Promise<(T & { id: string }) | null> {
+  try {
+    return await getCallerProfile<T>(req, columns)
+  } catch (e: any) {
+    if (/^Profile not found$/.test(e?.message ?? "")) return null
+    throw e
+  }
 }
 
 // Compose the full caller-resolution chain. Sequence and queries mirror the

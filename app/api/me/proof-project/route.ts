@@ -28,6 +28,7 @@
 
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { errorStatus } from "../../_lib/routeError"
 import { getActiveCoachRelationship } from "../../_lib/coachedClient"
 import { getAuthedUser, getProfileId, getSupabaseAdmin } from "../../_lib/meAuth"
 import {
@@ -187,7 +188,7 @@ export async function GET(req: NextRequest) {
     })
   } catch (err: any) {
     const msg = err?.message || String(err)
-    const status = msg.toLowerCase().includes("unauthorized") ? 401 : 500
-    return withCorsJson(req, { ok: false, error: msg }, status)
+    // errorStatus: 401 unauthorized, 403 a refused caller, 404 no profile.
+    return withCorsJson(req, { ok: false, error: msg }, errorStatus(err))
   }
 }
