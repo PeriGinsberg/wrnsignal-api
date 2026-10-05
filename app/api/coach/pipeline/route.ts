@@ -42,10 +42,13 @@ const DEFAULT_STAGES: { stage_key: string; label: string; sort_order: number; is
   { stage_key: "sow_drafted",       label: "SOW Drafted",       sort_order: 5,  is_terminal: false },
   { stage_key: "sow_sent",          label: "SOW Sent",          sort_order: 6,  is_terminal: false },
   { stage_key: "sow_executed",      label: "SOW Executed",      sort_order: 7,  is_terminal: false },
-  { stage_key: "invoice_drafted",   label: "Invoice Drafted",   sort_order: 8,  is_terminal: false },
-  { stage_key: "invoice_sent",      label: "Invoice Sent",      sort_order: 9,  is_terminal: false },
-  { stage_key: "invoice_paid",      label: "Invoice Paid",      sort_order: 10, is_terminal: false },
-  { stage_key: TERMINAL_STAGE_KEY,  label: "Convert to Client", sort_order: 11, is_terminal: true },
+  // Let's Go lands a prospect here (lib/sow/accept.ts). 20261012_lets_go.sql
+  // added it to every existing pipeline in the same place.
+  { stage_key: "onboarding",        label: "Onboarding",        sort_order: 8,  is_terminal: false },
+  { stage_key: "invoice_drafted",   label: "Invoice Drafted",   sort_order: 9,  is_terminal: false },
+  { stage_key: "invoice_sent",      label: "Invoice Sent",      sort_order: 10, is_terminal: false },
+  { stage_key: "invoice_paid",      label: "Invoice Paid",      sort_order: 11, is_terminal: false },
+  { stage_key: TERMINAL_STAGE_KEY,  label: "Convert to Client", sort_order: 12, is_terminal: true },
 ]
 
 const LABEL_MAX = 60

@@ -93,6 +93,14 @@ export const COACH_CLIENT_EVENT_TYPES = [
   // SOW went out, so this one's link stopped working (context: name, replaced_by).
   "sow_sent",
   "sow_withdrawn",
+  // Let's Go. Context: the typed name, the package, and changed_after_send
+  // when the package was edited after the SOW went out without a re-send.
+  "sow_accepted",
+  // The client's Google Drive workspace (lib/sow/workspace.ts): made at
+  // Let's Go (context: folder name, url), shared with the client when the
+  // welcome task is released (context: email, url).
+  "workspace_created",
+  "workspace_shared",
 ] as const
 
 export type CoachClientEventType = (typeof COACH_CLIENT_EVENT_TYPES)[number]

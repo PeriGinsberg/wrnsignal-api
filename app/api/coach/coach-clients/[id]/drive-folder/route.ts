@@ -38,10 +38,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (denied) return withCorsJson(req, { ok: false, error: denied }, 403)
 
     const { data } = await supabase
-      .from("coach_clients").select("drive_folder_id, drive_folder_url").eq("id", id).maybeSingle()
+      .from("coach_clients").select("drive_folder_id, drive_folder_url, workspace_folder_id, workspace_folder_url").eq("id", id).maybeSingle()
     return withCorsJson(req, {
       ok: true,
       folder: data?.drive_folder_id ? { id: data.drive_folder_id, url: data.drive_folder_url } : null,
+      // The client's whole Drive workspace, made at Let's Go (lib/sow/workspace.ts).
+      workspace: data?.workspace_folder_id ? { id: data.workspace_folder_id, url: data.workspace_folder_url } : null,
     }, 200)
   } catch (err: any) {
     console.error("[coach/drive-folder GET]", err?.stack || err?.message)

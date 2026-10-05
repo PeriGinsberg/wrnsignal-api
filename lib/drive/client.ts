@@ -197,6 +197,35 @@ export async function createFolder(parentId: string, name: string): Promise<Driv
   })
 }
 
+/**
+ * A child folder name not yet used under this parent: the name itself, else
+ * "name (2)", "name (3)" and so on. A client's workspace is never an existing
+ * folder that happens to share their name.
+ */
+export async function freeChildFolderName(parentId: string, name: string): Promise<string> {
+  if (!(await findChildFolder(parentId, name))) return name
+  for (let n = 2; n <= 50; n++) {
+    const candidate = `${name} (${n})`
+    if (!(await findChildFolder(parentId, candidate))) return candidate
+  }
+  throw new DriveError(`Too many folders named "${name}" under this parent`, 409, "name_taken")
+}
+
+/**
+ * Give one person edit access to a file or folder (a folder's contents follow).
+ * Google's own "shared with you" email is NOT sent: the coach's welcome email
+ * introduces the workspace.
+ */
+export async function shareWithUser(fileId: string, email: string): Promise<{ permissionId: string; role: string }> {
+  const json = await call(`/files/${encodeURIComponent(fileId)}/permissions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    params: { fields: "id,role", sendNotificationEmail: "false" },
+    body: JSON.stringify({ role: "writer", type: "user", emailAddress: email }),
+  })
+  return { permissionId: json.id as string, role: String(json.role ?? "") }
+}
+
 /** Find a child folder by name, creating it when absent. Idempotent. */
 export async function ensureChildFolder(parentId: string, name: string): Promise<DriveFile> {
   return (await findChildFolder(parentId, name)) ?? (await createFolder(parentId, name))

@@ -99,6 +99,13 @@ export const LABELS: Record<CoachClientEventType, (e: CoachClientEvent) => strin
     const cc = e.context?.cc ? ` (cc ${e.context.cc})` : ""
     return `${Number(e.context?.send) > 1 ? "SOW re-sent" : "SOW sent"}${name}${to}${cc}`
   },
+  sow_accepted: (e) => {
+    const who = e.context?.accepted_name ? ` by ${e.context.accepted_name}` : ""
+    const name = e.context?.name ? ` (${e.context.name})` : ""
+    return `SOW accepted${who}${name}: Let's Go${e.context?.changed_after_send ? ". The package had changed since it was sent" : ""}`
+  },
+  workspace_created: (e) => e.context?.name ? `Drive workspace created: ${e.context.name}` : "Drive workspace created",
+  workspace_shared: (e) => e.context?.email ? `Drive workspace shared with ${e.context.email}` : "Drive workspace shared",
   sow_withdrawn: (e) => {
     const name = e.context?.name ? ` for ${e.context.name}` : ""
     return e.context?.replaced_by ? `SOW${name} withdrawn: the ${e.context.replaced_by} SOW was sent instead` : `SOW${name} withdrawn`

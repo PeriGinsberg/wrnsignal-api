@@ -25,7 +25,7 @@ const dueAt = (day: string | null) => (day ? `${day}T12:00:00.000Z` : null)
 export async function syncTodo(db: SupabaseClient, activityId: string): Promise<void> {
   try {
     const { data: a } = await db.from("coach_client_engagement_activities")
-      .select("id, name, owner, state, assignee_profile_id, due_date, engagement_deliverable_id").eq("id", activityId).maybeSingle()
+      .select("id, name, owner, state, assignee_profile_id, due_date, engagement_deliverable_id, welcome_release").eq("id", activityId).maybeSingle()
     const { data: open } = await db.from("coach_tasks").select("id, title, assignee_profile_id, due_at")
       .eq("plan_activity_id", activityId).eq("status", "open").is("deleted_at", null).limit(1)
     const existing = ((open ?? []) as { id: string; title: string; assignee_profile_id: string; due_at: string | null }[])[0]
@@ -35,7 +35,7 @@ export async function syncTodo(db: SupabaseClient, activityId: string): Promise<
       if (existing) await close(db, existing.id, "cancelled", now)
       return
     }
-    const task = a as { id: string; name: string; owner: string; state: TaskState; assignee_profile_id: string | null; due_date: string | null; engagement_deliverable_id: string }
+    const task = a as { id: string; name: string; owner: string; state: TaskState; assignee_profile_id: string | null; due_date: string | null; engagement_deliverable_id: string; welcome_release?: boolean }
     const { data: d } = await db.from("coach_client_engagement_deliverables")
       .select("engagement_id, not_needed").eq("id", task.engagement_deliverable_id).maybeSingle()
     const deliv = d as { engagement_id: string; not_needed: boolean } | null
@@ -45,7 +45,7 @@ export async function syncTodo(db: SupabaseClient, activityId: string): Promise<
       if (existing) await close(db, existing.id, task.state === "done" || task.state === "skipped" ? "done" : "cancelled", now)
       return
     }
-    const title = taskTitle({ name: task.name, owner: task.owner, state: task.state })
+    const title = taskTitle({ name: task.name, owner: task.owner, state: task.state, welcome_release: !!task.welcome_release })
     const due = dueAt(task.due_date)
     if (existing) {
       if (existing.title !== title || existing.assignee_profile_id !== task.assignee_profile_id || (existing.due_at ?? null) !== due) {

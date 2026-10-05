@@ -29,6 +29,7 @@ import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
 import { NoteVisibilityIcon } from "../../NoteVisibilityIcon"
 import { TASK_STATE_LABEL, type TaskState } from "@/lib/plan/model"
 import { SowPanel } from "./SowPanel"
+import { DriveWorkspaceLink } from "../../_plan/DriveWorkspaceLink"
 import {
   ActivityEditRow, AddActivityRow, DeliverableProse, ProofProjectToggle,
 } from "./EngagementEditing"
@@ -508,6 +509,7 @@ export function EngagementsTab({
 
   return (
     <div>
+      <DriveWorkspaceLink coachClientId={coachClientId} refreshKey={sowKey} />
       <p style={{ fontSize: TYPE.secondary, color: T.MUTED, margin: "0 0 16px" }}>
         Packages attached to {clientName}. Each is a frozen copy — editing your catalog won&apos;t
         change what&apos;s here.

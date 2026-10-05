@@ -45,10 +45,13 @@ export function hasStarted(s: TaskState): boolean {
 
 /**
  * What a task is called where someone has to act on it. An Active client task
- * is the coach's job to hand over, so it reads "Release: [task]".
+ * is the coach's job to hand over, so it reads "Release: [task]". The client
+ * task flagged at Let's Go is handed over with the welcome email, so it reads
+ * "Send welcome email (releases: [task])".
  */
-export function taskTitle(t: { name: string; owner: string; state: TaskState }): string {
-  return t.owner === "client" && t.state === "active" ? `Release: ${t.name}` : t.name
+export function taskTitle(t: { name: string; owner: string; state: TaskState; welcome_release?: boolean }): string {
+  if (t.owner !== "client" || t.state !== "active") return t.name
+  return t.welcome_release ? `Send welcome email (releases: ${t.name})` : `Release: ${t.name}`
 }
 
 export type PlanTask = {
@@ -62,6 +65,8 @@ export type PlanTask = {
   released_at: string | null
   sort_order: number
   is_signoff: boolean
+  /** Released with the welcome email; releasing it shares the client's Drive workspace. */
+  welcome_release?: boolean
 }
 
 export type PlanDeliverable = {

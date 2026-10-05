@@ -5,6 +5,7 @@
 // page. Workforce Ready Now's light palette, as on the consult booking page.
 
 import Image from "next/image"
+import type { ReactNode } from "react"
 import type { SowDocument } from "@/lib/sow/build"
 import { money } from "@/lib/sow/build"
 
@@ -21,8 +22,10 @@ const C = {
 /**
  * preview: the coach's preview (a note under Let's Go says so).
  * onLetsGo: what Let's Go does; without it the button is inactive.
+ * footer: replaces the Let's Go area entirely (the client's link: the name
+ * box, then the thank-you).
  */
-export function SowView({ doc, preview = false, onLetsGo }: { doc: SowDocument; preview?: boolean; onLetsGo?: () => void }) {
+export function SowView({ doc, preview = false, onLetsGo, footer }: { doc: SowDocument; preview?: boolean; onLetsGo?: () => void; footer?: ReactNode }) {
   const active = !preview && !!onLetsGo
   return (
     <div style={{ background: `linear-gradient(180deg, ${C.wash} 0%, #fff 50%)`, color: C.ink, padding: "24px 16px 40px", fontSize: 15, lineHeight: 1.55 }}>
@@ -90,7 +93,7 @@ export function SowView({ doc, preview = false, onLetsGo }: { doc: SowDocument; 
           {doc.payment.note && <p style={{ margin: "12px 0 0", color: C.ink }}>{doc.payment.note}</p>}
         </section>
 
-        <div style={{ textAlign: "center" }}>
+        {footer ?? <div style={{ textAlign: "center" }}>
           <button type="button" disabled={!active} onClick={active ? onLetsGo : undefined} style={{
             background: C.navy, color: C.peach, border: "none", borderRadius: 12, padding: "14px 40px",
             fontSize: 17, fontWeight: 800, cursor: active ? "pointer" : "default", opacity: active ? 1 : 0.6, fontFamily: "inherit",
@@ -100,7 +103,7 @@ export function SowView({ doc, preview = false, onLetsGo }: { doc: SowDocument; 
           {preview && (
             <p style={{ fontSize: 12, color: C.muted, marginTop: 8 }}>Preview. Let&apos;s Go works on the link you send.</p>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   )

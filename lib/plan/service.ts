@@ -35,7 +35,7 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: string; stat
 const fail = (error: string, status = 400): { ok: false; error: string; status: number } => ({ ok: false, error, status })
 
 const TASK_COLUMNS =
-  "id, engagement_deliverable_id, name, owner, state, assignee_profile_id, due_date, released_at, sort_order, is_signoff"
+  "id, engagement_deliverable_id, name, owner, state, assignee_profile_id, due_date, released_at, sort_order, is_signoff, welcome_release"
 
 type TaskRow = {
   id: string
@@ -48,12 +48,13 @@ type TaskRow = {
   released_at: string | null
   sort_order: number
   is_signoff: boolean
+  welcome_release?: boolean
 }
 
 const toTask = (r: TaskRow): PlanTask => ({
   id: r.id, deliverable_id: r.engagement_deliverable_id, name: r.name, owner: r.owner, state: r.state,
   assignee_profile_id: r.assignee_profile_id, due_date: r.due_date ?? null, released_at: r.released_at ?? null,
-  sort_order: r.sort_order, is_signoff: !!r.is_signoff,
+  sort_order: r.sort_order, is_signoff: !!r.is_signoff, welcome_release: !!r.welcome_release,
 })
 const bySort = <T extends { sort_order: number }>(a: T, b: T) => a.sort_order - b.sort_order
 
@@ -176,6 +177,39 @@ async function setState(
     })
   }
   task.state = to
+  // The welcome task went to the client: share their Drive workspace with them.
+  // Loaded here, not imported at the top: lib/sow/workspace reaches the task
+  // service, which already imports this file.
+  if (to === "waiting_on_client" && task.welcome_release) {
+    const { onWelcomeReleased } = await import("../sow/workspace")
+    await onWelcomeReleased(db, ctx.coachClientId)
+  }
+  return null
+}
+
+/**
+ * Let's Go: the first client task of this package (plan order, skipping Not
+ * needed) becomes the welcome task. It is made Active, in any order, and its
+ * To-Do item reads "Send welcome email (releases: [task])". Returns its name,
+ * or null when the package has no client task.
+ */
+export async function flagWelcomeTask(db: SupabaseClient, coachClientId: string, engagementId: string): Promise<string | null> {
+  const { data: ds } = await db.from("coach_client_engagement_deliverables").select("id, name, not_needed, sort_order")
+    .eq("engagement_id", engagementId)
+  const delivs = ((ds ?? []) as { id: string; name: string; not_needed: boolean; sort_order: number }[]).sort(bySort)
+  for (const d of delivs) {
+    if (d.not_needed) continue
+    const task = (await deliverableTasks(db, d.id)).find((t) => t.owner === "client" && (t.state === "upcoming" || t.state === "active"))
+    if (!task) continue
+    await db.from("coach_client_engagement_activities").update({ welcome_release: true }).eq("id", task.id)
+    task.welcome_release = true
+    if (task.state === "upcoming") {
+      await setState(db, { coachClientId, actor: null }, task, "active", { deliverable: d.name, auto: true, reason: "the client clicked Let's Go" })
+    } else {
+      await syncTodo(db, task.id) // retitle the open To-Do item
+    }
+    return task.name
+  }
   return null
 }
 
