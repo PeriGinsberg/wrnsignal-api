@@ -93,6 +93,16 @@ export const LABELS: Record<CoachClientEventType, (e: CoachClientEvent) => strin
     }
     return when ? `Consult booked${where} for ${when}${time}` : `Consult booked${where}`
   },
+  sow_sent: (e) => {
+    const name = e.context?.name ? ` for ${e.context.name}` : ""
+    const to = e.context?.to ? ` to ${e.context.to}` : ""
+    const cc = e.context?.cc ? ` (cc ${e.context.cc})` : ""
+    return `${Number(e.context?.send) > 1 ? "SOW re-sent" : "SOW sent"}${name}${to}${cc}`
+  },
+  sow_withdrawn: (e) => {
+    const name = e.context?.name ? ` for ${e.context.name}` : ""
+    return e.context?.replaced_by ? `SOW${name} withdrawn: the ${e.context.replaced_by} SOW was sent instead` : `SOW${name} withdrawn`
+  },
   plan_changed: (e) => {
     const c = e.context ?? {}
     const task = c.task ? `"${c.task}"` : "A task"

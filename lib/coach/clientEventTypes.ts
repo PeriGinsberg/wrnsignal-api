@@ -88,6 +88,11 @@ export const COACH_CLIENT_EVENT_TYPES = [
   // deliverable_added, deliverable_removed, deliverable_not_needed,
   // deliverable_restored.
   "plan_changed",
+  // A client's SOW (lib/sow/send.ts). sow_sent: context has the package name,
+  // to, cc, the send number and the subject. sow_withdrawn: another package's
+  // SOW went out, so this one's link stopped working (context: name, replaced_by).
+  "sow_sent",
+  "sow_withdrawn",
 ] as const
 
 export type CoachClientEventType = (typeof COACH_CLIENT_EVENT_TYPES)[number]

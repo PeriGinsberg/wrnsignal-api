@@ -538,6 +538,7 @@ export function EngagementsTab({
               onPlanAction={(activityId, action) => void planAction(activityId, action)}
               onPlanPost={(body, lockId) => void planPost(body, lockId)}
               sowKey={sowKey}
+              onSowSent={() => { void resync(); setSowKey((k) => k + 1) }}
               onPatchActivity={(activityId, patch, confirm) => patchActivity(e.id, activityId, patch, confirm)}
               onDeleteActivity={(activityId, confirm) => deleteActivity(e.id, activityId, confirm)}
               onAddActivity={(deliverableId, name, owner) => addActivity(e.id, deliverableId, name, owner)}
@@ -624,7 +625,7 @@ export function EngagementsTab({
 function EngagementCard({
   e, coachClientId, expanded, detaching, proposalBusy, settingActivityId, showConvertNudge,
   onPatchActivity, onDeleteActivity, onAddActivity, onReorderActivities, onSaveProse, onSetProofProject,
-  onToggle, onDetach, onSetStatus, onSetActivityDueDate, onPlanAction, onPlanPost, sowKey,
+  onToggle, onDetach, onSetStatus, onSetActivityDueDate, onPlanAction, onPlanPost, sowKey, onSowSent,
 }: {
   e: Engagement
   coachClientId: string
@@ -646,6 +647,7 @@ function EngagementCard({
   onPlanAction: (activityId: string, action: "activate" | "release") => void
   onPlanPost: (body: Record<string, unknown>, lockId: string) => void
   sowKey: number
+  onSowSent: () => void
 }) {
   // A proposal (draft or sent) is customized here and gets its SOW.
   const proposal = e.proposal_status === "draft" || e.proposal_status === "sent"
@@ -775,7 +777,7 @@ function EngagementCard({
               onAdd={(milestoneId) => onPlanPost({ action: "add_deliverable", engagement_id: e.id, milestone_id: milestoneId }, e.id)}
             />
           )}
-          {proposal && <SowPanel coachClientId={coachClientId} engagementId={e.id} refreshKey={sowKey} />}
+          {proposal && <SowPanel coachClientId={coachClientId} engagementId={e.id} refreshKey={sowKey} onSent={onSowSent} />}
         </div>
       )}
     </div>

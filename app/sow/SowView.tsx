@@ -18,7 +18,12 @@ const C = {
   wash: "#F4F9FD",
 }
 
-export function SowView({ doc, preview = false }: { doc: SowDocument; preview?: boolean }) {
+/**
+ * preview: the coach's preview (a note under Let's Go says so).
+ * onLetsGo: what Let's Go does; without it the button is inactive.
+ */
+export function SowView({ doc, preview = false, onLetsGo }: { doc: SowDocument; preview?: boolean; onLetsGo?: () => void }) {
+  const active = !preview && !!onLetsGo
   return (
     <div style={{ background: `linear-gradient(180deg, ${C.wash} 0%, #fff 50%)`, color: C.ink, padding: "24px 16px 40px", fontSize: 15, lineHeight: 1.55 }}>
       <div style={{ maxWidth: 720, margin: "0 auto" }}>
@@ -86,9 +91,9 @@ export function SowView({ doc, preview = false }: { doc: SowDocument; preview?: 
         </section>
 
         <div style={{ textAlign: "center" }}>
-          <button type="button" disabled={preview} style={{
+          <button type="button" disabled={!active} onClick={active ? onLetsGo : undefined} style={{
             background: C.navy, color: C.peach, border: "none", borderRadius: 12, padding: "14px 40px",
-            fontSize: 17, fontWeight: 800, cursor: preview ? "default" : "pointer", opacity: preview ? 0.6 : 1, fontFamily: "inherit",
+            fontSize: 17, fontWeight: 800, cursor: active ? "pointer" : "default", opacity: active ? 1 : 0.6, fontFamily: "inherit",
           }}>
             Let&apos;s Go
           </button>

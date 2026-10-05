@@ -21,19 +21,30 @@ const DEFAULTS = {
   status: "draft", saved: false, opening: null, price_override_cents: null, package_total_cents: 175000, total_cents: 175000,
   payment: { mode: "split", payments: [{ amount_cents: 87500, days: 0 }, { amount_cents: 87500, days: 45 }] },
   document: DOC, warnings: ["No SOW bullets for Resume. Add them in Settings > Services > Deliverables."],
+  recipient: { email: "aiden@example.com", parent_email: "mom@example.com" },
+  sent: null, changed_since_sent: false, other_sent: null,
+  email: { subject: "Your plan with Workforce Ready Now", body: "Hi Aiden,\n\nSee the details here:\n\n[SOW link]" },
 }
+let sow: any
 let puts: any[]
+let posts: any[]
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { "Content-Type": "application/json" } })
 
 beforeEach(() => {
   puts = []
-  vi.stubGlobal("fetch", vi.fn(async (_u: RequestInfo | URL, init?: RequestInit) => {
+  posts = []
+  sow = DEFAULTS
+  vi.stubGlobal("fetch", vi.fn(async (u: RequestInfo | URL, init?: RequestInit) => {
+    if (init?.method === "POST" && String(u).endsWith("/sow/send")) {
+      posts.push(JSON.parse(String(init.body)))
+      return json({ ok: true, sent: { to: "aiden@example.com" }, sow: { ...DEFAULTS, saved: true, sent: { at: "2026-10-05T15:00:00Z", to: "aiden@example.com", cc: "mom@example.com", count: 1 } } })
+    }
     if (init?.method === "PUT") {
       const body = JSON.parse(String(init.body))
       puts.push(body)
       return json({ ok: true, sow: { ...DEFAULTS, saved: true, opening: body.opening || null, price_override_cents: body.price_override_cents, payment: body.payment } })
     }
-    return json({ ok: true, sow: DEFAULTS })
+    return json({ ok: true, sow })
   }))
 })
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
@@ -112,5 +123,67 @@ describe("SOW panel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save and preview" }))
     await screen.findByRole("dialog", { name: "SOW preview" })
     expect(puts).toHaveLength(1)
+  })
+})
+
+describe("SOW panel: sending", () => {
+  it("opens the email: To, cc the parent, the pre-filled message, the signature", async () => {
+    await open()
+    fireEvent.click(screen.getByRole("button", { name: "Send SOW" }))
+    const d = await screen.findByRole("dialog", { name: "Send SOW" })
+    expect(within(d).getByText("aiden@example.com")).toBeTruthy()
+    expect(within(d).getByLabelText(/cc the parent \(mom@example.com\)/)).toBeTruthy()
+    expect((within(d).getByLabelText("Subject") as HTMLInputElement).value).toBe("Your plan with Workforce Ready Now")
+    expect((within(d).getByLabelText("Message") as HTMLTextAreaElement).value).toContain("[SOW link]")
+    expect(within(d).getByTestId("sow-signature").innerHTML).not.toBe("")
+  })
+
+  it("won't send without [SOW link]; sends the edited email with the cc", async () => {
+    await open()
+    fireEvent.click(screen.getByRole("button", { name: "Send SOW" }))
+    const d = await screen.findByRole("dialog", { name: "Send SOW" })
+    const msg = within(d).getByLabelText("Message")
+    fireEvent.change(msg, { target: { value: "Hi Aiden, here it is." } })
+    expect((within(d).getByRole("button", { name: "Send" }) as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.change(msg, { target: { value: "Hi Aiden,\n\n[SOW link]" } })
+    fireEvent.click(within(d).getByLabelText(/cc the parent/))
+    fireEvent.click(within(d).getByRole("button", { name: "Send" }))
+    await waitFor(() => expect(posts).toHaveLength(1))
+    expect(posts[0]).toEqual({ subject: "Your plan with Workforce Ready Now", body: "Hi Aiden,\n\n[SOW link]", cc_parent: true })
+    expect(await screen.findByText("Sent Oct 5, 2026 to aiden@example.com (cc mom@example.com)")).toBeTruthy()
+    expect(screen.queryByRole("dialog")).toBeNull()
+  })
+
+  it("no parent email: no cc box", async () => {
+    sow = { ...DEFAULTS, recipient: { email: "aiden@example.com", parent_email: null } }
+    await open()
+    fireEvent.click(screen.getByRole("button", { name: "Send SOW" }))
+    const d = await screen.findByRole("dialog", { name: "Send SOW" })
+    expect(within(d).queryByLabelText(/cc the parent/)).toBeNull()
+  })
+
+  it("warns that another package's SOW will be withdrawn", async () => {
+    sow = { ...DEFAULTS, other_sent: { engagement_id: "eng-2", package_name: "Foundations" } }
+    await open()
+    fireEvent.click(screen.getByRole("button", { name: "Send SOW" }))
+    const d = await screen.findByRole("dialog", { name: "Send SOW" })
+    expect(within(d).getByRole("note").textContent).toContain("The Foundations SOW is out now. Sending this one withdraws it")
+  })
+
+  it("sent and changed since: says so, and offers Re-send with a new link", async () => {
+    sow = { ...DEFAULTS, saved: true, sent: { at: "2026-10-05T15:00:00Z", to: "aiden@example.com", cc: null, count: 1 }, changed_since_sent: true }
+    await open()
+    expect(screen.getByTestId("sow-status").textContent).toBe("Sent Oct 5, 2026 to aiden@example.com")
+    expect(screen.getByText(/Changed since sent/)).toBeTruthy()
+    fireEvent.click(screen.getByRole("button", { name: "Re-send SOW" }))
+    const d = await screen.findByRole("dialog", { name: "Re-send SOW" })
+    expect(within(d).getByText(/The link in the earlier email stops working/)).toBeTruthy()
+  })
+
+  it("no email on the record: Send is off and says why", async () => {
+    sow = { ...DEFAULTS, recipient: { email: null, parent_email: null } }
+    await open()
+    expect((screen.getByRole("button", { name: "Send SOW" }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByText("Add an email to this record to send the SOW.")).toBeTruthy()
   })
 })

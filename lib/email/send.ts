@@ -116,18 +116,26 @@ export async function sendToClient(args: {
   templateAlias: string
   model: Record<string, unknown>
   from?: string
+  /**
+   * A copy, e.g. a prospect's parent. Outside production it is not sent: the
+   * redirect covers it, and the subject names it instead, so a test shows who
+   * would have been copied without mailing them.
+   */
+  cc?: string | null
 }): Promise<SendResult> {
   const intended = String(args.to || "").trim()
   if (!intended) return { ok: false, error: "No email address for this client." }
+  const cc = String(args.cc ?? "").trim()
 
   const production = isProduction()
   const to = production ? intended : NON_PROD_REDIRECT
-  const subjectPrefix = production ? "" : `[${environmentLabel()} -> ${intended}] `
+  const subjectPrefix = production ? "" : `[${environmentLabel()} -> ${intended}${cc ? `, cc ${cc}` : ""}] `
 
   try {
     const res = await getPostmarkClient().sendEmailWithTemplate({
       From: args.from ?? FROM_EMAIL,
       To: to,
+      ...(production && cc ? { Cc: cc } : {}),
       TemplateAlias: args.templateAlias,
       MessageStream: CLIENT_STREAM,
       TemplateModel: { ...args.model, subject_prefix: subjectPrefix },

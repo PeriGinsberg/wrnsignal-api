@@ -41,6 +41,8 @@ beforeEach(() => {
     if (url.endsWith("/sow")) return json({ ok: true, sow: {
       status: "draft", saved: false, opening: null, price_override_cents: null, package_total_cents: 15000, total_cents: 15000,
       payment: { mode: "full" }, warnings: [],
+      recipient: { email: "aiden@example.com", parent_email: null }, sent: null, changed_since_sent: false, other_sent: null,
+      email: { subject: "s", body: "[SOW link]" },
       document: { client_name: "Aiden", practice_name: null, package_name: "x", opening: null, stages: [], sections: [], payment: { total_cents: 15000, mode: "full", payments: [] } },
     } })
     if (url === "/api/coach/milestones") return json({ ok: true, milestones: [{ id: "m-mock", name: "Mock Interview", active: true }, { id: "m-old", name: "Retired", active: false }] })

@@ -6,7 +6,10 @@
 //
 //   booking_form.submitted  starts the 3-day no-booking follow-up timer
 //   consult.booked          cancels it (by the button or from Calendly)
-//   prospect.lost           cancels it too
+//   prospect.lost           cancels it too (and the SOW follow-up)
+//   sow.sent                starts the 3-day SOW follow-up timer; a re-send
+//                           restarts it
+//   sow.accepted            cancels it (Let's Go)
 //
 // Never fails the action that emitted it: the engine's queue keeps the event,
 // and the half-hourly job applies it if the drain here does not.
@@ -14,7 +17,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { emitAndRun } from "../automation/run"
 
-export type ProspectAutomationEvent = "booking_form.submitted" | "consult.booked" | "prospect.lost"
+export type ProspectAutomationEvent = "booking_form.submitted" | "consult.booked" | "prospect.lost" | "sow.sent" | "sow.accepted"
 
 export async function emitProspectEvent(
   db: SupabaseClient,

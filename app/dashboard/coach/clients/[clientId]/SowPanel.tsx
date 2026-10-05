@@ -3,14 +3,16 @@
 // The SOW panel on one proposal (a draft or sent package) on the Engagements
 // tab: the coach's opening paragraph for this client, an optional price for
 // this client, and the payment terms; then a preview of the SOW exactly as the
-// client will see it. GET/PUT .../engagements/[engagement_id]/sow; the rules
-// are in lib/sow/client.ts and lib/sow/build.ts. Amounts travel in cents.
+// client will see it. Then Send (or Re-send): an email edited before it goes
+// (SendSowDialog). GET/PUT .../engagements/[engagement_id]/sow and POST
+// .../sow/send; the rules are in lib/sow/. Amounts travel in cents.
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { T, btnPrimary } from "../../../../../lib/dashboard-theme"
 import { TYPE } from "../../../../../lib/theme/surfaces"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
 import { SowView } from "../../../../sow/SowView"
+import { SendSowDialog } from "./SendSowDialog"
 import { SPLIT_MAX, SPLIT_MIN, money, type SowDocument, type SowPayment } from "@/lib/sow/build"
 
 async function authFetch(url: string, opts: RequestInit = {}): Promise<Response> {
@@ -32,7 +34,14 @@ type Sow = {
   payment: SowPayment
   document: SowDocument
   warnings: string[]
+  recipient: { email: string | null; parent_email: string | null }
+  sent: { at: string; to: string | null; cc: string | null; count: number } | null
+  changed_since_sent: boolean
+  other_sent: { engagement_id: string; package_name: string } | null
+  email: { subject: string; body: string }
 }
+
+const sentDate = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
 type Draft = { opening: string; price: string; mode: "full" | "split"; payments: { amount: string; days: string }[] }
 
 const dollars = (cents: number) => String(cents / 100)
@@ -61,7 +70,13 @@ const small: React.CSSProperties = {
 }
 const label: React.CSSProperties = { fontSize: TYPE.micro, fontWeight: 800, letterSpacing: 0.6, textTransform: "uppercase", color: T.DIM }
 
-export function SowPanel({ coachClientId, engagementId, refreshKey = 0 }: { coachClientId: string; engagementId: string; refreshKey?: number }) {
+export function SowPanel({ coachClientId, engagementId, refreshKey = 0, onSent }: {
+  coachClientId: string
+  engagementId: string
+  refreshKey?: number
+  /** After a send: the package's status changed, and another package's SOW may have been withdrawn. */
+  onSent?: () => void
+}) {
   const url = `/api/coach/coach-clients/${coachClientId}/engagements/${engagementId}/sow`
   const [sow, setSow] = useState<Sow | null>(null)
   const [draft, setDraft] = useState<Draft | null>(null)
@@ -69,6 +84,8 @@ export function SowPanel({ coachClientId, engagementId, refreshKey = 0 }: { coac
   const [saving, setSaving] = useState(false)
   const [savedOk, setSavedOk] = useState(false)
   const [previewing, setPreviewing] = useState(false)
+  const [sending, setSending] = useState<null | "open" | "busy">(null)
+  const [sendError, setSendError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -128,12 +145,45 @@ export function SowPanel({ coachClientId, engagementId, refreshKey = 0 }: { coac
     }
   }
 
+  async function send(email: { subject: string; body: string; cc_parent: boolean }) {
+    if (dirty && !(await save())) { setSending(null); return }
+    setSending("busy")
+    setSendError(null)
+    try {
+      const res = await authFetch(`${url}/send`, { method: "POST", body: JSON.stringify(email) })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j?.ok) { setSendError(j?.error || `Send failed (${res.status})`); setSending("open"); return }
+      if (j.sow) { setSow(j.sow); setDraft(toDraft(j.sow)) }
+      setSending(null)
+      onSent?.()
+    } catch {
+      setSendError("Network error, try again")
+      setSending("open")
+    }
+  }
+
+  // Send needs a sound SOW: payments that add up, something in it, a price, an email.
+  const sendBlock = !sow.recipient.email ? "Add an email to this record to send the SOW."
+    : !sow.document.stages.length ? "Every deliverable is Not needed; there is nothing to send."
+    : sow.total_cents <= 0 ? "The total is $0. Set a price for this client."
+    : allocated !== total && draft.mode === "split" ? "The payments must add up to the total before sending."
+    : null
+
   return (
     <div data-testid="sow-panel" style={{ marginTop: 12, padding: 12, borderRadius: 10, border: `1px solid ${T.BORDER_SOFT}`, background: T.GLASS }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
         <span style={{ fontSize: TYPE.secondary, fontWeight: 800, color: T.TEXT }}>SOW</span>
-        <span style={{ fontSize: TYPE.micro, color: T.MUTED }}>{sow.saved ? "Saved" : "Not saved yet (showing the defaults)"}</span>
+        <span data-testid="sow-status" style={{ fontSize: TYPE.micro, color: sow.sent ? T.SUCCESS : T.MUTED }}>
+          {sow.sent
+            ? `Sent ${sentDate(sow.sent.at)} to ${sow.sent.to ?? "the client"}${sow.sent.cc ? ` (cc ${sow.sent.cc})` : ""}`
+            : sow.saved ? "Saved, not sent" : "Not saved yet (showing the defaults)"}
+        </span>
       </div>
+      {sow.changed_since_sent && (
+        <p role="note" style={{ margin: "0 0 10px", fontSize: TYPE.micro, fontWeight: 700, color: T.WRN_ORANGE }}>
+          Changed since sent. The link still shows what was sent; re-send to update it.
+        </p>
+      )}
 
       <label style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 10 }}>
         <span style={label}>Opening paragraph</span>
@@ -200,7 +250,28 @@ export function SowPanel({ coachClientId, engagementId, refreshKey = 0 }: { coac
           onClick={async () => { if (dirty && !(await save())) return; setPreviewing(true) }}>
           {dirty ? "Save and preview" : "Preview"}
         </button>
+        <button type="button" style={{ ...small, borderColor: T.WRN_ORANGE }} disabled={saving || !!sendBlock}
+          title={sendBlock ?? undefined}
+          onClick={() => { setSendError(null); setSending("open") }}>
+          {sow.sent ? "Re-send SOW" : "Send SOW"}
+        </button>
       </div>
+      {sendBlock && <p style={{ margin: "6px 0 0", fontSize: TYPE.micro, color: T.MUTED }}>{sendBlock}</p>}
+
+      {sending && (
+        <SendSowDialog
+          to={sow.recipient.email}
+          parentEmail={sow.recipient.parent_email}
+          subject={sow.email.subject}
+          body={sow.email.body}
+          otherSent={sow.other_sent?.package_name ?? null}
+          resend={!!sow.sent}
+          busy={sending === "busy"}
+          error={sendError}
+          onSend={(email) => void send(email)}
+          onClose={() => { if (sending !== "busy") setSending(null) }}
+        />
+      )}
 
       {previewing && (
         <div onClick={() => setPreviewing(false)} style={{ position: "fixed", inset: 0, background: "rgba(8,32,63,0.45)", zIndex: 1000, overflowY: "auto", padding: "24px 12px" }}>

@@ -12,6 +12,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import { checkPayment, composeSow, defaultPaymentFor, money, type DefaultPayment, type SowDocument, type SowPayment } from "./build"
 import { SOW_OPENING_MAX, fillOpening, normalizeText } from "./model"
 import { getSowLines } from "./service"
+import { DEFAULT_SOW_EMAIL_SUBJECT, defaultSowEmailBody } from "./email"
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string; status: number }
 const fail = (error: string, status = 400): { ok: false; error: string; status: number } => ({ ok: false, error, status })
@@ -28,6 +29,45 @@ export type ClientSow = {
   payment: SowPayment
   document: SowDocument
   warnings: string[]
+  /** Who the send goes to: the prospect's email, and a parent's when the record has one. */
+  recipient: { email: string | null; parent_email: string | null }
+  /** The last send, while the SOW is out. */
+  sent: { at: string; to: string | null; cc: string | null; count: number } | null
+  /** The package or SOW changed after the send; the link still shows what was sent. */
+  changed_since_sent: boolean
+  /** Another package's SOW that is out now, which sending this one withdraws. */
+  other_sent: { engagement_id: string; package_name: string } | null
+  /** The email editor's starting text. */
+  email: { subject: string; body: string }
+}
+
+export type SowRow = {
+  id: string
+  engagement_id: string
+  status: "draft" | "sent" | "accepted"
+  opening: string | null
+  price_override_cents: number | null
+  payment: SowPayment
+  token_hash: string | null
+  sent_at: string | null
+  sent_by: string | null
+  sent_snapshot: SowDocument | null
+  sent_to: string | null
+  sent_cc: string | null
+  send_count: number
+  sent_message_id: string | null
+}
+
+/**
+ * The same JSON whatever the key order. Postgres stores jsonb with its own key
+ * order, so a frozen copy read back must be compared by content, not text.
+ */
+export function canonical(v: unknown): string {
+  if (Array.isArray(v)) return `[${v.map(canonical).join(",")}]`
+  if (v && typeof v === "object") {
+    return `{${Object.keys(v as object).sort().map((k) => `${JSON.stringify(k)}:${canonical((v as Record<string, unknown>)[k])}`).join(",")}}`
+  }
+  return JSON.stringify(v ?? null)
 }
 
 type Deliv = { id: string; name: string; phase_id: string | null; not_needed: boolean; sort_order: number; fee_cents: number | null; source_milestone_id: string | null }
@@ -43,8 +83,12 @@ async function load(db: SupabaseClient, coachClientId: string, engagementId: str
     .select("id, coach_client_id, name, discount_cents, source_package_id, proposal_status").eq("id", engagementId).maybeSingle()
   const eng = e as { id: string; coach_client_id: string; name: string; discount_cents: number | null; source_package_id: string | null; proposal_status: string } | null
   if (!eng || eng.coach_client_id !== coachClientId) return null
-  const { data: c } = await db.from("coach_clients").select("id, coach_profile_id, name, client_profile_id").eq("id", coachClientId).maybeSingle()
-  const cc = c as { id: string; coach_profile_id: string; name: string | null; client_profile_id: string | null } | null
+  const { data: c } = await db.from("coach_clients")
+    .select("id, coach_profile_id, name, client_profile_id, invited_email, parent_email, lifecycle_status").eq("id", coachClientId).maybeSingle()
+  const cc = c as {
+    id: string; coach_profile_id: string; name: string | null; client_profile_id: string | null
+    invited_email: string | null; parent_email: string | null; lifecycle_status: string | null
+  } | null
   if (!cc) return null
   const { data: ds, error } = await db.from("coach_client_engagement_deliverables")
     .select("id, name, phase_id, not_needed, sort_order, fee_cents, source_milestone_id").eq("engagement_id", engagementId)
@@ -59,9 +103,12 @@ async function load(db: SupabaseClient, coachClientId: string, engagementId: str
   const lines = await getSowLines(db, cc.coach_profile_id)
   const { data: coach } = await db.from("client_profiles").select("coach_org").eq("id", cc.coach_profile_id).maybeSingle()
   let clientName = cc.name?.trim() || null
-  if (!clientName && cc.client_profile_id) {
-    const { data: p } = await db.from("client_profiles").select("name").eq("id", cc.client_profile_id).maybeSingle()
-    clientName = (p as { name: string | null } | null)?.name?.trim() || null
+  let email = cc.invited_email?.trim() || null
+  if ((!clientName || !email) && cc.client_profile_id) {
+    const { data: p } = await db.from("client_profiles").select("name, email").eq("id", cc.client_profile_id).maybeSingle()
+    const prof = p as { name: string | null; email: string | null } | null
+    clientName = clientName || prof?.name?.trim() || null
+    email = email || prof?.email?.trim() || null
   }
   let pkgDefault: DefaultPayment = null
   if (eng.source_package_id) {
@@ -75,12 +122,20 @@ async function load(db: SupabaseClient, coachClientId: string, engagementId: str
     const { data: st } = await db.from("coach_sow_settings").select("default_opening").eq("coach_profile_id", cc.coach_profile_id).maybeSingle()
     defaultOpening = fillOpening((st as { default_opening: string | null } | null)?.default_opening, clientName)
   }
+  // Another package's SOW for this client that is out now.
+  const { data: others } = await db.from("client_sows").select("engagement_id, status").eq("coach_client_id", coachClientId).eq("status", "sent")
+  const otherId = ((others ?? []) as { engagement_id: string }[]).map((o) => o.engagement_id).find((id) => id !== engagementId) ?? null
+  let otherSent: { engagement_id: string; package_name: string } | null = null
+  if (otherId) {
+    const { data: oe } = await db.from("coach_client_engagements").select("name").eq("id", otherId).maybeSingle()
+    otherSent = { engagement_id: otherId, package_name: (oe as { name: string } | null)?.name ?? "another package" }
+  }
   return {
-    defaultOpening,
+    defaultOpening, otherSent, email, rawName: clientName,
     eng, cc, delivs, bullets, lines, pkgDefault, clientName: clientName ?? "this client",
     phases: (ph ?? []) as { id: string; label: string; sow_subtitle: string | null; sow_note: string | null; sort_order: number }[],
     practiceName: ((coach as { coach_org: string | null } | null)?.coach_org) ?? null,
-    row: row as { id: string; status: "draft" | "sent" | "accepted"; opening: string | null; price_override_cents: number | null; payment: SowPayment } | null,
+    row: row as SowRow | null,
   }
 }
 
@@ -133,8 +188,24 @@ export async function getClientSow(db: SupabaseClient, coachClientId: string, en
       payment,
       document,
       warnings,
+      recipient: { email: x.email, parent_email: x.cc.parent_email?.trim() || null },
+      sent: x.row?.status === "sent" && x.row.sent_at
+        ? { at: x.row.sent_at, to: x.row.sent_to, cc: x.row.sent_cc, count: x.row.send_count ?? 0 }
+        : null,
+      changed_since_sent: x.row?.status === "sent" && !!x.row.sent_snapshot && canonical(x.row.sent_snapshot) !== canonical(document),
+      other_sent: x.otherSent,
+      email: { subject: DEFAULT_SOW_EMAIL_SUBJECT, body: defaultSowEmailBody(x.rawName, x.eng.name) },
     },
   }
+}
+
+/** Everything the send needs, from one read. */
+export async function loadForSend(db: SupabaseClient, coachClientId: string, engagementId: string) {
+  const x = await load(db, coachClientId, engagementId)
+  if (!x) return null
+  const sow = await getClientSow(db, coachClientId, engagementId)
+  if (!sow.ok) return null
+  return { sow: sow.data, row: x.row, engagement: x.eng, client: x.cc, email: x.email, clientName: x.rawName }
 }
 
 /**
@@ -151,7 +222,8 @@ export async function saveClientSow(
   if (x.eng.proposal_status === "approved" || x.eng.proposal_status === "declined") {
     return fail(`This package is ${x.eng.proposal_status}; its SOW can't be changed.`, 409)
   }
-  if (x.row && x.row.status !== "draft") return fail("This SOW has been sent. Changing it comes with re-sending.", 409)
+  // A sent SOW stays editable: the link keeps showing what was sent until a re-send.
+  if (x.row?.status === "accepted") return fail("This SOW has been accepted; it can't be changed.", 409)
 
   const b = (args.input ?? {}) as Record<string, unknown>
   const opening = normalizeText(b.opening, SOW_OPENING_MAX, "The opening paragraph")

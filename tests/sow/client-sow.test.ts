@@ -151,7 +151,9 @@ async function main() {
     ok("an approved package's SOW can't be changed", !(await saveClientSow(c, { coachClientId: "cc-1", engagementId: "eng-ok", actor: "coach-1", input: { payment: { mode: "full" } } })).ok)
     ok("another client's package is not found", !(await getClientSow(c, "cc-1", "eng-x")).ok)
     db.tables.client_sows[0].status = "sent"
-    ok("a sent SOW is not edited in place", !(await bad({ payment: { mode: "full" } })).ok)
+    ok("a sent SOW stays editable (the link keeps the sent copy until a re-send)", (await bad({ payment: { mode: "full" } })).ok)
+    db.tables.client_sows[0].status = "accepted"
+    ok("an accepted SOW is not edited", !(await bad({ payment: { mode: "full" } })).ok)
   }
 
   console.log(`\n${pass} passed, ${fail} failed`)
