@@ -67,7 +67,8 @@ async function main() {
       && withLand.stages[2].heading === "Stage Three. Land: Interview Performance")
     const split = composeSow(inputs({ payment: { mode: "split", payments: [{ amount_cents: 87500, days: 0 }, { amount_cents: 87500, days: 45 }] } }))
     ok("split payments read in words", split.payment.payments.map((p) => p.label).join(" | ") ===
-      "Payment 1: $875, due at signing | Payment 2: $875, due 45 days after signing")
+      "Payment 1: $875, due when you click Let's Go | Payment 2: $875, due 45 days after you click Let's Go")
+    ok("then how it is invoiced", split.payment.note === "Once you click Let's Go, an invoice will be sent via Intuit.")
   }
 
   console.log("\npayment rules")

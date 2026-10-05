@@ -81,9 +81,12 @@ export function money(cents: number): string {
 
 /** When a payment falls due, in words. */
 export function dueLabel(days: number): string {
-  if (days === 0) return "due at signing"
-  return `due ${days} day${days === 1 ? "" : "s"} after signing`
+  if (days === 0) return "due when you click Let's Go"
+  return `due ${days} day${days === 1 ? "" : "s"} after you click Let's Go`
 }
+
+/** Under the payments: how the client is billed. */
+export const PAYMENT_NOTE = "Once you click Let's Go, an invoice will be sent via Intuit."
 
 // ── The document ─────────────────────────────────────────────────────────────
 
@@ -106,7 +109,7 @@ export type SowDocument = {
   opening: string | null
   stages: { heading: string; deliverables: { name: string; bullets: string[] }[]; note: string | null }[]
   sections: { key: SowSection; label: string; lines: string[] }[]
-  payment: { total_cents: number; mode: "full" | "split"; payments: { amount_cents: number; days: number; label: string }[] }
+  payment: { total_cents: number; mode: "full" | "split"; payments: { amount_cents: number; days: number; label: string }[]; note: string }
 }
 
 const NUMBER_WORDS = ["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve"]
@@ -152,6 +155,6 @@ export function composeSow(input: SowInputs): SowDocument {
     opening: input.opening,
     stages,
     sections,
-    payment: { total_cents: input.totalCents, mode: input.payment.mode, payments },
+    payment: { total_cents: input.totalCents, mode: input.payment.mode, payments, note: PAYMENT_NOTE },
   }
 }

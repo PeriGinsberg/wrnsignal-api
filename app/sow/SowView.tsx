@@ -82,6 +82,7 @@ export function SowView({ doc, preview = false }: { doc: SowDocument; preview?: 
           <ul style={{ margin: 0, paddingLeft: 20 }}>
             {doc.payment.payments.map((p, i) => <li key={i}>{p.label}</li>)}
           </ul>
+          {doc.payment.note && <p style={{ margin: "12px 0 0", color: C.ink }}>{doc.payment.note}</p>}
         </section>
 
         <div style={{ textAlign: "center" }}>

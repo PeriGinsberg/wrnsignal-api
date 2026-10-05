@@ -14,7 +14,8 @@ const DOC = {
   client_name: "Aiden Park", practice_name: "Workforce Ready Now", package_name: "Run the Search", opening: null,
   stages: [{ heading: "Stage One. Know: Your SIGNAL DNA and Career Paths", deliverables: [{ name: "DNA Report", bullets: ["A written report"] }], note: "Not a personality test." }],
   sections: [{ key: "included", label: "Included at no charge", lines: ["SIGNAL"] }],
-  payment: { total_cents: 175000, mode: "split", payments: [{ amount_cents: 87500, days: 0, label: "Payment 1: $875, due at signing" }, { amount_cents: 87500, days: 45, label: "Payment 2: $875, due 45 days after signing" }] },
+  payment: { total_cents: 175000, mode: "split", payments: [{ amount_cents: 87500, days: 0, label: "Payment 1: $875, due when you click Let's Go" }, { amount_cents: 87500, days: 45, label: "Payment 2: $875, due 45 days after you click Let's Go" }],
+    note: "Once you click Let's Go, an invoice will be sent via Intuit." },
 }
 const DEFAULTS = {
   status: "draft", saved: false, opening: null, price_override_cents: null, package_total_cents: 175000, total_cents: 175000,
@@ -100,7 +101,8 @@ describe("SOW panel", () => {
     const dialog = await screen.findByRole("dialog", { name: "SOW preview" })
     expect(within(dialog).getByText("Stage One. Know: Your SIGNAL DNA and Career Paths")).toBeTruthy()
     expect(within(dialog).getByText("Not a personality test.")).toBeTruthy()
-    expect(within(dialog).getByText("Payment 2: $875, due 45 days after signing")).toBeTruthy()
+    expect(within(dialog).getByText("Payment 2: $875, due 45 days after you click Let's Go")).toBeTruthy()
+    expect(within(dialog).getByText("Once you click Let's Go, an invoice will be sent via Intuit.")).toBeTruthy()
     expect((within(dialog).getByRole("button", { name: "Let's Go" }) as HTMLButtonElement).disabled).toBe(true)
   })
 
