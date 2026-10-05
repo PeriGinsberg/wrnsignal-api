@@ -89,6 +89,18 @@ describe("SOW settings", () => {
     expect(await screen.findByText("SOW sections saved.")).toBeTruthy()
   })
 
+  it("edits and saves the default opening paragraph with the lines", async () => {
+    render(<SowTab />)
+    await screen.findByDisplayValue("Ultimate Interview Playbook")
+    const box = screen.getByLabelText("Default opening paragraph") as HTMLTextAreaElement
+    expect(box.value).toBe("")
+    fireEvent.change(box, { target: { value: "Hi [First Name],\n\nThank you." } })
+    fireEvent.click(screen.getByRole("button", { name: "Save SOW sections" }))
+    await waitFor(() => expect(puts).toHaveLength(1))
+    expect(puts[0].default_opening).toBe("Hi [First Name],\n\nThank you.")
+    expect(puts[0].lines).toHaveLength(3)
+  })
+
   it("won't save an empty line, and removes lines", async () => {
     render(<SowTab />)
     await screen.findByDisplayValue("Ultimate Interview Playbook")

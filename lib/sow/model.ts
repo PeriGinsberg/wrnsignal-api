@@ -77,3 +77,22 @@ export function lineShows(line: Pick<SowLine, "show_for" | "phase_id">, phasesIn
   const inPlan = phasesInPlan.has(line.phase_id)
   return line.show_for === "phase_in_plan" ? inPlan : !inPlan
 }
+
+export const SOW_OPENING_MAX = 3000
+
+/**
+ * A first name from a name as typed: the first word, or the word after the
+ * comma in "Last, First". Empty when there is no name.
+ */
+export function firstNameOf(name: string | null | undefined): string {
+  const n = (name ?? "").trim()
+  const given = n.includes(",") ? n.slice(n.indexOf(",") + 1) : n
+  return given.trim().split(/\s+/)[0] ?? ""
+}
+
+/** The default opening with [First Name] filled in ("there" when the name is unknown). */
+export function fillOpening(template: string | null | undefined, name: string | null | undefined): string | null {
+  if (!template?.trim()) return null
+  const first = firstNameOf(name) || "there"
+  return template.replace(/\[\s*first\s+name\s*\]/gi, first)
+}

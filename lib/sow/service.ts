@@ -7,6 +7,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import {
   SOW_LINE_MAX,
+  SOW_OPENING_MAX,
+  normalizeText,
   SOW_LINES_PER_SECTION,
   SOW_SECTIONS,
   SOW_SECTION_LABEL,
@@ -70,4 +72,25 @@ export async function saveSowLines(db: SupabaseClient, coachId: string, input: u
     if (error) return fail(`Saved the new lines, but couldn't remove the old ones: ${error.message}`, 500)
   }
   return { ok: true, data: await getSowLines(db, coachId) }
+}
+
+// ── The coach's SOW settings ─────────────────────────────────────────────────
+
+/** The opening paragraph new client SOWs start with, or null. */
+export async function getDefaultOpening(db: SupabaseClient, coachId: string): Promise<string | null> {
+  const { data, error } = await db.from("coach_sow_settings").select("default_opening").eq("coach_profile_id", coachId).maybeSingle()
+  if (error) throw new Error(`Failed to read SOW settings: ${error.message}`)
+  return (data as { default_opening: string | null } | null)?.default_opening ?? null
+}
+
+/** Save the default opening paragraph. Blank clears it. SOWs already saved keep theirs. */
+export async function saveDefaultOpening(db: SupabaseClient, coachId: string, input: unknown): Promise<Result<string | null>> {
+  const v = normalizeText(input, SOW_OPENING_MAX, "The default opening paragraph")
+  if ("error" in v) return fail(v.error)
+  const { data: existing } = await db.from("coach_sow_settings").select("coach_profile_id").eq("coach_profile_id", coachId).maybeSingle()
+  const { error } = existing
+    ? await db.from("coach_sow_settings").update({ default_opening: v.value }).eq("coach_profile_id", coachId)
+    : await db.from("coach_sow_settings").insert({ coach_profile_id: coachId, default_opening: v.value })
+  if (error) return fail(`Failed to save the default opening: ${error.message}`, 500)
+  return { ok: true, data: v.value }
 }

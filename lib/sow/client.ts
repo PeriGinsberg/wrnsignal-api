@@ -10,10 +10,8 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { checkPayment, composeSow, defaultPaymentFor, money, type DefaultPayment, type SowDocument, type SowPayment } from "./build"
-import { normalizeText } from "./model"
+import { SOW_OPENING_MAX, fillOpening, normalizeText } from "./model"
 import { getSowLines } from "./service"
-
-export const SOW_OPENING_MAX = 3000
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: string; status: number }
 const fail = (error: string, status = 400): { ok: false; error: string; status: number } => ({ ok: false, error, status })
@@ -71,7 +69,14 @@ async function load(db: SupabaseClient, coachClientId: string, engagementId: str
     pkgDefault = ((pk as { default_payment: DefaultPayment } | null)?.default_payment) ?? null
   }
   const { data: row } = await db.from("client_sows").select("*").eq("engagement_id", engagementId).maybeSingle()
+  // A new SOW starts from the coach's default opening, [First Name] filled in.
+  let defaultOpening: string | null = null
+  if (!row) {
+    const { data: st } = await db.from("coach_sow_settings").select("default_opening").eq("coach_profile_id", cc.coach_profile_id).maybeSingle()
+    defaultOpening = fillOpening((st as { default_opening: string | null } | null)?.default_opening, clientName)
+  }
   return {
+    defaultOpening,
     eng, cc, delivs, bullets, lines, pkgDefault, clientName: clientName ?? "this client",
     phases: (ph ?? []) as { id: string; label: string; sow_subtitle: string | null; sow_note: string | null; sort_order: number }[],
     practiceName: ((coach as { coach_org: string | null } | null)?.coach_org) ?? null,
@@ -86,6 +91,8 @@ export async function getClientSow(db: SupabaseClient, coachClientId: string, en
   const packageTotal = packageTotalCents(x.delivs, x.eng.discount_cents)
   const total = x.row?.price_override_cents ?? packageTotal
   const payment = x.row?.payment ?? defaultPaymentFor(x.pkgDefault, total)
+  // Saved: the coach's own text, even if they cleared it. Unsaved: the default.
+  const opening = x.row ? x.row.opening : x.defaultOpening
 
   const included = x.delivs.filter((d) => !d.not_needed)
   const warnings: string[] = []
@@ -101,7 +108,7 @@ export async function getClientSow(db: SupabaseClient, coachClientId: string, en
     clientName: x.clientName,
     practiceName: x.practiceName,
     packageName: x.eng.name,
-    opening: x.row?.opening ?? null,
+    opening,
     phases: x.phases,
     deliverables: x.delivs.map((d) => ({
       name: d.name, phase_id: d.phase_id, not_needed: d.not_needed, sort_order: d.sort_order,
@@ -119,7 +126,7 @@ export async function getClientSow(db: SupabaseClient, coachClientId: string, en
       proposal_status: x.eng.proposal_status,
       status: x.row?.status ?? "draft",
       saved: !!x.row,
-      opening: x.row?.opening ?? null,
+      opening,
       price_override_cents: x.row?.price_override_cents ?? null,
       package_total_cents: packageTotal,
       total_cents: total,

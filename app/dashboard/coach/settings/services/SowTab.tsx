@@ -1,6 +1,8 @@
 "use client"
 
-// SOW: Settings > Services > SOW. The practice's standard SOW sections
+// SOW: Settings > Services > SOW. The default opening paragraph new client
+// SOWs start with ([First Name] fills from the prospect's name), and the
+// practice's standard SOW sections
 // (Included at no charge, Optional addition, How we work, Not included). Each
 // line shows on every SOW, only when a phase is in the client's plan, or only
 // when a phase is NOT in the plan. Deliverable bullets live on the Deliverables
@@ -13,7 +15,7 @@ import { T, input, btnPrimary, btnSecondary } from "../../../../../lib/dashboard
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
 import { SavingSpinner } from "../../SavingSpinner"
 import type { Phase } from "@/lib/phases/model"
-import { SOW_LINE_MAX, SOW_SECTIONS, SOW_SECTION_LABEL, type SowLine, type SowSection } from "@/lib/sow/model"
+import { SOW_LINE_MAX, SOW_OPENING_MAX, SOW_SECTIONS, SOW_SECTION_LABEL, type SowLine, type SowSection } from "@/lib/sow/model"
 
 async function authFetch(url: string, opts: RequestInit = {}): Promise<Response> {
   const { data: { session } } = await getSupabaseBrowser().auth.getSession()
@@ -46,6 +48,8 @@ const toPayload = (r: Row) => {
 export function SowTab() {
   const [rows, setRows] = useState<Row[]>([])
   const [saved, setSaved] = useState<Row[]>([])
+  const [opening, setOpening] = useState("")
+  const [savedOpening, setSavedOpening] = useState("")
   const [phases, setPhases] = useState<Phase[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -63,6 +67,8 @@ export function SowTab() {
       setRows(r)
       setSaved(r)
       setPhases(j.phases)
+      setOpening(j.default_opening ?? "")
+      setSavedOpening(j.default_opening ?? "")
     } catch {
       setError("Network error, try again")
     } finally {
@@ -72,7 +78,7 @@ export function SowTab() {
 
   useEffect(() => { void load() }, [load])
 
-  const dirty = useMemo(() => snapshot(rows) !== snapshot(saved), [rows, saved])
+  const dirty = useMemo(() => snapshot(rows) !== snapshot(saved) || opening !== savedOpening, [rows, saved, opening, savedOpening])
   const clear = () => { setError(null); setSavedOk(false) }
 
   function update(key: string, patch: Partial<Row>) {
@@ -107,12 +113,14 @@ export function SowTab() {
     setSaving(true)
     clear()
     try {
-      const res = await authFetch("/api/coach/sow-lines", { method: "PUT", body: JSON.stringify({ lines: rows.map(toPayload) }) })
+      const res = await authFetch("/api/coach/sow-lines", { method: "PUT", body: JSON.stringify({ lines: rows.map(toPayload), default_opening: opening.trim() || null }) })
       const j = await res.json().catch(() => ({}))
       if (!res.ok || !j?.ok) { setError(j?.error || `Save failed (${res.status})`); return }
       const r = toRows(j.lines)
       setRows(r)
       setSaved(r)
+      setOpening(j.default_opening ?? "")
+      setSavedOpening(j.default_opening ?? "")
       setSavedOk(true)
     } catch {
       setError("Network error, try again")
@@ -130,10 +138,28 @@ export function SowTab() {
   return (
     <div>
       <p style={{ fontSize: 13, color: T.MUTED, margin: "0 0 16px" }}>
-        The standard sections at the end of every client&apos;s SOW. A line can show on every SOW, only when a
+        How every client&apos;s SOW opens, and the standard sections at its end. A line can show on every SOW, only when a
         phase is in the client&apos;s plan, or only when it isn&apos;t. Deliverable bullets are on the Deliverables
         tab; phase subtitles and closing notes are on the Phases tab.
       </p>
+
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase", color: T.DIM, marginBottom: 8 }}>
+          Default opening paragraph
+        </div>
+        <textarea
+          aria-label="Default opening paragraph"
+          value={opening}
+          maxLength={SOW_OPENING_MAX}
+          placeholder={"Hi [First Name],\n\nThank you for your time…"}
+          onChange={(e) => { setOpening(e.target.value); clear() }}
+          style={{ ...input, minHeight: 120, width: "100%", boxSizing: "border-box", resize: "vertical", fontFamily: "inherit", lineHeight: 1.45 }}
+        />
+        <p style={{ fontSize: 12, color: T.DIM, margin: "6px 0 0" }}>
+          New SOWs start with this; you can change it for each client. [First Name] becomes the prospect&apos;s first name.
+          SOWs you have already saved keep their own opening.
+        </p>
+      </div>
 
       {SOW_SECTIONS.map((section) => {
         const lines = rows.filter((r) => r.section === section)

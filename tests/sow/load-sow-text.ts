@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
-// Load docs/WRN_SOW_Text.md into one coach's Settings: phase SOW subtitles and
-// closing notes, deliverable SOW bullets, and the standard SOW sections.
+// Load docs/WRN_SOW_Text.md into one coach's Settings: the default opening
+// paragraph, phase SOW subtitles and closing notes, deliverable SOW bullets,
+// and the standard SOW sections. --only-opening loads just the default opening.
 //
 // Dry run unless --apply. It refuses to overwrite SOW text the coach already
 // has unless --overwrite. Every deliverable and phase named in the doc must
@@ -8,15 +9,15 @@
 //
 // USAGE:
 //   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... COACH_EMAIL=peri+democoach@workforcereadynow.com \
-//   NODE_OPTIONS=--use-system-ca npx tsx tests/sow/load-sow-text.ts [--apply] [--overwrite]
+//   NODE_OPTIONS=--use-system-ca npx tsx tests/sow/load-sow-text.ts [--only-opening] [--apply] [--overwrite]
 // Against prod, also set ALLOW_PROD=yes.
 //
 // Creds come from process.env only; this file never reads .env*.
 
 import { readFileSync } from "node:fs"
 import { createClient } from "@supabase/supabase-js"
-import { SOW_SECTIONS, SOW_SECTION_LABEL, normalizeBullets, normalizeText, SOW_NOTE_MAX, SOW_SUBTITLE_MAX, type SowSection } from "../../lib/sow/model"
-import { getSowLines, saveSowLines } from "../../lib/sow/service"
+import { SOW_SECTIONS, SOW_SECTION_LABEL, normalizeBullets, normalizeText, SOW_NOTE_MAX, SOW_OPENING_MAX, SOW_SUBTITLE_MAX, type SowSection } from "../../lib/sow/model"
+import { getDefaultOpening, getSowLines, saveDefaultOpening, saveSowLines } from "../../lib/sow/service"
 
 const PROD_REF = "ejhnokcnahauvrcbcmic" // DEVELOPMENT.md, "The mental model"
 const DOC = "docs/WRN_SOW_Text.md"
@@ -24,6 +25,7 @@ const DOC = "docs/WRN_SOW_Text.md"
 const parseOnly = process.argv.includes("--parse-only")
 const apply = process.argv.includes("--apply")
 const overwrite = process.argv.includes("--overwrite")
+const onlyOpening = process.argv.includes("--only-opening")
 
 function req(name: string, alt?: string): string {
   const v = process.env[name] || (alt ? process.env[alt] : undefined)
@@ -35,6 +37,7 @@ const norm = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase()
 // ── Parse the doc ────────────────────────────────────────────────────────────
 
 type Parsed = {
+  opening: string | null
   subtitles: Map<string, string>
   notes: Map<string, string>
   bullets: { name: string; phase: string; lines: string[] }[]
@@ -42,7 +45,8 @@ type Parsed = {
 }
 
 function parse(md: string): Parsed {
-  const out: Parsed = { subtitles: new Map(), notes: new Map(), bullets: [], lines: [] }
+  const out: Parsed = { opening: null, subtitles: new Map(), notes: new Map(), bullets: [], lines: [] }
+  const opening: string[] = []
   const sectionByLabel = new Map(SOW_SECTIONS.map((s) => [norm(SOW_SECTION_LABEL[s]), s]))
   let h2 = ""
   let h3 = ""
@@ -51,7 +55,7 @@ function parse(md: string): Parsed {
     if (line.startsWith("## ")) {
       // The doc's headings, by how they start ("Phase subtitles (shown as ...)").
       const t = norm(line.slice(3))
-      h2 = ["phase subtitles", "phase closing notes", "deliverable sow bullets", "standard sections"].find((k) => t.startsWith(k)) ?? t
+      h2 = ["default opening paragraph", "phase subtitles", "phase closing notes", "deliverable sow bullets", "standard sections"].find((k) => t.startsWith(k)) ?? t
       h3 = ""
       continue
     }
@@ -62,6 +66,10 @@ function parse(md: string): Parsed {
         if (!m) throw new Error(`Deliverable heading without a phase: ${h3}`)
         out.bullets.push({ name: m[1].trim(), phase: m[2].trim(), lines: [] })
       }
+      continue
+    }
+    if (h2 === "default opening paragraph") {
+      opening.push(line) // paragraphs kept: a blank line stays a blank line
       continue
     }
     if (h2 === "phase subtitles" || h2 === "phase closing notes") {
@@ -87,6 +95,7 @@ function parse(md: string): Parsed {
       out.lines.push({ section, body, show })
     }
   }
+  out.opening = opening.join("\n").replace(/\n{3,}/g, "\n\n").trim() || null
   return out
 }
 
@@ -99,6 +108,7 @@ async function main() {
   const doc = parse(readFileSync(DOC, "utf8"))
   // --parse-only: what the doc holds, with no database.
   if (parseOnly) {
+    console.log(`default opening: ${doc.opening ? `${doc.opening.length} characters, starts "${doc.opening.slice(0, 40)}"` : "none"}`)
     console.log(`subtitles: ${[...doc.subtitles.keys()].join(", ")}`)
     console.log(`closing notes: ${[...doc.notes.keys()].join(", ")}`)
     for (const b of doc.bullets) console.log(`bullets: ${b.name} (${b.phase}) ${b.lines.length}`)
@@ -121,6 +131,23 @@ async function main() {
   if (coach.length !== 1 || !coach[0].is_coach) throw new Error(`expected one coach profile for ${email}, found ${coach.length}`)
   const coachId: string = coach[0].id
   console.log(`Coach: ${email}  ${coachId}`)
+
+  // ── The default opening paragraph ──
+  const opening = normalizeText(doc.opening, SOW_OPENING_MAX, "The default opening paragraph")
+  if ("error" in opening) throw new Error(opening.error)
+  const currentOpening = await getDefaultOpening(db as any, coachId) // throws if migration 20261010 is missing
+  const openingTaken = !!currentOpening && currentOpening !== opening.value
+  console.log(`\nDefault opening paragraph: ${opening.value ? `${opening.value.length} characters` : "none in the doc"}${currentOpening === opening.value && opening.value ? " (already loaded)" : ""}`)
+  if (opening.value) console.log(opening.value.split("\n").map((l) => `  | ${l}`).join("\n"))
+  if (onlyOpening) {
+    if (openingTaken && !overwrite) throw new Error("Nothing written; this coach already has a different default opening (re-run with --overwrite to replace it).")
+    if (!apply) { console.log("\nDry run: nothing written. Re-run with --apply."); return }
+    const r = await saveDefaultOpening(db as any, coachId, opening.value)
+    if (!r.ok) throw new Error(r.error)
+    if ((await getDefaultOpening(db as any, coachId)) !== opening.value) throw new Error("read-back does not match the doc")
+    console.log("\nDefault opening loaded and verified.")
+    return
+  }
 
   const phases = must("coach_phases (migration 20261008 applied?)", await db.from("coach_phases")
     .select("id, label, sow_subtitle, sow_note").eq("coach_profile_id", coachId)) as any[]
@@ -175,6 +202,7 @@ async function main() {
     ...phases.filter((p) => phaseWrites.has(p.id) && (p.sow_subtitle || p.sow_note)).map((p) => `phase ${p.label} has SOW text`),
     ...bulletWrites.filter((w) => delivByName.get(norm(w.name))?.sow_bullets).map((w) => `${w.name} has SOW bullets`),
     ...(existingLines.length ? [`${existingLines.length} standard lines exist`] : []),
+    ...(openingTaken ? ["a different default opening exists"] : []),
   ]
 
   // ── The plan ──
@@ -201,6 +229,10 @@ async function main() {
   // ── Write: standard lines first (all-or-nothing, through the app's own rules) ──
   const saved = await saveSowLines(db as any, coachId, lineRows.map(({ label, ...r }) => r))
   if (!saved.ok) throw new Error(`Standard lines: ${saved.error}`)
+  if (opening.value !== currentOpening) {
+    const o = await saveDefaultOpening(db as any, coachId, opening.value)
+    if (!o.ok) throw new Error(`Default opening: ${o.error}`)
+  }
   const now = new Date().toISOString()
   for (const w of phaseWrites.values()) {
     const patch: Record<string, unknown> = { updated_at: now }
@@ -230,6 +262,7 @@ async function main() {
   if (!playbook || playbook.show_for !== "phase_not_in_plan" || playbook.phase_id !== land?.id) { bad++; console.log("  FAIL the Playbook line is not tied to 'Land NOT in the plan'") }
   console.log(`\nRead back: ${backPhases.filter((p) => p.sow_subtitle || p.sow_note).length} phases with SOW text, ` +
     `${backDelivs.filter((d) => d.sow_bullets).length} deliverables with bullets, ${backLines.length} standard lines`)
+  if ((await getDefaultOpening(db as any, coachId)) !== opening.value) { bad++; console.log("  FAIL default opening") }
   if (bad) throw new Error("read-back does not match the doc")
   console.log("\nSOW text loaded and verified.")
 }

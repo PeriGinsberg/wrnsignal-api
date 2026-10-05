@@ -3,8 +3,8 @@
 // Run: npx tsx tests/sow/sow-text.test.ts
 
 import { makeFakeDb } from "../_lib/fakeSupabase"
-import { bulletList, lineShows, normalizeBullets, normalizeText } from "../../lib/sow/model"
-import { getSowLines, saveSowLines } from "../../lib/sow/service"
+import { bulletList, fillOpening, firstNameOf, lineShows, normalizeBullets, normalizeText } from "../../lib/sow/model"
+import { getDefaultOpening, getSowLines, saveDefaultOpening, saveSowLines } from "../../lib/sow/service"
 import { ensurePhases, savePhases } from "../../lib/phases/service"
 
 let pass = 0
@@ -27,6 +27,7 @@ function seed() {
       { id: "ph-theirs", coach_profile_id: OTHER, phase_key: "know", label: "Know", sort_order: 1, active: true, is_custom: false },
     ],
     coach_sow_lines: [],
+    coach_sow_settings: [],
   })
 }
 const line = (section: string, body: string, show_for = "every_plan", phase_id: string | null = null) => ({ section, body, show_for, phase_id })
@@ -109,6 +110,26 @@ async function main() {
     ok("blank clears it", clear.ok && clear.data[0].sow_subtitle === null && clear.data[0].sow_note === null)
     ok("a subtitle over 80 characters is refused", !(await savePhases(db.client as any, COACH, list.map((p, i) => (i === 0 ? { ...p, sow_subtitle: "x".repeat(81) } : p)))).ok)
     ok("a note over 1,000 characters is refused", !(await savePhases(db.client as any, COACH, list.map((p, i) => (i === 0 ? { ...p, sow_note: "x".repeat(1001) } : p)))).ok)
+  }
+
+  console.log("\nthe default opening paragraph")
+  {
+    ok("first name: the first word", firstNameOf("Aiden Park") === "Aiden")
+    ok("first name: Last, First", firstNameOf("Dupuy, Alex") === "Alex")
+    ok("first name: none", firstNameOf(null) === "" && firstNameOf("  ") === "")
+    const t = "Hi [First Name],\n\nThank you, [first name]."
+    ok("[First Name] fills, any case", fillOpening(t, "Aiden Park") === "Hi Aiden,\n\nThank you, Aiden.")
+    ok("no name reads there", fillOpening(t, null) === "Hi there,\n\nThank you, there.")
+    ok("no template is no opening", fillOpening("   ", "Aiden") === null && fillOpening(null, "Aiden") === null)
+
+    const db = seed()
+    ok("none until set", (await getDefaultOpening(db.client as any, COACH)) === null)
+    ok("saves", (await saveDefaultOpening(db.client as any, COACH, "  Hi [First Name],  ")).ok && (await getDefaultOpening(db.client as any, COACH)) === "Hi [First Name],")
+    ok("saving again updates the one row", (await saveDefaultOpening(db.client as any, COACH, "Hello")).ok && db.tables.coach_sow_settings.length === 1
+      && (await getDefaultOpening(db.client as any, COACH)) === "Hello")
+    ok("blank clears it", (await saveDefaultOpening(db.client as any, COACH, "")).ok && (await getDefaultOpening(db.client as any, COACH)) === null)
+    ok("over 3,000 characters is refused", !(await saveDefaultOpening(db.client as any, COACH, "x".repeat(3001))).ok)
+    ok("another coach's is separate", (await getDefaultOpening(db.client as any, OTHER)) === null)
   }
 
   console.log(`\n${pass} passed, ${fail} failed`)

@@ -143,7 +143,7 @@ export function composeSow(input: SowInputs): SowDocument {
 
   const payments = input.payment.mode === "split"
     ? input.payment.payments.map((p, i) => ({ ...p, label: `Payment ${i + 1}: ${money(p.amount_cents)}, ${dueLabel(p.days)}` }))
-    : [{ amount_cents: input.totalCents, days: 0, label: `${money(input.totalCents)}, due in full at signing` }]
+    : [{ amount_cents: input.totalCents, days: 0, label: `${money(input.totalCents)}, due in full when you click Let's Go` }]
 
   return {
     client_name: input.clientName,

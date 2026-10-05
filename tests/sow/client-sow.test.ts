@@ -58,7 +58,7 @@ async function main() {
     ok("Land not in the plan: the Playbook line shows", doc.sections.find((s) => s.key === "included")!.lines.join() === "SIGNAL,Playbook")
     ok("and the Land-only line does not; its emptied section is left out", !doc.sections.some((s) => s.key === "how_we_work"))
     ok("sections in their fixed order", doc.sections.map((s) => s.key).join() === "included,not_included")
-    ok("full payment reads as one line", doc.payment.payments.length === 1 && doc.payment.payments[0].label === "$800, due in full at signing")
+    ok("full payment reads as one line", doc.payment.payments.length === 1 && doc.payment.payments[0].label === "$800, due in full when you click Let's Go")
 
     const withLand = composeSow(inputs({ deliverables: [...inputs().deliverables, { name: "Mock Interview", phase_id: "ph-land", not_needed: false, sort_order: 7, bullets: null }] }))
     ok("Land in the plan: the Playbook line hides and the Land line shows",
@@ -114,6 +114,7 @@ async function main() {
       coach_milestones: [{ id: "m1", sow_bullets: "A written report" }, { id: "m2", sow_bullets: null }, { id: "m3", sow_bullets: "x" }],
       coach_phases: PHASES.map((p) => ({ ...p, coach_profile_id: "coach-1" })),
       coach_sow_lines: [],
+      coach_sow_settings: [{ coach_profile_id: "coach-1", default_opening: "Hi [First Name],\n\nThank you for your time." }],
       client_sows: [],
     })
     const c = db.client as any
@@ -126,6 +127,8 @@ async function main() {
     ok("reading writes nothing", db.tables.client_sows.length === 0 && !first.data.saved)
     ok("a deliverable without bullets is a warning", first.data.warnings.some((w) => w.includes("No SOW bullets for Resume")))
     ok("the document names the client", first.data.document.client_name === "Aiden Park" && first.data.document.stages.length === 2)
+    ok("a new SOW starts with the default opening, first name filled", first.data.opening === "Hi Aiden,\n\nThank you for your time."
+      && first.data.document.opening === first.data.opening)
 
     const saved = await saveClientSow(c, { coachClientId: "cc-1", engagementId: "eng-1", actor: "coach-1", input: {
       opening: "  Welcome, Aiden.  ", price_override_cents: 160000,
@@ -136,6 +139,9 @@ async function main() {
     ok("one row per package", db.tables.client_sows.length === 1 && db.tables.client_sows[0].status === "draft")
     const again = await saveClientSow(c, { coachClientId: "cc-1", engagementId: "eng-1", actor: "coach-1", input: { opening: null, price_override_cents: null, payment: { mode: "full" } } })
     ok("saving again updates the same row; no price means the package total", again.ok && db.tables.client_sows.length === 1 && again.data.total_cents === 175000)
+    db.tables.coach_sow_settings[0].default_opening = "A new default"
+    const kept = await getClientSow(c, "cc-1", "eng-1")
+    ok("a saved SOW keeps its own opening (here, cleared) when the default changes", kept.ok && kept.data.opening === null)
 
     const bad = (input: unknown) => saveClientSow(c, { coachClientId: "cc-1", engagementId: "eng-1", actor: "coach-1", input })
     ok("a split that doesn't add up to the price is refused", !(await bad({ price_override_cents: 160000, payment: { mode: "split", payments: [{ amount_cents: 87500, days: 0 }, { amount_cents: 87500, days: 45 }] } })).ok)

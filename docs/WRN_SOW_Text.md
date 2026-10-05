@@ -3,6 +3,12 @@
 Source: Peri's current All the Way Through SOW, with agreed changes (Your SIGNAL DNA naming, outreach wording, no AI simulator access, Proof Project at $1,800).
 All lines confirmed by Peri. Note the new 'Only when Land is NOT in the plan' condition.
 
+## Default opening paragraph (new SOWs start with this; [First Name] fills from the prospect)
+
+Hi [First Name],
+
+Thank you for your time and for the opportunity to learn more about your goals. Here is the Statement of Work for your engagement. Read it through, and when everything looks right, click Let's Go at the bottom and I will send along your onboarding information and get your first session scheduled.
+
 ## Phase subtitles (shown as the stage heading)
 - Know: Your SIGNAL DNA and Career Paths
 - Build: Foundations
