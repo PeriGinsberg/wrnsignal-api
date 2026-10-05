@@ -106,6 +106,13 @@ export const LABELS: Record<CoachClientEventType, (e: CoachClientEvent) => strin
   },
   workspace_created: (e) => e.context?.name ? `Drive workspace created: ${e.context.name}` : "Drive workspace created",
   workspace_shared: (e) => e.context?.email ? `Drive workspace shared with ${e.context.email}` : "Drive workspace shared",
+  welcome_email_sent: (e) => {
+    const to = e.context?.to ? ` to ${e.context.to}` : ""
+    const cc = e.context?.cc ? ` (cc ${e.context.cc})` : ""
+    const which = e.context?.template ? `: ${e.context.template}` : ""
+    return `Welcome email sent${to}${cc}${which}`
+  },
+  welcome_email_skipped: (e) => e.context?.task ? `Welcome task "${e.context.task}" released without an email` : "Welcome task released without an email",
   sow_withdrawn: (e) => {
     const name = e.context?.name ? ` for ${e.context.name}` : ""
     return e.context?.replaced_by ? `SOW${name} withdrawn: the ${e.context.replaced_by} SOW was sent instead` : `SOW${name} withdrawn`

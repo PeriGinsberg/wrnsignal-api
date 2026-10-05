@@ -14,6 +14,8 @@
 // stops the two surfaces drifting.
 
 import { useCallback, useEffect, useState } from "react"
+import { isWelcomeTodo } from "../../../../lib/welcome/model"
+import { WelcomeEmailDialog } from "../_plan/WelcomeEmailDialog"
 import { useRouter } from "next/navigation"
 import { T } from "../../../../lib/dashboard-theme"
 import type { Task } from "../../../../lib/tasks/model"
@@ -70,7 +72,11 @@ export function TaskCard({ order = "card" }: { order?: "card" | "due" } = {}) {
   useEffect(() => { void load() }, [load])
   useEffect(() => { void loadClients() }, [loadClients])
 
+  const [welcome, setWelcome] = useState<Task | null>(null)
+
   async function toggleDone(task: Task, next: boolean) {
+    // Ticking the welcome task's To-Do opens the welcome email instead.
+    if (next && isWelcomeTodo(task)) { setWelcome(task); return }
     setBusy(task.id)
     const before = tasks
     // The card only ever shows open work, so a completed row leaves it. That
@@ -101,6 +107,10 @@ export function TaskCard({ order = "card" }: { order?: "card" | "due" } = {}) {
     // the panel and owns the title and its "View all" link.
     <div>
       <TaskRowStyles />
+      {welcome && (
+        <WelcomeEmailDialog coachClientId={welcome.coach_client_id!} taskId={welcome.plan_activity_id!}
+          onClose={() => setWelcome(null)} onDone={() => { setWelcome(null); void load() }} />
+      )}
 
       {error && <p style={{ color: T.ERROR, fontSize: 13, margin: "10px 0 0 0" }}>{error}</p>}
 

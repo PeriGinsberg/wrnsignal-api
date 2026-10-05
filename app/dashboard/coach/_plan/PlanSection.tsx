@@ -27,6 +27,7 @@ import {
   type TaskState,
   type TaskType,
 } from "@/lib/plan/model"
+import { WelcomeEmailDialog } from "./WelcomeEmailDialog"
 
 const NAVY = PHASE_COLORS.text
 
@@ -91,6 +92,9 @@ export function PlanSection({ coachClientId, refreshKey = 0, onChanged }: {
   const [confirm, setConfirm] = useState<{ text: string; body: Record<string, unknown> } | null>(null)
   // A due date was just set on an Upcoming task: offer to activate it.
   const [askActivate, setAskActivate] = useState<PlanTask | null>(null)
+  // Releasing the welcome task opens the welcome email first.
+  const [welcome, setWelcome] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (!coachClientId) return
@@ -118,6 +122,11 @@ export function PlanSection({ coachClientId, refreshKey = 0, onChanged }: {
   }, [coachClientId])
 
   async function send(body: Record<string, unknown>) {
+    if (body.action === "release" && plan?.deliverables.some((d) => d.tasks.some((t) => t.id === body.task_id && t.welcome_release))) {
+      setWelcome(String(body.task_id))
+      return false
+    }
+    setNotice(null)
     setBusy(true)
     setError(null)
     try {
@@ -163,6 +172,7 @@ export function PlanSection({ coachClientId, refreshKey = 0, onChanged }: {
         The deliverables and tasks in this client&apos;s approved packages. Changes here are for this client only.
       </p>
       {error && <div role="alert" style={{ fontSize: 12, color: "#B42318", marginBottom: 10 }}>{error}</div>}
+      {notice && <div role="status" style={{ fontSize: 12, color: NAVY, background: "#E6F7F7", borderRadius: 8, padding: "6px 10px", marginBottom: 10 }}>{notice}</div>}
       {!plan ? (
         !error && <p style={{ fontSize: 13, color: NAVY, margin: 0 }}>Loading the plan…</p>
       ) : groups.length === 0 ? (
@@ -217,6 +227,11 @@ export function PlanSection({ coachClientId, refreshKey = 0, onChanged }: {
             </div>
           </div>
         </div>
+      )}
+
+      {welcome && coachClientId && (
+        <WelcomeEmailDialog coachClientId={coachClientId} taskId={welcome} onClose={() => setWelcome(null)}
+          onDone={(message) => { setWelcome(null); setNotice(message); void load(); onChanged?.() }} />
       )}
 
       {confirm && (

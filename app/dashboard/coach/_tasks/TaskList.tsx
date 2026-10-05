@@ -13,6 +13,8 @@
 // old priority on their created audit event, so nothing was thrown away.
 
 import { useCallback, useEffect, useState } from "react"
+import { isWelcomeTodo } from "../../../../lib/welcome/model"
+import { WelcomeEmailDialog } from "../_plan/WelcomeEmailDialog"
 import { T, btnSecondary } from "../../../../lib/dashboard-theme"
 import type { Task } from "../../../../lib/tasks/model"
 import { TaskFormModal } from "./TaskFormModal"
@@ -128,7 +130,11 @@ export function TaskList({
     })()
   }, [])
 
+  const [welcome, setWelcome] = useState<Task | null>(null)
+
   async function toggleDone(task: Task, next: boolean) {
+    // Ticking the welcome task's To-Do opens the welcome email instead.
+    if (next && isWelcomeTodo(task)) { setWelcome(task); return }
     setBusy(task.id)
     const before = tasks
     // This list only shows open work, so a completed row leaves it.
@@ -214,6 +220,10 @@ export function TaskList({
   return (
     <div>
       <TaskRowStyles />
+      {welcome && (
+        <WelcomeEmailDialog coachClientId={welcome.coach_client_id!} taskId={welcome.plan_activity_id!}
+          onClose={() => setWelcome(null)} onDone={() => { setWelcome(null); void load(); onChanged?.() }} />
+      )}
       {showStatusFilter && (
         <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }} role="tablist" aria-label="Task status">
           {STATUS_TABS.map((t) => {

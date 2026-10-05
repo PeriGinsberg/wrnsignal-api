@@ -20,6 +20,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import { logProspectEvent } from "../prospects/history"
 import { autoStartPhases } from "../phases/service"
 import { syncTodo } from "./todo"
+import type { DriveApi } from "../sow/workspace"
 import {
   TASK_STATE_LABEL,
   hasStarted,
@@ -135,7 +136,7 @@ async function log(
 
 // ── Changing a task's state ──────────────────────────────────────────────────
 
-type Ctx = { coachClientId: string; actor: string | null; byClient?: boolean }
+type Ctx = { coachClientId: string; actor: string | null; byClient?: boolean; drive?: DriveApi }
 
 /**
  * The one writer of a task's state. Records the release time when a client
@@ -182,7 +183,7 @@ async function setState(
   // service, which already imports this file.
   if (to === "waiting_on_client" && task.welcome_release) {
     const { onWelcomeReleased } = await import("../sow/workspace")
-    await onWelcomeReleased(db, ctx.coachClientId)
+    await onWelcomeReleased(db, ctx.coachClientId, { drive: ctx.drive })
   }
   return null
 }
@@ -289,7 +290,7 @@ function undoTarget(t: TaskRow): TaskState {
 /** The coach acts on one task in the client's plan. */
 export async function applyTaskAction(
   db: SupabaseClient,
-  args: { coachClientId: string; taskId: string; action: TaskAction; actor: string },
+  args: { coachClientId: string; taskId: string; action: TaskAction; actor: string; drive?: DriveApi },
 ): Promise<Result<true>> {
   const where = await locate(db, args.coachClientId, args.taskId)
   if (!where) return fail("Task not found", 404)
@@ -300,7 +301,7 @@ export async function applyTaskAction(
   if (deliverable.not_needed && args.action !== "undo") {
     return fail("This deliverable is marked Not needed. Restore it first.", 409)
   }
-  const ctx: Ctx = { coachClientId: args.coachClientId, actor: args.actor }
+  const ctx: Ctx = { coachClientId: args.coachClientId, actor: args.actor, drive: args.drive }
   const was = task.state
   const to: TaskState =
     args.action === "activate" ? "active"

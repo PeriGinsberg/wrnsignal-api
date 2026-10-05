@@ -14,6 +14,8 @@
 // so the two surfaces cannot drift apart.
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { isWelcomeTodo } from "../../../../lib/welcome/model"
+import { WelcomeEmailDialog } from "../_plan/WelcomeEmailDialog"
 import { T, btnPrimary, btnSecondary, card, input, selectDark, selectDarkOption } from "../../../../lib/dashboard-theme"
 import { TASK_VIEWS, type Task, type TaskView } from "../../../../lib/tasks/model"
 import { BackToDashboard } from "../BackToDashboard"
@@ -111,7 +113,11 @@ export default function CoachTasksPage() {
     return full ? full.split(/\s+/)[0] : null
   }
 
+  const [welcome, setWelcome] = useState<Task | null>(null)
+
   async function toggleDone(task: Task, next: boolean) {
+    // Ticking the welcome task's To-Do opens the welcome email instead.
+    if (next && isWelcomeTodo(task)) { setWelcome(task); return }
     setBusy(task.id)
     const before = tasks
     // Optimistic, because the coach has already decided. The row stays put and
@@ -196,6 +202,10 @@ export default function CoachTasksPage() {
   return (
     <div style={{ padding: "24px 20px", maxWidth: 1180, margin: "0 auto" }}>
       <TaskRowStyles />
+      {welcome && (
+        <WelcomeEmailDialog coachClientId={welcome.coach_client_id!} taskId={welcome.plan_activity_id!}
+          onClose={() => setWelcome(null)} onDone={() => { setWelcome(null); void load() }} />
+      )}
       <BackToDashboard />
 
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginTop: 8 }}>

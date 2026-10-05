@@ -101,6 +101,12 @@ export const COACH_CLIENT_EVENT_TYPES = [
   // welcome task is released (context: email, url).
   "workspace_created",
   "workspace_shared",
+  // The welcome email (lib/welcome/service.ts), sent when the coach releases
+  // the welcome task. welcome_email_sent: to, cc, subject, the template's
+  // name and the task. welcome_email_skipped: the coach chose Don't send and
+  // the task went out without it (context: task).
+  "welcome_email_sent",
+  "welcome_email_skipped",
 ] as const
 
 export type CoachClientEventType = (typeof COACH_CLIENT_EVENT_TYPES)[number]
