@@ -34,12 +34,14 @@ const byOrder = (a: Phase, b: Phase) => a.sort_order - b.sort_order
  * the unique (coach, phase_key) key means two first reads at once cannot
  * double the list: the loser re-reads what the winner wrote.
  */
+async function readPhases(db: SupabaseClient, coachId: string): Promise<Phase[]> {
+  const { data, error } = await db.from("coach_phases").select(PHASE_COLUMNS).eq("coach_profile_id", coachId)
+  if (error) throw new Error(`Failed to read phases: ${error.message}`)
+  return ((data ?? []) as Phase[]).sort(byOrder)
+}
+
 export async function ensurePhases(db: SupabaseClient, coachId: string): Promise<Phase[]> {
-  const read = async () => {
-    const { data, error } = await db.from("coach_phases").select(PHASE_COLUMNS).eq("coach_profile_id", coachId)
-    if (error) throw new Error(`Failed to read phases: ${error.message}`)
-    return ((data ?? []) as Phase[]).sort(byOrder)
-  }
+  const read = () => readPhases(db, coachId)
   const existing = await read()
   if (existing.length) return existing
   const { error } = await db.from("coach_phases").insert(DEFAULT_PHASES.map((p, i) => ({
@@ -136,10 +138,10 @@ async function coachOf(db: SupabaseClient, coachClientId: string): Promise<strin
   return (data as { coach_profile_id: string } | null)?.coach_profile_id ?? null
 }
 
-async function board(db: SupabaseClient, coachClientId: string): Promise<Board[] | null> {
+async function board(db: SupabaseClient, coachClientId: string, seed = true): Promise<Board[] | null> {
   const coachId = await coachOf(db, coachClientId)
   if (!coachId) return null
-  const phases = (await ensurePhases(db, coachId)).filter((p) => p.active)
+  const phases = (await (seed ? ensurePhases(db, coachId) : readPhases(db, coachId))).filter((p) => p.active)
 
   // Only APPROVED packages put a phase in the plan.
   const { data: engs, error: e1 } = await db.from("coach_client_engagements").select("id")
@@ -191,9 +193,13 @@ async function board(db: SupabaseClient, coachClientId: string): Promise<Board[]
   })
 }
 
-/** The client's phases, in the coach's order, as the stepper shows them. */
-export async function getClientPhases(db: SupabaseClient, coachClientId: string): Promise<ClientPhase[] | null> {
-  const b = await board(db, coachClientId)
+/**
+ * The client's phases, in the coach's order, as the stepper shows them.
+ * `seed: false` for the client's own reads: a client's screen never writes the
+ * coach's default phases (a coach without phases has none in any plan anyway).
+ */
+export async function getClientPhases(db: SupabaseClient, coachClientId: string, opts: { seed?: boolean } = {}): Promise<ClientPhase[] | null> {
+  const b = await board(db, coachClientId, opts.seed ?? true)
   return b ? b.map((p) => ({
     phase_id: p.phase_id, label: p.label, status: p.status, tasks_done: p.tasks_done,
     tasks_total: p.tasks_total, ready_to_complete: p.ready_to_complete, updated_at: p.updated_at,

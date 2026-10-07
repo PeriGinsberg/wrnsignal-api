@@ -167,6 +167,7 @@ const LIGHT_ROUTES: string[] = [
   "/dashboard/tracker/*",           // step 7, all three views plus the
                                     // application detail page.
   "/dashboard/profile",             // step 8, the sectioned settings home.
+  "/dashboard/welcome",             // the first-run welcome. Designed light.
   "/dashboard/practice/*",          // the client's practice round. Designed
                                     // light from the start, so it is listed
                                     // in the commit that built it rather than
