@@ -39,7 +39,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ job
       return withCorsJson(req, { ok: false, error: "Forbidden: that plan is not on this board" }, 403)
     }
 
-    const result = await sharePlanJob(supabase, job as PlanJob)
+    const result = await sharePlanJob(supabase, job as PlanJob, { actor: scope.actorId })
     if (!result.ok) {
       // A domain policy refusal is not a bug, and saying "something went wrong"
       // would send someone looking for one.

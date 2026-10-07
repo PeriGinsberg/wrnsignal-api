@@ -35,6 +35,7 @@ import {
 } from "@/lib/drive/client"
 import { driveFileUrl } from "@/lib/drive/folderUrl"
 import { emitAndRun } from "@/lib/automation/run"
+import { completeTaskNamed } from "@/lib/plan/service"
 import { logCoachClientEvent } from "@/app/api/_lib/coachClientEvents"
 import { buildPlanContent } from "./planData"
 import { renderPlanHtml } from "./render"
@@ -304,6 +305,7 @@ export async function runPlanJob(
 export async function sharePlanJob(
   supabase: SupabaseClient,
   job: PlanJob,
+  opts: { actor?: string | null } = {},
 ): Promise<{ ok: true; job: PlanJob } | { ok: false; error: string; policy?: boolean }> {
   if (!job.drive_file_id || !job.document_id) {
     return { ok: false, error: "That plan is not finished yet." }
@@ -390,7 +392,28 @@ export async function sharePlanJob(
     coach_client_id: emailed.coach_client_id,
   }, emailed.client_profile_id)
 
+  // The client's plan: "Share plan with client" is Done, so the next task
+  // ("Book Review Networking Plan session") becomes Active. Never fails the
+  // share; a plan without that task is a no-op.
+  await finishSharePlanTask(supabase, emailed, opts.actor ?? null)
+
   return { ok: true, job: emailed }
+}
+
+export const SHARE_PLAN_TASK = "Share plan with client"
+
+async function finishSharePlanTask(supabase: SupabaseClient, job: PlanJob, actor: string | null): Promise<void> {
+  try {
+    let by = actor
+    if (!by) {
+      const { data: cc } = await supabase.from("coach_clients").select("coach_profile_id").eq("id", job.coach_client_id).maybeSingle()
+      by = (cc as { coach_profile_id: string } | null)?.coach_profile_id ?? null
+    }
+    if (!by) return
+    await completeTaskNamed(supabase, { coachClientId: job.coach_client_id, name: SHARE_PLAN_TASK, actor: by })
+  } catch (e) {
+    console.error("[networking-plan] finishing the plan's share task failed:", e instanceof Error ? e.message : String(e))
+  }
 }
 
 /**

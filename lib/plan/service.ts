@@ -321,6 +321,32 @@ export async function applyTaskAction(
 }
 
 /**
+ * Something SIGNAL saw happen finished a plan task: the first not-yet-finished
+ * coach task with this name (any case) in the client's approved packages is
+ * marked Done, which activates the next one as usual. A task already finished,
+ * or in a Not needed deliverable, is left alone. Returns the task's name, or
+ * null when there was nothing to finish.
+ *
+ * Found by name because a client's plan task keeps no link to the library
+ * task it was copied from. Used by the Networking Plan's Share with Client,
+ * which finishes "Share plan with client".
+ */
+export async function completeTaskNamed(
+  db: SupabaseClient,
+  args: { coachClientId: string; name: string; actor: string },
+): Promise<string | null> {
+  const want = args.name.trim().toLowerCase()
+  for (const d of await getPlan(db, args.coachClientId)) {
+    if (d.not_needed) continue
+    const t = d.tasks.find((x) => x.owner === "coach" && x.name.trim().toLowerCase() === want && (x.state === "upcoming" || x.state === "active"))
+    if (!t) continue
+    const r = await applyTaskAction(db, { coachClientId: args.coachClientId, taskId: t.id, action: "done", actor: args.actor })
+    return r.ok ? t.name : null
+  }
+  return null
+}
+
+/**
  * The client marks a released task done in their Coaches Hub, or undoes that.
  * Only their own released client tasks, so nothing else is reachable.
  */
