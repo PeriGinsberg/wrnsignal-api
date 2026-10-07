@@ -66,6 +66,12 @@ async function calendly<T>(path: string, init: RequestInit = {}): Promise<T> {
 // are matched as substrings of the event type's name with case, spaces and
 // punctuation removed; the first entry that matches wins. null = the session
 // is in no plan, so it always makes a one-off prep task.
+//
+// Confirmed with Peri 2026-10-07: "Workforce Ready Now Working Session" (was
+// "Initial Workforce Ready Now Working Session") is the catch-all, booked
+// outside any plan task; "Review Networking Plan" (was "WRN Networking
+// Workshop") books the Networking Campaign; the two "WRN Meeting" types are
+// ignored on purpose (IGNORED below).
 const SESSIONS: { keys: string[]; deliverable: string | null }[] = [
   { keys: ["signaldnaassessment"], deliverable: "Your SIGNAL DNA Assessment" },
   { keys: ["decode"], deliverable: "Your SIGNAL DNA Decode and Career Path Session" },
@@ -77,8 +83,10 @@ const SESSIONS: { keys: string[]; deliverable: string | null }[] = [
   { keys: ["mockinterview"], deliverable: "Mock Interview" },
   { keys: ["interviewsession"], deliverable: "Interview Sessions 1 to 3" },
   { keys: ["offboarding"], deliverable: "Offboarding" },
-  { keys: ["workingsession"], deliverable: null },
+  { keys: ["workforcereadynowworkingsession"], deliverable: null },
 ]
+// Session-like names that must never touch a plan or make a prep task.
+const IGNORED = ["wrnmeeting"]
 const key = (v: string) => v.toLowerCase().replace(/[^a-z0-9]/g, "")
 
 async function mapSessions(types: EventType[], write: boolean) {
@@ -101,6 +109,7 @@ async function mapSessions(types: EventType[], write: boolean) {
   for (const t of types.filter((x) => x.active)) {
     const was = existing.get(t.uri)
     if (was?.action === "consult_booked") { console.log(`  skip  "${t.name}": it is the consult`); continue }
+    if (IGNORED.some((k) => key(t.name).includes(k))) { console.log(`  ignore  "${t.name}"`); continue }
     const entry = SESSIONS.find((e) => e.keys.some((k) => key(t.name).includes(k)))
     if (!entry) { unpaired.push(t.name); continue }
     const m = entry.deliverable ? library.find((l) => l.name.trim().toLowerCase() === entry.deliverable!.toLowerCase()) : null
