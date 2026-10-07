@@ -14,6 +14,7 @@ import { T } from "../../../../lib/dashboard-theme"
 import { SPACE, TYPE } from "../../../../lib/theme/surfaces"
 import { isDueToday, isOverdue, type Task } from "../../../../lib/tasks/model"
 import { formatDue } from "./taskClient"
+import { TaskDetails } from "@/app/components/TaskDetails"
 
 export const TASK_GRID_COLUMNS = "28px minmax(0, 1fr) 150px 130px 140px 96px 40px 76px"
 // No status column in the condensed form. The card it serves shows only open
@@ -451,6 +452,14 @@ export function TaskRow(props: TaskRowProps) {
             overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>
             {snippet}
+          </div>
+        )}
+        {/* The plan task's details, read-only: they are edited in the
+            client's Plan, so this item's own description stays the coach's. */}
+        {task.plan_details && (
+          <div style={{ marginTop: 4, whiteSpace: "normal" }}>
+            <TaskDetails details={task.plan_details} ink={T.TEXT} accent={T.MUTED} taskName={task.title}
+              extra={task.link ? <a href={task.link} style={{ fontSize: 13, fontWeight: 700, color: T.MUTED }}>Edit in Plan</a> : null} />
           </div>
         )}
       </div>

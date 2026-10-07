@@ -30,6 +30,7 @@ import {
 } from "../../../lib/theme/surfaces"
 import { SectionState } from "./SectionState"
 import { ActivityStatus } from "./ActivityStatus"
+import { TaskDetails } from "../../components/TaskDetails"
 import { PracticeEntry } from "./PracticeEntry"
 import { unreviewedSourcedJobs, type ActionProvider, type RequiredAction } from "./requiredActions"
 
@@ -40,7 +41,8 @@ type PlanNote = { id: string; body: string; action_required: boolean; created_at
 // No `owner` field: /api/me/activities still returns one (and still filters on
 // it server-side — owner='coach' activities never reach this page), but nothing
 // here reads it now that the plan rows carry no coach marker.
-type PlanActivity = { id: string; name: string; status: string; due_date: string | null; notes: PlanNote[] }
+// details: only ever a CLIENT task's (the API returns no coach tasks).
+type PlanActivity = { id: string; name: string; status: string; due_date: string | null; details?: string | null; notes: PlanNote[] }
 export type PlanGroup = { deliverable_id: string; name: string; activities: PlanActivity[] }
 
 const eyebrow: React.CSSProperties = {
@@ -605,6 +607,7 @@ function MyPlanSection({
                         onSet={(s) => void onSetStatus(a.id, s)}
                       />
                     </div>
+                    <TaskDetails details={a.details} ink={S.text.primary} accent={S.meaning.progress.ink} taskName={a.name} />
                     {/* NO "From your coach" MARKER HERE, deliberately (removed
                         2026-08-10). Every activity on this plan is the coach's —
                         the plan IS the coach's work — so marking the owner='both'

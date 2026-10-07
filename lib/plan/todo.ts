@@ -22,6 +22,25 @@ export function planLink(c: { coach_client_id: string; client_profile_id: string
 
 const dueAt = (day: string | null) => (day ? `${day}T12:00:00.000Z` : null)
 
+/**
+ * The plan task's details on each To-Do item that is the To-Do side of one.
+ * Items with no plan task, or a plan task with no details, are returned as
+ * they are.
+ */
+export async function withPlanDetails<T extends { plan_activity_id?: string | null }>(
+  db: SupabaseClient,
+  tasks: T[],
+): Promise<(T & { plan_details?: string | null })[]> {
+  const ids = [...new Set(tasks.map((t) => t.plan_activity_id).filter((id): id is string => !!id))]
+  if (!ids.length) return tasks
+  const { data } = await db.from("coach_client_engagement_activities").select("id, details").in("id", ids)
+  const byId = new Map(((data ?? []) as { id: string; details: string | null }[]).map((r) => [r.id, r.details]))
+  return tasks.map((t) => {
+    const details = t.plan_activity_id ? byId.get(t.plan_activity_id) ?? null : null
+    return details ? { ...t, plan_details: details } : t
+  })
+}
+
 export async function syncTodo(db: SupabaseClient, activityId: string): Promise<void> {
   try {
     const { data: a } = await db.from("coach_client_engagement_activities")

@@ -24,6 +24,7 @@ import type { DriveApi } from "../sow/workspace"
 import {
   TASK_STATE_LABEL,
   hasStarted,
+  normalizeDetails,
   isFinished,
   type PlanDeliverable,
   type PlanTask,
@@ -36,7 +37,7 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: string; stat
 const fail = (error: string, status = 400): { ok: false; error: string; status: number } => ({ ok: false, error, status })
 
 const TASK_COLUMNS =
-  "id, engagement_deliverable_id, name, owner, state, assignee_profile_id, due_date, released_at, sort_order, is_signoff, welcome_release"
+  "id, engagement_deliverable_id, name, owner, state, assignee_profile_id, due_date, released_at, sort_order, is_signoff, welcome_release, details"
 
 type TaskRow = {
   id: string
@@ -50,12 +51,13 @@ type TaskRow = {
   sort_order: number
   is_signoff: boolean
   welcome_release?: boolean
+  details?: string | null
 }
 
 const toTask = (r: TaskRow): PlanTask => ({
   id: r.id, deliverable_id: r.engagement_deliverable_id, name: r.name, owner: r.owner, state: r.state,
   assignee_profile_id: r.assignee_profile_id, due_date: r.due_date ?? null, released_at: r.released_at ?? null,
-  sort_order: r.sort_order, is_signoff: !!r.is_signoff, welcome_release: !!r.welcome_release,
+  sort_order: r.sort_order, is_signoff: !!r.is_signoff, welcome_release: !!r.welcome_release, details: r.details ?? null,
 })
 const bySort = <T extends { sort_order: number }>(a: T, b: T) => a.sort_order - b.sort_order
 
@@ -537,11 +539,17 @@ export async function applyLegacyStatus(
 /** The coach changes who a task is assigned to, or its due date. */
 export async function updateTaskDetails(
   db: SupabaseClient,
-  args: { coachClientId: string; taskId: string; assignee?: string | null; dueDate?: string | null; actor: string },
+  args: { coachClientId: string; taskId: string; assignee?: string | null; dueDate?: string | null; details?: unknown; actor: string },
 ): Promise<Result<true>> {
   const where = await locate(db, args.coachClientId, args.taskId)
   if (!where) return fail("Task not found", 404)
   const patch: Record<string, unknown> = {}
+  if (args.details !== undefined) {
+    const d = normalizeDetails(args.details)
+    if (!d.ok) return fail(d.error)
+    if ((where.task.details ?? null) === d.value) return { ok: true, data: true }
+    patch.details = d.value
+  }
   if (args.assignee !== undefined) patch.assignee_profile_id = args.assignee
   if (args.dueDate !== undefined) {
     if (args.dueDate !== null && !/^\d{4}-\d{2}-\d{2}$/.test(args.dueDate)) return fail("Due date must be a date.")
@@ -552,7 +560,7 @@ export async function updateTaskDetails(
   if (error) return fail(`Failed to update the task: ${error.message}`, 500)
   await syncTodo(db, args.taskId)
   await log(db, args.coachClientId, args.actor, {
-    action: args.assignee !== undefined ? "task_assigned" : "task_due",
+    action: args.details !== undefined ? "task_details" : args.assignee !== undefined ? "task_assigned" : "task_due",
     task: where.task.name, deliverable: where.deliverable.name,
     ...(args.dueDate !== undefined ? { due_date: args.dueDate } : {}),
   })
@@ -620,17 +628,19 @@ export async function removeDeliverable(
 /** Add a one-off task at the end of a deliverable, Upcoming. */
 export async function addTask(
   db: SupabaseClient,
-  args: { coachClientId: string; deliverableId: string; name: string; type: TaskType; actor: string },
+  args: { coachClientId: string; deliverableId: string; name: string; type: TaskType; details?: unknown; actor: string },
 ): Promise<Result<PlanTask>> {
   const d = await ownDeliverable(db, args.coachClientId, args.deliverableId)
   if (!d) return fail("Deliverable not found", 404)
   const name = args.name.trim()
   if (!name) return fail("Give the task a name.")
   if (name.length > 200) return fail("Task names can be at most 200 characters.")
+  const details = normalizeDetails(args.details)
+  if (!details.ok) return fail(details.error)
   const tasks = await deliverableTasks(db, d.id)
   const { data: cc } = await db.from("coach_clients").select("coach_profile_id").eq("id", args.coachClientId).maybeSingle()
   const { data, error } = await db.from("coach_client_engagement_activities").insert({
-    engagement_deliverable_id: d.id, name, owner: args.type, state: "upcoming",
+    engagement_deliverable_id: d.id, name, owner: args.type, state: "upcoming", details: details.value,
     sort_order: (tasks.at(-1)?.sort_order ?? 0) + 1,
     assignee_profile_id: (cc as { coach_profile_id: string } | null)?.coach_profile_id ?? null,
   }).select(TASK_COLUMNS).single()
@@ -688,14 +698,15 @@ export async function addDeliverableFromLibrary(
     time_estimate_days: lib.time_estimate_days, sort_order: nextSort, phase_id: lib.phase_id,
   }).select("id").single()
   if (dErr || !nd) return fail(`Failed to add the deliverable: ${dErr?.message ?? "no row"}`, 500)
-  const { data: acts } = await db.from("coach_milestone_activities").select("id, name, owner, sort_order").eq("milestone_id", lib.id)
+  const { data: acts } = await db.from("coach_milestone_activities").select("id, name, owner, sort_order, details").eq("milestone_id", lib.id)
   const { data: cc } = await db.from("coach_clients").select("coach_profile_id").eq("id", args.coachClientId).maybeSingle()
   const assignee = (cc as { coach_profile_id: string } | null)?.coach_profile_id ?? null
-  const rows = ((acts ?? []) as { id: string; name: string; owner: TaskType; sort_order: number }[]).sort(bySort)
+  const rows = ((acts ?? []) as { id: string; name: string; owner: TaskType; sort_order: number; details: string | null }[]).sort(bySort)
   if (rows.length) {
     const { error } = await db.from("coach_client_engagement_activities").insert(rows.map((a) => ({
       engagement_deliverable_id: (nd as { id: string }).id, source_activity_id: a.id, name: a.name,
       owner: a.owner === "client" ? "client" : "coach", state: "upcoming", sort_order: a.sort_order, assignee_profile_id: assignee,
+      details: a.details ?? null,
     })))
     if (error) return fail(`Failed to add the deliverable's tasks: ${error.message}`, 500)
   }

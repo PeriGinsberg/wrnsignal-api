@@ -54,6 +54,13 @@ export type Task = {
    * it by, i.e. a prospect, or a converted client not yet set up in SIGNAL.
    */
   record?: TaskRecord | null
+  /**
+   * Read-side only, set by the list route (withPlanDetails, lib/plan/todo.ts):
+   * the details of the plan task this To-Do item is the To-Do side of. Edited
+   * in the client's Plan, never here, so the item's own description stays the
+   * coach's notes.
+   */
+  plan_details?: string | null
 }
 
 export type TaskRecord = { kind: "prospect" | "client"; name: string | null; href: string }

@@ -33,13 +33,14 @@ export type ActivityRow = {
   name: string
   owner: string
   sort_order: number
+  details: string | null
   created_at: string
   updated_at: string
 }
-export const ACTIVITY_SELECT = "id, milestone_id, name, owner, sort_order, created_at, updated_at"
+export const ACTIVITY_SELECT = "id, milestone_id, name, owner, sort_order, details, created_at, updated_at"
 
 export function toApiActivity(r: ActivityRow) {
-  return { id: r.id, name: r.name, owner: r.owner, sort_order: r.sort_order }
+  return { id: r.id, name: r.name, owner: r.owner, sort_order: r.sort_order, details: r.details ?? null }
 }
 
 // Ownership guard. Activities have no coach_profile_id; ownership is reached

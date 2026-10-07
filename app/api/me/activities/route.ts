@@ -14,7 +14,7 @@
 // activities across ALL of the active relationship's engagements, grouped by
 // DELIVERABLE. owner='coach' activities are filtered out. Read-only.
 //
-// Minimal per-activity payload — { id, name, status, owner, due_date, notes[] } —
+// Minimal per-activity payload: { id, name, status, owner, due_date, details, notes[] },
 // never source_*_id, pricing/fee, or any engagement/coach internals. due_date is
 // read only here (the client sees it; the coach sets it). notes carries ONLY the
 // activity's VISIBLE notes (visible_to_client = true AND not deleted) — coach-private
@@ -48,6 +48,7 @@ type ActRow = {
   status: string
   owner: string
   due_date: string | null
+  details: string | null
   sort_order: number
   created_at: string
   engagement_deliverable_id: string
@@ -95,7 +96,7 @@ export async function GET(req: NextRequest) {
     // the coach's side: releasing is what makes a task appear here.
     const { data: actData, error: actErr } = await supabase
       .from("coach_client_engagement_activities")
-      .select("id, name, status, owner, due_date, sort_order, created_at, engagement_deliverable_id")
+      .select("id, name, status, owner, due_date, details, sort_order, created_at, engagement_deliverable_id")
       .in("engagement_deliverable_id", [...delivById.keys()])
       .eq("owner", "client")
       .in("state", ["waiting_on_client", "done"])
@@ -127,7 +128,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Group by deliverable — only deliverables that have ≥1 owned activity appear.
-    type Group = { deliverable_id: string; name: string; sort_order: number; created_at: string; activities: { id: string; name: string; status: string; owner: string; due_date: string | null; notes: NoteOut[] }[] }
+    type Group = { deliverable_id: string; name: string; sort_order: number; created_at: string; activities: { id: string; name: string; status: string; owner: string; due_date: string | null; details: string | null; notes: NoteOut[] }[] }
     const groups = new Map<string, Group>()
     for (const a of acts) {
       const d = delivById.get(a.engagement_deliverable_id)
@@ -137,7 +138,9 @@ export async function GET(req: NextRequest) {
         g = { deliverable_id: d.id, name: d.name, sort_order: d.sort_order, created_at: d.created_at, activities: [] }
         groups.set(d.id, g)
       }
-      g.activities.push({ id: a.id, name: a.name, status: a.status, owner: a.owner, due_date: a.due_date, notes: notesByActivity.get(a.id) ?? [] })
+      // details: this query only ever returns CLIENT tasks (owner = 'client'),
+      // so a coach task's details cannot reach the client from here.
+      g.activities.push({ id: a.id, name: a.name, status: a.status, owner: a.owner, due_date: a.due_date, details: a.details ?? null, notes: notesByActivity.get(a.id) ?? [] })
     }
 
     // Order groups by deliverable sort_order, then created_at as a stable

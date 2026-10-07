@@ -95,6 +95,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       r = await updateTaskDetails(db, { ...base, taskId: str(b.task_id), assignee: b.assignee === null ? null : str(b.assignee) })
     } else if (action === "due") {
       r = await updateTaskDetails(db, { ...base, taskId: str(b.task_id), dueDate: b.due_date === null || b.due_date === "" ? null : str(b.due_date) })
+    } else if (action === "details") {
+      r = await updateTaskDetails(db, { ...base, taskId: str(b.task_id), details: b.details ?? null })
     } else if (action === "remove_task") {
       r = await removeTask(db, { ...base, taskId: str(b.task_id) })
     } else if (action === "deliverable_not_needed" || action === "deliverable_restore") {
@@ -103,7 +105,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       r = await removeDeliverable(db, { ...base, deliverableId: str(b.deliverable_id) })
     } else if (action === "add_task") {
       if (!isTaskType(b.type)) return withCorsJson(req, { ok: false, error: "type must be coach or client" }, 400)
-      r = await addTask(db, { ...base, deliverableId: str(b.deliverable_id), name: str(b.name), type: b.type })
+      r = await addTask(db, { ...base, deliverableId: str(b.deliverable_id), name: str(b.name), type: b.type, details: b.details })
     } else if (action === "reorder") {
       r = await reorderTasks(db, { ...base, deliverableId: str(b.deliverable_id), taskIds: b.task_ids })
     } else if (action === "add_deliverable") {

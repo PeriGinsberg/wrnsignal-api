@@ -11,6 +11,7 @@
 // deliverable owned by another coach (or a bad id) → 404.
 
 import { type NextRequest } from "next/server"
+import { normalizeDetails } from "@/lib/plan/model"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
 import {
   getSupabaseAdmin,
@@ -47,6 +48,8 @@ export async function POST(
 
     const name = typeof body.name === "string" ? body.name.trim() : ""
     if (!name) return withCorsJson(req, { ok: false, error: "name is required" }, 400)
+    const details = normalizeDetails(body.details)
+    if (!details.ok) return withCorsJson(req, { ok: false, error: details.error }, 400)
 
     if (!isValidOwner(body.owner)) {
       return withCorsJson(req, { ok: false, error: `owner must be one of: ${ACTIVITY_OWNERS.join(", ")}` }, 400)
@@ -84,7 +87,7 @@ export async function POST(
 
     const { data: inserted, error: insErr } = await supabase
       .from("coach_milestone_activities")
-      .insert({ milestone_id: id, name, owner: body.owner, sort_order: sortOrder })
+      .insert({ milestone_id: id, name, owner: body.owner, sort_order: sortOrder, details: details.value })
       .select(ACTIVITY_SELECT)
       .single()
     if (insErr || !inserted) {

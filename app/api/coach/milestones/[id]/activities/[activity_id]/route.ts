@@ -2,7 +2,7 @@
 //
 // Deliverable Activities — edit / delete one activity.
 //
-//   PATCH  — partial update; allow-listed { name?, owner?, sort_order? }.
+//   PATCH: partial update; allow-listed { name?, owner?, sort_order?, details? }.
 //   DELETE — remove the activity.
 //
 // SECURITY (two-step, the one that matters): (1) the PARENT deliverable [id]
@@ -12,6 +12,7 @@
 // milestone_id match fails → 404.
 
 import { type NextRequest } from "next/server"
+import { normalizeDetails } from "@/lib/plan/model"
 import { corsOptionsResponse, withCorsJson } from "../../../../../_lib/cors"
 import {
   getSupabaseAdmin,
@@ -32,7 +33,7 @@ export async function OPTIONS(req: NextRequest) {
   return corsOptionsResponse(req.headers.get("origin"))
 }
 
-const PATCH_ALLOWED = new Set(["name", "owner", "sort_order"])
+const PATCH_ALLOWED = new Set(["name", "owner", "sort_order", "details"])
 
 export async function PATCH(
   req: NextRequest,
@@ -65,6 +66,11 @@ export async function PATCH(
         return withCorsJson(req, { ok: false, error: `owner must be one of: ${ACTIVITY_OWNERS.join(", ")}` }, 400)
       }
       updates.owner = body.owner
+    }
+    if ("details" in body) {
+      const d = normalizeDetails(body.details)
+      if (!d.ok) return withCorsJson(req, { ok: false, error: d.error }, 400)
+      updates.details = d.value
     }
     if ("sort_order" in body) {
       if (typeof body.sort_order !== "number" || !Number.isInteger(body.sort_order)) {

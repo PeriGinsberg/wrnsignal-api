@@ -26,6 +26,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { T, input, btnPrimary, btnSecondary } from "../../../../../lib/dashboard-theme"
 import { getSupabaseBrowser } from "../../../../../lib/supabase-browser"
 import { SOW_BULLETS_MAX, bulletList } from "@/lib/sow/model"
+import { DETAILS_MAX } from "@/lib/plan/model"
 
 const NAME_MAX = 120
 
@@ -63,6 +64,8 @@ type ActivityDraft = {
   id: string | null
   name: string
   owner: ActivityOwner
+  /** "" for none. Copied into a client's plan when a package is attached. */
+  details: string
 }
 function genKey(): string {
   return typeof crypto !== "undefined" && crypto.randomUUID
@@ -179,7 +182,7 @@ async function syncActivities(
     if (!row.id) {
       const res = await authFetch(`/api/coach/milestones/${milestoneId}/activities`, {
         method: "POST",
-        body: JSON.stringify({ name, owner: row.owner, sort_order }),
+        body: JSON.stringify({ name, owner: row.owner, sort_order, details: row.details }),
       })
       const j = await res.json().catch(() => ({}))
       if (!res.ok || !j?.ok) return j?.error || `Couldn't add an activity (${res.status})`
@@ -191,11 +194,12 @@ async function syncActivities(
       const orig = origById.get(row.id)
       const oi = origIndex.get(row.id)
       const changed =
-        !orig || orig.name !== name || orig.owner !== row.owner || (typeof oi === "number" && oi + 1 !== sort_order)
+        !orig || orig.name !== name || orig.owner !== row.owner || orig.details.trim() !== row.details.trim()
+        || (typeof oi === "number" && oi + 1 !== sort_order)
       if (changed) {
         const res = await authFetch(`/api/coach/milestones/${milestoneId}/activities/${row.id}`, {
           method: "PATCH",
-          body: JSON.stringify({ name, owner: row.owner, sort_order }),
+          body: JSON.stringify({ name, owner: row.owner, sort_order, details: row.details }),
         })
         const j = await res.json().catch(() => ({}))
         if (!res.ok || !j?.ok) return j?.error || `Couldn't update an activity (${res.status})`
@@ -368,6 +372,7 @@ export function DeliverablesTab() {
             id: a.id,
             name: a.name,
             owner: a.owner as ActivityOwner,
+            details: a.details ?? "",
           }))
           setEActivities(rows)
           setEOrigActivities(rows.map((r) => ({ ...r }))) // snapshot for diffing
@@ -754,13 +759,13 @@ function DeliverableForm({
   // ── Activity mutations (all funnel through onActivitiesChange) ──
   const addActivity = () => {
     const k = genKey()
-    onActivitiesChange([...activities, { key: k, id: null, name: "", owner: "coach" }])
+    onActivitiesChange([...activities, { key: k, id: null, name: "", owner: "coach", details: "" }])
     setFocusKey(k)
   }
   const addAfter = (i: number) => {
     const k = genKey()
     const next = [...activities]
-    next.splice(i + 1, 0, { key: k, id: null, name: "", owner: "coach" })
+    next.splice(i + 1, 0, { key: k, id: null, name: "", owner: "coach", details: "" })
     onActivitiesChange(next)
     setFocusKey(k)
   }
@@ -876,6 +881,7 @@ function DeliverableForm({
                 showError={triedSubmit && !a.name.trim()}
                 onName={(v) => updateRow(i, { name: v })}
                 onOwner={(o) => updateRow(i, { owner: o })}
+                onDetails={(v) => updateRow(i, { details: v })}
                 onUp={() => moveRow(i, -1)}
                 onDown={() => moveRow(i, 1)}
                 onRemove={() => removeRow(i)}
@@ -910,7 +916,7 @@ function DeliverableForm({
 // ── One activity row: step number · name · owner segmented · ▲▼ · remove ──
 function ActivityRow({
   index, activity, canUp, canDown, shouldFocus, showError,
-  onName, onOwner, onUp, onDown, onRemove, onEnter, onFocused,
+  onName, onOwner, onDetails, onUp, onDown, onRemove, onEnter, onFocused,
 }: {
   index: number
   activity: ActivityDraft
@@ -920,6 +926,7 @@ function ActivityRow({
   showError: boolean
   onName: (v: string) => void
   onOwner: (o: ActivityOwner) => void
+  onDetails: (v: string) => void
   onUp: () => void
   onDown: () => void
   onRemove: () => void
@@ -927,6 +934,8 @@ function ActivityRow({
   onFocused: () => void
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const hasDetails = !!activity.details.trim()
   useEffect(() => {
     if (shouldFocus) {
       inputRef.current?.focus()
@@ -935,6 +944,7 @@ function ActivityRow({
   }, [shouldFocus, onFocused])
 
   return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
     <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
       {/* Step number */}
       <span
@@ -986,6 +996,32 @@ function ActivityRow({
       >
         ✕
       </button>
+    </div>
+      {/* Details, collapsed. Saved with the deliverable. A client task's details
+          show to the client once released; a coach task's never do. */}
+      <div style={{ paddingLeft: 30 }}>
+        <button type="button" aria-expanded={detailsOpen} onClick={() => setDetailsOpen((v) => !v)}
+          style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 700, color: T.MUTED }}>
+          {detailsOpen ? "Hide details" : hasDetails ? "› Details" : "+ Add details"}
+        </button>
+        {detailsOpen && (
+          <div style={{ marginTop: 6 }}>
+            <textarea
+              aria-label={`Details for ${activity.name || `step ${index + 1}`}`}
+              value={activity.details}
+              maxLength={DETAILS_MAX}
+              rows={4}
+              onChange={(e) => onDetails(e.target.value)}
+              placeholder="What this task involves. One checklist item per line, starting with -"
+              style={{ ...input, height: "auto", width: "100%", boxSizing: "border-box", padding: "8px 10px", lineHeight: 1.5, resize: "vertical", fontFamily: "inherit" }}
+            />
+            <div style={{ fontSize: 12, color: T.MUTED, marginTop: 3 }}>
+              {activity.owner === "client" ? "The client sees these in their Coaching Hub once the task is released to them." : "Coach only."}
+              {" "}{activity.details.length}/{DETAILS_MAX}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

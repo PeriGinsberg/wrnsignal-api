@@ -34,6 +34,21 @@ export function isTaskType(v: unknown): v is TaskType {
 }
 
 /** Finished: counts toward "done", and lets the next task activate. */
+/** A task's details: plain text, a checklist one item per line. */
+export const DETAILS_MAX = 2000
+
+/**
+ * A details value as sent by a form: trimmed, empty is "no details" (null).
+ * Returns an error string for a non-string or one over DETAILS_MAX.
+ */
+export function normalizeDetails(v: unknown): { ok: true; value: string | null } | { ok: false; error: string } {
+  if (v === null || v === undefined) return { ok: true, value: null }
+  if (typeof v !== "string") return { ok: false, error: "Details must be text." }
+  const t = v.replace(/\r\n/g, "\n").trim()
+  if (t.length > DETAILS_MAX) return { ok: false, error: `Details can be at most ${DETAILS_MAX} characters.` }
+  return { ok: true, value: t || null }
+}
+
 export function isFinished(s: TaskState): boolean {
   return s === "done" || s === "skipped"
 }
@@ -65,6 +80,8 @@ export type PlanTask = {
   released_at: string | null
   sort_order: number
   is_signoff: boolean
+  /** Plain text, a checklist one item per line. Client tasks' details show to the client once released. */
+  details: string | null
   /** Released with the welcome email; releasing it shares the client's Drive workspace. */
   welcome_release?: boolean
 }

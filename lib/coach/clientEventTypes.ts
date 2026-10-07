@@ -91,7 +91,7 @@ export const COACH_CLIENT_EVENT_TYPES = [
   "phase_status_changed",
   // The client's plan changed (pass A): a task's state, or a customisation.
   // Context.action says which: task_state (from/to, auto when SIGNAL did it),
-  // task_added, task_removed, task_assigned, task_due, tasks_reordered,
+  // task_added, task_removed, task_assigned, task_due, task_details, tasks_reordered,
   // deliverable_added, deliverable_removed, deliverable_not_needed,
   // deliverable_restored.
   "plan_changed",

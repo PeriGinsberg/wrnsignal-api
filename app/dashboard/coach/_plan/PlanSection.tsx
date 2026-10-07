@@ -28,6 +28,7 @@ import {
   type TaskType,
 } from "@/lib/plan/model"
 import { WelcomeEmailDialog } from "./WelcomeEmailDialog"
+import { TaskDetails } from "@/app/components/TaskDetails"
 
 const NAVY = PHASE_COLORS.text
 
@@ -324,7 +325,8 @@ function TaskRow({ t, first, last, locked, assignees, busy, onSend, onMove, onRe
   const options = assignees.some((a) => a.id === t.assignee_profile_id) || !t.assignee_profile_id
     ? assignees : [...assignees, { id: t.assignee_profile_id, name: "Current assignee", email: null }]
   return (
-    <div data-testid="task" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", padding: "6px 8px", borderRadius: 8, background: "#F8FAFC", opacity: greyed ? 0.6 : 1 }}>
+    <div data-testid="task" style={{ padding: "6px 8px", borderRadius: 8, background: "#F8FAFC", opacity: greyed ? 0.6 : 1 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
       <span style={{ display: "flex", flexDirection: "column" }}>
         <button type="button" aria-label={`Move ${t.name} up`} disabled={busy || first} onClick={() => onMove(-1)}
           style={{ background: "none", border: "none", fontSize: 9, cursor: "pointer", color: NAVY, padding: 0 }}>▲</button>
@@ -360,6 +362,14 @@ function TaskRow({ t, first, last, locked, assignees, busy, onSend, onMove, onRe
           <button type="button" style={small} disabled={busy} aria-label={`Remove ${t.name}`} onClick={onRemove}>✕</button>
         </span>
       )}
+    </div>
+      {/* Client task details show to the client in their Coaching Hub once
+          released; coach task details stay here. */}
+      <div style={{ paddingLeft: 22, marginTop: 4 }}>
+        <TaskDetails details={t.details} ink={NAVY} accent="#00569A" taskName={t.name} disabled={busy || locked}
+          label={t.owner === "client" ? "Details (the client sees these)" : "Details (coach only)"}
+          onSave={(details) => onSend({ action: "details", task_id: t.id, details })} />
+      </div>
     </div>
   )
 }

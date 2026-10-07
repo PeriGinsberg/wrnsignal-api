@@ -146,7 +146,7 @@ export async function GET(
 
     const { data: acts, error: aErr } = await supabase
       .from("coach_milestone_activities")
-      .select("id, name, owner, sort_order")
+      .select("id, name, owner, sort_order, details")
       .eq("milestone_id", id)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: true })

@@ -130,6 +130,7 @@ export const LABELS: Record<CoachClientEventType, (e: CoachClientEvent) => strin
       case "task_removed": return `Task ${task} removed${where}`
       case "task_assigned": return `Task ${task}${where} reassigned`
       case "task_due": return c.due_date ? `Task ${task}${where} due ${historyDay(c.due_date) ?? c.due_date}` : `Task ${task}${where}: due date cleared`
+      case "task_details": return `Task ${task}${where} details updated`
       case "tasks_reordered": return `Tasks reordered in ${c.deliverable ?? "a deliverable"}`
       case "deliverable_added": return `Deliverable "${c.deliverable}" added to the plan`
       case "deliverable_removed": return `Deliverable "${c.deliverable}" removed from the plan`
