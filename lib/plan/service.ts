@@ -346,6 +346,143 @@ export async function completeTaskNamed(
   return null
 }
 
+// ── Calendly sessions ────────────────────────────────────────────────────────
+//
+// A session deliverable is Book (client) -> Prepare for (coach) -> Run (coach);
+// Interview Sessions 1 to 3 holds three such sets, and Pre-Interview Prep has
+// no Book task. A booking is matched by the library deliverable the plan's
+// deliverable was copied from, never by task names, which differ ("Book Job
+// Search Strategy/Networking session" pairs with "Prepare for strategy
+// session"). See lib/calendly/webhook.ts for the booking side.
+
+export type SessionPair = {
+  deliverable: string
+  book: { id: string; name: string } | null
+  prep: { id: string; name: string }
+}
+
+const isBook = (t: TaskRow) => t.owner === "client" && /\bbook\b/i.test(t.name)
+const isPrep = (t: TaskRow) => t.owner === "coach" && /^prepare\b/i.test(t.name)
+const isRun = (t: TaskRow) => t.owner === "coach" && /^run\b/i.test(t.name)
+
+/** The deliverable's Book/Prepare sets in order; a Prepare with no Book before it stands alone. */
+function sessionSets(tasks: TaskRow[]): { book: TaskRow | null; prep: TaskRow; run: TaskRow | null }[] {
+  const sets: { book: TaskRow | null; prep: TaskRow; run: TaskRow | null }[] = []
+  let book: TaskRow | null = null
+  for (let i = 0; i < tasks.length; i++) {
+    const t = tasks[i]
+    if (isBook(t)) { book = t; continue }
+    if (!isPrep(t)) continue
+    const run = tasks.slice(i + 1).find((x) => isRun(x) || isBook(x) || isPrep(x)) ?? null
+    sets.push({ book, prep: t, run: run && isRun(run) ? run : null })
+    book = null
+  }
+  return sets
+}
+
+/**
+ * A client booked a session: the first open set in the matching deliverable of
+ * their approved plan has its Book task marked Done and its Prepare task made
+ * Active, due `prepDue`, assigned to the client's coach if no one is. A set is
+ * open when its Prepare task is Upcoming, or Active and not already held by
+ * another booking (`heldPrepIds`). Null when the plan has no such set: not
+ * approved, the deliverable missing or Not needed, or every set used.
+ */
+export async function bookSessionTasks(
+  db: SupabaseClient,
+  args: { coachClientId: string; milestoneId: string; prepDue: string; coachId: string; heldPrepIds: string[]; reason: string },
+): Promise<SessionPair | null> {
+  const { data: engs } = await db.from("coach_client_engagements").select("id")
+    .eq("coach_client_id", args.coachClientId).eq("proposal_status", "approved")
+  const engIds = ((engs ?? []) as { id: string }[]).map((e) => e.id)
+  if (!engIds.length) return null
+  const { data: ds } = await db.from("coach_client_engagement_deliverables").select("id, name, not_needed, sort_order")
+    .in("engagement_id", engIds).eq("source_milestone_id", args.milestoneId)
+  const delivs = ((ds ?? []) as { id: string; name: string; not_needed: boolean; sort_order: number }[])
+    .filter((d) => !d.not_needed).sort(bySort)
+
+  for (const d of delivs) {
+    const set = sessionSets(await deliverableTasks(db, d.id)).find(({ prep }) =>
+      prep.state === "upcoming" || (prep.state === "active" && !args.heldPrepIds.includes(prep.id)))
+    if (!set) continue
+    const ctx: Ctx = { coachClientId: args.coachClientId, actor: null }
+    const { book, prep } = set
+    if (book && !isFinished(book.state)) {
+      const err = await setState(db, ctx, book, "done", { deliverable: d.name, auto: true, reason: args.reason })
+      if (err) throw new Error(`Failed to finish "${book.name}": ${err}`)
+    }
+    // Due date and assignee first, so the To-Do item the activation opens carries them.
+    const { error } = await db.from("coach_client_engagement_activities")
+      .update({ due_date: args.prepDue, assignee_profile_id: prep.assignee_profile_id ?? args.coachId }).eq("id", prep.id)
+    if (error) throw new Error(`Failed to date "${prep.name}": ${error.message}`)
+    if (prep.state === "upcoming") {
+      const err = await setState(db, ctx, prep, "active", { deliverable: d.name, auto: true, reason: args.reason })
+      if (err) throw new Error(`Failed to activate "${prep.name}": ${err}`)
+    } else {
+      await syncTodo(db, prep.id)
+    }
+    await log(db, args.coachClientId, null, { action: "task_due", task: prep.name, deliverable: d.name, due_date: args.prepDue })
+    await autoStartPhases(db, args.coachClientId, `task "${prep.name}" started`)
+    return { deliverable: d.name, book: book ? { id: book.id, name: book.name } : null, prep: { id: prep.id, name: prep.name } }
+  }
+  return null
+}
+
+/** A session was rescheduled: its Prepare task moves to the new due date, unless already finished. */
+export async function moveSessionPrep(
+  db: SupabaseClient,
+  args: { coachClientId: string; prepTaskId: string; prepDue: string },
+): Promise<string | null> {
+  const where = await locate(db, args.coachClientId, args.prepTaskId)
+  if (!where || isFinished(where.task.state) || where.task.state === "not_needed") return null
+  const { error } = await db.from("coach_client_engagement_activities").update({ due_date: args.prepDue }).eq("id", args.prepTaskId)
+  if (error) throw new Error(`Failed to move "${where.task.name}": ${error.message}`)
+  await syncTodo(db, args.prepTaskId)
+  await log(db, args.coachClientId, null, { action: "task_due", task: where.task.name, deliverable: where.deliverable.name, due_date: args.prepDue })
+  return where.task.name
+}
+
+/**
+ * A session was cancelled. The Book task goes back to Waiting on client (the
+ * client sees it again) and the Prepare task back to Upcoming with no due date.
+ * A Prepare task already Done stays Done. A session that already ran (its Run
+ * task finished) changes nothing.
+ */
+export async function cancelSessionTasks(
+  db: SupabaseClient,
+  args: { coachClientId: string; bookTaskId: string | null; prepTaskId: string; reason: string },
+): Promise<{ ran: boolean; book: string | null; prep: string | null; prep_kept_done: boolean }> {
+  const prepAt = await locate(db, args.coachClientId, args.prepTaskId)
+  if (!prepAt) return { ran: false, book: null, prep: null, prep_kept_done: false }
+  const set = sessionSets(await deliverableTasks(db, prepAt.deliverable.id)).find((s) => s.prep.id === args.prepTaskId)
+  if (set?.run && isFinished(set.run.state)) return { ran: true, book: null, prep: null, prep_kept_done: false }
+
+  const ctx: Ctx = { coachClientId: args.coachClientId, actor: null }
+  const context = { deliverable: prepAt.deliverable.name, auto: true, reason: args.reason }
+  let book: string | null = null
+  if (args.bookTaskId) {
+    const bookAt = await locate(db, args.coachClientId, args.bookTaskId)
+    if (bookAt && bookAt.task.state !== "waiting_on_client" && bookAt.task.state !== "not_needed") {
+      const err = await setState(db, ctx, bookAt.task, "waiting_on_client", context)
+      if (err) throw new Error(`Failed to reopen "${bookAt.task.name}": ${err}`)
+      book = bookAt.task.name
+    }
+  }
+  const prep = prepAt.task
+  if (prep.state === "done" || prep.state === "skipped" || prep.state === "not_needed") {
+    return { ran: false, book, prep: null, prep_kept_done: prep.state === "done" }
+  }
+  const { error } = await db.from("coach_client_engagement_activities").update({ due_date: null }).eq("id", prep.id)
+  if (error) throw new Error(`Failed to clear "${prep.name}": ${error.message}`)
+  if (prep.state !== "upcoming") {
+    const err = await setState(db, ctx, prep, "upcoming", context)
+    if (err) throw new Error(`Failed to reset "${prep.name}": ${err}`)
+  } else {
+    await syncTodo(db, prep.id)
+  }
+  return { ran: false, book, prep: prep.name, prep_kept_done: false }
+}
+
 /**
  * The client marks a released task done in their Coaches Hub, or undoes that.
  * Only their own released client tasks, so nothing else is reachable.

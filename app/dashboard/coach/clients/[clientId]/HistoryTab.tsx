@@ -152,6 +152,36 @@ export const LABELS: Record<CoachClientEventType, (e: CoachClientEvent) => strin
     const reason = e.context?.reason ? `. Reason: ${e.context.reason}` : ""
     return `Consult cancelled${where}${who}${when}${reason}`
   },
+  session_booked: (e) => {
+    const c = e.context ?? {}
+    const session = c.session ?? "Session"
+    const time = c.time_label ? ` for ${c.time_label}` : ""
+    const due = historyDay(c.prep_due)
+    if (c.rescheduled) {
+      return `${session} rescheduled on Calendly${time}${c.prep_task && due ? `. "${c.prep_task}" now due ${due}` : due ? `. Prep now due ${due}` : ""}`
+    }
+    if (c.matched) {
+      const book = c.book_task ? ` "${c.book_task}" done;` : ""
+      return `${session} booked on Calendly${time}.${book} "${c.prep_task}" due ${due ?? c.prep_due}`
+    }
+    return `${session} booked on Calendly${time}. ${c.why ? `Not matched in the plan (${c.why}): ` : ""}"${c.todo_title}" added to your To-Do${due ? `, due ${due}` : ""}`
+  },
+  session_cancelled: (e) => {
+    const c = e.context ?? {}
+    const session = c.session ?? "Session"
+    const who = c.canceled_by === "host" ? " by you" : ""
+    const when = c.time_label ? ` (was ${c.time_label})` : ""
+    const reason = c.reason ? `. Reason: ${c.reason}` : ""
+    const head = `${session} cancelled on Calendly${who}${when}${reason}`
+    if (c.already_ran) return `${head}. The session had already run, so the plan is unchanged`
+    const parts = [
+      c.book_task ? `"${c.book_task}" back to Waiting on client` : null,
+      c.prep_task ? `"${c.prep_task}" back to Upcoming` : null,
+      c.prep_kept_done ? "prep already done, kept" : null,
+      c.todo_cancelled ? "prep task removed from your To-Do" : null,
+    ].filter(Boolean)
+    return parts.length ? `${head}. ${parts.join("; ")}` : head
+  },
   consult_saved: (e) => {
     const n = Array.isArray(e.context?.changed) ? e.context.changed.length : 0
     return n > 0 ? `Consult saved, ${n} field${n === 1 ? "" : "s"} updated` : "Consult saved"

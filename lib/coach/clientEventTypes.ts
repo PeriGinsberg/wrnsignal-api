@@ -79,6 +79,13 @@ export const COACH_CLIENT_EVENT_TYPES = [
   // Phase 3: a consult cancelled on Calendly. Context: the date it was for, the
   // reason they gave, and who cancelled (the invitee or the host).
   "consult_cancelled",
+  // A client's coaching session booked, rescheduled or cancelled on Calendly
+  // (lib/calendly/webhook.ts). session_booked context: the session, its time,
+  // prep_due, and either matched (book_task, prep_task) or the one-off To-Do
+  // title and why; rescheduled=true for a move. session_cancelled context: the
+  // session, time, reason, who cancelled, and what was reopened.
+  "session_booked",
+  "session_cancelled",
   // Client phases: a phase's status moved. Context: the phase's label, from and
   // to, and auto=true when SIGNAL moved it (a task in the phase started).
   "phase_status_changed",

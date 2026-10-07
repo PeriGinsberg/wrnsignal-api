@@ -16,6 +16,9 @@
 //     node_modules/tsx/dist/cli.mjs tests/calendly/simulate.ts <command> [options]
 //
 //   book       --email=<who books> [--name="First Last"] [--day=YYYY-MM-DD]
+//              [--session="Mock Interview"]  a coaching session instead of the
+//              consult: any session event type mapped in dev whose name
+//              contains this text (scripts/calendly-setup.ts --sessions)
 //   reschedule --email=<same email> [--day=YYYY-MM-DD]
 //   cancel     --email=<same email> [--reason="text"]
 //   timers     --email=<prospect's email>   fire their waiting follow-up now
@@ -49,12 +52,19 @@ function startOf(day?: string): string {
   return `${d}T18:00:00Z`
 }
 
-async function mappedType(): Promise<string> {
-  const { data } = await db.from("calendly_event_type_actions").select("event_type_uri, event_type_name")
-    .eq("action", "consult_booked").eq("active", true).limit(1)
+async function mappedType(session?: string): Promise<{ uri: string; name: string }> {
+  let q = db.from("calendly_event_type_actions").select("event_type_uri, event_type_name")
+    .eq("action", session ? "session_booked" : "consult_booked").eq("active", true)
+  if (session) q = q.ilike("event_type_name", `%${session}%`)
+  const { data } = await q.limit(1)
   const row = (data ?? [])[0]
-  if (!row) { console.error("No Calendly event type is mapped in dev. Run scripts/calendly-setup.ts first."); process.exit(1) }
-  return row.event_type_uri
+  if (!row) {
+    console.error(session
+      ? `No session event type named like "${session}" is mapped in dev. Run scripts/calendly-setup.ts --sessions first.`
+      : "No Calendly event type is mapped in dev. Run scripts/calendly-setup.ts first.")
+    process.exit(1)
+  }
+  return { uri: row.event_type_uri, name: row.event_type_name ?? "Initial Consult" }
 }
 
 /** The latest booking SIGNAL saw from this email, for reschedule and cancel. */
@@ -67,13 +77,13 @@ async function lastBooking(email: string) {
   return row.payload as CalendlyWebhook
 }
 
-function newBooking(email: string, name: string, eventType: string, start: string, oldInvitee: string | null): CalendlyWebhook {
+function newBooking(email: string, name: string, eventType: { uri: string; name: string }, start: string, oldInvitee: string | null): CalendlyWebhook {
   const ev = `https://api.calendly.com/scheduled_events/SIM-${randomUUID()}`
   return {
     event: "invitee.created",
     payload: {
       uri: `${ev}/invitees/SIM-${randomUUID()}`, email, name, rescheduled: false, old_invitee: oldInvitee,
-      scheduled_event: { uri: ev, name: "Initial Consult (simulated)", start_time: start, event_type: eventType },
+      scheduled_event: { uri: ev, name: `${eventType.name} (simulated)`, start_time: start, event_type: eventType.uri },
     },
   }
 }
@@ -95,12 +105,13 @@ async function main() {
   if (!cmd || !email) { console.error("Usage: simulate.ts <book|reschedule|cancel|timers> --email=..."); process.exit(1) }
 
   if (cmd === "book") {
-    await send(newBooking(email, arg("name") || email.split("@")[0], await mappedType(), startOf(arg("day")), null))
+    await send(newBooking(email, arg("name") || email.split("@")[0], await mappedType(arg("session")), startOf(arg("day")), null))
   } else if (cmd === "reschedule") {
     const old = await lastBooking(email)
     // What Calendly sends: the old booking cancelled as a reschedule, then the new one.
     await send({ event: "invitee.canceled", payload: { ...old.payload, rescheduled: true } })
-    await send(newBooking(email, old.payload.name ?? email, old.payload.scheduled_event.event_type, startOf(arg("day")), old.payload.uri))
+    const type = { uri: old.payload.scheduled_event.event_type, name: (old.payload.scheduled_event.name ?? "Session").replace(/ \(simulated\)$/, "") }
+    await send(newBooking(email, old.payload.name ?? email, type, startOf(arg("day")), old.payload.uri))
   } else if (cmd === "cancel") {
     const old = await lastBooking(email)
     await send({ event: "invitee.canceled", payload: { ...old.payload, rescheduled: false,
