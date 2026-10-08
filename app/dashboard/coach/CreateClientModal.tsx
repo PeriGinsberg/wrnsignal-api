@@ -89,7 +89,11 @@ export default function CreateClientModal({
   const [submitting, setSubmitting] = useState(false)
   const [emailConflict, setEmailConflict] = useState("")
   const [generalError, setGeneralError] = useState("")
-  const [result, setResult] = useState<{ ok: boolean } | null>(null)
+  // Set once the account exists. The invite is a separate, optional step:
+  // creating an account never emails the client.
+  const [result, setResult] = useState<{ ok: boolean; clientId: string | null } | null>(null)
+  const [invite, setInvite] = useState<"idle" | "sending" | "sent">("idle")
+  const [inviteError, setInviteError] = useState("")
 
   const showEducationDetails = educationStatus === "in_school" || educationStatus === "graduated"
 
@@ -110,11 +114,38 @@ export default function CreateClientModal({
     setPhone(""); setLinkedinUrl(""); setEducationStatus(""); setUniversity(""); setGradDate("")
     setResumeTab("paste"); setUploadStatus(null)
     setEmailConflict(""); setGeneralError(""); setResult(null)
+    setInvite("idle"); setInviteError("")
   }
 
   function handleClose() {
+    // Once an account exists, closing counts as done: the list behind refreshes.
+    const created = !!result?.ok
     reset()
-    onClose()
+    if (created) onSuccess()
+    else onClose()
+  }
+
+  // The invite, sent only when the coach asks: the same route as Send Invite on
+  // the client's page (/api/coach/clients/[clientId]/send-invite).
+  async function handleSendInvite() {
+    if (!result?.clientId || invite === "sending") return
+    setInvite("sending")
+    setInviteError("")
+    try {
+      const token = await getToken()
+      if (!token) { setInviteError("Not authenticated"); setInvite("idle"); return }
+      const res = await fetch(`/api/coach/clients/${encodeURIComponent(result.clientId)}/send-invite`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: "{}",
+      })
+      const j = await res.json().catch(() => ({}))
+      if (res.ok && j?.ok) setInvite("sent")
+      else { setInviteError(j?.error || "Couldn't send the invite. You can send it later from the client's page."); setInvite("idle") }
+    } catch {
+      setInviteError("Network error. You can send the invite later from the client's page.")
+      setInvite("idle")
+    }
   }
 
   async function getToken() {
@@ -192,8 +223,8 @@ export default function CreateClientModal({
         return
       }
 
-      setResult({ ok: true })
-      setTimeout(() => { onSuccess() }, 2000)
+      // Stay open: the coach decides whether to send the invite now.
+      setResult({ ok: true, clientId: data.clientId ?? null })
     } catch {
       setGeneralError("Something went wrong. Please try again.")
     } finally {
@@ -223,7 +254,7 @@ export default function CreateClientModal({
             Create Client Account
           </div>
           <div style={{ fontSize: 12, color: MUTED, marginTop: 4 }}>
-            Set up SIGNAL for your client — an invite will be sent automatically
+            Set up SIGNAL for your client. You choose when to send the invite.
           </div>
           <button
             onClick={handleClose}
@@ -491,8 +522,12 @@ export default function CreateClientModal({
         }}>
           <div>
             {result?.ok && (
-              <span style={{ fontSize: 12, color: SUCCESS, fontStyle: "italic" }}>
-                Account created &middot; invite not yet sent
+              <span style={{ fontSize: 12, color: inviteError ? ROSE : SUCCESS, fontStyle: "italic" }}>
+                {inviteError
+                  ? inviteError
+                  : invite === "sent"
+                  ? `Account created \u00b7 invite sent to ${email}`
+                  : "Account created \u00b7 invite not yet sent"}
               </span>
             )}
             {generalError && !result && (
@@ -511,8 +546,27 @@ export default function CreateClientModal({
                 fontFamily: "inherit",
               }}
             >
-              Cancel
+              {result?.ok ? "Done" : "Cancel"}
             </button>
+            {result?.ok ? (
+              invite !== "sent" && (
+                <button
+                  onClick={handleSendInvite}
+                  disabled={invite === "sending" || !result.clientId}
+                  style={{
+                    background: PLUM, color: "#ffffff", borderRadius: 24,
+                    padding: "10px 24px", fontSize: 12, letterSpacing: "0.06em",
+                    border: "none", cursor: invite === "sending" ? "default" : "pointer",
+                    opacity: invite === "sending" ? 0.6 : 1,
+                    fontFamily: "inherit",
+                    display: "inline-flex", alignItems: "center", gap: 8,
+                  }}
+                >
+                  {invite === "sending" && <SavingSpinner />}
+                  {invite === "sending" ? "Sending invite..." : "Send Invite \u2192"}
+                </button>
+              )
+            ) : (
             <button
               onClick={handleSubmit}
               disabled={submitting || !!result}
@@ -526,8 +580,9 @@ export default function CreateClientModal({
               }}
             >
               {submitting && <SavingSpinner />}
-              {submitting ? "Creating account..." : "Create Account & Send Invite \u2192"}
+              {submitting ? "Creating account..." : "Create Account \u2192"}
             </button>
+            )}
           </div>
         </div>
       </div>
