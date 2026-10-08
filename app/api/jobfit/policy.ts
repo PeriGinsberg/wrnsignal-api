@@ -18,6 +18,7 @@ export type PenaltyKey =
   | "missing_ownership_scope_proof"
   | "credential_requirement_mismatch"
   | "finance_subfamily_mismatch"
+  | "language_requirement_unmet"
   | "role_archetype_mismatch"
   | "content_role_conflict"
   | "degree_in_progress"
@@ -227,6 +228,15 @@ export const POLICY: JobFitPolicy = {
       label: "Professional credential or enrollment required",
       severity: 5,
       multiplier: 5.0,
+      maxStackCount: 1,
+    },
+    // A second language the job REQUIRES, not shown on the resume (DEF-019).
+    // Strong (12 points) but not a gate: the resume may simply not mention a
+    // language the candidate speaks, so this flags rather than forces Pass.
+    language_requirement_unmet: {
+      label: "Required language not shown on the resume",
+      severity: 4,
+      multiplier: 3.0,
       maxStackCount: 1,
     },
     finance_subfamily_mismatch: {

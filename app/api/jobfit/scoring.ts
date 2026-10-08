@@ -4,6 +4,7 @@
 // WHY bullets are created from matched proof objects, not category overlap.
 
 import { POLICY, type PenaltyKey } from "./policy"
+import { languageLabel } from "./languageRequirement"
 import type {
   EvidenceKind,
   JobRequirementUnit,
@@ -1350,6 +1351,31 @@ export function scoreJobFit(
       severity: "low",
     })
     console.log("[scoring] Soft credential risk flag added:", detail)
+  }
+
+  // Required second language not shown on the resume (DEF-019). Only when the
+  // job says REQUIRED: preferred languages never reach requiredLanguages.
+  const requiredLanguages = job.requiredLanguages ?? []
+  if (requiredLanguages.length) {
+    const shown = new Set(profile.languagesShown ?? [])
+    const missing = requiredLanguages.filter((l) => !shown.has(l))
+    if (missing.length) {
+      const list = missing.map(languageLabel).join(" and ")
+      const amt = computePenaltyAmount("language_requirement_unmet")
+      penalties.push({
+        key: "language_requirement_unmet",
+        amount: amt,
+        note: `Required language not shown: ${missing.join(", ")}`,
+        risk: {
+          code: "RISK_LANGUAGE_REQUIRED",
+          job_fact: job.requiredLanguagesLine ? `The posting says: "${job.requiredLanguagesLine}"` : `The posting requires ${list}.`,
+          profile_fact: `Your resume does not mention ${list}.`,
+          risk: `This role requires ${list}. If you speak it, say so on your resume (for example in a Languages line) before applying; if you don't, this is likely a screening requirement.`,
+          severity: "high",
+          weight: -amt,
+        },
+      })
+    }
   }
 
   // Sponsored hard credential — the role requires a credential the EMPLOYER

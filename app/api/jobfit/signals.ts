@@ -170,6 +170,8 @@ export type StructuredProfileSignals = {
   function_tag_evidence?: Partial<Record<FunctionTag, string[]>>
   profile_evidence_units?: ProfileEvidenceUnit[]
   financeSubFamily?: FinanceSubFamily
+  // Languages named anywhere in the resume/profile (languageRequirement.ts).
+  languagesShown?: string[]
   // Sub-segments of Sales the candidate explicitly targets. Parsed from
   // target_roles. Used to detect mismatch against job-side salesSubFamily.
   salesTargetSubsegments?: SalesSubFamily[]
@@ -203,6 +205,10 @@ export type StructuredJobSignals = {
   companyName: string | null
   jobFamily: JobFamily
   financeSubFamily: FinanceSubFamily
+  // Second languages the job REQUIRES (never preferred), and the clause that
+  // said so (languageRequirement.ts, DEF-019).
+  requiredLanguages?: string[]
+  requiredLanguagesLine?: string | null
   // Sub-family for Sales jobs. Null when jobFamily is not Sales.
   salesSubFamily: SalesSubFamily
   analytics: { isHeavy: boolean; isLight: boolean }

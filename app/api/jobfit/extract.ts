@@ -15,6 +15,7 @@
 // - Kept deterministic architecture intact
 
 import crypto from "crypto"
+import { languagesShownInProfile, requiredLanguagesFromJob } from "./languageRequirement"
 import { POLICY } from "./policy"
 import type {
   DegreeRequirement,
@@ -4799,6 +4800,7 @@ export function extractJobSignals(
   // program itself encourages. Only when FINRA/SIE is the sole hard credential:
   // an internship that requires a law, medical, CPA or other license still gates.
   const internshipSignals = detectInternshipSignals(jobTextRaw)
+  const requiredLanguages = requiredLanguagesFromJob(jobTextRaw)
   const onlyFinraCredential =
     requiresFinraLicense &&
     !(requiresLawSchool || requiresMedSchool || requiresCPA || requiresGradDegree ||
@@ -5126,6 +5128,8 @@ return {
     reportingSignals: { strong: reportingStrong },
     requirement_units: requirementUnits,
     internship: internshipSignals,
+    requiredLanguages: requiredLanguages.languages,
+    requiredLanguagesLine: requiredLanguages.line,
   }
 }
 
@@ -5240,6 +5244,7 @@ export function extractProfileSignals(
   return {
     ...merged,
     financeSubFamily: profileFinanceSubFamily,
+    languagesShown: languagesShownInProfile(profileTextRaw),
     ...(salesTargetSubsegments.length > 0 ? { salesTargetSubsegments } : {}),
   }
 }

@@ -261,6 +261,8 @@
           "mode": "hybrid"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -293,6 +295,9 @@
           "premed_clinical"
         ],
         "gradYear": 2026,
+        "languagesShown": [
+          "greek"
+        ],
         "locationPreference": {
           "allowedCities": [
             "Boca Raton",
@@ -774,6 +779,8 @@
           "r",
           "word"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -806,6 +813,9 @@
           "premed_clinical"
         ],
         "gradYear": 2026,
+        "languagesShown": [
+          "greek"
+        ],
         "locationPreference": {
           "allowedCities": [
             "Boca Raton",
@@ -1143,6 +1153,8 @@
           "mode": "unclear"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -1175,6 +1187,9 @@
           "premed_clinical"
         ],
         "gradYear": 2026,
+        "languagesShown": [
+          "greek"
+        ],
         "locationPreference": {
           "allowedCities": [
             "Boca Raton",
@@ -1508,6 +1523,8 @@
         "preferredTools": [
           "r"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -1540,6 +1557,9 @@
           "premed_clinical"
         ],
         "gradYear": 2026,
+        "languagesShown": [
+          "greek"
+        ],
         "locationPreference": {
           "allowedCities": [
             "Boca Raton",
@@ -1877,6 +1897,8 @@
           "mode": "unclear"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -1909,6 +1931,9 @@
           "premed_clinical"
         ],
         "gradYear": 2026,
+        "languagesShown": [
+          "greek"
+        ],
         "locationPreference": {
           "allowedCities": [
             "Boca Raton",
@@ -2655,6 +2680,8 @@
         "preferredTools": [
           "figma"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -2688,6 +2715,7 @@
           "sales_bd"
         ],
         "gradYear": 2026,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "New York"
@@ -3523,6 +3551,8 @@
           "mode": "in_person"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -3556,6 +3586,7 @@
           "sales_bd"
         ],
         "gradYear": 2026,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "New York"
@@ -4576,6 +4607,8 @@
           "powerpoint",
           "word"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -4609,6 +4642,7 @@
           "sales_bd"
         ],
         "gradYear": 2026,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "New York"
@@ -5324,6 +5358,8 @@
           "powerpoint",
           "word"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -5357,6 +5393,7 @@
           "sales_bd"
         ],
         "gradYear": 2026,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "New York"
@@ -6081,6 +6118,8 @@
           "mode": "unclear"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -6114,6 +6153,7 @@
           "sales_bd"
         ],
         "gradYear": 2026,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "New York"
@@ -6562,6 +6602,8 @@
           "powerpoint",
           "word"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -6591,6 +6633,9 @@
           "sales_bd"
         ],
         "gradYear": null,
+        "languagesShown": [
+          "spanish"
+        ],
         "locationPreference": {
           "allowedCities": [
             "Hybrid",
@@ -6912,6 +6957,8 @@
           "mode": "unclear"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -6941,6 +6988,9 @@
           "sales_bd"
         ],
         "gradYear": null,
+        "languagesShown": [
+          "spanish"
+        ],
         "locationPreference": {
           "allowedCities": [
             "Hybrid",
@@ -7407,6 +7457,8 @@
           "mode": "unclear"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -7436,6 +7488,9 @@
           "sales_bd"
         ],
         "gradYear": null,
+        "languagesShown": [
+          "spanish"
+        ],
         "locationPreference": {
           "allowedCities": [
             "Hybrid",
@@ -7804,6 +7859,8 @@
           "mode": "unclear"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -7833,6 +7890,9 @@
           "sales_bd"
         ],
         "gradYear": null,
+        "languagesShown": [
+          "spanish"
+        ],
         "locationPreference": {
           "allowedCities": [
             "Hybrid",
@@ -8306,6 +8366,8 @@
         "preferredTools": [
           "excel"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -8335,6 +8397,9 @@
           "sales_bd"
         ],
         "gradYear": null,
+        "languagesShown": [
+          "spanish"
+        ],
         "locationPreference": {
           "allowedCities": [
             "Hybrid",
@@ -8871,6 +8936,8 @@
           "mode": "in_person"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -8900,6 +8967,9 @@
           "sales_bd"
         ],
         "gradYear": null,
+        "languagesShown": [
+          "spanish"
+        ],
         "locationPreference": {
           "allowedCities": [
             "Hybrid",
@@ -9637,6 +9707,8 @@
           "react",
           "swift"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "c++",
           "java",
@@ -9672,6 +9744,7 @@
           "software_it"
         ],
         "gradYear": 2026,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "New York"
@@ -10072,6 +10145,8 @@
           "mode": "hybrid"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -10103,6 +10178,7 @@
           "software_it"
         ],
         "gradYear": 2026,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "New York"
@@ -10752,6 +10828,8 @@
         "preferredTools": [
           "figma"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "node",
           "react",
@@ -10787,6 +10865,7 @@
           "software_it"
         ],
         "gradYear": 2026,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "New York"
@@ -11268,6 +11347,8 @@
           "mode": "unclear"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "excel",
           "powerpoint",
@@ -11303,6 +11384,7 @@
           "software_it"
         ],
         "gradYear": 2026,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "New York"
@@ -11744,6 +11826,8 @@
           "mode": "hybrid"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -11775,6 +11859,7 @@
           "software_it"
         ],
         "gradYear": 2026,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "New York"
@@ -12336,6 +12421,8 @@
           "crm",
           "excel"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -12369,6 +12456,7 @@
           "sales_bd"
         ],
         "gradYear": 2026,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Boca Raton",
@@ -12846,6 +12934,8 @@
           "mode": "in_person"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -12879,6 +12969,7 @@
           "sales_bd"
         ],
         "gradYear": 2026,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Boca Raton",
@@ -13305,6 +13396,8 @@
           "excel",
           "powerpoint"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": true,
         "requiresDomainIndustryExperience": false,
@@ -13334,6 +13427,9 @@
           "sales_bd"
         ],
         "gradYear": null,
+        "languagesShown": [
+          "spanish"
+        ],
         "locationPreference": {
           "allowedCities": [
             "Hybrid",
@@ -13724,6 +13820,8 @@
           "powerpoint",
           "word"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -13755,6 +13853,7 @@
           "operations_general"
         ],
         "gradYear": 2028,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Boca Raton",
@@ -14271,6 +14370,8 @@
         },
         "mentionsPharmaTraining": true,
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -14303,6 +14404,7 @@
           "sales_bd"
         ],
         "gradYear": 2025,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Boca Raton",
@@ -14881,6 +14983,8 @@
           "mode": "in_person"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "excel",
           "powerpoint",
@@ -14917,6 +15021,7 @@
           "sales_bd"
         ],
         "gradYear": 2026,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Washington, D.C."
@@ -15161,6 +15266,8 @@
         "preferredTools": [
           "excel"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -15191,6 +15298,7 @@
           "operations_general"
         ],
         "gradYear": 2023,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Atlanta"
@@ -15868,6 +15976,8 @@
           "excel",
           "powerpoint"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -15899,6 +16009,7 @@
           "finance_corp"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Chicago",
@@ -16242,6 +16353,8 @@
         "preferredTools": [
           "gcp"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": true,
@@ -16273,6 +16386,7 @@
           "premed_clinical"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Atlanta",
@@ -16821,6 +16935,8 @@
           "excel",
           "powerpoint"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -16854,6 +16970,7 @@
           "software_it"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "New York",
@@ -17161,6 +17278,8 @@
           "mode": "unclear"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -17192,6 +17311,7 @@
           "operations_general"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Boston",
@@ -17646,6 +17766,8 @@
         "preferredTools": [
           "sql"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "amplitude",
           "mixpanel"
@@ -17680,6 +17802,7 @@
           "sales_bd"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Atlanta",
@@ -18339,6 +18462,8 @@
           "excel",
           "powerpoint"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -18371,6 +18496,7 @@
           "finance_corp"
         ],
         "gradYear": 2023,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Jacksonville",
@@ -19145,6 +19271,8 @@
           "java",
           "python"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "aws",
           "docker",
@@ -19180,6 +19308,7 @@
           "software_it"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Atlanta",
@@ -20023,6 +20152,8 @@
           "photoshop",
           "powerpoint"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -20058,6 +20189,7 @@
           "sales_bd"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Chicago",
@@ -20562,6 +20694,8 @@
           "catia",
           "solidworks"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "matlab",
           "python"
@@ -20599,6 +20733,7 @@
           "trades_skilled"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Boston",
@@ -21427,6 +21562,8 @@
           "mode": "unclear"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -21458,6 +21595,9 @@
           "premed_clinical"
         ],
         "gradYear": 2024,
+        "languagesShown": [
+          "spanish"
+        ],
         "locationPreference": {
           "allowedCities": [
             "Miami",
@@ -22323,6 +22463,8 @@
           "excel",
           "powerpoint"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -22357,6 +22499,7 @@
           "premed_clinical"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Boston",
@@ -22770,6 +22913,8 @@
           "mode": "hybrid"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -22802,6 +22947,7 @@
           "sales_bd"
         ],
         "gradYear": 2023,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Atlanta",
@@ -23260,6 +23406,8 @@
           "kubernetes",
           "python"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "aws",
           "azure",
@@ -23295,6 +23443,7 @@
           "premed_clinical"
         ],
         "gradYear": 2023,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "San Francisco",
@@ -24363,6 +24512,8 @@
         "preferredTools": [
           "excel"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "sql",
           "tableau"
@@ -24399,6 +24550,7 @@
           "premed_clinical"
         ],
         "gradYear": 2023,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Boston",
@@ -24858,6 +25010,8 @@
           "mode": "unclear"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -24891,6 +25045,7 @@
           "premed_clinical"
         ],
         "gradYear": 2023,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Los Angeles",
@@ -25786,6 +25941,8 @@
           "kubernetes",
           "python"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "react"
         ],
@@ -25818,6 +25975,7 @@
           "software_it"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Austin",
@@ -26641,6 +26799,8 @@
         "preferredTools": [
           "excel"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "google analytics",
           "illustrator",
@@ -26680,6 +26840,7 @@
           "sales_bd"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Chicago",
@@ -27240,6 +27401,8 @@
           "catia",
           "solidworks"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "abaqus",
           "ansys"
@@ -27277,6 +27440,7 @@
           "trades_skilled"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Boston",
@@ -27979,6 +28143,8 @@
           "mode": "unclear"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -28010,6 +28176,9 @@
           "premed_clinical"
         ],
         "gradYear": 2024,
+        "languagesShown": [
+          "spanish"
+        ],
         "locationPreference": {
           "allowedCities": [
             "Boca Raton",
@@ -29003,6 +29172,8 @@
           "r",
           "sql"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -29038,6 +29209,7 @@
           "premed_clinical"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Boston",
@@ -29364,6 +29536,8 @@
           "mode": "hybrid"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "excel",
           "tableau"
@@ -29399,6 +29573,7 @@
           "premed_clinical"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Atlanta",
@@ -29922,6 +30097,8 @@
           "python",
           "r"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -29951,6 +30128,7 @@
           "data_analytics_bi"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Los Angeles",
@@ -30256,6 +30434,8 @@
           "react",
           "sql"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "aws",
           "azure"
@@ -30290,6 +30470,7 @@
           "operations_general"
         ],
         "gradYear": 2023,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Los Angeles",
@@ -30600,6 +30781,8 @@
           "java",
           "python"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "aws",
           "azure",
@@ -30635,6 +30818,7 @@
           "sales_bd"
         ],
         "gradYear": 2023,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Chicago"
@@ -31305,6 +31489,8 @@
           "mode": "unclear"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "crm",
           "salesforce"
@@ -31342,6 +31528,7 @@
           "sales_bd"
         ],
         "gradYear": 2023,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Miami",
@@ -32200,6 +32387,8 @@
           "python",
           "r"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": true,
@@ -32233,6 +32422,7 @@
           "software_it"
         ],
         "gradYear": 2023,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Atlanta",
@@ -32829,6 +33019,8 @@
           "excel",
           "powerpoint"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -32863,6 +33055,7 @@
           "premed_clinical"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Boston",
@@ -33306,6 +33499,8 @@
           "mode": "unclear"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -33340,6 +33535,7 @@
           "premed_clinical"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Boston",
@@ -33860,6 +34056,8 @@
           "mode": "unclear"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "jira"
         ],
@@ -33895,6 +34093,9 @@
           "sales_bd"
         ],
         "gradYear": 2024,
+        "languagesShown": [
+          "spanish"
+        ],
         "locationPreference": {
           "allowedCities": [
             "Miami"
@@ -34619,6 +34820,8 @@
         "preferredTools": [
           "excel"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "powerpoint"
         ],
@@ -34656,6 +34859,7 @@
           "premed_clinical"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "New York"
@@ -35015,6 +35219,8 @@
           "java",
           "python"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "docker",
           "kubernetes"
@@ -35049,6 +35255,9 @@
           "premed_clinical"
         ],
         "gradYear": 2024,
+        "languagesShown": [
+          "spanish"
+        ],
         "locationPreference": {
           "allowedCities": [
             "Atlanta",
@@ -35971,6 +36180,8 @@
           "powerpoint",
           "word"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "crm"
         ],
@@ -36005,6 +36216,7 @@
           "premed_clinical"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "New York",
@@ -36317,6 +36529,8 @@
           "catia",
           "solidworks"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "abaqus",
           "ansys"
@@ -36351,6 +36565,7 @@
           "operations_general"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Los Angeles",
@@ -36607,6 +36822,8 @@
           "mode": "unclear"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -36638,6 +36855,7 @@
           "sales_bd"
         ],
         "gradYear": 2023,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Atlanta",
@@ -37526,6 +37744,8 @@
           "sql",
           "word"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -37560,6 +37780,7 @@
           "operations_general"
         ],
         "gradYear": 2023,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Boston",
@@ -37878,6 +38099,8 @@
           "mode": "remote"
         },
         "preferredTools": [],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -37909,6 +38132,7 @@
           "sales_bd"
         ],
         "gradYear": 2023,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Atlanta",
@@ -39025,6 +39249,8 @@
           "python",
           "r"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [
           "git",
           "sql",
@@ -39064,6 +39290,7 @@
           "sales_bd"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Los Angeles",
@@ -39580,6 +39807,8 @@
           "indesign",
           "photoshop"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -39613,6 +39842,7 @@
           "trades_skilled"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Boston",
@@ -40220,6 +40450,8 @@
           "sql",
           "tableau"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -40254,6 +40486,9 @@
           "sales_bd"
         ],
         "gradYear": 2024,
+        "languagesShown": [
+          "spanish"
+        ],
         "locationPreference": {
           "allowedCities": [
             "Atlanta",
@@ -40908,6 +41143,8 @@
           "crm",
           "salesforce"
         ],
+        "requiredLanguages": [],
+        "requiredLanguagesLine": null,
         "requiredTools": [],
         "requiresAdvisoryBackground": false,
         "requiresDomainIndustryExperience": false,
@@ -40944,6 +41181,7 @@
           "sales_bd"
         ],
         "gradYear": 2024,
+        "languagesShown": [],
         "locationPreference": {
           "allowedCities": [
             "Atlanta"
