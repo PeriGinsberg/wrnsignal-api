@@ -745,6 +745,16 @@ export default function CoachClientPostConversionPage() {
               </a>
             )}
           </div>
+          <a
+            href={`/dashboard/coach/resume-workshop/${encodeURIComponent(id)}`}
+            style={{
+              fontSize: 14, fontWeight: 900, padding: "8px 16px", borderRadius: 10,
+              border: `1px solid ${T.BORDER_SOFT}`, background: T.GLASS, color: T.TEXT,
+              textDecoration: "none", whiteSpace: "nowrap",
+            }}
+          >
+            Resume Workshop <span aria-hidden="true">{"↗"}</span>
+          </a>
           <span
             style={{
               background: "rgba(255,149,0,0.15)",

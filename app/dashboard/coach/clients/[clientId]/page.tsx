@@ -908,6 +908,22 @@ export default function CoachClientPage() {
         >
           Networking <span aria-hidden="true">{"↗"}</span>
         </a>
+
+        {/* The Resume Workshop is a full-width workspace for a live session,
+            so it opens on its own page, like Networking. Keyed by the
+            relationship, which loads with this page. */}
+        {coachClientId && (
+          <a
+            href={`/dashboard/coach/resume-workshop/${encodeURIComponent(coachClientId)}`}
+            style={{
+              fontSize: TYPE.secondary, fontWeight: 900, padding: "8px 16px", borderRadius: 10,
+              border: `1px solid ${T.BORDER_SOFT}`, background: T.GLASS, color: T.MUTED,
+              textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6, flexShrink: 0, whiteSpace: "nowrap",
+            }}
+          >
+            Resume Workshop <span aria-hidden="true">{"↗"}</span>
+          </a>
+        )}
       </div>
 
       {/* TAB 0 — Dashboard (default landing) */}
