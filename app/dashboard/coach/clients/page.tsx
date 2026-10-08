@@ -11,6 +11,7 @@ import { getSupabaseBrowser } from "../../../../lib/supabase-browser"
 import { T, btnSecondary, card, eyebrow, selectDark, selectDarkOption } from "../../../../lib/dashboard-theme"
 import { LifecycleStatusPill, LIFECYCLE_STATUS_VALUES, type LifecycleStatus } from "../LifecycleStatusPill"
 import { BackToDashboard } from "../BackToDashboard"
+import CreateClientModal from "../CreateClientModal"
 import { LoadingShell } from "../LoadingShell"
 import { onCoachRowEnter, onCoachRowLeave, COACH_ROW_DEFAULT_BG, COACH_ROW_TRANSITION } from "../coachRowHover"
 import { SPACE, TYPE } from "../../../../lib/theme/surfaces"
@@ -146,6 +147,7 @@ function MiniCell({ label, value, color }: { label: string; value: string | numb
 }
 
 export default function MyClientsFullPage() {
+  const [showCreateClient, setShowCreateClient] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const filterParam = searchParams.get("filter")
@@ -272,12 +274,36 @@ export default function MyClientsFullPage() {
     <div>
       <BackToDashboard />
       <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: TYPE.title, fontWeight: 800, letterSpacing: "-0.01em", color: T.TEXT, margin: 0 }}>
-          My Clients <span style={{ color: T.MUTED, fontWeight: 600, fontSize: TYPE.subheading }}>({sorted.length})</span>
-        </h1>
-        <p style={{ fontSize: TYPE.secondary, color: T.MUTED, marginTop: 8 }}>
-          Every client, at every status. Open one to reach their tracker, profile and personas.
-        </p>
+        {/* Title left, Add Client right: the same header as Prospects. */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+          <div>
+            <h1 style={{ fontSize: TYPE.title, fontWeight: 800, letterSpacing: "-0.01em", color: T.TEXT, margin: 0 }}>
+              My Clients <span style={{ color: T.MUTED, fontWeight: 600, fontSize: TYPE.subheading }}>({sorted.length})</span>
+            </h1>
+            <p style={{ fontSize: TYPE.secondary, color: T.MUTED, marginTop: 8 }}>
+              Every client, at every status. Open one to reach their tracker, profile and personas.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowCreateClient(true)}
+            style={{
+              background: T.WRN_ORANGE,
+              color: "var(--sig-ink-on-bright, #04060F)",
+              borderRadius: 10,
+              minHeight: SPACE.control,
+              padding: "0 20px",
+              fontSize: TYPE.control,
+              fontWeight: 800,
+              cursor: "pointer",
+              border: "none",
+              fontFamily: "inherit",
+              flexShrink: 0,
+            }}
+          >
+            + Add Client
+          </button>
+        </div>
         {filter && (
           <div style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 8,
             background: "rgba(254,176,106,0.10)", border: "1px solid rgba(254,176,106,0.30)",
@@ -402,7 +428,7 @@ export default function MyClientsFullPage() {
               ? `No ${lifecycleFilter} clients.`
               : filter
                 ? `No clients match the "${FILTER_LABELS[filter]}" filter. Clear the filter to see your full roster.`
-                : "No clients yet. Use Create or Invite from the Dashboard to add one."}
+                : "No clients yet. Use + Add Client above to add one."}
           </p>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -556,6 +582,16 @@ export default function MyClientsFullPage() {
           </div>
         )}
       </div>
+
+      {showCreateClient && (
+        <CreateClientModal
+          onClose={() => setShowCreateClient(false)}
+          onSuccess={() => {
+            setShowCreateClient(false)
+            load()
+          }}
+        />
+      )}
     </div>
   )
 }
