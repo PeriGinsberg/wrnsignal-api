@@ -22,6 +22,8 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
 import CreateClientModal from "./CreateClientModal"
+import AddProspectModal from "./prospects/AddProspectModal"
+import { CoachTopRibbon } from "./CoachTopRibbon"
 import {
   T, input, textarea, btnPrimary, btnSecondary, card, eyebrow, label,
 } from "../../../lib/dashboard-theme"
@@ -809,6 +811,7 @@ export default function CoachHomePage() {
 
   // Modal state
   const [showCreateClient, setShowCreateClient] = useState(false)
+  const [showAddProspect, setShowAddProspect] = useState(false)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteEmail, setInviteEmail] = useState("")
   const [inviteAccess, setInviteAccess] = useState("full")
@@ -919,6 +922,9 @@ export default function CoachHomePage() {
 
   return (
     <div>
+      {/* Top ribbon: find a client, add a client, add a prospect. */}
+      <CoachTopRibbon onAddClient={() => setShowCreateClient(true)} onAddProspect={() => setShowAddProspect(true)} />
+
       <HeaderStrip firstName={data.coach.firstName} />
 
       {/* The plan's three blocks, at the top (2026-10-06). Clients by phase
@@ -1133,6 +1139,16 @@ export default function CoachHomePage() {
             )}
           </div>
         </div>
+      )}
+
+      {showAddProspect && (
+        <AddProspectModal
+          onClose={() => setShowAddProspect(false)}
+          onSuccess={() => {
+            setShowAddProspect(false)
+            load()
+          }}
+        />
       )}
 
       {showCreateClient && (
