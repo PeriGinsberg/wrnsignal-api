@@ -4528,6 +4528,20 @@ export function extractJobSignals(
     "will help you get",
     "will help you earn",
     "upon hire",
+    // Earned during the role, or merely encouraged (DEF-018, C006): "highly
+    // encouraged to study for and complete the SIE ... before the conclusion
+    // of the program". Specific phrasings only, never a bare "encouraged".
+    "highly encouraged",
+    "strongly encouraged",
+    "encouraged to study",
+    "encouraged to complete",
+    "encouraged to obtain",
+    "encouraged to pursue",
+    "before the conclusion of the program",
+    "by the end of the program",
+    "during the program",
+    "during the internship",
+    "during your internship",
     "after joining",
     "after start",
     "obtain within",
@@ -4777,6 +4791,22 @@ export function extractJobSignals(
       console.log("[extract] Suppressing credentialRequired for training program")
       credentialRequired = false
     }
+  }
+
+  // An INTERNSHIP never hard-gates on a securities registration (DEF-018,
+  // C006). A FINRA registration needs a sponsoring firm, so an intern cannot
+  // hold one before the firm hires them, and the SIE is a student exam the
+  // program itself encourages. Only when FINRA/SIE is the sole hard credential:
+  // an internship that requires a law, medical, CPA or other license still gates.
+  const internshipSignals = detectInternshipSignals(jobTextRaw)
+  const onlyFinraCredential =
+    requiresFinraLicense &&
+    !(requiresLawSchool || requiresMedSchool || requiresCPA || requiresGradDegree ||
+      requiresInsuranceLicense || requiresRealEstateLicense || requiresTeachingCredential ||
+      requiresPELicense || requiresCDL)
+  if (credentialRequired && onlyFinraCredential && internshipSignals.isInternship) {
+    console.log("[extract] Suppressing FINRA/SIE credentialRequired for an internship")
+    credentialRequired = false
   }
 
   // ── Job archetype detection ─────────────────────────────────────────────────
@@ -5095,7 +5125,7 @@ return {
     jobIndustry: jobIndustry,
     reportingSignals: { strong: reportingStrong },
     requirement_units: requirementUnits,
-    internship: detectInternshipSignals(jobTextRaw),
+    internship: internshipSignals,
   }
 }
 

@@ -32,14 +32,14 @@ Update at the end of the session.
 
 | Metric | Count |
 |---|---|
-| Cases run | 4 |
-| Verdicts CORRECT | 0 |
-| Verdicts BUG | 4 |
-| False-fires | 10 |
-| False-clears | 1 (unverified — see DEF-002) |
-| Wrong-verdicts (top-line APPLY/REVIEW/PASS wrong) | 3 |
+| Cases run | 6 |
+| Verdicts CORRECT | 1 (C007: right band, wrong reason) |
+| Verdicts BUG | 5 |
+| False-fires | 13 |
+| False-clears | 2 (DEF-019 verified; DEF-002 unverified) |
+| Wrong-verdicts (top-line APPLY/REVIEW/PASS wrong) | 4 |
 | Known-bug repeats (family-mismatch etc.) | 0 |
-| New defects opened | 17 (DEF-005…017; DEF-008 closed NOT-A-DEFECT) |
+| New defects opened | 20 (DEF-005…020; DEF-008 closed NOT-A-DEFECT) |
 
 **Detector fire tally** (how often each detector fired, and how often that fire was wrong):
 
@@ -51,6 +51,8 @@ Update at the end of the session.
 | RISK_MISSING_TOOLS | 3 | 2 | 67% |
 | RISK_LIMITED_MATCH_EVIDENCE | 2 | 2 | 100% |
 | GATE_FIELD_MISMATCH (force_pass) | 1 | 1 | 100% |
+| GATE_CREDENTIAL_REQUIRED (force_pass) | 1 | 1 | 100% |
+| RISK_SUBFAMILY_MISMATCH | 2 | 2 | 100% |
 | domain_gap | 0 | 0 | — |
 | scope_inversion | 1 | 1 | 100% |
 | unsupported_skill_claim | 0 | 0 | — |
@@ -89,6 +91,9 @@ Severity key: **S1** = wrong top-line verdict, user acts on bad advice. **S2** =
 | DEF-015 | Non-requirement note read as a requirement: `SECTION_HEADER_RULES` (`extract.ts:1816`) + `drafting_documentation` bare `"documentation"` jobPhrase (`extract.ts:1379`) | false-fire (WHY) | S2 | 1 | C005 | "Program Details:" and the trailing "Note:" paragraph have no header rule, so they fold into the preceding Requirements section. The immigration line "UBS will not … sign any documentation in support of … immigration sponsorship (OPT/CPT)" becomes `drafting_documentation` **core**, matched direct (weight 103) to the résumé skills line "policy drafting". It is the case's top WHY. Here it hides DEF-016: remove it and the score falls 88 → 74 | Treat sponsorship/work-authorization lines as non-requirement text, alongside `EEO_BOILERPLATE` (`extract.ts:~1960`), segment-scoped like `stripLegalBoilerplate`. Separately, the bare `"documentation"` jobPhrase is the same bare-word class as DEF-009/DEF-011 | **FIXED on dev, uncommitted (2026-10-01).** Work-authorization / visa-sponsorship sentences added to `EEO_BOILERPLATE`, so `stripLegalBoilerplate` drops them segment by segment. Every pattern needs immigration/visa context ("sponsorship sales", "event sponsorships", "opt in" untouched). Corpus effect: zero. No frozen prod run had built a unit from this text, so C005 is the first sighting. Header rules for "Program Details" / "Note" not added (the sentence filter makes them cosmetic). The bare `"documentation"` jobPhrase is still open, as part of the bare-word class |
 | DEF-016 | CAPABILITY_RULES coverage for consulting / graduate-program JDs (`strategy_problem_solving` `extract.ts:1170-1193`, `minMatches: 2`) + `isTrainingProgram` (`extract.ts:4734`) | coverage gap | S2 | 1 | C005 | The JD's actual work and requirements produce **zero** units: "structure complex challenges, develop actionable solutions, support execution across transformation and change initiatives", "experience working in a project-based environment", "strategic thinker with strong communication skills", "evidence … responsible use of AI". `strategy_problem_solving` needs 2 phrase hits in one segment, and no segment carries both "consulting" and "strategy"; there is no change/transformation key. `isTrainingProgram` also misses "Graduate Talent Program … professional and technical training … rotations" (its patterns want "training program", "gain exposure **in**"). With DEF-014 and DEF-015 both fixed, the case still lands Review/74 on one adjacent match | Add consulting/change-delivery vocabulary (structure problems, actionable solutions, transformation, change initiatives, project-based) and an AI-use requirement key. Extend `isTrainingProgram` to "graduate program / talent program / rotations / targeted training". Same shape of gap as the §5 "events" question: the JD's core function is invisible to the rules | OPEN |
 | DEF-017 | Priority Apply on tool-only evidence (`computeBaseScore` `scoring.ts:843`, Priority Apply gate `decision.ts:8,49`) | wrong-verdict (over) | S2 | 1 | prod ad572717 / e37ae047 (surfaced by the DEF-014 fix) | Precision AQ "Analyst, Market Access Consulting" reaches Priority Apply/97 with three WHY codes, all office tools (Excel, PowerPoint, Word, direct), plus the target-title bonus and the family match. Before DEF-014 the false −12 family mismatch held it at Apply/81 and hid how thin the evidence is. Pre-existing scoring generosity, not caused by DEF-014 | Require at least one non-tool direct WHY (function/deliverable) for Priority Apply, or stop tool matches counting toward `directCount`. Audit the corpus for other Priority Apply rows whose direct WHYs are all `match_kind: tool` before choosing | OPEN |
+| DEF-018 | Credential gate on an encouraged, in-program SIE: `finraKeywords` (`policy.ts:551` "securities industry essentials") + `SPONSOR_PHRASES` (`extract.ts:4493-4545`) + `isTrainingProgram` (`extract.ts:4759`) → `GATE_CREDENTIAL_REQUIRED` force_pass (`constraints.ts:160-169`) | false-fire → wrong-verdict | **S1** | 1 | C006 | A bare mention of the SIE sets `requiresFinraLicense` (`extract.ts:4445`). The JD only says candidates are "highly encouraged to study for and complete the Securities Industry Essentials (SIE) licensing before the conclusion of the program". The ±200-char sponsorship window (`isCredentialSponsored`, `extract.ts:4583`) has no "encouraged" / "before the conclusion of" / "during the program" phrase, and `isTrainingProgram` never treats an internship as a program (`isInternship: true`, `isTrainingProgram: false`). Gate forced **Priority Apply/97 → Pass/55** on a junior Finance major who meets every stated requirement | (1) Add encouragement / in-program phrases to `SPONSOR_PHRASES` ("encouraged", "highly encouraged", "before the conclusion of", "by the end of the program", "during the program", "during the internship"). (2) Never hard-gate a FINRA/SIE credential on `isInternship` roles: an intern cannot hold a Series registration before a firm sponsors it, and the SIE is open to students. (3) Consider removing bare "securities industry essentials" from `finraKeywords`, keeping only "sie required" / "sie exam required" style phrasing. Regression: C006 must return Priority Apply/Apply with no credential gate; an Advisor posting that states "Series 7 and 66 required" must still gate. Related: DEF-016 (same `isTrainingProgram` narrowness, different root cause) | OPEN |
+| DEF-019 | Language requirement invisible on the regex JD path: `bilingual_language` (`extract.ts:1517-1531`) has `jobPhrases: []` by design, emitted only by the LLM JD path | false-clear (coverage gap) | S2 | 1 | C007 | "Fluency in English and Spanish is required" produces no requirement unit and no risk. The résumé shows no Spanish. Here the verdict still lands Review (via the thin-evidence guardrail), but the same JD with stronger direct matches would reach Apply for a monolingual candidate: potential S1 | Either turn on the LLM JD path for this key in prod, or add narrow regex jobPhrases for explicit requirements only ("fluency in .* spanish is required", "bilingual .* required", "must be fluent in"), never bare "fluent in" (the profile-side comment at :1521 explains why). Treat an unmet *required* language as a high risk; preferred languages ("Portuguese proficiency is preferred") stay low | OPEN |
+| DEF-020 | Profile finance sub-family: `inferProfileFinanceSubFamily` (`extract.ts:3772`) checks IB keywords first (`:3782-3785`) | false-fire | S3 | 2 | C006, C007 | One club bullet ("prepare to enter the industry … Investment Banking") classifies the whole profile as `ib`, ahead of real wealth-management evidence (shadow at Westshore, Wealthspire academy) that only the later AM check would see. Emits RISK_SUBFAMILY_MISMATCH "Your finance experience is primarily in investment banking" on both of this candidate's jobs. Weight 0 (distance 1), so verdicts unaffected; the shown risk is wrong | Weigh experience over aspiration: count IB/AM signals in EXPERIENCE bullets (roles, employers) before club/program lines, or require 2+ IB signals before IB wins. Also: job side reads a wealth-management advisor internship as `asset_management` (C006) and Santander WM&I as `other_finance` (C007); consider a `wealth_management` sub-family | OPEN |
 
 ---
 
@@ -540,6 +545,95 @@ LAYER: extraction-jd (title family, section headers, capability coverage). Scori
 
 ---
 
+
+```
+CASE ID:        C006
+DATE:           2026-10-08
+RÉSUMÉ:         E.B. — FSU B.S. Finance, May 2028, 3.8 GPA. Valuation Intern (Property Tax Alliance, 2026),
+                Acquisition Intern ROW (Bowman, 2025), Wealth Management Shadow (Westshore, 2025),
+                Wealthspire Rising-Gen Academy (2026), Finance Society, Securities Society.
+                Holds no SIE or Series registration.
+JD:             Raymond James 2027 Summer Internship, Wealth Management, multiple locations (9.3k chars, has newlines)
+SHIPPED RESULT: Pass / 55  (raw 97, decision_initial Priority Apply, penalty 0, gate GATE_CREDENTIAL_REQUIRED force_pass)
+detector fires: GATE_CREDENTIAL_REQUIRED (force_pass); RISK_SUBFAMILY_MISMATCH (low, weight 0)
+case files:     evals/jobfit/cases/C006/ (gitignored, contains PII)
+pull:           tests/jobfit-regression/pull-prod-case.ts --run 96b96094-87af-46aa-89ac-6d3c2e1c0324 --case C006
+
+REPORTED AS:    "internship scoring too severe; expects experience the job description doesn't require"
+
+VERDICT CHECK:  bug, wrong-verdict (S1). Expected Priority Apply / Apply.
+  He meets every stated requirement: junior standing, graduating May 2028 (window Dec 2027 to May 2028),
+  bachelor's in finance, and directly relevant wealth-management exposure. The JD's only experience line is
+  Workday boilerplate ("General Experience - 4 to 6 months"), and the engine did NOT gate on experience:
+  yearsRequired null, isSeniorRole false, penalty_sum 0. The user's "experience" reading is the gate's
+  message, not an experience rule.
+
+ROOT CAUSE: DEF-018. The only licensing language is "Successful candidates are highly encouraged to study
+  for and complete the Securities Industry Essentials (SIE) licensing before the conclusion of the program".
+  - policy.ts:551 lists bare "securities industry essentials" as a FINRA requirement keyword, so
+    requiresFinraLicense = true (extract.ts:4445).
+  - isCredentialSponsored (extract.ts:4583) looks ±200 chars for SPONSOR_PHRASES (extract.ts:4493-4545);
+    none of "highly encouraged", "before the conclusion of the program" is in the list. credentialSponsored false.
+  - isSupportAssociateTitle (extract.ts:4606) does not cover "Internship".
+  - isTrainingProgram (extract.ts:4759) is false: "internship program" and "developmental programs" match
+    none of its patterns, although job_signals.internship.isInternship is true.
+  - constraints.ts:160-169 then returns force_pass with "This role requires FINRA registration or securities
+    license", clamping 97 to 55.
+  Source of the flag is the regex extractor, not the LLM job-signals adapter (llmJobSignalsAdapter.ts:241):
+  credentialDetail is the regex's fixed string (extract.ts:4691).
+
+SECONDARY (not investigated further, weight 0): RISK_SUBFAMILY_MISMATCH says "Your finance experience is
+  primarily in investment banking" and "This is a asset management role". The résumé is closer to wealth
+  management / valuation (one IB-prep club line), and a wealth-management advisor internship is read as
+  asset_management. Low severity, did not move the verdict.
+
+NOT BUGS: no experience or seniority gate; no family mismatch; zero penalties.
+
+LAYER: extraction-jd (credential requirement extraction). The gate and the clamp behave as designed on a
+  wrong `credentialRequired: true`.
+
+COUNTERFACTUAL: from the payload itself, decision_initial = Priority Apply at raw 97 before the gate;
+  removing the false credential flag alone restores it.
+```
+
+
+```
+CASE ID:        C007
+DATE:           2026-10-08
+RÉSUMÉ:         E.B. (same candidate as C006). No Spanish anywhere on the résumé.
+JD:             Santander Future Talents: WM&I Summer Internship Program 2027, Miami (6.1k chars, has newlines)
+SHIPPED RESULT: Review / 74  (raw 79, decision_initial Apply, penalty 0, gate none, final clamp to 74)
+detector fires: RISK_SUBFAMILY_MISMATCH (low, weight 0); evidence guardrail rule 2 (no quality direct WHY)
+case files:     evals/jobfit/cases/C007/ (gitignored, contains PII)
+pull:           tests/jobfit-regression/pull-prod-case.ts --run d120eac5-d089-4b35-b6aa-c0828e1646bb --case C007
+
+REPORTED AS:    second job on the same candidate's tracker, reviewed alongside C006
+
+VERDICT CHECK:  correct band (Review), wrong reason.
+  The JD's requirements are eligibility lines: undergraduate in Business/Economics/Finance graduating
+  May-June 2028 (met), GPA above 3.5 (3.8, met), "Fluency in English and Spanish is required" (no evidence),
+  US work authorization without sponsorship (not stated on résumé). An unmet required language justifies
+  Review. The engine never saw it.
+
+WHAT THE ENGINE ACTUALLY SAW: two requirement_units, both `supporting`, both matched ADJACENT:
+  - stakeholder_coordination  "Contribute to client-focused solutions…"  ↔ Wealthspire mentorship bullet (w 77)
+  - operations_execution      "Skills: GPA above 3.5; demonstrated leadership…" ↔ P&L reconciliation bullet (w 78)
+  Apply at raw 79 was capped to Review by decision.ts rule 2 (no quality direct WHY, decision.ts:200-218)
+  and clamped to 74 (decision.ts:234-235). The cap is working as designed on thin, adjacent-only evidence.
+
+DEFECTS:
+  - DEF-019: "Fluency in English and Spanish is required" emits nothing. bilingual_language has empty
+    jobPhrases on purpose (extract.ts:1517-1531); only the LLM JD path emits it.
+  - DEF-020: RISK_SUBFAMILY_MISMATCH again calls the profile investment banking (profile financeSubFamily
+    "ib" from one Securities Society bullet; extract.ts:3782-3785). Job read as other_finance.
+
+NOT BUGS: no credential or experience gate (credentialRequired false, yearsRequired null); the Review
+  guardrail fired as designed.
+
+LAYER: extraction-jd (language requirement coverage) + extraction-resume (profile sub-family). Scoring and
+  guardrails behaved as designed.
+```
+
 ## 5. OPEN QUESTIONS / PAYLOAD GAPS
 
 Things to resolve or capture better while testing:
@@ -561,6 +655,7 @@ Things to resolve or capture better while testing:
 - [x] **82 of 175 prod profiles (47%) resolved to `targetFamilies: ["Other"]` — ROOT CAUSE FOUND, FIXED.** Not a vocabulary gap: **69 of the 82 stated no target roles at all**. `inferTargetFamilies` ended `: ["Other"]` unconditionally, so "said nothing" and "said something unmappable" collapsed into one value that `constraints.ts:45`, `scoring.ts:840` and `scoring.ts:1661` all read as an asserted non-technical target. Fixed in `lib/jobfit-family-inference.ts`: `["Other"]` only when roles were stated and matched nothing (preserves 0410q — psychology grad vs Meta SWE stays Pass), `[]` when nothing was stated. Only 13 profiles state genuinely unmapped roles (recruiter, property manager, sports management, fractional CFO, IP/trademark associate, non-profit coordinator); vocabulary for those is still open below. A/B over the 107 corpus cases frozen at `["Other"]`: 43 decisions move, 42 up, 1 down (`86d81044` Leasing Coordinator Apply/79→Review/69 — its JD's family is also `Other`, so profile-Other↔job-Other was collecting the +10 family-match bonus; matching unknown to unknown should not earn it). 3 `GATE_FIELD_MISMATCH` force-passes clear (2× Energy and Sustainability Intern, Public Realm Designer, Staff Engineer). **The regression suite cannot see this change** — the prod corpus freezes `profileOverrides.targetFamilies`, so it reports 0 drift; the guard is `lib/jobfit-family-inference.test.ts` plus the A/B above.
 - [ ] **Blurb anchoring, software_engineering edition (found auditing C004's candidate, 2026-09-22).** Bessemer Venture Partners "Summer Analyst 2027" scores Pass/22 with jobFamily IT_Software and GATE_FIELD_MISMATCH. It survives the DEF-009 anchor fix *correctly*: the line is the firm describing its portfolio — "from consumer internet and e-commerce, to mobile and cloud computing, to business software, healthcare and cleantech" — so "cloud" does sit next to "software" and the rule fires by its own logic. The defect is one level up: a company/portfolio blurb is being read as a requirement line, exactly like [finance_corp blurb anchoring]. `filterJobTextToRequirements` does not drop it. Candidate fix: treat investment/portfolio blurb vocabulary (invest, portfolio companies, founders, Series A-C, our portfolio, we back) as a non-requirement section, rather than adding negativeContext per rule. Same audit found 6 other Pass rows on that profile with NO gate — those are evidence-based and not this bug.
 - [ ] **Vocabulary for the 13 profiles that state unmapped roles.** recruiter / recruiting coordinator (no HR mapping), property manager / lease administrator / Yardi, sports management / guest services / fan engagement, fractional CFO, IP-trademark-copyright associate, non-profit coordinator, bare "project manager", bare "data". These still take the mismatch penalty and the hard-tech gate. Add per family with the diff audited each time — a blanket `Other`=unknown rule was tried and rejected (DEF-010).
+- [ ] **The payload does not say which extractor produced `job_signals` (regex vs the LLM job-signals adapter, `llmJobSignalsAdapter.ts`).** C006 could be attributed only by matching `credentialDetail` to the regex's fixed string (`extract.ts:4691`). Export a `job_signals_source` (regex / llm / merged) so credential and gate findings can be attributed without string-matching.
 - [ ] `profile_signals.resumeText` contains only the 5-line header, not the résumé body. Is the full text reaching the extractor, or is it assembled from `profile_evidence_units` only?
 
 ---
