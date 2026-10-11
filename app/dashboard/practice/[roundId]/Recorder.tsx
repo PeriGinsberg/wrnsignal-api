@@ -11,15 +11,26 @@
 //   Cancel           stops, turns the camera OFF, and throws the take away.
 //                    Nothing is uploaded and nothing is stored. The card is
 //                    left showing Re-record.
-//   Re-record        the same thing Start does, from a cancelled card.
-//   Finish           stops, uploads, and LOCKS the question.
+//   Re-record        throws the take away and puts the card back on Start
+//                    recording. It does NOT film: the camera and the timer
+//                    wait for them to press Start recording, so they get a
+//                    breath between takes.
+//   Finish           stops and turns the camera off, then plays the take back
+//                    on the card. Nothing is uploaded yet.
+//   Use this answer  uploads the take they just watched and LOCKS the question.
+//   Re-record        (after watching) the same: take gone, back to Start.
+//
+// WHY THEY WATCH IT FIRST. Seeing yourself answer is the coaching: people judge
+// their own eye contact, pace and filler words better on playback than from
+// memory. So a take is only ever stored after the client has had the chance to
+// see it and chosen it. The timer running out lands on the same playback.
 //
 // WHY CANCEL TURNS THE CAMERA OFF. It is the button somebody presses when they
 // want to stop being filmed. Leaving the light on because the next take would
 // start faster answers a question nobody asked.
 //
-// Locking is the point of Finish. "Submit" at the bottom sends the round; this
-// button is how the client says "that one is my answer", and a question that
+// Locking is the point of Use this answer. "Submit" at the bottom sends the
+// round; this button is how the client says "that one is my answer", and a question that
 // could still be re-recorded after they said that would make Submit mean
 // something different for each card.
 //
@@ -40,7 +51,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 
-export type RecorderState = "idle" | "recording" | "cancelled" | "uploading" | "done" | "error"
+export type RecorderState = "idle" | "ready" | "recording" | "cancelled" | "review" | "uploading" | "done" | "error"
+
+/** A finished take waiting for the client to watch it and decide. */
+type Take = { blob: Blob; mime: string; durationMs: number; url: string }
 
 /** The containers worth asking for, best first. */
 const CANDIDATES = [
@@ -100,6 +114,16 @@ export function Recorder({
   const [state, setState] = useState<RecorderState>("idle")
   const [error, setError] = useState<string>("")
   const [msLeft, setMsLeft] = useState(seconds * 1000)
+  const [take, setTake] = useState<Take | null>(null)
+  // The object URL behind the playback, for revoking on unmount: the state
+  // value is stale inside the cleanup.
+  const takeUrlRef = useRef<string | null>(null)
+
+  const dropTake = useCallback(() => {
+    if (takeUrlRef.current) URL.revokeObjectURL(takeUrlRef.current)
+    takeUrlRef.current = null
+    setTake(null)
+  }, [])
 
   const stopTracks = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop())
@@ -113,6 +137,7 @@ export function Recorder({
     return () => {
       if (tickRef.current) clearInterval(tickRef.current)
       stopTracks()
+      if (takeUrlRef.current) URL.revokeObjectURL(takeUrlRef.current)
     }
   }, [stopTracks])
 
@@ -151,14 +176,12 @@ export function Recorder({
         const type = rec.mimeType || mime || "video/webm"
         const blob = new Blob(chunks, { type })
         stopTracks()
-        setState("uploading")
-        try {
-          await onRecorded(blob, type.split(";")[0], durationMs)
-          setState("done")
-        } catch (e: any) {
-          setState("error")
-          setError(`That recorded, but did not upload: ${e?.message ?? e}`)
-        }
+        // Playback first. The take is only uploaded when they choose it.
+        const url = URL.createObjectURL(blob)
+        if (takeUrlRef.current) URL.revokeObjectURL(takeUrlRef.current)
+        takeUrlRef.current = url
+        setTake({ blob, mime: type.split(";")[0], durationMs, url })
+        setState("review")
       }
 
       startedAtRef.current = Date.now()
@@ -181,12 +204,13 @@ export function Recorder({
         }
       }, 200)
     },
-    [onRecorded, seconds, stopTracks],
+    [seconds, stopTracks],
   )
 
   /** Start, and Re-record: camera on and recording, in one press. */
   const start = useCallback(async () => {
     setError("")
+    dropTake()
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
       setState("error")
       setError("This browser cannot record video. Try Safari or Chrome, and make sure the page is on https.")
@@ -215,7 +239,7 @@ export function Recorder({
             : `Could not start the camera: ${e?.message ?? e}`,
       )
     }
-  }, [beginRecording])
+  }, [beginRecording, dropTake])
 
   /**
    * Cancel: stop, camera off, take thrown away.
@@ -237,12 +261,40 @@ export function Recorder({
     setState("cancelled")
   }, [seconds, stopTracks])
 
-  /** Finish: stop, upload, and lock the question. */
+  /** Re-record: the take is gone and the card waits on Start recording. */
+  const reRecord = useCallback(() => {
+    dropTake()
+    setError("")
+    setMsLeft(seconds * 1000)
+    setState("ready")
+  }, [dropTake, seconds])
+
+  /** Finish: stop, camera off, and play the take back. */
   const finish = useCallback(() => {
     const rec = recorderRef.current
     if (!rec || rec.state === "inactive") return
     rec.stop()
   }, [])
+
+  /**
+   * Use this answer: upload the take they watched, and lock the question.
+   *
+   * A failed upload goes back to the playback with the error, so the take
+   * they chose is still there to try again rather than lost.
+   */
+  const useAnswer = useCallback(async () => {
+    if (!take) return
+    setError("")
+    setState("uploading")
+    try {
+      await onRecorded(take.blob, take.mime, take.durationMs)
+      dropTake()
+      setState("done")
+    } catch (e: any) {
+      setState("review")
+      setError(`That did not upload: ${e?.message ?? e}. Press Use this answer to try again.`)
+    }
+  }, [take, onRecorded, dropTake])
 
   if (locked && state !== "uploading") {
     return (
@@ -254,7 +306,8 @@ export function Recorder({
 
   const low = msLeft <= 10_000
   const pct = Math.max(0, Math.min(100, (msLeft / (seconds * 1000)) * 100))
-  const showVideo = state === "recording" || state === "uploading"
+  const showVideo = state === "recording"
+  const showTake = (state === "review" || state === "uploading") && !!take
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -276,7 +329,20 @@ export function Recorder({
             visibility: showVideo ? "visible" : "hidden",
           }}
         />
-        {!showVideo && (
+        {/* THE PLAYBACK. Its own element: the live preview is mirrored and
+            muted, and a take watched back should be neither, so they see and
+            hear what the interviewer would. */}
+        {showTake && (
+          <video
+            key={take!.url}
+            src={take!.url}
+            controls
+            playsInline
+            aria-label="Your recorded answer"
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", background: "#0D1829" }}
+          />
+        )}
+        {!showVideo && !showTake && (
           <div
             style={{
               position: "absolute", inset: 0, display: "flex", alignItems: "center",
@@ -289,6 +355,8 @@ export function Recorder({
               ? "Answer saved."
               : state === "cancelled"
                 ? "Take discarded. Nothing was saved."
+                : state === "ready"
+                ? "That take is gone. Press Start recording when you are ready."
                 : "Press Start recording. Your camera comes on and recording begins straight away."}
           </div>
         )}
@@ -320,11 +388,11 @@ export function Recorder({
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
         {/* A FRESH CARD HAS ONE BUTTON. Anything beside it is a choice offered
             before there is anything to choose between. */}
-        {(state === "idle" || state === "error") && (
+        {(state === "idle" || state === "ready" || state === "error") && (
           <button type="button" onClick={() => void start()} style={btn("primary")}>Start recording</button>
         )}
         {state === "cancelled" && (
-          <button type="button" onClick={() => void start()} style={btn("primary")}>Re-record</button>
+          <button type="button" onClick={reRecord} style={btn("primary")}>Re-record</button>
         )}
         {state === "recording" && (
           <>
@@ -332,6 +400,15 @@ export function Recorder({
               Finish ({formatClock(msLeft)} left)
             </button>
             <button type="button" onClick={cancel} style={btn("secondary")}>Cancel</button>
+          </>
+        )}
+        {state === "review" && (
+          <>
+            <button type="button" onClick={() => void useAnswer()} style={btn("primary")}>Use this answer</button>
+            <button type="button" onClick={reRecord} style={btn("secondary")}>Re-record</button>
+            <span style={{ fontSize: 15, lineHeight: "22px", color: "#08203F", flexBasis: "100%" }}>
+              Watch your answer, then keep it or record it again.
+            </span>
           </>
         )}
         {state === "uploading" && <span style={{ fontSize: 15 }}>Saving your answer...</span>}

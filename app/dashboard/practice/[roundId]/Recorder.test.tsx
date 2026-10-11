@@ -50,6 +50,11 @@ beforeEach(() => {
     configurable: true,
     value: { getUserMedia: vi.fn(async () => fakeStream()) },
   })
+  // jsdom has no object URLs.
+  vi.stubGlobal("URL", Object.assign(Object.create(URL), {
+    createObjectURL: vi.fn(() => `blob:take-${Math.random()}`),
+    revokeObjectURL: vi.fn(),
+  }))
   // jsdom's <video> has no play().
   Object.defineProperty(globalThis.HTMLMediaElement.prototype, "play", {
     configurable: true, value: vi.fn(async () => {}),
@@ -67,6 +72,11 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals() })
  */
 async function settle() {
   await act(async () => { await new Promise((r) => setTimeout(r, 5)) })
+}
+
+const click = async (name: string | RegExp) => {
+  await act(async () => { screen.getByRole("button", { name }).click() })
+  await settle()
 }
 
 describe("a fresh card", () => {
@@ -117,6 +127,19 @@ describe("cancel", () => {
   })
 })
 
+describe("re-record after cancel", () => {
+  it("does not turn the camera on until Start recording", async () => {
+    render(<Recorder seconds={90} locked={false} onRecorded={vi.fn()} />)
+    await click("Start recording")
+    await click("Cancel")
+    await click("Re-record")
+
+    expect(FakeMediaRecorder.made.length).toBe(1)
+    expect(screen.getByRole("button", { name: "Start recording" })).toBeTruthy()
+    expect(screen.queryByRole("button", { name: /^Finish/ })).toBeNull()
+  })
+})
+
 describe("cancel, re-record, finish", () => {
   it("stores exactly one take, the last one", async () => {
     const onRecorded = vi.fn(async () => {})
@@ -128,8 +151,10 @@ describe("cancel, re-record, finish", () => {
     await settle()
     await act(async () => { screen.getByRole("button", { name: "Re-record" }).click() })
     await settle()
+    await click("Start recording")
     await act(async () => { screen.getByRole("button", { name: /^Finish/ }).click() })
     await settle()
+    await click("Use this answer")
 
     // Two recorders were made and only the second one's take was kept.
     expect(FakeMediaRecorder.made.length).toBe(2)
@@ -142,9 +167,65 @@ describe("cancel, re-record, finish", () => {
     await settle()
     await act(async () => { screen.getByRole("button", { name: /^Finish/ }).click() })
     await settle()
+    await click("Use this answer")
 
     expect(screen.getByText(/locked in/i)).toBeTruthy()
     expect(screen.queryByRole("button")).toBeNull()
+  })
+})
+
+describe("watching the take before keeping it", () => {
+  it("Finish plays the take back and uploads nothing", async () => {
+    const onRecorded = vi.fn(async () => {})
+    render(<Recorder seconds={90} locked={false} onRecorded={onRecorded} />)
+    await click("Start recording")
+    await click(/^Finish/)
+
+    expect(onRecorded).not.toHaveBeenCalled()
+    const playback = screen.getByLabelText("Your recorded answer") as HTMLVideoElement
+    expect(playback.getAttribute("src")).toMatch(/^blob:take-/)
+    expect(playback.hasAttribute("controls")).toBe(true)
+    expect(playback.muted).toBe(false)
+    expect(screen.getByRole("button", { name: "Use this answer" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Re-record" })).toBeTruthy()
+    // The camera is off while they watch.
+    expect(tracks.stopped).toBeGreaterThan(0)
+  })
+
+  it("Re-record after watching throws that take away and waits on Start recording", async () => {
+    const onRecorded = vi.fn(async () => {})
+    render(<Recorder seconds={90} locked={false} onRecorded={onRecorded} />)
+    await click("Start recording")
+    await click(/^Finish/)
+    await click("Re-record")
+
+    // Take gone, and NOT filming: no new recorder, no camera request, no Finish.
+    expect(screen.queryByLabelText("Your recorded answer")).toBeNull()
+    expect(FakeMediaRecorder.made.length).toBe(1)
+    expect((navigator.mediaDevices.getUserMedia as any).mock.calls.length).toBe(1)
+    expect(screen.queryByRole("button", { name: /^Finish/ })).toBeNull()
+    expect(screen.getByText(/press start recording when you are ready/i)).toBeTruthy()
+
+    await click("Start recording")
+    await click(/^Finish/)
+    await click("Use this answer")
+
+    expect(FakeMediaRecorder.made.length).toBe(2)
+    expect(onRecorded).toHaveBeenCalledTimes(1)
+  })
+
+  it("a failed upload keeps the take on screen to try again", async () => {
+    const onRecorded = vi.fn().mockRejectedValueOnce(new Error("network down")).mockResolvedValueOnce(undefined)
+    render(<Recorder seconds={90} locked={false} onRecorded={onRecorded} />)
+    await click("Start recording")
+    await click(/^Finish/)
+    await click("Use this answer")
+
+    expect(screen.getByRole("alert").textContent).toMatch(/network down/)
+    expect(screen.getByLabelText("Your recorded answer")).toBeTruthy()
+    await click("Use this answer")
+    expect(onRecorded).toHaveBeenCalledTimes(2)
+    expect(screen.getByText(/locked in/i)).toBeTruthy()
   })
 })
 
