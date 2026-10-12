@@ -22,6 +22,16 @@
 //     .confirm         -> callout paleblue "Confirm in session"
 //     .note            -> callout paleblue
 //     .ans textarea    -> field long, key = textarea id, label = the question, placeholder = the box label
+//                         (a question with several boxes labels each one by its box label instead)
+//     .card            -> list, titled by its label
+//   p (no class)       -> text
+//   .starter outside a question -> callout peach, titled by its label
+//   .card with paragraphs -> text, the first one labelled by the card's label
+//   table.tbl          -> table (header row from <thead>, cells as plain text)
+//   dl of .term        -> table with no header: term, definition
+//   table.tbl of inputs after an <sc-for> -> grid, one short answer per cell: rows from the
+//                         sc-for's hint-placeholder-count, key from its list name, column keys
+//                         from each input's aria-label, the .guide row as its guide
 
 import { readFileSync, writeFileSync } from "node:fs"
 import * as cheerio from "cheerio"
@@ -49,6 +59,53 @@ function callout($: cheerio.CheerioAPI, el: Element, tone: string, fixedTitle?: 
   return { type: "callout", tone, ...(title ? { title } : {}), body: paragraphs($, el).join("\n\n") }
 }
 
+const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+
+/**
+ * A static table, or a grid when its cells are inputs. The HTML parser moves
+ * an <sc-for> out of a <tbody>, so the row repeat arrives as the element
+ * before the table, empty, and is passed in.
+ */
+function tableBlock($: cheerio.CheerioAPI, el: Element, repeat: Element | null): Block {
+  const t = $(el)
+  const heads = t.find("thead th").toArray().map((th) => clean($(th).text()))
+  const inputs = t.find("tbody input").toArray()
+  if (!inputs.length) {
+    const rows = t.find("tbody tr").toArray().map((tr) => $(tr).children("td").toArray().map((td) => clean($(td).text())))
+    return { type: "table", columns: heads, rows }
+  }
+  if (!repeat) throw new Error("A table of inputs with no <sc-for> to say how many rows")
+  const rows = Number($(repeat).attr("hint-placeholder-count"))
+  const key = String($(repeat).attr("list") ?? "").replace(/[{}\s]/g, "")
+  if (!Number.isInteger(rows) || rows < 1 || !key) throw new Error("The <sc-for> needs list and hint-placeholder-count")
+  // The first column is the row number; each other column is one input.
+  const labels = heads.slice(1)
+  if (inputs.length !== labels.length) throw new Error(`Grid has ${labels.length} headings but ${inputs.length} inputs`)
+  const columns = inputs.map((inp, i) => ({
+    key: slug(String($(inp).attr("aria-label") ?? "").replace(/\{\{[^}]*\}\}/g, "")),
+    label: labels[i],
+  }))
+  const guideRow = t.find("tbody tr.guide").first()
+  const guide = guideRow.length ? guideRow.children("td").toArray().slice(1).map((td) => clean($(td).text())) : undefined
+  return { type: "grid", key, columns, rows, ...(guide ? { guide } : {}) }
+}
+
+function termsBlock($: cheerio.CheerioAPI, dl: Element): Block {
+  const rows = $(dl).find(".term").toArray().map((d) => [clean($(d).find("dt").text()), clean($(d).find("dd").text())])
+  return { type: "table", rows }
+}
+
+function cardBlocks($: cheerio.CheerioAPI, el: Element): Block[] {
+  const n = $(el)
+  const items = n.find("li").toArray().map((li) => clean($(li).text()))
+  const title = label($, el)
+  if (items.length && n.children("p").not(".lab").length) throw new Error(`A card with both paragraphs and a list: "${clean(n.text()).slice(0, 60)}"`)
+  if (items.length) return [{ type: "list", style: "bullets", title, items }]
+  const ps = paragraphs($, el)
+  if (!ps.length) throw new Error(`An empty card: "${clean(n.text()).slice(0, 60)}"`)
+  return ps.map((body, i) => ({ type: "text", ...(i === 0 && title ? { label: title } : {}), body }))
+}
+
 function questionBlocks($: cheerio.CheerioAPI, q: Element): Block[] {
   const out: Block[] = []
   // A "Must ask" style tag rides on the question as its label, not in its text.
@@ -57,39 +114,53 @@ function questionBlocks($: cheerio.CheerioAPI, q: Element): Block[] {
   const question = clean(head.find(".qt").first().clone().find(".tag").remove().end().text())
   const number = Number(clean(head.find(".qn").first().text())) || undefined
   out.push({ type: "text", size: "lead", ...(tag ? { label: tag } : {}), body: question })
-  for (const child of $(q).children().toArray()) {
-    const c = $(child)
-    if (c.hasClass("qhead")) continue
-    if (c.hasClass("starter")) out.push(callout($, child, "peach", "Answer starter"))
-    else if (c.hasClass("confirm")) out.push(callout($, child, "paleblue", "Confirm in session"))
-    else if (c.hasClass("note")) out.push(callout($, child, "paleblue"))
-    else if (c.hasClass("ans")) {
-      const ta = c.find("textarea").first()
-      out.push({
-        type: "field",
-        key: ta.attr("id"),
-        input: "long",
-        ...(number !== undefined ? { number } : {}),
-        label: question,
-        placeholder: clean(c.find("label").first().text()) || "Your answer",
-      })
-    } else throw new Error(`Unhandled element in a question: <${child.tagName} class="${c.attr("class") ?? ""}">`)
+  // Two boxes under one question ("Call 1", "Call 2") would read as the same
+  // question twice, so each is labelled by its own box label instead.
+  const several = $(q).children(".ans").length > 1
+  let repeat: Element | null = null
+  const walk = (children: Element[]) => {
+    for (const child of children) {
+      const c = $(child)
+      if (c.hasClass("qhead")) continue
+      if (child.tagName === "sc-for") { repeat = child; continue }
+      if (c.hasClass("starter")) out.push(callout($, child, "peach", label($, child) ?? "Answer starter"))
+      else if (c.hasClass("confirm")) out.push(callout($, child, "paleblue", "Confirm in session"))
+      else if (c.hasClass("note")) out.push(callout($, child, "paleblue"))
+      else if (c.hasClass("card")) out.push(...cardBlocks($, child))
+      else if (c.is("table.tbl")) { out.push(tableBlock($, child, repeat)); repeat = null }
+      else if (c.is("div") && !c.attr("class")) walk(c.children().toArray())
+      else if (c.hasClass("ans")) {
+        const box = clean(c.find("label").first().text())
+        out.push({
+          type: "field",
+          key: c.find("textarea").first().attr("id"),
+          input: "long",
+          ...(number !== undefined && !several ? { number } : {}),
+          label: several ? box : question,
+          placeholder: several ? "Your answer" : box || "Your answer",
+        })
+      } else throw new Error(`Unhandled element in a question: <${child.tagName} class="${c.attr("class") ?? ""}">`)
+    }
   }
+  walk($(q).children().toArray())
   return out
 }
 
 function sectionBlocks($: cheerio.CheerioAPI, nodes: Element[]): Block[] {
   const out: Block[] = []
+  let repeat: Element | null = null
   for (const node of nodes) {
     const n = $(node)
     if (n.hasClass("eyebrow") || n.hasClass("ht") || n.hasClass("rule")) continue
+    if (node.tagName === "sc-for") { repeat = node; continue }
     if (n.hasClass("q")) out.push(...questionBlocks($, node))
-    else if (n.hasClass("card")) {
-      const items = n.find("li").toArray().map((li) => clean($(li).text()))
-      if (!items.length) throw new Error(`A card without a list: "${clean(n.text()).slice(0, 60)}"`)
-      out.push({ type: "list", style: "bullets", title: label($, node), items })
-    } else if (n.hasClass("note")) out.push(callout($, node, "paleblue"))
+    else if (n.hasClass("card")) out.push(...cardBlocks($, node))
+    else if (n.hasClass("note")) out.push(callout($, node, "paleblue"))
+    else if (n.hasClass("starter")) out.push(callout($, node, "peach", label($, node) ?? "Answer starter"))
     else if (n.is("p.sub")) out.push({ type: "heading", text: clean(n.text()) })
+    else if (n.is("p") && !n.attr("class")) out.push({ type: "text", body: clean(n.text()) })
+    else if (n.is("table.tbl")) { out.push(tableBlock($, node, repeat)); repeat = null }
+    else if (n.is("dl")) out.push(termsBlock($, node))
     else if (n.is("div") && !n.attr("class")) out.push(...sectionBlocks($, n.children().toArray()))
     else throw new Error(`Unhandled element in a section: <${node.tagName} class="${n.attr("class") ?? ""}">`)
   }

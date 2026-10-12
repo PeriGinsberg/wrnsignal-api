@@ -181,5 +181,36 @@ ok("...and never reaches the summary as an answer", answerText(undefined) === ""
   ok("starter on a non-field block is refused", !validateContent(bad).ok)
 }
 
+console.log("tables and grids (Aiden's Bond Sports Round 2)")
+const aRaw = JSON.parse(readFileSync(join(__dirname, "../../docs/workbooks-v1/workbooks-v1/aiden-ginsberg_bond-sports-round-2.json"), "utf8"))
+const aParsed = validateContent(aRaw)
+ok("Aiden's Round 2 workbook is valid", aParsed.ok)
+if (!aParsed.ok) console.error(aParsed.errors)
+const a = (aParsed as { ok: true; content: WorkbookContent }).content
+const aKeys = allFieldKeys(a)
+ok("30 answer boxes plus 60 lead cells", aKeys.length === 90)
+ok("a lead cell is a writable key", isWritableKey(a, "leads.1.facility") && isWritableKey(a, "leads.10.why-bond"))
+ok("row 11 is not", !isWritableKey(a, "leads.11.facility"))
+ok("a cell takes text", validateAnswerValue(a, "leads.3.city", "Boca Raton") === null)
+ok("a lead cell belongs to Today's Homework", sectionOfField(a, "leads.2.owner-or-gm") === "today-s-homework")
+ok("lead cells never count against the progress bar", progress(a, {}).total === 30)
+ok("...but a filled cell is still an answer", answerText({ "leads.1.city": "Boca" }["leads.1.city"]) === "Boca")
+{
+  const bad = JSON.parse(JSON.stringify(aRaw))
+  const grid = bad.sections.flatMap((s: any) => s.blocks).find((b: any) => b.type === "grid")
+  grid.guide = ["only one"]
+  ok("a guide row of the wrong width is refused", !validateContent(bad).ok)
+  grid.guide = undefined; grid.rows = 0
+  ok("a grid with no rows is refused", !validateContent(bad).ok)
+  grid.rows = 10; grid.columns.push({ key: "city", label: "Again" })
+  ok("a repeated column key is refused", !validateContent(bad).ok)
+}
+{
+  const bad = JSON.parse(JSON.stringify(aRaw))
+  const table = bad.sections.flatMap((s: any) => s.blocks).find((b: any) => b.type === "table" && b.columns)
+  table.rows[0] = ["SportsEngine"]
+  ok("a table row of the wrong width is refused", !validateContent(bad).ok)
+}
+
 if (failures) { console.error(`\n${failures} failure(s)`); process.exit(1) }
 console.log("\nall passed")

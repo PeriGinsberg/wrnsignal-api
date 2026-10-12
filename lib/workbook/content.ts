@@ -115,6 +115,20 @@ export type Block =
   | { type: "star"; key: string; title: string; question: string; number?: number; skill?: string }
   | { type: "scenario"; key: string; prompt: string; number?: number }
   | { type: "coach_only"; body: string; title?: string }
+  /**
+   * A read-only table. Without `columns` it is a list of terms: no header row,
+   * and the first cell of each row reads as the word being defined.
+   */
+  | { type: "table"; title?: string; columns?: string[]; rows: string[][] }
+  /**
+   * A table the client fills in, one short answer per cell, rows numbered from
+   * 1. Each cell is its own answer, keyed `<key>.<row>.<column key>`. `guide`
+   * is a read-only first row saying what goes in each column.
+   *
+   * Every cell is optional: sixty cells counted toward the progress bar would
+   * outweigh every other question in the workbook.
+   */
+  | { type: "grid"; key: string; title?: string; columns: { key: string; label: string }[]; rows: number; guide?: string[] }
 
 /** in_session: worked through with the coach. homework: done alone afterwards. */
 export type SectionMode = "in_session" | "homework"
@@ -229,9 +243,18 @@ export function storyKeys(b: Extract<Block, { type: "story" }>): string[] {
   return keys
 }
 
+/** The cell keys of a grid, row by row. */
+export function gridKeys(b: Extract<Block, { type: "grid" }>): string[] {
+  const out: string[] = []
+  for (let r = 1; r <= b.rows; r++) for (const c of b.columns) out.push(`${b.key}.${r}.${c.key}`)
+  return out
+}
+
 /** The field keys one block owns, in render order. */
 export function blockFieldKeys(b: Block): string[] {
   switch (b.type) {
+    case "grid":
+      return gridKeys(b)
     case "field":
     case "pick":
     case "select":
@@ -260,6 +283,8 @@ export function blockOptionalKeys(b: Block): string[] {
     case "pick":
     case "select":
       return b.optional ? [b.key] : []
+    case "grid":
+      return gridKeys(b)
     case "story": {
       const out = STORY_PARTS.filter((p) => p.optional).map((p) => `${b.key}.${p.part}`)
       // Saying it out loud is homework the coach times in session, not a
@@ -605,7 +630,7 @@ function okOptions(v: unknown): boolean {
 const BLOCK_TYPES = new Set([
   "text", "heading", "list", "callout", "coach_note", "big_quote", "field",
   "word_track", "pick", "star", "scenario", "coach_only",
-  "select", "story", "coverage",
+  "select", "story", "coverage", "table", "grid",
 ])
 const SUMMARY_TYPES = new Set([
   "interview_details", "hook", "tmay", "story_map", "quick_answers", "questions", "checklist", "signoff",
@@ -675,7 +700,26 @@ export function validateContent(raw: unknown): { ok: true; content: WorkbookCont
       if (b.type === "list" && (!["bullets", "numbers", "quotes"].includes(b.style) || !Array.isArray(b.items))) errors.push(`${bt}: list needs style and items`)
       if (b.type === "callout" && !["peach", "paleblue"].includes(b.tone)) errors.push(`${bt}: callout tone must be peach or paleblue`)
       if (b.type === "big_quote" && !str(b.text) && !str(b.body)) errors.push(`${bt}: big_quote needs text or body`)
-      if (["field", "pick", "star", "scenario", "select", "story"].includes(b.type)) {
+      if (b.type === "table") {
+        const width = Array.isArray(b.columns) ? b.columns.length : Array.isArray(b.rows?.[0]) ? b.rows[0].length : 0
+        if (b.columns != null && (!Array.isArray(b.columns) || !b.columns.every(str))) errors.push(`${bt}: table columns must be text`)
+        if (!Array.isArray(b.rows) || b.rows.length === 0 || width === 0) errors.push(`${bt}: table needs rows`)
+        else if (!b.rows.every((r: unknown) => Array.isArray(r) && r.length === width && r.every((x) => typeof x === "string"))) {
+          errors.push(`${bt}: every table row needs ${width} text cells`)
+        }
+      }
+      if (b.type === "grid") {
+        const cols = Array.isArray(b.columns) ? b.columns : []
+        const colKeys = cols.map((x: any) => x?.key)
+        if (!cols.length || !cols.every((x: any) => str(x?.label) && typeof x?.key === "string" && /^[a-z0-9_-]+$/.test(x.key))) {
+          errors.push(`${bt}: grid columns need a key (lowercase letters, digits, - or _) and a label`)
+        } else if (new Set(colKeys).size !== colKeys.length) errors.push(`${bt}: grid column keys must be unique`)
+        if (!Number.isInteger(b.rows) || b.rows < 1 || b.rows > 50) errors.push(`${bt}: grid rows must be a whole number from 1 to 50`)
+        if (b.guide != null && (!Array.isArray(b.guide) || b.guide.length !== cols.length || !b.guide.every((x: unknown) => typeof x === "string"))) {
+          errors.push(`${bt}: grid guide needs one text cell per column`)
+        }
+      }
+      if (["field", "pick", "star", "scenario", "select", "story", "grid"].includes(b.type)) {
         if (!str(b.key) || b.key.startsWith(CHECKLIST_PREFIX)) { errors.push(`${bt}: key is required and must not be reserved`); continue }
         for (const k of blockFieldKeys(b)) {
           if (keys.has(k)) errors.push(`${bt}: duplicate field key "${k}"`)

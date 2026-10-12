@@ -10,7 +10,7 @@
 
 import React, { useEffect, useRef, type ReactNode } from "react"
 import {
-  SCENARIO_PARTS, STAR_PARTS, STORY_PARTS, blockFieldKeys, computeCoverage, displayValue,
+  SCENARIO_PARTS, STAR_PARTS, STORY_PARTS, blockFieldKeys, computeCoverage, displayValue, gridKeys,
   optionsFromAnswers, quoteText, selectValues,
   type AnswerValue, type Block, type PickValue, type Section, type SelectOption,
 } from "../../lib/workbook/content"
@@ -385,6 +385,71 @@ function List({ b }: { b: Extract<Block, { type: "list" }> }) {
   )
 }
 
+function Table({ b }: { b: Extract<Block, { type: "table" }> }) {
+  const terms = !b.columns
+  return (
+    <div className="wb-col" style={{ gap: 14 }}>
+      {b.title && <span className="wb-label">{b.title}</span>}
+      <div className="wb-table-wrap">
+        <table className="wb-table">
+          {b.columns && <thead><tr>{b.columns.map((c, i) => <th key={i}>{c}</th>)}</tr></thead>}
+          <tbody>
+            {b.rows.map((r, i) => (
+              <tr key={i}>{r.map((x, j) => <td key={j} style={terms && j === 0 ? { fontWeight: 700 } : undefined}>{x}</td>)}</tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+/** One short answer per cell. Save state is reported once for the whole grid, not under sixty boxes. */
+function Grid({ api, b }: { api: FieldApi; b: Extract<Block, { type: "grid" }> }) {
+  const keys = gridKeys(b)
+  const states = keys.map((k) => api.state(k))
+  const error = states.find((s) => s?.kind === "error") as { kind: "error"; message: string } | undefined
+  const status = !api.editable ? null
+    : error ? <span className="wb-warn" role="alert">{error.message}</span>
+    : states.some((s) => s?.kind === "saving") ? <span className="wb-saving" role="status">Saving</span>
+    : states.some((s) => s?.kind === "saved") ? <span className="wb-saved" role="status">Saved</span>
+    : null
+  const rows = Array.from({ length: b.rows }, (_, i) => i + 1)
+  return (
+    <div className="wb-col" style={{ gap: 14 }}>
+      {b.title && <span className="wb-label">{b.title}</span>}
+      <div className="wb-table-wrap">
+        <table className="wb-table wb-grid">
+          <thead><tr><th style={{ width: 36 }}>#</th>{b.columns.map((c) => <th key={c.key}>{c.label}</th>)}</tr></thead>
+          <tbody>
+            {b.guide && (
+              <tr className="wb-grid-guide"><td />{b.guide.map((g, i) => <td key={i}>{g}</td>)}</tr>
+            )}
+            {rows.map((r) => (
+              <tr key={r}>
+                <td className="wb-grid-num">{r}</td>
+                {b.columns.map((c) => {
+                  const k = `${b.key}.${r}.${c.key}`
+                  const v = api.get(k)
+                  return (
+                    <td key={c.key}>
+                      <input type="text" className="wb-input wb-cell" aria-label={`${c.label} ${r}`}
+                        value={typeof v === "string" ? v : ""} readOnly={!api.editable}
+                        onChange={(e) => api.set(k, e.target.value)} />
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {keys.map((k) => <ConflictBox key={k} api={api} k={k} />)}
+      {status && <div className="wb-field-foot">{status}</div>}
+    </div>
+  )
+}
+
 export function CoachNote({ body, coachName }: { body: string; coachName: string }) {
   return (
     <aside className="wb-note">
@@ -441,6 +506,10 @@ function Main({ api, b }: { api: FieldApi; b: Block }): ReactNode {
       return <Star api={api} b={b} />
     case "scenario":
       return <Scenario api={api} b={b} />
+    case "table":
+      return <Table b={b} />
+    case "grid":
+      return <Grid api={api} b={b} />
     case "coach_only":
       return api.showCoachOnly ? (
         <div className="wb-coachonly">

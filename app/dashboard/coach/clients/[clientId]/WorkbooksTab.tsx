@@ -132,6 +132,9 @@ function reviewItems(s: Section): { group?: string; key: string; label: string }
     if (b.type === "pick") out.push({ key: b.key, label: b.label })
     if (b.type === "star") for (const p of STAR_PARTS) out.push({ group: `${b.number ?? ""} ${b.title}`.trim(), key: `${b.key}.${p.part}`, label: p.label })
     if (b.type === "scenario") for (const p of SCENARIO_PARTS) out.push({ group: `${b.number ?? ""} ${b.prompt}`.trim(), key: `${b.key}.${p.part}`, label: p.label })
+    if (b.type === "grid") {
+      for (let r = 1; r <= b.rows; r++) for (const c of b.columns) out.push({ group: `${b.title ? `${b.title}: ` : ""}Row ${r}`, key: `${b.key}.${r}.${c.key}`, label: c.label })
+    }
   }
   return out
 }

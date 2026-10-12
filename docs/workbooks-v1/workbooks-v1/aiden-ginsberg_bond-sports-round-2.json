@@ -1,0 +1,921 @@
+{
+ "schema_version": 1,
+ "slug": "bond-sports-round-2",
+ "title": "Bond Sports Round 2",
+ "block_types_note": "Built from Ginsberg_BondSports_Round2_Workbook.html by scripts/workbook-from-html.ts, so the text is verbatim. Question -> text (lead). Answer starter -> callout peach 'Answer starter'. Note -> callout paleblue. Confirm in session -> callout paleblue 'Confirm in session'. Every question -> a long field labelled with the question; the HTML box label becomes its placeholder. Inline bold in the HTML is plain text here.",
+ "client": {
+  "first_name": "Aiden",
+  "full_name": "Aiden Ginsberg"
+ },
+ "interview": {
+  "company": "Bond Sports",
+  "role": "Sales Development Representative",
+  "date": "2026-10-13",
+  "time": null,
+  "interviewer_name": "Marc Rothschild (and possibly Matt Minoff)",
+  "interviewer_title": "Co-founder and President",
+  "location": "In person"
+ },
+ "coach": {
+  "first_name": "Peri"
+ },
+ "sections": [
+  {
+   "id": "who-you-re-meeting",
+   "number": 1,
+   "title": "Who You're Meeting",
+   "blocks": [
+    {
+     "type": "text",
+     "body": "You're meeting Marc for sure, and maybe Matt too. They're the two people who started Bond. Learn both names and faces from LinkedIn before tomorrow."
+    },
+    {
+     "type": "list",
+     "style": "bullets",
+     "title": "Marc Rothschild · Co-founder and President",
+     "items": [
+      "Started a company called Selectable Media with Matt and ran its day to day operations.",
+      "A big media company, Meredith, bought Selectable Media in 2015. Marc then ran digital revenue at Meredith: the sales team, client services, and influencer marketing.",
+      "Then became President and COO at Clique, the company behind the Who What Wear brand.",
+      "Also worked at AOL earlier on.",
+      "What it means for you: he has built and run sales teams. Expect questions about how you think about selling."
+     ]
+    },
+    {
+     "type": "list",
+     "style": "bullets",
+     "title": "Matt Minoff · Co-founder and CEO",
+     "items": [
+      "Captain of the Yale men's basketball team, then played professionally in Israel.",
+      "Ran Selectable Media as CEO, then was Chief Digital Officer at Meredith.",
+      "Why he started Bond: he organized a lot of games and tournaments and kept getting frustrated by how hard it was to find and book places to play.",
+      "Matt is the one who passed your email to Andy."
+     ]
+    },
+    {
+     "type": "callout",
+     "tone": "paleblue",
+     "title": "If both of them are there",
+     "body": "Answer the person who asked, but look at both of them.\n\nIf Matt is there, thank him in one line and move on: \"Thanks again for passing my email along to Andy.\"\n\nThank you notes go to both, separately, the same day."
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "Your notes on Marc and Matt"
+    },
+    {
+     "type": "callout",
+     "tone": "paleblue",
+     "body": "Anything you find on their LinkedIn or in recent Bond posts. Something they shared, a school, a sport, a post."
+    },
+    {
+     "type": "field",
+     "key": "n_lead",
+     "input": "long",
+     "number": 1,
+     "label": "Your notes on Marc and Matt",
+     "placeholder": "Your notes"
+    }
+   ]
+  },
+  {
+   "id": "bond-in-plain-english",
+   "number": 2,
+   "title": "Bond in Plain English",
+   "blocks": [
+    {
+     "type": "text",
+     "label": "What Bond does",
+     "body": "Bond sells software that runs a sports facility. Booking, sign ups, payments, and memberships, all in one place."
+    },
+    {
+     "type": "text",
+     "body": "Picture a hockey rink using one app to book ice time, another for league sign ups, another for payments, and a spreadsheet for memberships. Bond replaces all of that with one system."
+    },
+    {
+     "type": "text",
+     "body": "Who pays: the facility owner. Families just use it to book and pay."
+    },
+    {
+     "type": "text",
+     "label": "Who they sell to",
+     "body": "Ice rinks, indoor soccer, baseball and softball, basketball, volleyball, multi sport complexes, parks and rec departments, and colleges."
+    },
+    {
+     "type": "list",
+     "style": "bullets",
+     "title": "Big customers to know",
+     "items": [
+      "Black Bear Sports Group: the biggest owner of ice rinks in the U.S. Bond runs all 36 of their rinks, 34 youth hockey clubs, and 4 leagues. Five year deal.",
+      "TOCA Football: big soccer brand. Bond runs their sign ups.",
+      "Socceroof: indoor soccer. Dropped their own system for Bond and grew from six to ten facilities.",
+      "Chelsea Piers: invoiced over $1M in one tryout day on Bond.",
+      "Yale: runs its campus rec facilities on Bond."
+     ]
+    },
+    {
+     "type": "list",
+     "style": "bullets",
+     "title": "New things Bond launched",
+     "items": [
+      "Bond ID: a digital pass on your phone. One tap to check in instead of waiting at the front desk.",
+      "SUB-ZERO partnership: Bond now talks to rink maintenance software, so the scheduling team and the ice crew stay in sync.",
+      "Online booking: customers can book fields, lessons, and parties 24/7 without calling. Socceroof was the first soccer company to use it."
+     ]
+    },
+    {
+     "type": "list",
+     "style": "bullets",
+     "title": "The money (Bond is private, so these are labeled)",
+     "items": [
+      "$250M+ a year in registrations: from Bond's website. This is NOT Bond's revenue. It's the money families pay facilities that runs through Bond.",
+      "About $4.8M in revenue: an outside estimate. Rough guess only.",
+      "About 30 to 40 employees. Small company.",
+      "Investors: Rally Ventures led, with Correlation Ventures. Funding totals don't match across sources, so don't quote a number.",
+      "What it means for you: Bond runs on investor money, and investors want growth. Growth means new customers. New customers start with SDRs booking meetings. Your job sits at the very start of how Bond grows."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "saas-words",
+   "number": 3,
+   "title": "SaaS Words, in Plain English",
+   "blocks": [
+    {
+     "type": "text",
+     "body": "You don't need to use these words to sound smart. You just need to understand them when Marc or Matt does."
+    },
+    {
+     "type": "table",
+     "rows": [
+      [
+       "SaaS (software as a service)",
+       "Software you rent monthly or yearly instead of buying once. Facilities pay Bond a subscription."
+      ],
+      [
+       "Vertical SaaS",
+       "Software built for one industry. Bond is software built just for sports facilities."
+      ],
+      [
+       "SaaS+ (payments)",
+       "The software makes money twice: from the subscription and from payments that run through it. Rally Ventures said it plans to work with Bond on payments and other add on products."
+      ],
+      [
+       "ARR / MRR",
+       "Annual or monthly recurring revenue. The subscription money that comes in every year or month."
+      ],
+      [
+       "Churn",
+       "Customers who cancel. Low churn means people stay."
+      ],
+      [
+       "Lead",
+       "A facility that might be a fit."
+      ],
+      [
+       "Prospect",
+       "A lead you're actively reaching out to."
+      ],
+      [
+       "Qualified lead",
+       "A lead that's a real fit: right size, has budget, and is open to switching."
+      ],
+      [
+       "Inbound / outbound",
+       "Inbound: they come to you, like a demo request on the website. Outbound: you reach out first, like a cold call or email."
+      ],
+      [
+       "Cadence (or sequence)",
+       "A planned run of calls, emails, and messages to one prospect over a few weeks."
+      ],
+      [
+       "Pipeline",
+       "Every deal in progress, from first call to signed."
+      ],
+      [
+       "Demo",
+       "A meeting where the facility sees how Bond works."
+      ],
+      [
+       "SDR (your job)",
+       "Finds prospects and books the meeting."
+      ],
+      [
+       "AE (account executive)",
+       "Runs the demo and closes the deal."
+      ],
+      [
+       "Quota",
+       "The number you're expected to hit each month or quarter, like meetings booked."
+      ],
+      [
+       "CRM",
+       "The system where every call, email, and lead gets tracked."
+      ],
+      [
+       "Implementation (onboarding)",
+       "Setting a new customer up on Bond. Bond says about 3 to 4 weeks."
+      ],
+      [
+       "Upsell",
+       "Selling more to a customer you already have, like adding a new location."
+      ]
+     ]
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "Any words you still want to ask about?"
+    },
+    {
+     "type": "field",
+     "key": "n_words",
+     "input": "long",
+     "number": 1,
+     "label": "Any words you still want to ask about?",
+     "placeholder": "Your notes"
+    }
+   ]
+  },
+  {
+   "id": "why-bond-wins",
+   "number": 4,
+   "title": "Why Bond Wins: The Competition",
+   "blocks": [
+    {
+     "type": "text",
+     "body": "You don't need to be a software expert. You need to know who else is out there and what makes Bond different."
+    },
+    {
+     "type": "heading",
+     "text": "The competitors, one line each"
+    },
+    {
+     "type": "table",
+     "columns": [
+      "Competitor",
+      "Built for",
+      "What it does"
+     ],
+     "rows": [
+      [
+       "SportsEngine (NBC)",
+       "Youth leagues, clubs, volunteer run organizations",
+       "Sign ups, payments, rosters, schedules, team app, websites, tournaments"
+      ],
+      [
+       "LeagueApps",
+       "Youth and local sports clubs, leagues, camps, parks",
+       "Sign ups, payments, scheduling, websites. Calls itself \"the operating system and community for youth and local sports leaders.\""
+      ],
+      [
+       "Upper Hand",
+       "Training facilities, academies, coaches, camps",
+       "Scheduling, memberships, payments. Its pitch: \"No more juggling tools.\" Plans start at $79 a month."
+      ],
+      [
+       "DaySmart Recreation",
+       "Ice and skating rinks, skating schools",
+       "Scheduling, mobile booking, 60+ reports, Learn to Skate USA partnership"
+      ],
+      [
+       "EZFacility",
+       "Sports and fitness facilities",
+       "Facility scheduling and memberships"
+      ]
+     ]
+    },
+    {
+     "type": "list",
+     "style": "bullets",
+     "title": "What makes Bond different (from Bond's own site)",
+     "items": [
+      "Built for big, complex facilities. Multi sport complexes and ice rinks, not just youth clubs. Proof: Black Bear runs all 36 rinks on Bond.",
+      "Everything actually connects. Scheduling, sign ups, payments, and reporting share the same information, so staff stop copying things between systems. Move one event and everything updates.",
+      "Fast to switch. Live in about 3 to 4 weeks. Bond moves the data and trains the staff, and the facility keeps running the whole time.",
+      "Constantly improving. New features every week.",
+      "Real people for support. By phone, text, or email."
+     ]
+    },
+    {
+     "type": "callout",
+     "tone": "paleblue",
+     "title": "Coaching notes",
+     "body": "Upper Hand also says \"one system,\" so \"all in one\" alone isn't the difference. Bond's real edge is how big and complicated the facilities are that it can run.\n\nNever trash a competitor. Just say what each one is built for."
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "\"Why Bond over the competition?\""
+    },
+    {
+     "type": "callout",
+     "tone": "peach",
+     "title": "Answer starter",
+     "body": "\"A lot of the other options are built for clubs and leagues, or for one sport. Bond is built for the facility itself, especially the big multi sport ones and rinks, and everything runs in one system. Black Bear running 36 rinks on it says a lot.\""
+    },
+    {
+     "type": "field",
+     "key": "c_why",
+     "input": "long",
+     "number": 1,
+     "label": "\"Why Bond over the competition?\"",
+     "placeholder": "Your version, in your own words"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "Anything else you found about the competition"
+    },
+    {
+     "type": "field",
+     "key": "c_more",
+     "input": "long",
+     "number": 2,
+     "label": "Anything else you found about the competition",
+     "placeholder": "Your notes"
+    }
+   ]
+  },
+  {
+   "id": "your-story",
+   "number": 5,
+   "title": "Your Story",
+   "blocks": [
+    {
+     "type": "heading",
+     "text": "Your relevant experience"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "Phone screens at 18"
+    },
+    {
+     "type": "callout",
+     "tone": "peach",
+     "title": "Answer starter",
+     "body": "\"My first real job was at my mom's recruiting firm. I started when I was 18, doing phone screens with candidates, and a lot of them had been working longer than I'd been alive.\""
+    },
+    {
+     "type": "field",
+     "key": "y1",
+     "input": "long",
+     "number": 1,
+     "label": "Phone screens at 18",
+     "placeholder": "Your answer"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "Caribbean Baseball Organization"
+    },
+    {
+     "type": "callout",
+     "tone": "peach",
+     "title": "Answer starter",
+     "body": "\"I was filling a summer league roster, calling, texting, and emailing high school and college players and their parents, and following up until they signed. We got to over 50 players. I liked seeing my work actually make a difference.\""
+    },
+    {
+     "type": "field",
+     "key": "y2",
+     "input": "long",
+     "number": 2,
+     "label": "Caribbean Baseball Organization",
+     "placeholder": "Your answer"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "The Padres"
+    },
+    {
+     "type": "callout",
+     "tone": "peach",
+     "title": "Answer starter",
+     "body": "\"I'm on the event operations team at Petco Park. They picked me to start training new hires, so I help get new crew ready for game days. I love the people I work with.\""
+    },
+    {
+     "type": "field",
+     "key": "y3",
+     "input": "long",
+     "number": 3,
+     "label": "The Padres",
+     "placeholder": "Your answer"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "Dalsimer Atlas"
+    },
+    {
+     "type": "callout",
+     "tone": "peach",
+     "title": "Answer starter",
+     "body": "\"In high school I worked weekends for Dalsimer Atlas, an event company in Boca, setting up and tearing down really high end parties. It was a lot of manual work, but everything had to be perfect, and I was dealing with clients and vendors the whole time.\""
+    },
+    {
+     "type": "field",
+     "key": "y4",
+     "input": "long",
+     "number": 4,
+     "label": "Dalsimer Atlas",
+     "placeholder": "Your answer"
+    },
+    {
+     "type": "heading",
+     "text": "Not taking no for an answer"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "Breaking into MLB"
+    },
+    {
+     "type": "callout",
+     "tone": "peach",
+     "title": "Answer starter",
+     "body": "\"Getting into MLB was rough. Starting my sophomore year, I was applying for internships, calling, emailing, messaging people on LinkedIn. I thought I had a really good resume and was doing everything right. But I got rejected a lot, and mostly I just got ghosted. That was frustrating. But it made me figure out better ways to get noticed. It took about two years.\n\nWhat finally worked was I stopped chasing job postings and started way earlier, just trying to make any connection I could. Eventually I connected with the Director of Events at the Padres, months before applications opened. I stayed in touch, applied the day it posted, and let her know. I got the interview, and it was a Zoom with three managers and seven candidates all at once, which was kind of wild. But I got the job. So I packed up and moved to San Diego by myself.\""
+    },
+    {
+     "type": "callout",
+     "tone": "paleblue",
+     "body": "End on the move to San Diego and stop. Don't explain what it says about you."
+    },
+    {
+     "type": "field",
+     "key": "y5",
+     "input": "long",
+     "number": 5,
+     "label": "Breaking into MLB",
+     "placeholder": "Your answer"
+    },
+    {
+     "type": "heading",
+     "text": "Listening"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "One thing Andy said that stuck with you"
+    },
+    {
+     "type": "callout",
+     "tone": "paleblue",
+     "body": "Bring up something specific from your conversation with Andy. It shows you listened. And tomorrow, react to what Marc and Matt say before you ask your next question."
+    },
+    {
+     "type": "field",
+     "key": "y6",
+     "input": "long",
+     "number": 6,
+     "label": "One thing Andy said that stuck with you",
+     "placeholder": "Your answer"
+    }
+   ]
+  },
+  {
+   "id": "how-you-used-ai",
+   "number": 6,
+   "title": "How You Used AI to Prepare",
+   "blocks": [
+    {
+     "type": "callout",
+     "tone": "paleblue",
+     "body": "The job posting asks for someone who will \"leverage technology and data to consistently improve outreach.\" Say plainly how you used AI. It's part of how you work."
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "How you prepared for today"
+    },
+    {
+     "type": "callout",
+     "tone": "peach",
+     "title": "Answer starter",
+     "body": "\"I used AI a lot to prepare for today. It helped me research Bond and your competitors, build my lead list, and figure out what to ask your customers. Then I made the calls myself and checked everything. I see it the same way for this job. It gets me prepared faster so I can spend more time actually talking to people.\""
+    },
+    {
+     "type": "field",
+     "key": "ai1",
+     "input": "long",
+     "number": 1,
+     "label": "How you prepared for today",
+     "placeholder": "Your answer"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "Be ready: \"How do you use AI day to day?\""
+    },
+    {
+     "type": "callout",
+     "tone": "paleblue",
+     "body": "Give one or two real examples of how you actually use it."
+    },
+    {
+     "type": "field",
+     "key": "ai2",
+     "input": "long",
+     "number": 2,
+     "label": "Be ready: \"How do you use AI day to day?\"",
+     "placeholder": "Your answer"
+    }
+   ]
+  },
+  {
+   "id": "today-s-homework",
+   "number": 7,
+   "title": "Today's Homework",
+   "blocks": [
+    {
+     "type": "text",
+     "body": "Andy said do what you think is best. This is it. Walk in with work nobody asked you to do."
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "10 South Florida leads"
+    },
+    {
+     "type": "callout",
+     "tone": "paleblue",
+     "body": "Look up sports facilities in Broward and Palm Beach: soccer, ice rinks, baseball, basketball, volleyball, multi sport. Check each website to see how they take bookings. A phone number or a basic form means they could use Bond. Find the owner or GM on LinkedIn. Print this list and bring it."
+    },
+    {
+     "type": "grid",
+     "key": "leads",
+     "columns": [
+      {
+       "key": "facility",
+       "label": "Facility"
+      },
+      {
+       "key": "city",
+       "label": "City"
+      },
+      {
+       "key": "sports",
+       "label": "Sports"
+      },
+      {
+       "key": "how-they-book",
+       "label": "How they book today"
+      },
+      {
+       "key": "owner-or-gm",
+       "label": "Owner or GM"
+      },
+      {
+       "key": "why-bond",
+       "label": "Why they might need Bond"
+      }
+     ],
+     "rows": 10,
+     "guide": [
+      "Name",
+      "Town",
+      "What they offer",
+      "Online, phone, or a basic form",
+      "Name and title",
+      "One line"
+     ]
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "Call 1 or 2 Bond customers"
+    },
+    {
+     "type": "callout",
+     "tone": "paleblue",
+     "body": "Who to call: pick from the Customers page on Bond's website, like Socceroof, Perseverance, or NoLimit Sports. Ask for the owner or general manager.\n\nBe honest about who you are. Saying \"I called two of your customers yesterday\" is a strong line for tomorrow."
+    },
+    {
+     "type": "callout",
+     "tone": "peach",
+     "title": "Your opener",
+     "body": "\"Hi, my name's Aiden. I'm interviewing with Bond Sports tomorrow and wanted to hear from someone who actually uses it. Do you have two minutes?\""
+    },
+    {
+     "type": "list",
+     "style": "bullets",
+     "title": "Questions to ask",
+     "items": [
+      "\"What were you using before Bond?\"",
+      "\"What made you switch?\"",
+      "\"What do you like most about it?\"",
+      "\"What would you change or add if you could?\"",
+      "\"How has their team been to work with?\""
+     ]
+    },
+    {
+     "type": "field",
+     "key": "call1",
+     "input": "long",
+     "label": "Call 1: who, facility, and what they said",
+     "placeholder": "Your answer"
+    },
+    {
+     "type": "field",
+     "key": "call2",
+     "input": "long",
+     "label": "Call 2: who, facility, and what they said",
+     "placeholder": "Your answer"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "Your takeaway"
+    },
+    {
+     "type": "callout",
+     "tone": "paleblue",
+     "body": "One or two sentences on what you learned that you could share with Marc and Matt."
+    },
+    {
+     "type": "field",
+     "key": "take",
+     "input": "long",
+     "number": 3,
+     "label": "Your takeaway",
+     "placeholder": "Your answer"
+    }
+   ]
+  },
+  {
+   "id": "your-questions",
+   "number": 8,
+   "title": "Your Questions",
+   "blocks": [
+    {
+     "type": "callout",
+     "tone": "paleblue",
+     "body": "React to each answer before you ask the next one. You won't get through all of these, and that's fine."
+    },
+    {
+     "type": "heading",
+     "text": "About Bond"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "To both: \"What made you two see this problem?\""
+    },
+    {
+     "type": "field",
+     "key": "q1",
+     "input": "long",
+     "number": 1,
+     "label": "To both: \"What made you two see this problem?\"",
+     "placeholder": "What they said"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "To Matt: \"Where do you want Bond to be in two or three years?\""
+    },
+    {
+     "type": "field",
+     "key": "q2",
+     "input": "long",
+     "number": 2,
+     "label": "To Matt: \"Where do you want Bond to be in two or three years?\"",
+     "placeholder": "What they said"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "To Marc: \"Which types of facilities are growing fastest for you right now?\""
+    },
+    {
+     "type": "field",
+     "key": "q3",
+     "input": "long",
+     "number": 3,
+     "label": "To Marc: \"Which types of facilities are growing fastest for you right now?\"",
+     "placeholder": "What they said"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "To either: \"What would make this hire a win a year from now?\""
+    },
+    {
+     "type": "field",
+     "key": "q4",
+     "input": "long",
+     "number": 4,
+     "label": "To either: \"What would make this hire a win a year from now?\"",
+     "placeholder": "What they said"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "Built live: one question that reacts to something they actually said"
+    },
+    {
+     "type": "field",
+     "key": "q5",
+     "input": "long",
+     "number": 5,
+     "label": "Built live: one question that reacts to something they actually said",
+     "placeholder": "Your question"
+    },
+    {
+     "type": "heading",
+     "text": "At the end: understanding the job"
+    },
+    {
+     "type": "callout",
+     "tone": "paleblue",
+     "body": "Some of this came up with Andy. Build on it where you can: \"Andy mentioned [X]. How do you see it?\""
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "\"What does a normal day look like for an SDR here?\""
+    },
+    {
+     "type": "field",
+     "key": "j1",
+     "input": "long",
+     "number": 6,
+     "label": "\"What does a normal day look like for an SDR here?\"",
+     "placeholder": "What they said"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "\"Do SDRs find their own leads, work off a list the company gives them, or both?\""
+    },
+    {
+     "type": "field",
+     "key": "j2",
+     "input": "long",
+     "number": 7,
+     "label": "\"Do SDRs find their own leads, work off a list the company gives them, or both?\"",
+     "placeholder": "What they said"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "\"Is the SDR's job just to get people to the table, or do you play any part in the actual sale?\""
+    },
+    {
+     "type": "field",
+     "key": "j3",
+     "input": "long",
+     "number": 8,
+     "label": "\"Is the SDR's job just to get people to the table, or do you play any part in the actual sale?\"",
+     "placeholder": "What they said"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "\"What numbers do you look at to know an SDR is doing well?\""
+    },
+    {
+     "type": "field",
+     "key": "j4",
+     "input": "long",
+     "number": 9,
+     "label": "\"What numbers do you look at to know an SDR is doing well?\"",
+     "placeholder": "What they said"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "\"How does commission work?\""
+    },
+    {
+     "type": "field",
+     "key": "j5",
+     "input": "long",
+     "number": 10,
+     "label": "\"How does commission work?\"",
+     "placeholder": "What they said"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "\"For SDRs who are at least meeting your expectations, what do their commissions look like?\""
+    },
+    {
+     "type": "field",
+     "key": "j6",
+     "input": "long",
+     "number": 11,
+     "label": "\"For SDRs who are at least meeting your expectations, what do their commissions look like?\"",
+     "placeholder": "What they said"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "\"What does training look like when someone starts?\""
+    },
+    {
+     "type": "field",
+     "key": "j7",
+     "input": "long",
+     "number": 12,
+     "label": "\"What does training look like when someone starts?\"",
+     "placeholder": "What they said"
+    }
+   ]
+  },
+  {
+   "id": "day-of",
+   "number": 9,
+   "title": "Day Of",
+   "blocks": [
+    {
+     "type": "callout",
+     "tone": "peach",
+     "title": "What to wear",
+     "body": "One notch above what the team wears. Collared shirt, dress pants or chinos, clean shoes, and a blazer you can take off if the office is casual."
+    },
+    {
+     "type": "list",
+     "style": "bullets",
+     "title": "What to bring",
+     "items": [
+      "Printed resumes, enough for everyone in the room.",
+      "Your 10 leads, printed.",
+      "Your customer call notes.",
+      "A notebook and pen."
+     ]
+    },
+    {
+     "type": "list",
+     "style": "bullets",
+     "title": "Timing",
+     "items": [
+      "Arrive 10 minutes early.",
+      "Same day: separate thank you notes to Marc and Matt, plus a short update to Andy."
+     ]
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "Thank you note to Marc"
+    },
+    {
+     "type": "callout",
+     "tone": "paleblue",
+     "body": "Use something specific from your conversation."
+    },
+    {
+     "type": "field",
+     "key": "t1",
+     "input": "long",
+     "number": 1,
+     "label": "Thank you note to Marc",
+     "placeholder": "Your version"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "Thank you note to Matt (if he was there)"
+    },
+    {
+     "type": "field",
+     "key": "t2",
+     "input": "long",
+     "number": 2,
+     "label": "Thank you note to Matt (if he was there)",
+     "placeholder": "Your version"
+    },
+    {
+     "type": "text",
+     "size": "lead",
+     "body": "Update to Andy"
+    },
+    {
+     "type": "callout",
+     "tone": "peach",
+     "title": "Answer starter",
+     "body": "\"Hi Andy, I met with Marc today and it went really well. Thanks again for everything. Best, Aiden\""
+    },
+    {
+     "type": "field",
+     "key": "t3",
+     "input": "long",
+     "number": 3,
+     "label": "Update to Andy",
+     "placeholder": "Your version"
+    }
+   ]
+  }
+ ],
+ "summary": {
+  "title": "Bond Sports Round 2",
+  "eyebrow": "Workforce Ready Now · Interview Workbook",
+  "blocks": [
+   {
+    "type": "interview_details"
+   }
+  ]
+ }
+}
