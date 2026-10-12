@@ -2,7 +2,7 @@
  "schema_version": 1,
  "slug": "bond-sports-round-2",
  "title": "Bond Sports Round 2",
- "block_types_note": "Built from Ginsberg_BondSports_Round2_Workbook.html by scripts/workbook-from-html.ts, so the text is verbatim. Question -> text (lead). Answer starter -> callout peach 'Answer starter'. Note -> callout paleblue. Confirm in session -> callout paleblue 'Confirm in session'. Every question -> a long field labelled with the question; the HTML box label becomes its placeholder. Inline bold in the HTML is plain text here.",
+ "block_types_note": "Built from Ginsberg_BondSports_Round2_Workbook.html (text verbatim), using only block types already live in prod: the SaaS word list is one text note per term (label = the word), the competitor table is one list per competitor (Built for / What it does), and the 10-lead table is ten short answer boxes, Lead 1 to Lead 10.",
  "client": {
   "first_name": "Aiden",
   "full_name": "Aiden Ginsberg"
@@ -147,81 +147,94 @@
      "body": "You don't need to use these words to sound smart. You just need to understand them when Marc or Matt does."
     },
     {
-     "type": "table",
-     "rows": [
-      [
-       "SaaS (software as a service)",
-       "Software you rent monthly or yearly instead of buying once. Facilities pay Bond a subscription."
-      ],
-      [
-       "Vertical SaaS",
-       "Software built for one industry. Bond is software built just for sports facilities."
-      ],
-      [
-       "SaaS+ (payments)",
-       "The software makes money twice: from the subscription and from payments that run through it. Rally Ventures said it plans to work with Bond on payments and other add on products."
-      ],
-      [
-       "ARR / MRR",
-       "Annual or monthly recurring revenue. The subscription money that comes in every year or month."
-      ],
-      [
-       "Churn",
-       "Customers who cancel. Low churn means people stay."
-      ],
-      [
-       "Lead",
-       "A facility that might be a fit."
-      ],
-      [
-       "Prospect",
-       "A lead you're actively reaching out to."
-      ],
-      [
-       "Qualified lead",
-       "A lead that's a real fit: right size, has budget, and is open to switching."
-      ],
-      [
-       "Inbound / outbound",
-       "Inbound: they come to you, like a demo request on the website. Outbound: you reach out first, like a cold call or email."
-      ],
-      [
-       "Cadence (or sequence)",
-       "A planned run of calls, emails, and messages to one prospect over a few weeks."
-      ],
-      [
-       "Pipeline",
-       "Every deal in progress, from first call to signed."
-      ],
-      [
-       "Demo",
-       "A meeting where the facility sees how Bond works."
-      ],
-      [
-       "SDR (your job)",
-       "Finds prospects and books the meeting."
-      ],
-      [
-       "AE (account executive)",
-       "Runs the demo and closes the deal."
-      ],
-      [
-       "Quota",
-       "The number you're expected to hit each month or quarter, like meetings booked."
-      ],
-      [
-       "CRM",
-       "The system where every call, email, and lead gets tracked."
-      ],
-      [
-       "Implementation (onboarding)",
-       "Setting a new customer up on Bond. Bond says about 3 to 4 weeks."
-      ],
-      [
-       "Upsell",
-       "Selling more to a customer you already have, like adding a new location."
-      ]
-     ]
+     "type": "text",
+     "label": "SaaS (software as a service)",
+     "body": "Software you rent monthly or yearly instead of buying once. Facilities pay Bond a subscription."
+    },
+    {
+     "type": "text",
+     "label": "Vertical SaaS",
+     "body": "Software built for one industry. Bond is software built just for sports facilities."
+    },
+    {
+     "type": "text",
+     "label": "SaaS+ (payments)",
+     "body": "The software makes money twice: from the subscription and from payments that run through it. Rally Ventures said it plans to work with Bond on payments and other add on products."
+    },
+    {
+     "type": "text",
+     "label": "ARR / MRR",
+     "body": "Annual or monthly recurring revenue. The subscription money that comes in every year or month."
+    },
+    {
+     "type": "text",
+     "label": "Churn",
+     "body": "Customers who cancel. Low churn means people stay."
+    },
+    {
+     "type": "text",
+     "label": "Lead",
+     "body": "A facility that might be a fit."
+    },
+    {
+     "type": "text",
+     "label": "Prospect",
+     "body": "A lead you're actively reaching out to."
+    },
+    {
+     "type": "text",
+     "label": "Qualified lead",
+     "body": "A lead that's a real fit: right size, has budget, and is open to switching."
+    },
+    {
+     "type": "text",
+     "label": "Inbound / outbound",
+     "body": "Inbound: they come to you, like a demo request on the website. Outbound: you reach out first, like a cold call or email."
+    },
+    {
+     "type": "text",
+     "label": "Cadence (or sequence)",
+     "body": "A planned run of calls, emails, and messages to one prospect over a few weeks."
+    },
+    {
+     "type": "text",
+     "label": "Pipeline",
+     "body": "Every deal in progress, from first call to signed."
+    },
+    {
+     "type": "text",
+     "label": "Demo",
+     "body": "A meeting where the facility sees how Bond works."
+    },
+    {
+     "type": "text",
+     "label": "SDR (your job)",
+     "body": "Finds prospects and books the meeting."
+    },
+    {
+     "type": "text",
+     "label": "AE (account executive)",
+     "body": "Runs the demo and closes the deal."
+    },
+    {
+     "type": "text",
+     "label": "Quota",
+     "body": "The number you're expected to hit each month or quarter, like meetings booked."
+    },
+    {
+     "type": "text",
+     "label": "CRM",
+     "body": "The system where every call, email, and lead gets tracked."
+    },
+    {
+     "type": "text",
+     "label": "Implementation (onboarding)",
+     "body": "Setting a new customer up on Bond. Bond says about 3 to 4 weeks."
+    },
+    {
+     "type": "text",
+     "label": "Upsell",
+     "body": "Selling more to a customer you already have, like adding a new location."
     },
     {
      "type": "text",
@@ -252,38 +265,48 @@
      "text": "The competitors, one line each"
     },
     {
-     "type": "table",
-     "columns": [
-      "Competitor",
-      "Built for",
-      "What it does"
-     ],
-     "rows": [
-      [
-       "SportsEngine (NBC)",
-       "Youth leagues, clubs, volunteer run organizations",
-       "Sign ups, payments, rosters, schedules, team app, websites, tournaments"
-      ],
-      [
-       "LeagueApps",
-       "Youth and local sports clubs, leagues, camps, parks",
-       "Sign ups, payments, scheduling, websites. Calls itself \"the operating system and community for youth and local sports leaders.\""
-      ],
-      [
-       "Upper Hand",
-       "Training facilities, academies, coaches, camps",
-       "Scheduling, memberships, payments. Its pitch: \"No more juggling tools.\" Plans start at $79 a month."
-      ],
-      [
-       "DaySmart Recreation",
-       "Ice and skating rinks, skating schools",
-       "Scheduling, mobile booking, 60+ reports, Learn to Skate USA partnership"
-      ],
-      [
-       "EZFacility",
-       "Sports and fitness facilities",
-       "Facility scheduling and memberships"
-      ]
+     "type": "list",
+     "style": "bullets",
+     "title": "SportsEngine (NBC)",
+     "items": [
+      "Built for: Youth leagues, clubs, volunteer run organizations",
+      "What it does: Sign ups, payments, rosters, schedules, team app, websites, tournaments"
+     ]
+    },
+    {
+     "type": "list",
+     "style": "bullets",
+     "title": "LeagueApps",
+     "items": [
+      "Built for: Youth and local sports clubs, leagues, camps, parks",
+      "What it does: Sign ups, payments, scheduling, websites. Calls itself \"the operating system and community for youth and local sports leaders.\""
+     ]
+    },
+    {
+     "type": "list",
+     "style": "bullets",
+     "title": "Upper Hand",
+     "items": [
+      "Built for: Training facilities, academies, coaches, camps",
+      "What it does: Scheduling, memberships, payments. Its pitch: \"No more juggling tools.\" Plans start at $79 a month."
+     ]
+    },
+    {
+     "type": "list",
+     "style": "bullets",
+     "title": "DaySmart Recreation",
+     "items": [
+      "Built for: Ice and skating rinks, skating schools",
+      "What it does: Scheduling, mobile booking, 60+ reports, Learn to Skate USA partnership"
+     ]
+    },
+    {
+     "type": "list",
+     "style": "bullets",
+     "title": "EZFacility",
+     "items": [
+      "Built for: Sports and fitness facilities",
+      "What it does: Facility scheduling and memberships"
      ]
     },
     {
@@ -544,43 +567,74 @@
      "body": "Look up sports facilities in Broward and Palm Beach: soccer, ice rinks, baseball, basketball, volleyball, multi sport. Check each website to see how they take bookings. A phone number or a basic form means they could use Bond. Find the owner or GM on LinkedIn. Print this list and bring it."
     },
     {
-     "type": "grid",
-     "key": "leads",
-     "columns": [
-      {
-       "key": "facility",
-       "label": "Facility"
-      },
-      {
-       "key": "city",
-       "label": "City"
-      },
-      {
-       "key": "sports",
-       "label": "Sports"
-      },
-      {
-       "key": "how-they-book",
-       "label": "How they book today"
-      },
-      {
-       "key": "owner-or-gm",
-       "label": "Owner or GM"
-      },
-      {
-       "key": "why-bond",
-       "label": "Why they might need Bond"
-      }
-     ],
-     "rows": 10,
-     "guide": [
-      "Name",
-      "Town",
-      "What they offer",
-      "Online, phone, or a basic form",
-      "Name and title",
-      "One line"
-     ]
+     "type": "field",
+     "key": "lead1",
+     "input": "short",
+     "label": "Lead 1",
+     "placeholder": "Facility, city, sports, how they book, owner or GM, why Bond."
+    },
+    {
+     "type": "field",
+     "key": "lead2",
+     "input": "short",
+     "label": "Lead 2",
+     "placeholder": "Facility, city, sports, how they book, owner or GM, why Bond."
+    },
+    {
+     "type": "field",
+     "key": "lead3",
+     "input": "short",
+     "label": "Lead 3",
+     "placeholder": "Facility, city, sports, how they book, owner or GM, why Bond."
+    },
+    {
+     "type": "field",
+     "key": "lead4",
+     "input": "short",
+     "label": "Lead 4",
+     "placeholder": "Facility, city, sports, how they book, owner or GM, why Bond."
+    },
+    {
+     "type": "field",
+     "key": "lead5",
+     "input": "short",
+     "label": "Lead 5",
+     "placeholder": "Facility, city, sports, how they book, owner or GM, why Bond."
+    },
+    {
+     "type": "field",
+     "key": "lead6",
+     "input": "short",
+     "label": "Lead 6",
+     "placeholder": "Facility, city, sports, how they book, owner or GM, why Bond."
+    },
+    {
+     "type": "field",
+     "key": "lead7",
+     "input": "short",
+     "label": "Lead 7",
+     "placeholder": "Facility, city, sports, how they book, owner or GM, why Bond."
+    },
+    {
+     "type": "field",
+     "key": "lead8",
+     "input": "short",
+     "label": "Lead 8",
+     "placeholder": "Facility, city, sports, how they book, owner or GM, why Bond."
+    },
+    {
+     "type": "field",
+     "key": "lead9",
+     "input": "short",
+     "label": "Lead 9",
+     "placeholder": "Facility, city, sports, how they book, owner or GM, why Bond."
+    },
+    {
+     "type": "field",
+     "key": "lead10",
+     "input": "short",
+     "label": "Lead 10",
+     "placeholder": "Facility, city, sports, how they book, owner or GM, why Bond."
     },
     {
      "type": "text",
