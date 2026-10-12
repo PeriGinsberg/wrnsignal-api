@@ -70,13 +70,13 @@ export async function sendClientInvite({
   const html = `<div style="font-size:18px;color:#2A0F35;margin-bottom:16px;">Hi ${clientFirstName},</div>
 
 <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 20px;">
-  Workforce Ready Now has set up your SIGNAL account. SIGNAL is your personal job search command center — it scores your fit for any role before you apply, rewrites your resume to match, and generates networking outreach so you land interviews faster.
+  Workforce Ready Now has set up your SIGNAL account. SIGNAL is your personal job search command center. It scores your fit for any role before you apply, rewrites your resume to match, and generates networking outreach so you land interviews faster.
 </p>
 
 ${targetsBlockHtml}
 
 <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 24px;">
-  Click below to sign in and start using SIGNAL. No password needed — this link logs you in automatically.
+  Click below to sign in and start using SIGNAL. No password needed. This link logs you in automatically.
 </p>
 
 <div style="text-align:center;margin-bottom:24px;">
@@ -108,14 +108,14 @@ Timeframe: ${timeframe}`
 
   const textBody = `Hi ${clientFirstName},
 
-Workforce Ready Now has set up your SIGNAL account. SIGNAL is your personal job search command center — it scores your fit for any role before you apply, rewrites your resume to match, and generates networking outreach so you land interviews faster.
+Workforce Ready Now has set up your SIGNAL account. SIGNAL is your personal job search command center. It scores your fit for any role before you apply, rewrites your resume to match, and generates networking outreach so you land interviews faster.
 
 ${targetsBlockText}
 
 Click below to sign in and start using SIGNAL:
 ${magicLink}
 
-No password needed — this link logs you in automatically.
+No password needed. This link logs you in automatically.
 
 ---
 This email was sent by Workforce Ready Now on behalf of your coach.
