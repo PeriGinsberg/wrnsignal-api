@@ -344,6 +344,8 @@ export async function POST(
           timeframe: "",
           magicLink,
           coachName: coach.name || coach.coach_org || "Your coach",
+          coachClientId,
+          actor: coachProfileId,
         })
         emailSent = true
       } catch (emailErr: any) {

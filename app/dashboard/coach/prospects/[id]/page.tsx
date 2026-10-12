@@ -45,6 +45,7 @@ import { formatDate } from "../../formatDate"
 // [id] here is coach_clients.id directly, so no resolver is needed.
 import { EngagementsTab } from "../../clients/[clientId]/EngagementsTab"
 import { HistoryTab } from "../../clients/[clientId]/HistoryTab"
+import { CommunicationsTab } from "../../clients/[clientId]/CommunicationsTab"
 import { TaskList } from "../../_tasks/TaskList"
 import { useRecordNoteTaskActions } from "../../_notes/RecordNoteTaskActions"
 import {
@@ -1768,6 +1769,11 @@ export default function ProspectDetailPage() {
 
       {/* History — read-only event timeline. [id] = coach_clients.id (params.id),
           passed straight through; no resolver needed. */}
+      {/* Communications: every email SIGNAL sent this prospect, as sent. */}
+      <Section title="Communications">
+        <CommunicationsTab coachClientId={prospect.id} />
+      </Section>
+
       <Section title="History">
         <HistoryTab coachClientId={prospect.id} />
       </Section>

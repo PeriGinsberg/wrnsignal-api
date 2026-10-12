@@ -137,6 +137,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ rou
         firstName: String(client.name ?? "").trim().split(/\s+/)[0] || "there",
         coachName: String(coach?.name ?? "").trim().split(/\s+/)[0] || "Your coach",
         roundTitle: round.title,
+        coachClientId: round.coach_client_id,
+        actor: actorId,
       })
       emailed = mail.ok
       if (!mail.ok) {

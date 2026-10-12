@@ -39,6 +39,7 @@ import { leadSourceStyle } from "../../_prospects/leadSourceUi"
 import { leadSourceLabel, takesReferredBy } from "../../../../../lib/prospects/model"
 import { TaskList } from "../../_tasks/TaskList"
 import { ClientPlan } from "../../_plan/ClientPlan"
+import { CommunicationsTab } from "../../clients/[clientId]/CommunicationsTab"
 import { useRecordNoteTaskActions } from "../../_notes/RecordNoteTaskActions"
 import {
   LegacyTaskLine,
@@ -1015,6 +1016,12 @@ export default function CoachClientPostConversionPage() {
         onChanged={() => load({ silent: true })}
         onAddNote={actions.openNote}
       />
+
+      {/* Communications: every email SIGNAL sent this client, the invite
+          included, as sent. */}
+      <Section title="Communications">
+        <CommunicationsTab coachClientId={record.id} />
+      </Section>
     </div>
   )
 }

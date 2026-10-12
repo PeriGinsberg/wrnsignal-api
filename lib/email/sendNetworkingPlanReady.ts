@@ -35,6 +35,8 @@ export type PlanEmailResult =
 export async function sendNetworkingPlanReady(args: {
   to: string
   firstName: string
+  coachClientId: string
+  actor: string | null
 }): Promise<PlanEmailResult> {
   let loginUrl: string
   try {
@@ -48,6 +50,7 @@ export async function sendNetworkingPlanReady(args: {
   return sendToClient({
     to: args.to,
     templateAlias: NETWORKING_PLAN_TEMPLATE,
+    log: { type: "networking_plan", coachClientId: args.coachClientId, actor: args.actor },
     model: { first_name: args.firstName || "there", login_url: loginUrl },
   })
 }

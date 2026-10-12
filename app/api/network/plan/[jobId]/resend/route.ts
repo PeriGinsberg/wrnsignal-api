@@ -60,7 +60,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ job
     // GHL contact was how the client got emailed. The email now goes to the
     // client's own address, so a client with no GHL contact can still be
     // re-sent to.
-    const updated = await emailClientPlanReady(supabase, plan)
+    const updated = await emailClientPlanReady(supabase, plan, { actor: scope.actorId })
 
     if (updated.client_email_error) {
       return withCorsJson(req, {

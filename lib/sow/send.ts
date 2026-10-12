@@ -117,6 +117,7 @@ export async function sendClientSow(
     cc,
     templateAlias: SOW_EMAIL_TEMPLATE,
     model: { subject, body_html: rendered.html, body_text: rendered.text },
+    log: { type: "sow", coachClientId: args.coachClientId, actor: args.actor, db },
   })
 
   // ── 5. Undo on failure ──

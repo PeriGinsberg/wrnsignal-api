@@ -182,6 +182,7 @@ export async function sendWelcome(
       cc,
       templateAlias: WELCOME_EMAIL_TEMPLATE,
       model: { subject, body_html: rendered.html, body_text: rendered.text },
+      log: { type: "welcome", coachClientId: args.coachClientId, actor: args.actor, db },
     })
     if (!result.ok) return fail(`The email did not send, so nothing changed: ${result.error}`, 502)
     sent = { to: x.to, cc, redirected: result.redirected }

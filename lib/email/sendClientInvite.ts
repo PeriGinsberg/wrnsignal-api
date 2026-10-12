@@ -1,4 +1,4 @@
-import { postmarkClient, FROM_EMAIL, MESSAGE_STREAM } from "../postmark"
+import { sendToClient } from "./send"
 
 interface SendClientInviteParams {
   clientFirstName: string
@@ -8,6 +8,9 @@ interface SendClientInviteParams {
   timeframe: string
   magicLink: string
   coachName: string
+  coachClientId: string
+  /** The coach who clicked Send Invite. */
+  actor: string
 }
 
 export async function sendClientInvite({
@@ -18,6 +21,8 @@ export async function sendClientInvite({
   timeframe,
   magicLink,
   coachName,
+  coachClientId,
+  actor,
 }: SendClientInviteParams) {
   const subject = `Your SIGNAL account is ready, ${clientFirstName}`
 
@@ -59,61 +64,39 @@ export async function sendClientInvite({
         Your coach <strong style="color:#2A0F35;">${coachName}</strong> will be in touch with details about your job search targets.
       </p>`
 
-  const html = `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#FDF8F6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <div style="max-width:560px;margin:40px auto;padding:0 20px;">
+  // THE BODY ONLY. The header, the rule and the signature come from the
+  // signal-client layout, which sendToClient wraps every client email in; this
+  // used to be a whole page of its own, with its own header and no signature.
+  const html = `<div style="font-size:18px;color:#2A0F35;margin-bottom:16px;">Hi ${clientFirstName},</div>
 
-    <!-- Header -->
-    <div style="background:#3D1A4A;padding:32px 40px;border-radius:12px 12px 0 0;">
-      <div style="font-size:28px;font-weight:300;color:#ffffff;letter-spacing:0.08em;">SIGNAL</div>
-      <div style="font-size:12px;color:#F2C4D0;letter-spacing:0.1em;margin-top:4px;">by Workforce Ready Now</div>
-    </div>
-
-    <!-- Body -->
-    <div style="background:#ffffff;padding:40px;border-radius:0 0 12px 12px;border:1px solid #EDD5E0;border-top:none;">
-
-      <div style="font-size:18px;color:#2A0F35;margin-bottom:16px;">Hi ${clientFirstName},</div>
-
-      <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 20px;">
-        Workforce Ready Now has set up your SIGNAL account. SIGNAL is your personal job search command center — it scores your fit for any role before you apply, rewrites your resume to match, and generates networking outreach so you land interviews faster.
-      </p>
+<p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 20px;">
+  Workforce Ready Now has set up your SIGNAL account. SIGNAL is your personal job search command center — it scores your fit for any role before you apply, rewrites your resume to match, and generates networking outreach so you land interviews faster.
+</p>
 
 ${targetsBlockHtml}
 
-      <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 24px;">
-        Click below to sign in and start using SIGNAL. No password needed — this link logs you in automatically.
-      </p>
+<p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 24px;">
+  Click below to sign in and start using SIGNAL. No password needed — this link logs you in automatically.
+</p>
 
-      <!-- CTA Button -->
-      <div style="text-align:center;margin-bottom:24px;">
-        <a href="${magicLink}" style="display:inline-block;background:#3D1A4A;color:#ffffff;font-size:16px;font-weight:600;text-decoration:none;padding:14px 40px;border-radius:8px;letter-spacing:0.02em;">
-          Open My SIGNAL Account
-        </a>
-      </div>
+<div style="text-align:center;margin-bottom:24px;">
+  <a href="${magicLink}" style="display:inline-block;background:#3D1A4A;color:#ffffff;font-size:16px;font-weight:600;text-decoration:none;padding:14px 40px;border-radius:8px;letter-spacing:0.02em;">
+    Open My SIGNAL Account
+  </a>
+</div>
 
-      <p style="font-size:12px;color:#999;line-height:1.6;margin:0 0 8px;">
-        If the button doesn't work, copy and paste this link into your browser:
-      </p>
-      <p style="font-size:12px;color:#3D1A4A;word-break:break-all;line-height:1.5;margin:0 0 24px;">
-        ${magicLink}
-      </p>
+<p style="font-size:12px;color:#999;line-height:1.6;margin:0 0 8px;">
+  If the button doesn't work, copy and paste this link into your browser:
+</p>
+<p style="font-size:12px;color:#3D1A4A;word-break:break-all;line-height:1.5;margin:0 0 24px;">
+  ${magicLink}
+</p>
 
-      <hr style="border:none;border-top:1px solid #EDD5E0;margin:24px 0;" />
+<hr style="border:none;border-top:1px solid #EDD5E0;margin:24px 0;" />
 
-      <p style="font-size:12px;color:#999;line-height:1.6;margin:0;">
-        This email was sent by Workforce Ready Now on behalf of your coach. If you didn't expect this, you can safely ignore it.
-      </p>
-    </div>
-
-    <!-- Footer -->
-    <div style="text-align:center;padding:20px 0;">
-      <div style="font-size:11px;color:#999;">&copy; ${new Date().getFullYear()} Workforce Ready Now. All rights reserved.</div>
-    </div>
-  </div>
-</body>
-</html>`
+<p style="font-size:12px;color:#999;line-height:1.6;margin:0;">
+  This email was sent by Workforce Ready Now on behalf of your coach. If you didn't expect this, you can safely ignore it.
+</p>`
 
   const targetsBlockText = hasAnyTargets
     ? `Your coach ${coachName} has configured your profile with the following targets:
@@ -138,12 +121,12 @@ No password needed — this link logs you in automatically.
 This email was sent by Workforce Ready Now on behalf of your coach.
 If you didn't expect this, you can safely ignore it.`
 
-  await postmarkClient.sendEmail({
-    From: FROM_EMAIL,
-    To: clientEmail,
-    Subject: subject,
-    HtmlBody: html,
-    TextBody: textBody,
-    MessageStream: MESSAGE_STREAM,
+  // Throws on failure, as it always has: both callers catch it and report
+  // email_sent: false.
+  const res = await sendToClient({
+    to: clientEmail,
+    content: { subject, html, text: textBody },
+    log: { type: "invite", coachClientId, actor },
   })
+  if (!res.ok) throw new Error(res.error)
 }

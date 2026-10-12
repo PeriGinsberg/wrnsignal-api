@@ -18,7 +18,10 @@
 //
 // See tests/email/sync-email-layout.ts, which is what pushes the layout.
 
+import type { SupabaseClient } from "@supabase/supabase-js"
 import { getPostmarkClient, CLIENT_STREAM, INTERNAL_STREAM, FROM_EMAIL } from "../postmark"
+import { getSupabaseAdmin } from "../collab/identity"
+import { coachBccFor, logClientEmail, type ClientEmailType } from "./clientEmailLog"
 
 export const CLIENT_LAYOUT_ALIAS = "signal-client"
 
@@ -98,14 +101,88 @@ export function isProduction(): boolean {
   return host === LIVE_EMAIL_HOST
 }
 
+/** What the email log needs to know about a send. See lib/email/clientEmailLog.ts. */
+export type ClientEmailContext = {
+  type: ClientEmailType
+  /** The coach_clients row the email belongs to; its coach gets a blind copy. */
+  coachClientId: string | null
+  /** Who clicked to send it. Null when SIGNAL sent it on its own. */
+  actor: string | null
+  /** Defaults to the service-role client. */
+  db?: SupabaseClient
+}
+
 /**
- * Send a client-facing template.
+ * A content-only "template" for an email SIGNAL writes itself (the invite), so
+ * it is rendered into the same layout as the stored templates.
+ */
+const INLINE_TEMPLATE = {
+  Subject: "{{subject_prefix}}{{{subject}}}",
+  HtmlBody: "{{{body_html}}}",
+  TextBody: "{{{body_text}}}",
+  LayoutTemplate: CLIENT_LAYOUT_ALIAS,
+}
+
+/**
+ * The email exactly as it will go out: Postmark renders the template, the
+ * layout and the signature, and that rendered copy is what is sent AND what is
+ * saved, so the log cannot differ from the inbox. (Checked against a real SOW
+ * on 2026-10-12: subject, text and HTML byte-identical to Postmark's record of
+ * the templated send.)
  *
- * Outside production the mail is redirected to NON_PROD_REDIRECT with the
- * intended recipient in the subject, so a preview deployment can be exercised
- * end to end without a client receiving anything. The body is untouched,
- * including its links, because the point of the test is to see what the client
- * would have seen.
+ * This is also where the signature rule is enforced: a stored template that
+ * does not use the signal-client layout is refused rather than sent bare.
+ */
+async function renderClientEmail(args: {
+  templateAlias?: string
+  model?: Record<string, unknown>
+  content?: { subject: string; html: string; text: string }
+  subjectPrefix: string
+}): Promise<{ ok: true; subject: string; html: string; text: string } | { ok: false; error: string }> {
+  const pm = getPostmarkClient()
+  let tpl: { Subject: string; HtmlBody: string | null; TextBody: string | null; LayoutTemplate: string | null }
+  let model: Record<string, unknown>
+  if (args.templateAlias) {
+    tpl = await pm.getTemplate(args.templateAlias)
+    if (tpl.LayoutTemplate !== CLIENT_LAYOUT_ALIAS) {
+      return { ok: false, error: `The ${args.templateAlias} template does not use the ${CLIENT_LAYOUT_ALIAS} layout, so it would go out without the signature.` }
+    }
+    model = args.model ?? {}
+  } else if (args.content) {
+    tpl = INLINE_TEMPLATE
+    model = { subject: args.content.subject, body_html: args.content.html, body_text: args.content.text }
+  } else {
+    return { ok: false, error: "Nothing to send." }
+  }
+  const v = await pm.validateTemplate({
+    Subject: tpl.Subject,
+    HtmlBody: tpl.HtmlBody ?? undefined,
+    TextBody: tpl.TextBody ?? undefined,
+    LayoutTemplate: tpl.LayoutTemplate ?? undefined,
+    TemplateType: "Standard" as any,
+    InlineCssForHtmlTestRender: true,
+    TestRenderModel: { ...model, subject_prefix: args.subjectPrefix },
+  })
+  if (!v.AllContentIsValid) {
+    return { ok: false, error: `The email did not render: ${JSON.stringify([v.Subject, v.HtmlBody, v.TextBody].map((p) => p?.ValidationErrors ?? []))}` }
+  }
+  return { ok: true, subject: v.Subject.RenderedContent, html: v.HtmlBody?.RenderedContent ?? "", text: v.TextBody?.RenderedContent ?? "" }
+}
+
+/**
+ * Send a client-facing email: a stored template (templateAlias + model) or
+ * one SIGNAL wrote (content), either way inside the signal-client layout.
+ *
+ * Three things happen to every one, which is why every client email comes
+ * through here:
+ *   1. the coach gets a blind copy (coachBccFor: whoever clicked, plus the
+ *      client's coach when that is someone else; the client's coach alone for
+ *      an automatic send)
+ *   2. it is saved to the email log, private links removed
+ *   3. outside production it is redirected to NON_PROD_REDIRECT with the
+ *      intended To, CC and BCC in the subject, and none of them is mailed.
+ *      The body is untouched, including its links, because the point of the
+ *      test is to see what the client would have seen.
  *
  * `subject_prefix` is always supplied, empty in production. Templates carry
  * "{{subject_prefix}}Real subject" so the prefix needs no conditional; an
@@ -113,8 +190,9 @@ export function isProduction(): boolean {
  */
 export async function sendToClient(args: {
   to: string
-  templateAlias: string
-  model: Record<string, unknown>
+  templateAlias?: string
+  model?: Record<string, unknown>
+  content?: { subject: string; html: string; text: string }
   from?: string
   /**
    * A copy, e.g. a prospect's parent. Outside production it is not sent: the
@@ -122,28 +200,69 @@ export async function sendToClient(args: {
    * would have been copied without mailing them.
    */
   cc?: string | null
+  log: ClientEmailContext
 }): Promise<SendResult> {
   const intended = String(args.to || "").trim()
   if (!intended) return { ok: false, error: "No email address for this client." }
   const cc = String(args.cc ?? "").trim()
+  const from = args.from ?? FROM_EMAIL
+
+  // The blind copy. A failure to work it out never stops the email; it goes
+  // without the copy and says so in the server log.
+  let db: SupabaseClient | null = null
+  let bcc: string[] = []
+  try {
+    db = args.log.db ?? getSupabaseAdmin()
+    bcc = await coachBccFor(db, { coachClientId: args.log.coachClientId, actor: args.log.actor, exclude: [intended, cc] })
+  } catch (e: any) {
+    console.warn("[email] coach BCC lookup failed, sending without it:", e?.message ?? String(e))
+  }
 
   const production = isProduction()
   const to = production ? intended : NON_PROD_REDIRECT
-  const subjectPrefix = production ? "" : `[${environmentLabel()} -> ${intended}${cc ? `, cc ${cc}` : ""}] `
+  const copies = [cc ? `cc ${cc}` : "", bcc.length ? `bcc ${bcc.join(", ")}` : ""].filter(Boolean).join(", ")
+  const subjectPrefix = production ? "" : `[${environmentLabel()} -> ${intended}${copies ? `, ${copies}` : ""}] `
 
+  let messageId: string
+  let rendered: { subject: string; html: string; text: string }
   try {
-    const res = await getPostmarkClient().sendEmailWithTemplate({
-      From: args.from ?? FROM_EMAIL,
+    const r = await renderClientEmail({ templateAlias: args.templateAlias, model: args.model, content: args.content, subjectPrefix })
+    if (!r.ok) return r
+    rendered = r
+    const res = await getPostmarkClient().sendEmail({
+      From: from,
       To: to,
       ...(production && cc ? { Cc: cc } : {}),
-      TemplateAlias: args.templateAlias,
+      ...(production && bcc.length ? { Bcc: bcc.join(", ") } : {}),
+      Subject: r.subject,
+      HtmlBody: r.html,
+      TextBody: r.text,
+      Tag: args.log.type,
       MessageStream: CLIENT_STREAM,
-      TemplateModel: { ...args.model, subject_prefix: subjectPrefix },
     })
-    return { ok: true, to, redirected: !production, messageId: res.MessageID }
+    messageId = res.MessageID
   } catch (e: any) {
     return { ok: false, error: String(e?.message ?? e) }
   }
+
+  if (db) {
+    await logClientEmail(db, {
+      coach_client_id: args.log.coachClientId,
+      email_type: args.log.type,
+      from_email: from,
+      to_email: intended,
+      cc_email: cc || null,
+      bcc_emails: bcc,
+      delivered_to: to,
+      redirected: !production,
+      subject: rendered.subject,
+      text_body: rendered.text,
+      html_body: rendered.html,
+      triggered_by: args.log.actor,
+      postmark_message_id: messageId,
+    })
+  }
+  return { ok: true, to, redirected: !production, messageId }
 }
 
 /**

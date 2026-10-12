@@ -90,6 +90,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ rou
       questionCount: round.questions.length,
       seconds: ANSWER_SECONDS,
       roundId,
+      coachClientId: round.coach_client_id,
+      actor: actorId,
     })
 
     if (!mail.ok) {

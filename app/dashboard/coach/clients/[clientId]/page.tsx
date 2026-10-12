@@ -46,6 +46,7 @@ import { EngagementsTab } from "./EngagementsTab"
 import { ClientTopicNotes } from "./ClientTopicNotes"
 import { LibraryTab } from "./LibraryTab"
 import { HistoryTab } from "./HistoryTab"
+import { CommunicationsTab } from "./CommunicationsTab"
 import { WorkbooksTab } from "./WorkbooksTab"
 import { JobDetailPanel, type PanelSection } from "./JobDetailPanel"
 import { LinkCompanyControl } from "./LinkCompanyControl"
@@ -58,7 +59,7 @@ import { PracticeTab } from "./PracticeTab"
 // retained (data is preserved; only the surface is gone).
 // "engagements" added for the attached-package snapshots (Client Engagement UI).
 // "history" added for the read-only event timeline (Client Event Log UI).
-type Tab = "dashboard" | "tracker" | "source" | "lanes" | "notes" | "tasks" | "analysis" | "engagements" | "workbooks" | "practice" | "library" | "history"
+type Tab = "dashboard" | "tracker" | "source" | "lanes" | "notes" | "tasks" | "analysis" | "engagements" | "workbooks" | "practice" | "library" | "communications" | "history"
 
 // Status filter buckets exposed to Job Tracker tab via URL ?status= param
 // or in-app tile click. "all" = no filter.
@@ -695,6 +696,7 @@ export default function CoachClientPage() {
     { id: "workbooks", label: "Workbooks" },
     { id: "practice", label: "Practice" },
     { id: "library", label: "Library" },
+    { id: "communications", label: "Communications" },
     { id: "history", label: "History" },
   ]
 
@@ -2156,6 +2158,9 @@ export default function CoachClientPage() {
           clientName={clientProfile?.name || clientProfile?.email || "this client"}
         />
       )}
+
+      {/* Communications: every email SIGNAL sent this client, as sent */}
+      {tab === "communications" && <CommunicationsTab coachClientId={coachClientId} />}
 
       {/* TAB 7 — History (read-only event timeline) */}
       {tab === "history" && <HistoryTab coachClientId={coachClientId} />}

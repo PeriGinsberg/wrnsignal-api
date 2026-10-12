@@ -24,10 +24,14 @@ export async function sendPracticeRoundEmail(args: {
   questionCount: number
   seconds: number
   roundId: string
+  coachClientId: string
+  /** Null for a round SIGNAL sent on its own (lib/practice/autoRound.ts). */
+  actor: string | null
 }) {
   return sendToClient({
     to: args.to,
     templateAlias: PRACTICE_ROUND_TEMPLATE,
+    log: { type: "practice_round", coachClientId: args.coachClientId, actor: args.actor },
     model: {
       first_name: args.firstName,
       coach_name: args.coachName,
@@ -56,10 +60,13 @@ export async function sendPracticeFeedbackEmail(args: {
   firstName: string
   coachName: string
   roundTitle: string
+  coachClientId: string
+  actor: string
 }) {
   return sendToClient({
     to: args.to,
     templateAlias: PRACTICE_FEEDBACK_TEMPLATE,
+    log: { type: "practice_feedback", coachClientId: args.coachClientId, actor: args.actor },
     model: {
       first_name: args.firstName,
       coach_name: args.coachName,

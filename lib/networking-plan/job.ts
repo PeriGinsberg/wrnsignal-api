@@ -382,7 +382,7 @@ export async function sharePlanJob(
   // LAST, because it is the only step that cannot be undone. Everything above
   // is recoverable by clicking Share again; an email that has left cannot be
   // unsent, so it goes after the plan is provably shareable.
-  const emailed = await emailClientPlanReady(supabase, ghl)
+  const emailed = await emailClientPlanReady(supabase, ghl, { actor: opts.actor })
 
   // The chain, after everything that could still fail. "Share Plan with
   // Client" ticks itself here, which is the last step of the campaign.
@@ -555,6 +555,7 @@ export async function notifyClientViaGhl(
 export async function emailClientPlanReady(
   supabase: SupabaseClient,
   job: PlanJob,
+  opts: { actor?: string | null } = {},
 ): Promise<PlanJob> {
   const { data: cc } = await supabase
     .from("coach_clients")
@@ -581,7 +582,7 @@ export async function emailClientPlanReady(
     return (data ?? job) as PlanJob
   }
 
-  const sent = await sendNetworkingPlanReady({ to: email, firstName })
+  const sent = await sendNetworkingPlanReady({ to: email, firstName, coachClientId: job.coach_client_id, actor: opts.actor ?? null })
 
   const patch: Record<string, unknown> = sent.ok
     ? {

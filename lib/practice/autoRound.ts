@@ -93,6 +93,9 @@ export async function createAndSendPresetRound(
       questionCount: args.preset.questions.length,
       seconds: args.preset.seconds,
       roundId: round.id,
+      coachClientId: args.coachClientId,
+      // Nobody clicked; the client's coach gets the blind copy.
+      actor: null,
     })
 
     return { ok: true, roundId: round.id, emailed: Boolean(mail.ok), to: args.clientEmail }

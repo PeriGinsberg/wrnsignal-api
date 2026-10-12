@@ -111,6 +111,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cli
           timeframe: client.timeline ?? "",
           magicLink,
           coachName,
+          coachClientId: access.id,
+          actor: profileId,
         })
         emailSent = true
       } catch (emailErr: any) {
