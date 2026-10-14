@@ -2170,6 +2170,7 @@ export default function CoachClientPage() {
       <JobDetailPanel
         open={jobPanelOpen}
         onClose={() => setJobPanelOpen(false)}
+        onDeleted={() => { setJobPanelOpen(false); setJobPanelAppId(null); void loadAll({ silent: true }) }}
         clientProfileId={clientId}
         applicationId={jobPanelAppId}
         initialSection={jobPanelSection}

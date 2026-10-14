@@ -11,6 +11,7 @@
 //   GET  /api/coach/clients/[clientId]/applications/[applicationId]/detail  (content)
 //   GET  /api/coach/clients/[clientId]/applications/[applicationId]/notes   (this job's notes)
 // Writes:
+//   DELETE /api/coach/clients/[clientId]/applications/[applicationId]       (a job a coach added)
 //   POST /api/coach/clients/[clientId]/applications/[applicationId]/notes   ({ artifact_type, body, visibility })
 //   POST /api/positioning?client_profile_id=[clientId]                       ({ application_id })
 //   POST /api/coverletter?client_profile_id=[clientId]                       ({ application_id })
@@ -35,6 +36,7 @@ type Detail = {
   coverLetterBy: RunBy
   positioningBy: RunBy
   canRun: boolean
+  canDelete: boolean
 }
 type Note = {
   id: string
@@ -53,6 +55,54 @@ async function getToken(): Promise<string | null> {
 async function authFetch(url: string, opts: RequestInit = {}): Promise<Response> {
   const token = await getToken()
   return fetch(url, { ...opts, headers: { ...(opts.headers || {}), Authorization: `Bearer ${token}` } })
+}
+
+// Delete, for a job a coach added. Two steps in place rather than a browser
+// confirm dialog: the panel is already a focused surface, and the second step
+// says exactly what goes.
+function DeleteJob({ onDelete }: { onDelete: () => Promise<string | null> }) {
+  const [confirming, setConfirming] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  async function go() {
+    setBusy(true); setErr(null)
+    const problem = await onDelete()
+    setBusy(false)
+    if (problem) setErr(problem)
+  }
+  return (
+    <div style={{ marginTop: 24, paddingTop: 16, borderTop: `1px solid ${T.BORDER_SOFT}` }}>
+      {!confirming ? (
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: TYPE.secondary, fontWeight: 700, color: T.ERROR }}
+        >
+          Delete this job
+        </button>
+      ) : (
+        <div>
+          <p style={{ fontSize: TYPE.secondary, color: T.TEXT, margin: "0 0 4px", fontWeight: 700 }}>
+            Delete this job from the client&apos;s tracker?
+          </p>
+          <p style={{ fontSize: TYPE.secondary, color: T.MUTED, margin: "0 0 12px" }}>
+            You added it, so you can remove it. Its recommendation, interviews and job notes go with it. This can&apos;t be undone.
+          </p>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button type="button" onClick={() => void go()} disabled={busy}
+              style={{ ...btnPrimary, padding: "7px 14px", fontSize: TYPE.secondary, background: T.ERROR, opacity: busy ? 0.6 : 1 }}>
+              {busy ? "Deleting…" : "Delete job"}
+            </button>
+            <button type="button" onClick={() => { setConfirming(false); setErr(null) }} disabled={busy}
+              style={{ ...btnSecondary, padding: "7px 14px", fontSize: TYPE.secondary }}>
+              Cancel
+            </button>
+          </div>
+          {err && <p style={{ fontSize: TYPE.secondary, color: T.ERROR, margin: "10px 0 0" }}>{err}</p>}
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ── render helpers ──
@@ -428,9 +478,11 @@ function NotesBlock({ artifactType, notes, loading, onSave }: {
   )
 }
 
-export function JobDetailPanel({ open, onClose, clientProfileId, applicationId, initialSection }: {
+export function JobDetailPanel({ open, onClose, onDeleted, clientProfileId, applicationId, initialSection }: {
   open: boolean
   onClose: () => void
+  /** After a successful delete. The caller closes the panel and reloads. */
+  onDeleted?: () => void
   clientProfileId: string
   applicationId: string | null
   initialSection: PanelSection
@@ -460,6 +512,7 @@ export function JobDetailPanel({ open, onClose, clientProfileId, applicationId, 
         coverLetterBy: j.coverLetterBy ?? null,
         positioningBy: j.positioningBy ?? null,
         canRun: j.can_run === true,
+        canDelete: j.can_delete === true,
       })
     } catch {
       setError("Network error — try again")
@@ -632,6 +685,17 @@ export function JobDetailPanel({ open, onClose, clientProfileId, applicationId, 
                   onSave={saveNote}
                 />
               </Collapsible>
+              {data.canDelete && (
+                <DeleteJob
+                  onDelete={async () => {
+                    const res = await authFetch(`/api/coach/clients/${clientProfileId}/applications/${applicationId}`, { method: "DELETE" })
+                    const j = await res.json().catch(() => ({}))
+                    if (!res.ok || !j?.ok) return j?.error || `Couldn't delete the job (${res.status})`
+                    onDeleted?.()
+                    return null
+                  }}
+                />
+              )}
             </>
           )}
         </div>

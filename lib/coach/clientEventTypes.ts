@@ -114,6 +114,9 @@ export const COACH_CLIENT_EVENT_TYPES = [
   // the task went out without it (context: task).
   "welcome_email_sent",
   "welcome_email_skipped",
+  // A coach deleted a job they had added to the client's Job Tracker
+  // (Recommend a Job). Context: company and title, since the row is gone.
+  "job_deleted",
 ] as const
 
 export type CoachClientEventType = (typeof COACH_CLIENT_EVENT_TYPES)[number]

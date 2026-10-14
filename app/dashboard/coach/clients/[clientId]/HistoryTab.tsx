@@ -213,6 +213,10 @@ export const LABELS: Record<CoachClientEventType, (e: CoachClientEvent) => strin
   account_created: () => "Account created",
   workbook_created: () => "Workbook created",
   workbook_shared: () => "Workbook shared",
+  job_deleted: (e) => {
+    const job = [e.context?.title, e.context?.company].filter(Boolean).join(" at ")
+    return job ? `Job removed from tracker: ${job}` : "Job removed from tracker"
+  },
   workbook_sent_for_review: (e) => {
     const n = Number(e.context?.open_questions ?? 0)
     return n > 0 ? `Workbook sent for review, ${n} question${n === 1 ? "" : "s"}` : "Workbook sent for review"

@@ -20,6 +20,7 @@ import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../../../../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { verifyCoachAccess } from "@/lib/collab/access"
+import { resolveDelegation } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -118,6 +119,22 @@ export async function GET(
       positioningBy = pos?.created_by_role ?? null
     }
 
+    // Offer Delete only on a job this coach (or the principal they act for)
+    // added through Recommend a Job, and only with full access. The DELETE
+    // route checks the same thing again; this only decides the button.
+    let canDelete = false
+    if (access.access_level === "full") {
+      const { actingIds } = await resolveDelegation(supabase, coachProfileId)
+      const { data: rec } = await supabase
+        .from("coach_job_recommendations")
+        .select("id")
+        .eq("application_id", app.id)
+        .eq("client_profile_id", ownerClientId)
+        .in("coach_profile_id", actingIds)
+        .limit(1)
+      canDelete = (rec?.length ?? 0) > 0
+    }
+
     return withCorsJson(
       req,
       {
@@ -134,6 +151,7 @@ export async function GET(
         // Running Positioning or Cover Letter writes, which needs FULL access;
         // a view or annotate coach can read the results but not run them.
         can_run: access.access_level === "full" && !!app.jobfit_run_id,
+        can_delete: canDelete,
       },
       200,
     )
