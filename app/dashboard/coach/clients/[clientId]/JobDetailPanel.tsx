@@ -86,7 +86,7 @@ function DeleteJob({ onDelete }: { onDelete: () => Promise<string | null> }) {
             Delete this job from the client&apos;s tracker?
           </p>
           <p style={{ fontSize: TYPE.secondary, color: T.MUTED, margin: "0 0 12px" }}>
-            You added it, so you can remove it. Its recommendation, interviews and job notes go with it. This can&apos;t be undone.
+            A coach added it, so it can be removed here. Its recommendation, interviews and job notes go with it. This can&apos;t be undone.
           </p>
           <div style={{ display: "flex", gap: 8 }}>
             <button type="button" onClick={() => void go()} disabled={busy}

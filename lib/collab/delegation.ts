@@ -67,3 +67,31 @@ export function owningCoachId(d: Delegation, explicit?: string | null): string {
   }
   return d.principalIds[0] ?? d.callerId
 }
+
+/**
+ * Every coach on a client's team: each coach with an active link to the client,
+ * plus each of their active delegates. Used where the question is "did someone
+ * on this client's team do it" rather than "did I": a principal and her
+ * delegate both act on jobs either of them added, in both directions. Acting
+ * ids only run delegate to principal, so they cannot answer this.
+ */
+export async function clientTeamCoachIds(
+  supabase: SupabaseClient,
+  clientProfileId: string,
+): Promise<string[]> {
+  const { data: links, error } = await supabase
+    .from("coach_clients")
+    .select("coach_profile_id")
+    .eq("client_profile_id", clientProfileId)
+    .eq("status", "active")
+  if (error) throw new Error(`Client team lookup failed: ${error.message}`)
+  const coaches = Array.from(new Set((links ?? []).map((l) => l.coach_profile_id as string).filter(Boolean)))
+  if (!coaches.length) return []
+  const { data: dels, error: dErr } = await supabase
+    .from("coach_delegates")
+    .select("delegate_coach_profile_id")
+    .in("principal_coach_profile_id", coaches)
+    .eq("status", "active")
+  if (dErr) throw new Error(`Delegation lookup failed: ${dErr.message}`)
+  return Array.from(new Set([...coaches, ...(dels ?? []).map((d) => d.delegate_coach_profile_id as string)]))
+}

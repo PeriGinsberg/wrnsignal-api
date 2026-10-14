@@ -7,7 +7,9 @@
 //
 // SECURITY: the same shape as ./detail. Authority comes from the application's
 // own owner, never the URL clientId; the coach needs FULL access to that owner;
-// and the recommendation must be from this coach or the principal they act for.
+// and the recommendation must be from a coach on this client's team (a linked
+// coach or one of their delegates), so a principal and her delegate can each
+// delete what the other added.
 //
 // What goes: the recommendation (its client responses cascade) and the
 // application (its interviews, status history and job notes cascade). The
@@ -19,7 +21,7 @@ import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../../../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { verifyCoachAccess } from "@/lib/collab/access"
-import { resolveDelegation } from "@/lib/collab/delegation"
+import { clientTeamCoachIds } from "@/lib/collab/delegation"
 import { logCoachClientEvent } from "../../../../../_lib/coachClientEvents"
 
 export const runtime = "nodejs"
@@ -58,16 +60,16 @@ export async function DELETE(
       return withCorsJson(req, { ok: false, error: "Forbidden: deleting a job needs full access to this client" }, 403)
     }
 
-    const { actingIds } = await resolveDelegation(supabase, coachProfileId)
+    const team = await clientTeamCoachIds(supabase, ownerClientId)
     const { data: recs, error: recErr } = await supabase
       .from("coach_job_recommendations")
       .select("id")
       .eq("application_id", applicationId)
       .eq("client_profile_id", ownerClientId)
-      .in("coach_profile_id", actingIds)
+      .in("coach_profile_id", team)
     if (recErr) throw new Error(`Recommendation lookup failed: ${recErr.message}`)
     if (!recs?.length) {
-      return withCorsJson(req, { ok: false, error: "Only a job you added can be deleted. The client added this one." }, 403)
+      return withCorsJson(req, { ok: false, error: "Only a job a coach added can be deleted. The client added this one." }, 403)
     }
 
     const { error: delRecErr } = await supabase
