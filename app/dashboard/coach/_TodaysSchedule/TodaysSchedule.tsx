@@ -1,13 +1,16 @@
 "use client"
 
 // Coach Home: Today's Schedule (Coach Calendar Integration, redesigned
-// 2026-10-13 with a Today / Week toggle).
+// 2026-10-13 with a Today / Week toggle, made compact the same day).
 //
 // Renders the coach's Outlook events via the /api/coach/calendar/* routes.
-// Today is a time-ordered list; Week is Monday to Sunday as seven calendar
-// columns, stacked into a day-by-day agenda on narrow screens. An event whose
-// attendees include one of the coach's clients shows that client's name and
-// opens the client's page; the rest show their meeting title.
+// Today is one line per event: time, the client's name (bold navy, opens the
+// client's page), the session type, and Join when the event has a meeting
+// link. The next session to start says "Next up"; ended ones dim. Events with
+// none of the coach's clients among their attendees are "personal": one small
+// gray line, hidden unless "Show personal" is on. Week is Monday to Sunday as
+// seven columns of small chips, stacked into a day-by-day agenda on narrow
+// screens. Refresh, the connected account and Disconnect sit in a menu.
 //
 // The only input is the server-derived isCalendarBetaEnabled boolean (Coach
 // Home is client-rendered, so the env allowlist is resolved in /api/coach/home
@@ -15,7 +18,7 @@
 //
 // FRD: docs/Features/coach-calendar-integration-v0-1-frd.md §5, §6.8
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
 import { T, card, btnPrimary, btnSecondary } from "@/lib/dashboard-theme"
@@ -42,7 +45,7 @@ type ConnectionMeta = {
 type ScheduleClient = { name: string; href: string }
 
 // The /api/coach/calendar/today event shape: CalendarEvent minus its attendee
-// emails, plus the clients matched from them.
+// emails, plus the clients matched from them and the session type.
 type ScheduleEvent = {
   id: string
   subject: string
@@ -54,6 +57,7 @@ type ScheduleEvent = {
   is_online_meeting: boolean
   online_meeting_url: string | null
   organizer_email: string | null
+  session_type: string | null
   clients: ScheduleClient[]
 }
 
@@ -62,6 +66,7 @@ interface TodaysScheduleProps {
 }
 
 const VIEW_KEY = "signal_coach_schedule_view"
+const PERSONAL_KEY = "signal_coach_schedule_personal"
 
 // Mirror the page.tsx getToken() pattern (helpers there aren't exported):
 // Supabase session lives in localStorage; fall back to the handoff token.
@@ -100,15 +105,29 @@ function formatTime(iso: string): string {
   return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })
 }
 
-function isPast(e: ScheduleEvent): boolean {
-  const end = new Date(e.end).getTime()
-  return !isNaN(end) && end < Date.now()
+// "9:30a", "2p": for the week chips.
+function shortTime(iso: string): string {
+  return formatTime(iso).replace(":00", "").replace(/\s?([AP])M$/i, (_, x: string) => x.toLowerCase())
 }
 
-// Calendly writes "Mock Interview between Peri Ginsberg and Jane Doe" to
-// Outlook. The part before "between" is the session type.
-function sessionType(subject: string): string {
-  return subject.replace(/\s+between\s+.+\s+and\s+.+$/i, "").trim()
+function isPast(e: ScheduleEvent, now: number): boolean {
+  const end = new Date(e.end).getTime()
+  return !isNaN(end) && end < now
+}
+
+// Personal = none of the coach's clients among the attendees.
+function isPersonal(e: ScheduleEvent): boolean {
+  return e.clients.length === 0
+}
+
+// The first timed event that has not started yet.
+function nextUpId(events: ScheduleEvent[], now: number): string | null {
+  for (const e of events) {
+    if (e.is_all_day) continue
+    const start = new Date(e.start).getTime()
+    if (!isNaN(start) && start > now) return e.id
+  }
+  return null
 }
 
 // "YYYY-MM-DD" plus n days, as "YYYY-MM-DD". Date-only arithmetic in UTC so
@@ -155,23 +174,27 @@ function IconCalendar() {
   )
 }
 
-// Layout rules that need media queries. Class names are prefixed ts- to stay
-// clear of the rest of Coach Home.
+// Layout rules that need media queries or :hover. Class names are prefixed
+// ts- to stay clear of the rest of Coach Home.
 const SCHEDULE_CSS = `
-  .ts-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
-  .ts-day { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 8px; border-radius: 12px; min-height: 140px; }
-  .ts-day-head { display: flex; flex-direction: column; align-items: center; padding-bottom: 6px; }
-  .ts-day-list { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-  .ts-session { display: block; text-decoration: none; color: inherit; transition: border-color 120ms ease, transform 120ms ease; }
-  a.ts-session:hover { transform: translateY(-1px); border-color: ${T.WRN_ORANGE} !important; }
-  .ts-today-row { display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 12px; align-items: stretch; }
+  .ts-row { display: grid; grid-template-columns: 70px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 8px; min-height: 34px; }
+  .ts-row--client:hover { background: ${T.ROW_HOVER}; }
+  .ts-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .ts-name { text-decoration: none; }
+  .ts-name:hover { text-decoration: underline; }
+  .ts-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+  .ts-day { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 6px; border-radius: 10px; min-height: 96px; }
+  .ts-day-head { display: flex; align-items: baseline; justify-content: center; gap: 4px; padding-bottom: 2px; }
+  .ts-day-list { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .ts-chip { display: block; padding: 3px 6px; border-radius: 6px; font-size: 11px; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none; }
+  a.ts-chip:hover { background: ${T.ROW_HOVER} !important; }
   @media (max-width: 900px) {
-    .ts-week { grid-template-columns: 1fr; gap: 6px; }
-    .ts-day { display: grid; grid-template-columns: 52px minmax(0, 1fr); align-items: start; gap: 10px; min-height: 0; }
-    .ts-day-head { padding-bottom: 0; }
+    .ts-week { grid-template-columns: 1fr; }
+    .ts-day { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: start; gap: 8px; min-height: 0; }
+    .ts-day-head { justify-content: flex-start; padding: 3px 0 0; }
   }
   @media (max-width: 480px) {
-    .ts-today-row { grid-template-columns: 64px minmax(0, 1fr); gap: 8px; }
+    .ts-row { grid-template-columns: 58px minmax(0, 1fr) auto; gap: 8px; padding: 6px 4px; }
     .ts-header { flex-wrap: wrap; }
   }
 `
@@ -180,7 +203,8 @@ function ScheduleCard({ children, headerRight }: { children: React.ReactNode; he
   // Open on load; the chevron folds the card to its header for this visit.
   const [open, setOpen] = useState(true)
   return (
-    <div style={{ ...card, padding: 20, marginBottom: 20, position: "relative" }}>
+    // overflow visible: the card's own overflow:hidden would clip the menu.
+    <div style={{ ...card, padding: 20, marginBottom: 20, position: "relative", overflow: "visible" }}>
       <style>{SCHEDULE_CSS}</style>
       {/* Matches the accent rule <Section> draws, by hand, because this card
           predates that component and is not one. Teal is this section's
@@ -193,14 +217,14 @@ function ScheduleCard({ children, headerRight }: { children: React.ReactNode; he
           borderTopLeftRadius: 18, borderTopRightRadius: 18,
         }}
       />
-      <div className="ts-header" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: open ? 16 : 0 }}>
+      <div className="ts-header" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: open ? 14 : 0 }}>
         <span style={{ display: "inline-flex", color: T.SECTION_SCHEDULE }}>
           <IconCalendar />
         </span>
         <span style={{ fontSize: 16, fontWeight: 600, color: T.TEXT, letterSpacing: -0.2 }}>
           Today&apos;s schedule
         </span>
-        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 10 }}>
+        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 8 }}>
           {open && headerRight}
           <CollapseToggle open={open} onToggle={() => setOpen((v) => !v)} label="Today's schedule" />
         </span>
@@ -265,90 +289,205 @@ function ViewToggle({ value, onChange }: { value: View; onChange: (v: View) => v
   )
 }
 
-// ── Session cards ────────────────────────────────────────────────────────────
+// ── Menu ─────────────────────────────────────────────────────────────────────
 
-// One event. A client match makes it a link to that client, with an orange
-// rule; anything else is a plain card with a blue rule. Past events fade.
-function SessionCard({ e, compact }: { e: ScheduleEvent; compact: boolean }) {
-  const client = e.clients[0] ?? null
-  const type = sessionType(e.subject || "") || "(no title)"
-  const title = client ? client.name : type
-  const extra = e.clients.length > 1 ? ` +${e.clients.length - 1}` : ""
-  const style: React.CSSProperties = {
-    padding: compact ? "7px 9px" : "10px 14px",
-    borderRadius: 10,
-    background: T.GLASS,
-    border: `1px solid ${T.BORDER_SOFT}`,
-    borderLeft: `3px solid ${client ? T.WRN_ORANGE : T.WRN_BLUE}`,
-    opacity: isPast(e) ? 0.55 : 1,
-    minWidth: 0,
-  }
-  const body = (
-    <>
-      {compact && (
-        <div style={{ fontSize: 11, fontWeight: 800, color: client ? T.INK_EMPHASIS : T.INK_LINK, fontVariantNumeric: "tabular-nums" }}>
-          {e.is_all_day ? "All day" : formatTime(e.start)}
-        </div>
-      )}
-      <div
-        style={{
-          fontSize: compact ? 12 : 14, fontWeight: 700, color: T.TEXT,
-          marginTop: compact ? 2 : 0, overflowWrap: "anywhere", lineHeight: 1.3,
-        }}
-      >
-        {title}{extra}
-      </div>
-      {client && (
-        <div style={{ fontSize: compact ? 11 : 12, color: T.MUTED, marginTop: 2, overflowWrap: "anywhere", lineHeight: 1.3 }}>
-          {type}
-        </div>
-      )}
-      {!compact && (e.is_online_meeting || e.location) && (
-        <div style={{ fontSize: 11, color: T.DIM, marginTop: 4, overflowWrap: "anywhere" }}>
-          {e.is_online_meeting ? "Online meeting" : e.location}
-        </div>
-      )}
-    </>
-  )
-  return client ? (
-    <Link href={client.href} className="ts-session" style={style} title={`Open ${client.name}`}>
-      {body}
-    </Link>
-  ) : (
-    <div className="ts-session" style={style}>{body}</div>
-  )
-}
-
-function TodayList({ events }: { events: ScheduleEvent[] }) {
-  if (events.length === 0) {
-    return (
-      <NestedBox>
-        <p style={{ fontSize: 13, color: T.MUTED, margin: 0, textAlign: "center" }}>
-          Nothing on your calendar today
-        </p>
-      </NestedBox>
-    )
+// Refresh, Disconnect and the connected account, folded behind one button so
+// they do not take a row under the schedule.
+function ScheduleMenu({ email, onRefresh, onDisconnect }: { email: string | null; onRefresh: () => void; onDisconnect: () => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const close = (ev: MouseEvent) => { if (ref.current && !ref.current.contains(ev.target as Node)) setOpen(false) }
+    const esc = (ev: KeyboardEvent) => { if (ev.key === "Escape") setOpen(false) }
+    document.addEventListener("mousedown", close)
+    document.addEventListener("keydown", esc)
+    return () => {
+      document.removeEventListener("mousedown", close)
+      document.removeEventListener("keydown", esc)
+    }
+  }, [open])
+  const item: React.CSSProperties = {
+    display: "block", width: "100%", textAlign: "left", background: "none", border: "none",
+    padding: "8px 12px", fontSize: 13, color: T.TEXT, cursor: "pointer", fontFamily: "inherit", borderRadius: 6,
   }
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      {events.map((e) => (
-        <div key={e.id} className="ts-today-row">
-          <div style={{ paddingTop: 10, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: T.TEXT }}>
-              {e.is_all_day ? "All day" : formatTime(e.start)}
+    <div ref={ref} style={{ position: "relative" }}>
+      <button
+        type="button"
+        aria-label="Schedule options"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          width: 30, height: 30, borderRadius: 999, padding: 0, cursor: "pointer",
+          background: "transparent", border: `1px solid ${T.BORDER_SOFT}`, color: T.MUTED,
+        }}
+      >
+        <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="5" cy="12" r="1.8" />
+          <circle cx="12" cy="12" r="1.8" />
+          <circle cx="19" cy="12" r="1.8" />
+        </svg>
+      </button>
+      {open && (
+        <div
+          role="menu"
+          style={{
+            position: "absolute", right: 0, top: 36, zIndex: 20, minWidth: 220, padding: 4,
+            background: T.CARD, border: `1px solid ${T.BORDER}`, borderRadius: 10,
+            boxShadow: "0 8px 24px rgba(8,32,63,0.14)",
+          }}
+        >
+          <button type="button" role="menuitem" style={item} onClick={() => { setOpen(false); onRefresh() }}>
+            Refresh
+          </button>
+          <button type="button" role="menuitem" style={{ ...item, color: T.MUTED }} onClick={() => { setOpen(false); onDisconnect() }}>
+            Disconnect Outlook
+          </button>
+          {email && (
+            <div
+              style={{
+                padding: "8px 12px 6px", marginTop: 4, borderTop: `1px solid ${T.BORDER_SOFT}`,
+                fontSize: 11, color: T.DIM, overflowWrap: "anywhere",
+              }}
+            >
+              Connected as {email}
             </div>
-            {!e.is_all_day && (
-              <div style={{ fontSize: 11, color: T.DIM, marginTop: 2 }}>{formatTime(e.end)}</div>
-            )}
-          </div>
-          <SessionCard e={e} compact={false} />
+          )}
         </div>
-      ))}
+      )}
     </div>
   )
 }
 
-function WeekGrid({ events, rangeStart, today }: { events: ScheduleEvent[]; rangeStart: string; today: string }) {
+function PersonalSwitch({ on, count, onChange }: { on: boolean; count: number; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      onClick={() => onChange(!on)}
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 8, background: "none", border: "none",
+        padding: 0, cursor: "pointer", fontFamily: "inherit", fontSize: 12, color: T.MUTED,
+      }}
+    >
+      <span
+        aria-hidden="true"
+        style={{
+          position: "relative", display: "inline-block", width: 30, height: 18, borderRadius: 999,
+          background: on ? T.WRN_ORANGE : T.BORDER, transition: "background 120ms ease",
+        }}
+      >
+        <span
+          style={{
+            position: "absolute", top: 2, left: on ? 14 : 2, width: 14, height: 14, borderRadius: "50%",
+            background: "#FFFFFF", boxShadow: "0 1px 2px rgba(0,0,0,0.25)", transition: "left 120ms ease",
+          }}
+        />
+      </span>
+      Show personal ({count})
+    </button>
+  )
+}
+
+// ── Today ────────────────────────────────────────────────────────────────────
+
+function TodayRow({ e, now, nextUp }: { e: ScheduleEvent; now: number; nextUp: boolean }) {
+  const client = e.clients[0] ?? null
+  const time = e.is_all_day ? "All day" : formatTime(e.start)
+  const dim = isPast(e, now) ? 0.5 : 1
+  if (!client) {
+    return (
+      <div className="ts-row" style={{ opacity: dim, minHeight: 26, padding: "3px 10px" }}>
+        <span style={{ fontSize: 12, color: T.DIM, fontVariantNumeric: "tabular-nums" }}>{time}</span>
+        <span className="ts-line" style={{ fontSize: 12, color: T.DIM }}>{e.subject || "(no title)"}</span>
+        <span />
+      </div>
+    )
+  }
+  const extra = e.clients.length > 1 ? ` +${e.clients.length - 1}` : ""
+  return (
+    <div className="ts-row ts-row--client" style={{ opacity: dim, background: nextUp ? T.ORANGE_GLOW : undefined }}>
+      <span style={{ fontSize: 13, fontWeight: 700, color: T.TEXT, fontVariantNumeric: "tabular-nums" }}>{time}</span>
+      <span className="ts-line" style={{ fontSize: 14 }}>
+        <Link href={client.href} className="ts-name" style={{ fontWeight: 800, color: T.INK_EMPHASIS }} title={`Open ${client.name}`}>
+          {client.name}{extra}
+        </Link>
+        {e.session_type && <span style={{ color: T.MUTED }}>{"  ·  "}{e.session_type}</span>}
+      </span>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+        {nextUp && (
+          <span
+            style={{
+              fontSize: 10, fontWeight: 800, letterSpacing: 0.6, textTransform: "uppercase",
+              padding: "3px 8px", borderRadius: 999, whiteSpace: "nowrap",
+              background: T.WRN_ORANGE, color: "var(--sig-ink-on-bright, #04060F)",
+            }}
+          >
+            Next up
+          </span>
+        )}
+        {e.online_meeting_url && !isPast(e, now) && (
+          <a
+            href={e.online_meeting_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              fontSize: 12, fontWeight: 800, padding: "5px 12px", borderRadius: 999, whiteSpace: "nowrap",
+              background: T.GRAD_PRIMARY, color: "#FFFFFF", textDecoration: "none",
+            }}
+          >
+            Join
+          </a>
+        )}
+      </span>
+    </div>
+  )
+}
+
+function TodayList({ events, now, emptyText }: { events: ScheduleEvent[]; now: number; emptyText: string }) {
+  if (events.length === 0) {
+    return <p style={{ fontSize: 13, color: T.MUTED, margin: "4px 0", textAlign: "center" }}>{emptyText}</p>
+  }
+  const next = nextUpId(events.filter((e) => !isPersonal(e)), now)
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      {events.map((e) => <TodayRow key={e.id} e={e} now={now} nextUp={e.id === next} />)}
+    </div>
+  )
+}
+
+// ── Week ─────────────────────────────────────────────────────────────────────
+
+function WeekChip({ e, now }: { e: ScheduleEvent; now: number }) {
+  const client = e.clients[0] ?? null
+  const time = e.is_all_day ? "All day" : shortTime(e.start)
+  const style: React.CSSProperties = {
+    opacity: isPast(e, now) ? 0.5 : 1,
+    background: client ? T.CARD : "transparent",
+    border: `1px solid ${client ? T.BORDER : "transparent"}`,
+    borderLeft: client ? `3px solid ${T.WRN_ORANGE}` : undefined,
+  }
+  if (!client) {
+    return (
+      <span className="ts-chip" style={{ ...style, color: T.DIM }} title={e.subject}>
+        {time} {e.subject || "(no title)"}
+      </span>
+    )
+  }
+  const label = `${time} ${client.name}${e.session_type ? `, ${e.session_type}` : ""}`
+  return (
+    <Link href={client.href} className="ts-chip" style={style} title={label}>
+      <span style={{ fontWeight: 700, color: T.MUTED, fontVariantNumeric: "tabular-nums" }}>{time}</span>{" "}
+      <span style={{ fontWeight: 800, color: T.INK_EMPHASIS }}>{client.name}</span>
+    </Link>
+  )
+}
+
+function WeekGrid({ events, rangeStart, today, now }: { events: ScheduleEvent[]; rangeStart: string; today: string; now: number }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(rangeStart, i))
   const byDay = new Map<string, ScheduleEvent[]>(days.map((d) => [d, []]))
   for (const e of events) {
@@ -367,7 +506,7 @@ function WeekGrid({ events, rangeStart, today }: { events: ScheduleEvent[]; rang
             key={d}
             className="ts-day"
             style={{
-              background: isToday ? "rgba(254,176,106,0.10)" : T.GLASS,
+              background: isToday ? T.ORANGE_GLOW : T.GLASS,
               border: `1px solid ${isToday ? T.WRN_ORANGE : T.BORDER_SOFT}`,
             }}
           >
@@ -375,23 +514,13 @@ function WeekGrid({ events, rangeStart, today }: { events: ScheduleEvent[]; rang
               <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.8, textTransform: "uppercase", color: isToday ? T.INK_EMPHASIS : T.MUTED }}>
                 {p.weekday}
               </span>
-              <span
-                style={{
-                  marginTop: 2, width: 28, height: 28, borderRadius: "50%",
-                  display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 14, fontWeight: 800,
-                  background: isToday ? T.WRN_ORANGE : "transparent",
-                  color: isToday ? "var(--sig-ink-on-bright, #04060F)" : T.TEXT,
-                }}
-              >
-                {p.day}
-              </span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: isToday ? T.INK_EMPHASIS : T.TEXT }}>{p.day}</span>
             </div>
             <div className="ts-day-list">
               {list.length === 0 ? (
-                <span style={{ fontSize: 11, color: T.DIM, textAlign: "center", padding: "6px 0" }}>No sessions</span>
+                <span style={{ fontSize: 11, color: T.DIM, textAlign: "center", padding: "2px 0" }}>No sessions</span>
               ) : (
-                list.map((e) => <SessionCard key={e.id} e={e} compact />)
+                list.map((e) => <WeekChip key={e.id} e={e} now={now} />)
               )}
             </div>
           </div>
@@ -412,6 +541,7 @@ export function TodaysSchedule({ isCalendarBetaEnabled }: TodaysScheduleProps) {
   const [connection, setConnection] = useState<ConnectionMeta | null>(null)
   const [retryAfter, setRetryAfter] = useState<number | null>(null)
   const [errorBanner, setErrorBanner] = useState<string | null>(null)
+  const [showPersonal, setShowPersonal] = useState(false)
 
   async function fetchSchedule(v: View = view) {
     setState("loading")
@@ -458,6 +588,11 @@ export function TodaysSchedule({ isCalendarBetaEnabled }: TodaysScheduleProps) {
     setView(v)
     try { localStorage.setItem(VIEW_KEY, v) } catch { /* per-viewer convenience only */ }
     fetchSchedule(v)
+  }
+
+  function changePersonal(v: boolean) {
+    setShowPersonal(v)
+    try { localStorage.setItem(PERSONAL_KEY, v ? "1" : "0") } catch { /* not remembered */ }
   }
 
   async function handleConnect() {
@@ -508,8 +643,8 @@ export function TodaysSchedule({ isCalendarBetaEnabled }: TodaysScheduleProps) {
     }
   }
 
-  // Mount: process OAuth round-trip query params, restore the view, then
-  // gate + fetch.
+  // Mount: process OAuth round-trip query params, restore the view and the
+  // personal switch, then gate + fetch.
   useEffect(() => {
     try {
       const url = new URL(window.location.href)
@@ -532,6 +667,7 @@ export function TodaysSchedule({ isCalendarBetaEnabled }: TodaysScheduleProps) {
     let saved: View = "today"
     try { if (localStorage.getItem(VIEW_KEY) === "week") saved = "week" } catch { /* default */ }
     setView(saved)
+    try { setShowPersonal(localStorage.getItem(PERSONAL_KEY) === "1") } catch { /* default off */ }
 
     if (isCalendarBetaEnabled) {
       fetchSchedule(saved)
@@ -660,46 +796,42 @@ export function TodaysSchedule({ isCalendarBetaEnabled }: TodaysScheduleProps) {
   }
 
   // loaded
+  const now = Date.now()
+  const personalCount = events.filter(isPersonal).length
+  const shown = showPersonal ? events : events.filter((e) => !isPersonal(e))
+  const week = view === "week" && rangeStart && today ? { rangeStart, today } : null
   return (
-    <ScheduleCard headerRight={toggle}>
+    <ScheduleCard
+      headerRight={
+        <>
+          {toggle}
+          <ScheduleMenu
+            email={connection?.connected_email ?? null}
+            onRefresh={() => fetchSchedule()}
+            onDisconnect={handleDisconnect}
+          />
+        </>
+      }
+    >
       {banner}
-      {view === "week" && rangeStart && (
-        <div style={{ fontSize: 12, fontWeight: 700, color: T.MUTED, marginBottom: 10 }}>
-          This week, {weekLabel(rangeStart)}
+      {(week || personalCount > 0) && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: T.MUTED }}>
+            {week ? `This week, ${weekLabel(week.rangeStart)}` : ""}
+          </span>
+          {personalCount > 0 && <PersonalSwitch on={showPersonal} count={personalCount} onChange={changePersonal} />}
         </div>
       )}
 
-      {view === "week" && rangeStart && today ? (
-        <WeekGrid events={events} rangeStart={rangeStart} today={today} />
+      {week ? (
+        <WeekGrid events={shown} rangeStart={week.rangeStart} today={week.today} now={now} />
       ) : (
-        <TodayList events={events} />
+        <TodayList
+          events={shown}
+          now={now}
+          emptyText={events.length ? "No client sessions today" : "Nothing on your calendar today"}
+        />
       )}
-
-      <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 16, flexWrap: "wrap" }}>
-        <button type="button" onClick={() => fetchSchedule()} style={{ ...btnSecondary, cursor: "pointer" }}>
-          Refresh
-        </button>
-        <button
-          type="button"
-          onClick={handleDisconnect}
-          style={{
-            background: "transparent",
-            border: "none",
-            color: T.DIM,
-            fontSize: 12,
-            textDecoration: "underline",
-            cursor: "pointer",
-            padding: 0,
-          }}
-        >
-          Disconnect
-        </button>
-        {connection?.connected_email && (
-          <span style={{ fontSize: 11, color: T.MUTED, marginLeft: "auto" }}>
-            Connected as {connection.connected_email}
-          </span>
-        )}
-      </div>
     </ScheduleCard>
   )
 }

@@ -105,8 +105,12 @@ export interface CalendarEvent {
   /** Total attendees including the organizer. */
   attendee_count: number
   is_online_meeting: boolean
+  /** Teams join link, else a Zoom / Meet / Teams link found in the location or
+   *  the body (Calendly puts its Zoom link there). */
   online_meeting_url: string | null
   organizer_email: string | null
+  /** Calendly writes "Event Name: <type>" into the event body; null otherwise. */
+  event_name: string | null
   /** Attendee addresses, lowercased. The organizer is not included. */
   attendee_emails: string[]
 }
@@ -267,6 +271,8 @@ async function throwGraphError(res: Response, op: string): Promise<never> {
   )
 }
 
+const MEETING_LINK = /https:\/\/[^\s<>"']*(?:zoom\.us|meet\.google\.com|teams\.microsoft\.com|teams\.live\.com)[^\s<>"']*/i
+
 /** Transform a raw Microsoft Graph event into the FRD §6.4.3 event shape. */
 function transformEvent(ev: Record<string, any>): CalendarEvent {
   const attendees: Array<Record<string, any>> = Array.isArray(ev.attendees)
@@ -297,9 +303,19 @@ function transformEvent(ev: Record<string, any>): CalendarEvent {
     location: ev.location?.displayName || null,
     attendee_count: attendeeCount,
     is_online_meeting: ev.isOnlineMeeting === true,
-    online_meeting_url: ev.onlineMeeting?.joinUrl ?? null,
+    online_meeting_url:
+      ev.onlineMeeting?.joinUrl ??
+      String(ev.location?.displayName ?? "").match(MEETING_LINK)?.[0] ??
+      String(ev.bodyPreview ?? "").match(MEETING_LINK)?.[0] ??
+      null,
     organizer_email: organizerEmail,
     attendee_emails: [...attendeeEmails],
+    // Stops at a line break or, when the preview has run lines together, at
+    // the next label Calendly writes.
+    event_name:
+      String(ev.bodyPreview ?? "")
+        .match(/Event Name:\s*(.+?)(?:[\r\n]|\s{2,}|\s+(?:Location|Invitee|Description|Need to make changes|Powered by)\b|$)/i)?.[1]
+        ?.trim() || null,
   }
 }
 

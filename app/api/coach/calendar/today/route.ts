@@ -111,11 +111,14 @@ function zonedMidnightUtcIso(dateStr: string, tz: string, addDays: number): stri
 // carry stray whitespace.
 
 type ScheduleClient = { name: string; href: string }
+// Server-side only: which coach_clients row the match came from, for the
+// Calendly lookup below.
+type MatchedClient = ScheduleClient & { coachClientId: string }
 
 async function clientsByEmail(
   supabase: SupabaseClient,
   profileId: string,
-): Promise<Map<string, ScheduleClient>> {
+): Promise<Map<string, MatchedClient>> {
   const { actingIds } = await resolveDelegation(supabase, profileId)
   const { data: rels } = await supabase
     .from("coach_clients")
@@ -127,7 +130,7 @@ async function clientsByEmail(
     const { data } = await supabase.from("client_profiles").select("id, name, email").in("id", profileIds)
     for (const p of data ?? []) profiles.set(p.id as string, { name: p.name, email: p.email })
   }
-  const out = new Map<string, ScheduleClient>()
+  const out = new Map<string, MatchedClient>()
   for (const r of rels ?? []) {
     const prof = r.client_profile_id ? profiles.get(r.client_profile_id as string) : undefined
     // Same destinations as the old My Clients / My Prospects rows.
@@ -140,9 +143,55 @@ async function clientsByEmail(
       .map((e) => (e ?? "").trim().toLowerCase())
       .filter(Boolean)
     const name = (r.name || prof?.name || emails[0] || "Client").trim()
-    for (const e of emails) if (!out.has(e)) out.set(e, { name, href })
+    for (const e of emails) if (!out.has(e)) out.set(e, { name, href, coachClientId: r.id as string })
   }
   return out
+}
+
+// ── Session type ─────────────────────────────────────────────────────────────
+// What kind of session a client event is. In order: the "Event Name:" Calendly
+// writes into the event body; the Calendly booking SIGNAL stored for that
+// client at that start time; the meeting title with Calendly's "between A and
+// B" tail removed. A title that is only "A and B" (Calendly's default) says
+// nothing about the session, so it gives no type.
+
+// Naive wall-clock "YYYY-MM-DDTHH:mm:ss[.fffffff]" in tz, as UTC ms.
+function naiveToUtcMs(naive: string, tz: string): number {
+  const m = naive.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/)
+  if (!m) return NaN
+  const guess = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5])
+  return guess - tzOffsetMs(new Date(guess), tz)
+}
+
+// Calendly bookings for these clients: start (UTC ms) and event name, keyed by
+// coach_clients.id.
+async function calendlyBookings(
+  supabase: SupabaseClient,
+  coachClientIds: string[],
+): Promise<Map<string, Array<{ start: number; name: string }>>> {
+  const out = new Map<string, Array<{ start: number; name: string }>>()
+  if (!coachClientIds.length) return out
+  const { data } = await supabase
+    .from("calendly_webhook_deliveries")
+    .select("coach_client_id, payload")
+    .eq("event", "invitee.created")
+    .in("coach_client_id", coachClientIds)
+  for (const r of data ?? []) {
+    const se = (r.payload as { payload?: { scheduled_event?: { start_time?: string; name?: string } } })
+      ?.payload?.scheduled_event
+    const start = se?.start_time ? new Date(se.start_time).getTime() : NaN
+    if (!se?.name || isNaN(start)) continue
+    const list = out.get(r.coach_client_id as string) ?? []
+    list.push({ start, name: se.name.trim() })
+    out.set(r.coach_client_id as string, list)
+  }
+  return out
+}
+
+function typeFromSubject(subject: string): string | null {
+  const s = subject.replace(/\s+between\s+.+\s+and\s+.+$/i, "").trim()
+  if (!s || /^[^:|]+\s+and\s+[^:|]+$/i.test(s)) return null
+  return s
 }
 
 // ── Small response helpers ───────────────────────────────────────────────────
@@ -367,14 +416,37 @@ export async function GET(req: NextRequest) {
   if (result instanceof NextResponse) return result
   const coachEmail = ((conn.microsoft_user_email as string | null) ?? "").toLowerCase()
   const byEmail = await clientsByEmail(supabase, profileId)
-  const events = result.map(({ attendee_emails, ...e }) => {
+  const matched = result.map((e) => {
     const seen = new Set<string>()
-    const clients: ScheduleClient[] = []
-    for (const a of attendee_emails) {
+    const clients: MatchedClient[] = []
+    for (const a of e.attendee_emails) {
       const c = a !== coachEmail ? byEmail.get(a) : undefined
       if (c && !seen.has(c.href)) { seen.add(c.href); clients.push(c) }
     }
-    return { ...e, clients }
+    return { e, clients }
+  })
+  const bookings = await calendlyBookings(
+    supabase,
+    [...new Set(matched.flatMap((m) => m.clients.map((c) => c.coachClientId)))],
+  )
+  const events = matched.map(({ e, clients }) => {
+    // Attendee emails stay on the server.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { attendee_emails, event_name, ...rest } = e
+    let session_type = event_name
+    if (!session_type && clients.length) {
+      const start = naiveToUtcMs(e.start, tz)
+      for (const c of clients) {
+        const hit = (bookings.get(c.coachClientId) ?? []).find((b) => Math.abs(b.start - start) < 60_000)
+        if (hit) { session_type = hit.name; break }
+      }
+    }
+    if (!session_type) session_type = typeFromSubject(e.subject || "")
+    return {
+      ...rest,
+      session_type,
+      clients: clients.map(({ name, href }) => ({ name, href })),
+    }
   })
 
   // 6. Touch last_used_at — fire-and-forget (analytics; never fail the request).
