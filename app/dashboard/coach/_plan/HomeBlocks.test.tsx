@@ -79,11 +79,11 @@ describe("My active tasks", () => {
       return new Response(JSON.stringify({ ok: true, tasks, total: 12 }), { status: 200 })
     }))
   })
-  it("is every open task assigned to me, by due date, the first ten", async () => {
+  it("is every open task assigned to me, by due date, with no row cap", async () => {
     render(<TaskCard order="due" />)
     expect(await screen.findByText("Task 0")).toBeTruthy()
     expect(urls).toContain("/api/coach/tasks")
-    expect(screen.queryByText("Task 10")).toBeNull()
+    expect(screen.getByText("Task 11")).toBeTruthy()
     expect(screen.getByText("View all tasks (12)")).toBeTruthy()
   })
 })
@@ -98,8 +98,8 @@ describe("My active tasks, due window", () => {
   })
   beforeEach(() => {
     try { localStorage.clear() } catch { /* jsdom */ }
-    // Twelve overdue tasks: more than the card's ten, which is what made every
-    // window look the same when windows still included overdue work.
+    // Twelve overdue tasks: more than the old ten-row cap, which made every
+    // window show the same ten overdue rows.
     const overdue = Array.from({ length: 12 }, (_, i) => task(`Late ${i}`, at(-(i + 1))))
     const tasks = [...overdue, task("Soon", at(3)), task("Mid", at(10)), task("Far", at(25)), task("Undated", null)]
     vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
@@ -107,15 +107,15 @@ describe("My active tasks, due window", () => {
       return new Response(JSON.stringify({ ok: true, tasks, total: tasks.length }), { status: 200 })
     }))
   })
-  it("narrows to what is coming, and points to the overdue ones", async () => {
+  it("keeps every overdue task in every window and widens what is coming", async () => {
     render(<TaskCard order="due" />)
     expect(await screen.findByText("Late 0")).toBeTruthy()
 
     fireEvent.click(screen.getByRole("button", { name: "7 days" }))
+    expect(screen.getByText("Late 0")).toBeTruthy()
+    expect(screen.getByText("Late 11")).toBeTruthy()
     expect(screen.getByText("Soon")).toBeTruthy()
     expect(screen.queryByText("Mid")).toBeNull()
-    expect(screen.queryByText("Late 0")).toBeNull()
-    expect(screen.getByText("12 overdue, shown under All")).toBeTruthy()
 
     fireEvent.click(screen.getByRole("button", { name: "14 days" }))
     expect(screen.getByText("Mid")).toBeTruthy()
@@ -123,10 +123,10 @@ describe("My active tasks, due window", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "30 days" }))
     expect(screen.getByText("Far")).toBeTruthy()
+    expect(screen.getByText("Late 11")).toBeTruthy()
     expect(screen.queryByText("Undated")).toBeNull()
 
-    fireEvent.click(screen.getByText("12 overdue, shown under All"))
-    expect(screen.getByText("Late 0")).toBeTruthy()
-    expect(screen.getByRole("button", { name: "All" }).getAttribute("aria-pressed")).toBe("true")
+    fireEvent.click(screen.getByRole("button", { name: "All" }))
+    expect(screen.getByText("Undated")).toBeTruthy()
   })
 })
