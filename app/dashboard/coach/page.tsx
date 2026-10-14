@@ -295,7 +295,7 @@ export default function CoachHomePage() {
 
       <Section
         icon={<IconBell />}
-        title="Follow-ups due"
+        title="Client Tasks Overdue"
         count={planBlocks.data?.follow_ups.length}
         accentColor={T.SECTION_SCHEDULE}
       >
