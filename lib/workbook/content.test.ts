@@ -182,7 +182,7 @@ ok("...and never reaches the summary as an answer", answerText(undefined) === ""
 }
 
 console.log("tables and grids (Aiden's Bond Sports Round 2)")
-const aRaw = JSON.parse(readFileSync(join(__dirname, "../../docs/workbooks-v1/workbooks-v1/aiden-ginsberg_bond-sports-round-2.json"), "utf8"))
+const aRaw = JSON.parse(readFileSync(join(__dirname, "../../app/dashboard/workbooks/__fixtures__/bond-sports-round-2-tables.json"), "utf8"))
 const aParsed = validateContent(aRaw)
 ok("Aiden's Round 2 workbook is valid", aParsed.ok)
 if (!aParsed.ok) console.error(aParsed.errors)
