@@ -18,15 +18,17 @@ import { isWelcomeTodo } from "../../../../lib/welcome/model"
 import { WelcomeEmailDialog } from "../_plan/WelcomeEmailDialog"
 import { useRouter } from "next/navigation"
 import { T } from "../../../../lib/dashboard-theme"
-import { endOfDay, type Task } from "../../../../lib/tasks/model"
+import { endOfDay, isOverdue, type Task } from "../../../../lib/tasks/model"
 import { TaskRow, TaskRowHeader, TaskRowStyles } from "./TaskRow"
 import { apiJson } from "./taskClient"
 
 const DUE_LIMIT = 10
 
-// Coach Home's due-window filter. A window keeps overdue tasks and those due
-// by the end of its last day, today counted as day one (the same rolling
-// count isDueThisWeek uses for seven). Undated tasks show only under All.
+// Coach Home's due-window filter. A window is what is coming: tasks not yet
+// late and due by the end of its last day, today counted as day one (the same
+// rolling count isDueThisWeek uses for seven). Overdue and undated tasks show
+// under All. Overdue ones were in every window at first, and with more than
+// ten of them every window showed the same ten rows.
 type DueWindow = "7" | "14" | "30" | "all"
 const DUE_WINDOWS: { key: DueWindow; label: string }[] = [
   { key: "7", label: "7 days" },
@@ -38,7 +40,7 @@ const WINDOW_KEY = "signal_coach_tasks_window"
 
 function inWindow(t: Task, w: DueWindow, now: Date): boolean {
   if (w === "all") return true
-  if (!t.due_at) return false
+  if (!t.due_at || isOverdue(t, now)) return false
   const due = new Date(t.due_at)
   if (Number.isNaN(due.getTime())) return false
   const horizon = endOfDay(new Date(now.getTime() + (Number(w) - 1) * 24 * 60 * 60 * 1000))
@@ -180,6 +182,9 @@ export function TaskCard({ order = "card" }: { order?: "card" | "due" } = {}) {
   const shown = order === "due"
     ? tasks.filter((t) => inWindow(t, dueWindow, now)).slice(0, DUE_LIMIT)
     : tasks
+  const overdueHidden = order === "due" && dueWindow !== "all"
+    ? tasks.filter((t) => isOverdue(t, now)).length
+    : 0
 
   return (
     // No card chrome of its own: this is mounted inside <Section>, which draws
@@ -192,7 +197,19 @@ export function TaskCard({ order = "card" }: { order?: "card" | "due" } = {}) {
       )}
 
       {order === "due" && (
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", flexWrap: "wrap", gap: 10, marginBottom: 8 }}>
+          {overdueHidden > 0 && (
+            <button
+              type="button"
+              onClick={() => changeWindow("all")}
+              style={{
+                background: "none", border: "none", padding: 0, cursor: "pointer",
+                fontSize: 12, fontWeight: 700, color: T.INK_LINK, fontFamily: "inherit",
+              }}
+            >
+              {overdueHidden} overdue, shown under All
+            </button>
+          )}
           <WindowFilter value={dueWindow} onChange={changeWindow} />
         </div>
       )}

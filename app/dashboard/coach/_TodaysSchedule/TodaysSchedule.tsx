@@ -19,6 +19,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
 import { T, card, btnPrimary, btnSecondary } from "@/lib/dashboard-theme"
+import { CollapseToggle } from "../CollapseToggle"
 
 type ScheduleState =
   | "idle"
@@ -176,6 +177,8 @@ const SCHEDULE_CSS = `
 `
 
 function ScheduleCard({ children, headerRight }: { children: React.ReactNode; headerRight?: React.ReactNode }) {
+  // Open on load; the chevron folds the card to its header for this visit.
+  const [open, setOpen] = useState(true)
   return (
     <div style={{ ...card, padding: 20, marginBottom: 20, position: "relative" }}>
       <style>{SCHEDULE_CSS}</style>
@@ -190,16 +193,19 @@ function ScheduleCard({ children, headerRight }: { children: React.ReactNode; he
           borderTopLeftRadius: 18, borderTopRightRadius: 18,
         }}
       />
-      <div className="ts-header" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+      <div className="ts-header" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: open ? 16 : 0 }}>
         <span style={{ display: "inline-flex", color: T.SECTION_SCHEDULE }}>
           <IconCalendar />
         </span>
         <span style={{ fontSize: 16, fontWeight: 600, color: T.TEXT, letterSpacing: -0.2 }}>
           Today&apos;s schedule
         </span>
-        {headerRight && <span style={{ marginLeft: "auto" }}>{headerRight}</span>}
+        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 10 }}>
+          {open && headerRight}
+          <CollapseToggle open={open} onToggle={() => setOpen((v) => !v)} label="Today's schedule" />
+        </span>
       </div>
-      {children}
+      <div style={{ display: open ? "block" : "none" }}>{children}</div>
     </div>
   )
 }

@@ -24,6 +24,7 @@ import { TaskCard } from "./_tasks/TaskCard"
 import { ClientsByPhaseBlock, FollowUpsBlock, usePlanBlocks } from "./_plan/HomeBlocks"
 import { LoadingShell } from "./LoadingShell"
 import { TodaysSchedule } from "./_TodaysSchedule/TodaysSchedule"
+import { CollapseToggle } from "./CollapseToggle"
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -133,6 +134,9 @@ function Section({
 }) {
   const iconColor = accentColor ?? T.WRN_ORANGE
   const [titleHovered, setTitleHovered] = useState(false)
+  // Open on load; the chevron folds it to its header. The body stays mounted
+  // while folded, so a section keeps its state (a picked filter) when reopened.
+  const [open, setOpen] = useState(true)
   const titleSpan = (
     <span
       style={{
@@ -172,7 +176,7 @@ function Section({
           }}
         />
       )}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: open ? 16 : 0 }}>
         <span style={{ display: "inline-flex", color: iconColor }}>{icon}</span>
         {titleHref ? (
           <Link
@@ -187,9 +191,12 @@ function Section({
           titleSpan
         )}
         {typeof count === "number" && count > 0 && <CountPill n={count} color={iconColor} />}
-        {headerRight && <span style={{ marginLeft: "auto" }}>{headerRight}</span>}
+        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 10 }}>
+          {open && headerRight}
+          <CollapseToggle open={open} onToggle={() => setOpen((v) => !v)} label={title} />
+        </span>
       </div>
-      {children}
+      <div style={{ display: open ? "block" : "none" }}>{children}</div>
     </div>
   )
 }

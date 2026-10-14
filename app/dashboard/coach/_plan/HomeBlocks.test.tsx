@@ -87,3 +87,46 @@ describe("My active tasks", () => {
     expect(screen.getByText("View all tasks (12)")).toBeTruthy()
   })
 })
+
+describe("My active tasks, due window", () => {
+  const day = 24 * 60 * 60 * 1000
+  const at = (days: number) => new Date(Date.now() + days * day).toISOString()
+  const task = (id: string, due_at: string | null) => ({
+    id, title: id, description: null, status: "open", due_at, due_has_time: true,
+    assignee_profile_id: "c1", client_profile_id: null, coach_client_id: null, source: "manual", link: null,
+    template_id: null, created_at: "2026-10-01T00:00:00Z", completed_at: null,
+  })
+  beforeEach(() => {
+    try { localStorage.clear() } catch { /* jsdom */ }
+    // Twelve overdue tasks: more than the card's ten, which is what made every
+    // window look the same when windows still included overdue work.
+    const overdue = Array.from({ length: 12 }, (_, i) => task(`Late ${i}`, at(-(i + 1))))
+    const tasks = [...overdue, task("Soon", at(3)), task("Mid", at(10)), task("Far", at(25)), task("Undated", null)]
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input) === "/api/coach/clients") return new Response(JSON.stringify({ ok: true, clients: [] }), { status: 200 })
+      return new Response(JSON.stringify({ ok: true, tasks, total: tasks.length }), { status: 200 })
+    }))
+  })
+  it("narrows to what is coming, and points to the overdue ones", async () => {
+    render(<TaskCard order="due" />)
+    expect(await screen.findByText("Late 0")).toBeTruthy()
+
+    fireEvent.click(screen.getByRole("button", { name: "7 days" }))
+    expect(screen.getByText("Soon")).toBeTruthy()
+    expect(screen.queryByText("Mid")).toBeNull()
+    expect(screen.queryByText("Late 0")).toBeNull()
+    expect(screen.getByText("12 overdue, shown under All")).toBeTruthy()
+
+    fireEvent.click(screen.getByRole("button", { name: "14 days" }))
+    expect(screen.getByText("Mid")).toBeTruthy()
+    expect(screen.queryByText("Far")).toBeNull()
+
+    fireEvent.click(screen.getByRole("button", { name: "30 days" }))
+    expect(screen.getByText("Far")).toBeTruthy()
+    expect(screen.queryByText("Undated")).toBeNull()
+
+    fireEvent.click(screen.getByText("12 overdue, shown under All"))
+    expect(screen.getByText("Late 0")).toBeTruthy()
+    expect(screen.getByRole("button", { name: "All" }).getAttribute("aria-pressed")).toBe("true")
+  })
+})
