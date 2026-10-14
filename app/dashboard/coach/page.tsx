@@ -1,161 +1,43 @@
 "use client"
 
-// Coach Home / My Clients landing page — redesign 2026-05-08.
-// Pulls from /api/coach/home which combines greeting + per-client stats +
-// requiresAction items. Top-level metrics are aggregated client-side from
-// the per-client stats array (no server-side aggregation needed).
+// Coach Home. Redesigned 2026-10-13 to four blocks under the header:
 //
-// Sections, top to bottom:
-//   A. Header strip — date eyebrow + "Welcome back, {firstName}"
-//   B. Metrics bar — 8 tiles (4×2 grid). 6 real, 2 placeholders.
-//   C. Today's schedule — card with calendar icon, placeholder body.
-//   D. Requires action — card with bell icon + count, collapsible (5 → all).
-//   E. My clients — card with users icon + count + Create/Invite buttons,
-//                   single-row client layout, collapsible (5 → all).
+//   Top ribbon (client search, Add Client, Add Prospect), then the date
+//   eyebrow and "Welcome back, {firstName}", then
+//   1. Today's schedule: Outlook events with a Today / Week toggle.
+//   2. Clients by phase.
+//   3. My active tasks.
+//   4. Follow-ups due.
 //
-// Visual style: dark theme adapted from the locked design. Cards use
-// T.CARD bg + T.BORDER_SOFT; avatars use translucent colored bg + brighter
-// text (palette of 5, deterministic by hash of client name).
+// The metric tiles and the My clients / My prospects lists came off this page
+// in that redesign. Their own pages (Clients, Prospects, Applications) are
+// unchanged, and /api/coach/home still returns their data.
 
-import { useEffect, useMemo, useRef, useState, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
 import CreateClientModal from "./CreateClientModal"
 import AddProspectModal from "./prospects/AddProspectModal"
 import { CoachTopRibbon } from "./CoachTopRibbon"
-import {
-  T, input, textarea, btnPrimary, btnSecondary, card, eyebrow, label,
-} from "../../../lib/dashboard-theme"
+import { T, card, eyebrow } from "../../../lib/dashboard-theme"
 import { TaskCard } from "./_tasks/TaskCard"
 import { ClientsByPhaseBlock, FollowUpsBlock, usePlanBlocks } from "./_plan/HomeBlocks"
-import { LifecycleStatusPill, type LifecycleStatus } from "./LifecycleStatusPill"
-import { onCoachRowEnter, onCoachRowLeave, COACH_ROW_DEFAULT_BG, COACH_ROW_TRANSITION } from "./coachRowHover"
-import { SavingSpinner } from "./SavingSpinner"
 import { LoadingShell } from "./LoadingShell"
-import { MetricsWindowToggle, useMetricsWindow, windowSubtitle } from "./MetricsWindowToggle"
 import { TodaysSchedule } from "./_TodaysSchedule/TodaysSchedule"
-
-// The Engagement Signals card was retired 2026-10-06: Coach Home's top row is
-// now the plan's three blocks (My active tasks, Follow-ups due, Clients by
-// phase). The signals data is still returned by /api/coach/home.
 
 // ──────────────────────────────────────────────────────────────
 // Types
 // ──────────────────────────────────────────────────────────────
 
+// The part of the /api/coach/home response this page reads.
 type CoachHome = {
   ok: boolean
   coach: { firstName: string; fullName: string | null }
-  // Phase 2 Item 14: 6-tile metric set. activeProspects/Clients are counts
-  // of coach_clients by lifecycle_status; total* fields are 30-day windowed
-  // counts of signal_applications. avgInterviewRate is null when there
-  // are zero applications in the 30-day window.
-  metrics: {
-    activeProspects: number
-    activeClients: number
-    totalApplications: number
-    totalInterviewing: number
-    totalOffers: number
-    avgInterviewRate: number | null
-  }
-  clients: CoachClient[]
-  recentProspects: Prospect[]
-  requiresAction: ActionItem[]
   // Phase 1e (Coach Calendar Integration): server-derived beta gate. Coach Home
   // is client-rendered, so CALENDAR_BETA_PROFILE_IDS is parsed in the route and
   // surfaced as this boolean for the TodaysSchedule component.
   calendar_beta_enabled: boolean
 }
-
-type CoachClient = {
-  id: string
-  client_profile_id: string
-  name: string | null
-  email: string | null
-  status: string | null
-  lifecycle_status: LifecycleStatus
-  attention_level: "high" | "medium" | "low" | null
-  stats: {
-    applications: number
-    interviewing: number
-    offers: number
-    rejected: number
-    interview_rate: number
-  }
-  last_activity: string | null
-  last_viewed_at: string | null
-  updates_since_visit: number
-}
-
-type ActionItem = {
-  id: string
-  kind:
-    | "no_login"
-    | "rec_pending_review"
-    | "moved_interviewing"
-    | "moved_rejected"
-    | "offer_no_followup"
-    | "poor_fit_no_rec"
-  client_profile_id: string
-  client_name: string
-  message: string
-  days_elapsed: number
-}
-
-// Prospect list-item shape (mirrors /api/coach/prospects GET response;
-// `recentProspects` from /api/coach/home shares the same builder).
-type PhasePair = { checked: boolean; at: string | null }
-type PhaseKey =
-  | "initial_contact_made"
-  | "discovery_call_scheduled"
-  | "discovery_call_completed"
-  | "sow_sent"
-  | "sow_signed"
-  | "invoice_sent"
-  | "invoice_paid"
-
-type Prospect = {
-  id: string
-  name: string | null
-  invited_email: string | null
-  source_category: string | null
-  source_detail: string | null
-  phases: Record<PhaseKey, PhasePair>
-  lifecycle_status: string
-  client_profile_id: string | null
-  last_activity_at: string | null
-  created_at: string | null
-}
-
-// ──────────────────────────────────────────────────────────────
-// Constants
-// ──────────────────────────────────────────────────────────────
-
-// Avatar palette — 5 colors, dark-theme adapted (translucent bg + brighter text).
-// Picked by deterministic djb2 hash of client name → mod 5.
-const AVATAR_PALETTE = [
-  // Variables, because these read on navy and vanish on white. The
-  // wash is the dark fallback; lib/theme/coachSurface.ts supplies a
-  // solid tint and a dark ink for the light ground.
-  { bg: "var(--sig-avatar-0-bg, rgba(81,173,229,0.18))", text: "var(--sig-avatar-0-ink, #9FC9EE)" },
-  { bg: "var(--sig-avatar-1-bg, rgba(254,176,106,0.18))", text: "var(--sig-avatar-1-ink, #FECDA0)" },
-  { bg: "var(--sig-avatar-2-bg, rgba(167,139,250,0.18))", text: "var(--sig-avatar-2-ink, #C8B6F8)" },
-  { bg: "var(--sig-avatar-3-bg, rgba(244,114,182,0.18))", text: "var(--sig-avatar-3-ink, #F4ADC9)" },
-  { bg: "var(--sig-avatar-4-bg, rgba(0,179,179,0.18))", text: "var(--sig-avatar-4-ink, #7FE0DE)" },
-] as const
-
-const COLLAPSED_LIMIT = 5
-
-const PHASE_KEYS: readonly PhaseKey[] = [
-  "initial_contact_made",
-  "discovery_call_scheduled",
-  "discovery_call_completed",
-  "sow_sent",
-  "sow_signed",
-  "invoice_sent",
-  "invoice_paid",
-] as const
 
 // ──────────────────────────────────────────────────────────────
 // Helpers
@@ -183,40 +65,6 @@ function todayLabel() {
   return new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
 }
 
-// djb2-style string hash, lightly tweaked. Used to pick a palette index
-// deterministically for a given client name (so the same name always gets
-// the same color across renders).
-function hashIndex(s: string, mod: number): number {
-  let h = 5381
-  for (let i = 0; i < s.length; i++) h = ((h << 5) + h) ^ s.charCodeAt(i)
-  return Math.abs(h) % mod
-}
-
-function initialsOf(name: string | null, fallback: string | null): string {
-  const src = (name && name.trim()) || (fallback && fallback.trim()) || "?"
-  const parts = src.split(/\s+/).filter(Boolean)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return parts[0].slice(0, 2).toUpperCase()
-}
-
-function timeAgo(iso: string | null): string {
-  if (!iso) return ""
-  const ms = Date.now() - new Date(iso).getTime()
-  if (ms < 0) return "Just now"
-  const d = Math.floor(ms / (24 * 60 * 60 * 1000))
-  if (d === 0) return "Today"
-  if (d === 1) return "Yesterday"
-  if (d < 7) return `${d}d ago`
-  if (d < 30) return `${Math.floor(d / 7)}w ago`
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-}
-
-function countCheckedPhases(phases: Record<PhaseKey, PhasePair>): number {
-  let n = 0
-  for (const k of PHASE_KEYS) if (phases[k]?.checked) n++
-  return n
-}
-
 // ──────────────────────────────────────────────────────────────
 // Inline icons (Tabler-style outline, 1.5px stroke, currentColor)
 // ──────────────────────────────────────────────────────────────
@@ -225,15 +73,6 @@ const IconBell = () => (
   <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M10 5a2 2 0 1 1 4 0 7 7 0 0 1 4 6v3a4 4 0 0 0 2 3H4a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6" />
     <path d="M9 17v1a3 3 0 0 0 6 0v-1" />
-  </svg>
-)
-
-const IconUsers = () => (
-  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
-    <path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
-    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    <path d="M21 21v-2a4 4 0 0 0 -3 -3.85" />
   </svg>
 )
 
@@ -258,22 +97,6 @@ function CountPill({ n, color = T.WRN_ORANGE }: { n: number; color?: string }) {
     }}>
       {n}
     </span>
-  )
-}
-
-function Avatar({ name, email }: { name: string | null; email: string | null }) {
-  const seed = (name || email || "?").toLowerCase()
-  const palette = AVATAR_PALETTE[hashIndex(seed, AVATAR_PALETTE.length)]
-  return (
-    <div style={{
-      width: 28, height: 28, borderRadius: "50%",
-      background: palette.bg, color: palette.text,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: 11, fontWeight: 900, letterSpacing: 0.3,
-      flexShrink: 0,
-    }}>
-      {initialsOf(name, email)}
-    </div>
   )
 }
 
@@ -372,7 +195,7 @@ function Section({
 }
 
 // ──────────────────────────────────────────────────────────────
-// Section A — Header strip
+// Header strip
 // ──────────────────────────────────────────────────────────────
 
 function HeaderStrip({ firstName }: { firstName: string }) {
@@ -387,424 +210,10 @@ function HeaderStrip({ firstName }: { firstName: string }) {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Section B — Metrics bar (8 tiles, 4×2 grid)
-// ──────────────────────────────────────────────────────────────
-
-type Tile = {
-  label: string
-  value: string | number
-  color?: string
-  subtitle?: string
-  muted?: boolean
-  // Phase 2 Item 12 (revised): client-count tiles (Active Prospects /
-  // Active Clients) drive a filtered My Clients roster. When `href` is
-  // set, tile becomes a clickable button. Application-count tiles
-  // (Apps/Interviewing/Offers) route to /dashboard/coach/applications-recent
-  // in Commit 2.3 — they stay non-clickable in this commit. Avg Interview
-  // Rate is never clickable per locked spec.
-  href?: string
-}
-
-function MetricTile({ tile }: { tile: Tile }) {
-  const router = useRouter()
-  const [hovered, setHovered] = useState(false)
-  const clickable = !!tile.href
-  const baseStyle: React.CSSProperties = {
-    background: clickable && hovered ? "rgba(254,176,106,0.06)" : T.CARD,
-    border: `1px solid ${clickable && hovered ? "rgba(254,176,106,0.35)" : T.BORDER_SOFT}`,
-    borderRadius: 12,
-    padding: "14px 16px",
-    opacity: tile.muted ? 0.55 : 1,
-    cursor: clickable ? "pointer" : "default",
-    transition: "background 0.12s, border-color 0.12s",
-    textAlign: "left" as const,
-    fontFamily: "inherit",
-    width: "100%",
-  }
-  const body = (
-    <>
-      <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", color: T.MUTED }}>
-        {tile.label}
-      </div>
-      <div style={{ fontSize: 24, fontWeight: 500, color: tile.color || T.TEXT, marginTop: 6, lineHeight: 1.2 }}>
-        {tile.value}
-      </div>
-      {tile.subtitle && (
-        <div style={{
-          fontSize: 10, color: T.DIM, marginTop: 4,
-          fontStyle: tile.muted ? "italic" : "normal",
-        }}>
-          {tile.subtitle}
-        </div>
-      )}
-    </>
-  )
-  if (!clickable) {
-    return <div style={baseStyle}>{body}</div>
-  }
-  return (
-    <button
-      type="button"
-      onClick={() => router.push(tile.href!)}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={baseStyle}
-    >
-      {body}
-    </button>
-  )
-}
-
-function MetricsBar({ tiles }: { tiles: Tile[] }) {
-  // 3 × 2 grid for the Phase 2 6-tile metric set. Row 1: Active Prospects /
-  // Active Clients / Total Applications. Row 2: Total Interviewing /
-  // Total Offers / Avg Interview Rate.
-  return (
-    <div style={{
-      display: "grid",
-      gridTemplateColumns: "repeat(3, 1fr)",
-      gap: 10,
-      marginBottom: 24,
-    }}>
-      {tiles.map((t) => <MetricTile key={t.label} tile={t} />)}
-    </div>
-  )
-}
-
-// ──────────────────────────────────────────────────────────────
-// Section E — My clients (collapsible single-row layout)
-// ──────────────────────────────────────────────────────────────
-
-function MiniCell({ label, value, color }: { label: string; value: string | number; color?: string }) {
-  return (
-    <div style={{ minWidth: 48, textAlign: "center" }}>
-      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", color: T.DIM }}>
-        {label}
-      </div>
-      <div style={{ fontSize: 15, fontWeight: 700, color: color || T.TEXT, marginTop: 2 }}>
-        {value}
-      </div>
-    </div>
-  )
-}
-
-function ClientRow({
-  client,
-  onOpen,
-  onLifecycleStatusChange,
-}: {
-  client: CoachClient
-  onOpen: () => void
-  onLifecycleStatusChange: (next: LifecycleStatus) => void
-}) {
-  const updates = client.updates_since_visit
-  return (
-    <div
-      onClick={onOpen}
-      onMouseEnter={onCoachRowEnter}
-      onMouseLeave={(e) => onCoachRowLeave(e)}
-      style={{
-        display: "flex", alignItems: "center", gap: 14,
-        padding: "12px 14px",
-        background: COACH_ROW_DEFAULT_BG,
-        border: `1px solid ${T.BORDER_SOFT}`,
-        borderRadius: 10,
-        cursor: "pointer",
-        transition: COACH_ROW_TRANSITION,
-      }}
-    >
-      <Avatar name={client.name} email={client.email} />
-
-      <div style={{ minWidth: 0, flex: "1 1 180px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: T.TEXT, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {client.name || "Unnamed"}
-          </span>
-          <LifecycleStatusPill
-            value={client.lifecycle_status}
-            getToken={getToken}
-            clientProfileId={client.client_profile_id}
-            onChange={onLifecycleStatusChange}
-          />
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-        <MiniCell label="Apps"  value={client.stats.applications} />
-        <MiniCell label="Intvw" value={client.stats.interviewing} color={client.stats.interviewing > 0 ? T.INK_LINK : undefined} />
-        <MiniCell label="Rate"  value={`${client.stats.interview_rate}%`} />
-        <MiniCell label="Rej"   value={client.stats.rejected} />
-        <MiniCell label="Off"   value={client.stats.offers} color={client.stats.offers > 0 ? T.SUCCESS : undefined} />
-      </div>
-
-      <div style={{ flexShrink: 0, minWidth: 110, textAlign: "right" }}>
-        {updates > 0 ? (
-          <span style={{ fontSize: 11, fontWeight: 700, color: T.INK_EMPHASIS }}>{updates} new</span>
-        ) : (
-          <span style={{ fontSize: 11, color: T.DIM }}>No changes</span>
-        )}
-      </div>
-
-      <button
-        onClick={(e) => { e.stopPropagation(); onOpen() }}
-        style={{
-          ...btnSecondary,
-          fontSize: 12, fontWeight: 700, padding: "7px 14px", borderRadius: 8,
-          color: T.INK_EMPHASIS, borderColor: "rgba(254,176,106,0.3)",
-          flexShrink: 0,
-        }}
-      >
-        Open →
-      </button>
-    </div>
-  )
-}
-
-function MyClientsSection({
-  clients, onOpen, onCreate, onInvite, onShowAll, onLifecycleStatusChange,
-}: {
-  clients: CoachClient[]
-  // Receives the full client so the caller can branch on whether
-  // client_profile_id is populated (routes to /clients/[id] for
-  // SIGNAL-linked rows, /coach-clients/[id] for converted-but-not-yet-
-  // invited rows per Prospects v0.1 4d).
-  onOpen: (client: CoachClient) => void
-  onCreate: () => void
-  onInvite: () => void
-  onShowAll: () => void
-  onLifecycleStatusChange: (clientProfileId: string, next: LifecycleStatus) => void
-}) {
-  // ACTIVE ONLY, on the dashboard.
-  //
-  // The dashboard is the "who am I working with today" screen. A paused or
-  // archived client is neither, and showing them here pushed real clients off
-  // a five-row list: the section was silently answering a different question
-  // from the one its heading asks. The full roster at My Clients is where
-  // every status lives, and it has a filter for saying so.
-  const active = clients.filter((c) => c.lifecycle_status === "Active")
-  const visible = active.slice(0, COLLAPSED_LIMIT)
-  const hasMore = active.length > COLLAPSED_LIMIT
-
-  const headerRight = (
-    <div style={{ display: "flex", gap: 8 }}>
-      <button
-        onClick={onCreate}
-        style={{
-          border: `1px solid ${T.BORDER_SOFT}`, color: T.TEXT, background: T.NAV_DEFAULT_BG,
-          borderRadius: 10, padding: "6px 14px", fontSize: 12, fontWeight: 700,
-          cursor: "pointer", fontFamily: "inherit",
-        }}
-      >
-        + Create
-      </button>
-      <button
-        onClick={onInvite}
-        style={{
-          background: T.WRN_ORANGE, color: "var(--sig-ink-on-bright, #04060F)",
-          borderRadius: 10, padding: "6px 14px", fontSize: 12, fontWeight: 800,
-          cursor: "pointer", border: "none", fontFamily: "inherit",
-        }}
-      >
-        + Invite
-      </button>
-    </div>
-  )
-
-  return (
-    <Section
-      icon={<IconUsers />}
-      title="My clients"
-      accentColor={T.SECTION_CLIENTS}
-      titleHref="/dashboard/coach/clients"
-      count={active.length}
-      headerRight={headerRight}
-      allowOverflow
-    >
-      {active.length === 0 ? (
-        <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>No clients yet. Use Create or Invite above to add one.</p>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {visible.map((c) => (
-            <ClientRow
-              key={c.id}
-              client={c}
-              onOpen={() => onOpen(c)}
-              onLifecycleStatusChange={(next) => onLifecycleStatusChange(c.client_profile_id, next)}
-            />
-          ))}
-          {hasMore && (
-            <button
-              onClick={onShowAll}
-              style={{
-                background: "none", border: "none", color: T.INK_EMPHASIS,
-                fontSize: 12, fontWeight: 700, cursor: "pointer",
-                padding: "8px 0 0", textAlign: "left", marginTop: 4,
-              }}
-            >
-              Show all {active.length} →
-            </button>
-          )}
-        </div>
-      )}
-    </Section>
-  )
-}
-
-// ──────────────────────────────────────────────────────────────
-// Section F — My Prospects (collapsible single-row layout)
-// ──────────────────────────────────────────────────────────────
-
-function PhaseProgressChip({ phases }: { phases: Record<PhaseKey, PhasePair> }) {
-  const n = countCheckedPhases(phases)
-  const color = n > 0 ? T.INK_LINK : T.DIM
-  return (
-    <span style={{ fontSize: 11, color, fontWeight: 700, whiteSpace: "nowrap" }}>
-      {n} / 7 phases
-    </span>
-  )
-}
-
-function ProspectRow({
-  prospect,
-  onOpen,
-}: {
-  prospect: Prospect
-  onOpen: () => void
-}) {
-  return (
-    <div
-      onClick={onOpen}
-      onMouseEnter={onCoachRowEnter}
-      onMouseLeave={(e) => onCoachRowLeave(e)}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 14,
-        padding: "12px 14px",
-        background: COACH_ROW_DEFAULT_BG,
-        border: `1px solid ${T.BORDER_SOFT}`,
-        borderRadius: 10,
-        cursor: "pointer",
-        transition: COACH_ROW_TRANSITION,
-      }}
-    >
-      <Avatar name={prospect.name} email={prospect.invited_email} />
-      <div style={{ minWidth: 0, flex: "1 1 200px" }}>
-        <span
-          style={{
-            fontSize: 14,
-            fontWeight: 700,
-            color: T.TEXT,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            display: "block",
-            maxWidth: "100%",
-          }}
-        >
-          {prospect.name || "Unnamed"}
-        </span>
-      </div>
-      <div style={{ flexShrink: 0, minWidth: 100 }}>
-        <PhaseProgressChip phases={prospect.phases} />
-      </div>
-      <div style={{ flexShrink: 0, minWidth: 90, textAlign: "right", fontSize: 11, color: T.DIM }}>
-        {timeAgo(prospect.last_activity_at)}
-      </div>
-    </div>
-  )
-}
-
-function MyProspectsSection({
-  prospects,
-  totalCount,
-  onOpen,
-  onAdd,
-  onShowAll,
-}: {
-  prospects: Prospect[]
-  totalCount: number
-  onOpen: (prospectId: string) => void
-  onAdd: () => void
-  onShowAll: () => void
-}) {
-  const headerRight = (
-    <button
-      onClick={onAdd}
-      style={{
-        background: T.WRN_ORANGE,
-        color: "var(--sig-ink-on-bright, #04060F)",
-        borderRadius: 10,
-        padding: "6px 14px",
-        fontSize: 12,
-        fontWeight: 800,
-        cursor: "pointer",
-        border: "none",
-        fontFamily: "inherit",
-      }}
-    >
-      + Add Prospect
-    </button>
-  )
-
-  // "Show all {N} →" appears only when there are more prospects than
-  // the slice currently rendered. Compare against the server-side
-  // total (metrics.activeProspects) so this stays accurate even if
-  // the recentProspects array is server-side-sliced.
-  const hasMore = totalCount > prospects.length
-
-  return (
-    <Section
-      icon={<IconUsers />}
-      title="My prospects"
-      accentColor={T.SECTION_PROSPECTS}
-      titleHref="/dashboard/coach/prospects"
-      count={totalCount}
-      headerRight={headerRight}
-    >
-      {prospects.length === 0 ? (
-        <p style={{ color: T.MUTED, fontSize: 13, margin: 0 }}>
-          No prospects yet. Click &ldquo;+ Add Prospect&rdquo; above to capture your first one.
-        </p>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {prospects.map((p) => (
-            <ProspectRow
-              key={p.id}
-              prospect={p}
-              onOpen={() => onOpen(p.id)}
-            />
-          ))}
-          {hasMore && (
-            <button
-              onClick={onShowAll}
-              style={{
-                background: "none",
-                border: "none",
-                color: T.INK_EMPHASIS,
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: "pointer",
-                padding: "8px 0 0",
-                textAlign: "left",
-                marginTop: 4,
-              }}
-            >
-              Show all {totalCount} →
-            </button>
-          )}
-        </div>
-      )}
-    </Section>
-  )
-}
-
-// ──────────────────────────────────────────────────────────────
-// Page component
+// Page
 // ──────────────────────────────────────────────────────────────
 
 export default function CoachHomePage() {
-  const router = useRouter()
   const [data, setData] = useState<CoachHome | null>(null)
   const [loading, setLoading] = useState(true)
   const [accessForbidden, setAccessForbidden] = useState(false)
@@ -812,96 +221,24 @@ export default function CoachHomePage() {
   // Modal state
   const [showCreateClient, setShowCreateClient] = useState(false)
   const [showAddProspect, setShowAddProspect] = useState(false)
-  const [inviteOpen, setInviteOpen] = useState(false)
-  const [inviteEmail, setInviteEmail] = useState("")
-  const [inviteAccess, setInviteAccess] = useState("full")
-  const [inviteNote, setInviteNote] = useState("")
-  const [inviting, setInviting] = useState(false)
-  const [inviteResult, setInviteResult] = useState<any>(null)
 
-  // Phase 5 — metrics time-window toggle. Hook reads localStorage on
-  // mount + writes on change. Shared key across Coach Home + Client
-  // Dashboard so the coach's preference is global.
-  const [metricsWindow, setMetricsWindow] = useMetricsWindow()
   // Coach Home's plan blocks (follow-ups due, clients by phase).
   const planBlocks = usePlanBlocks()
 
-  // Phase 5 amendment — gates setLoading so that only the GENUINE
-  // first-mount fetch renders the LoadingShell. Subsequent refetches
-  // (toggle change, hook's localStorage sync on mount) refresh data
-  // in place. Without this, every toggle click flashed a LoadingShell
-  // for ~200ms before the new tile values rendered (same flash class
-  // as the 4.3 post-save bug, different trigger). Set to true at the
-  // START of the function so a re-entrant call during a pending
-  // fetch also skips the loading flip.
-  const hasLoadedOnceRef = useRef(false)
-
   const load = useCallback(async () => {
-    const silent = hasLoadedOnceRef.current
-    hasLoadedOnceRef.current = true
-    if (!silent) setLoading(true)
-    const res = await authFetch(`/api/coach/home?window=${metricsWindow}`)
+    const res = await authFetch("/api/coach/home")
     if (res.status === 403) {
       setAccessForbidden(true)
-      if (!silent) setLoading(false)
+      setLoading(false)
       return
     }
     if (res.ok) setData((await res.json()) as CoachHome)
-    if (!silent) setLoading(false)
-  }, [metricsWindow])
+    setLoading(false)
+  }, [])
 
   useEffect(() => { load() }, [load])
 
-  async function sendInvite() {
-    if (!inviteEmail.trim()) return
-    setInviting(true)
-    const res = await authFetch("/api/coach/invite", {
-      method: "POST",
-      body: JSON.stringify({ email: inviteEmail.trim(), access_level: inviteAccess, note: inviteNote }),
-    })
-    setInviteResult(await res.json())
-    setInviting(false)
-  }
-
-  // Phase 2 Item 14 — 6-tile metric set. Grid is 3 × 2.
-  //   Row 1: Active Prospects | Active Clients     | Total Applications
-  //   Row 2: Total Interviewing | Total Offers     | Avg Interview Rate
-  //
-  // Phase 2 Item 12 (revised) — click destinations:
-  //   - Active Prospects tile → dedicated /dashboard/coach/prospects page
-  //   - Active Clients tile → filtered My Clients roster (lifecycle_status='Active')
-  //   - Application-count tiles (Apps/Interviewing/Offers) → cross-client
-  //     applications-recent surface (different mental model: apps, not
-  //     clients)
-  //   - Avg Interview Rate is never clickable per locked spec.
-  const tiles: Tile[] = useMemo(() => {
-    if (!data) return []
-    const m = data.metrics
-    // Phase 5: subtitle text on the 4 windowed tiles tracks the active
-    // window. Active Prospects + Active Clients stay point-in-time (no
-    // subtitle change — they have no time concept).
-    const sub = windowSubtitle(metricsWindow)
-    return [
-      { label: "Active prospects", value: m.activeProspects, color: "var(--sig-pill-prospect-ink-on-card, #F4A261)",
-        href: "/dashboard/coach/prospects" },
-      { label: "Active clients", value: m.activeClients, color: T.INK_EMPHASIS,
-        href: "/dashboard/coach/clients?filter=active" },
-      { label: "Total applications", value: m.totalApplications, subtitle: sub,
-        href: "/dashboard/coach/applications-recent?status=all" },
-      { label: "Total interviewing", value: m.totalInterviewing, color: T.INK_LINK, subtitle: sub,
-        href: "/dashboard/coach/applications-recent?status=interviewing" },
-      { label: "Total offers", value: m.totalOffers, color: T.SUCCESS, subtitle: sub,
-        href: "/dashboard/coach/applications-recent?status=offer" },
-      {
-        label: "Avg interview rate",
-        value: m.avgInterviewRate === null ? "—" : `${m.avgInterviewRate}%`,
-        subtitle: sub,
-      },
-    ]
-  }, [data, metricsWindow])
-
   if (loading) return <LoadingShell />
-
 
   if (accessForbidden) {
     return (
@@ -919,7 +256,6 @@ export default function CoachHomePage() {
 
   if (!data) return null
 
-
   return (
     <div>
       {/* Top ribbon: find a client, add a client, add a prospect. */}
@@ -927,219 +263,34 @@ export default function CoachHomePage() {
 
       <HeaderStrip firstName={data.coach.firstName} />
 
-      {/* The plan's three blocks, at the top (2026-10-06). Clients by phase
-          and Follow-ups due share the first row; My active tasks runs full
-          width beneath them as a table, so titles and Go fit on one row. The
-          auto-fit grid stacks the pair once two 320px columns no longer fit.
-          My active tasks is every open To-Do item assigned to me, plan tasks
-          included, by due date. */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))",
-          gap: 20,
-          alignItems: "start",
-          marginBottom: 20,
-        }}
-      >
-        <Section
-          icon={<IconClipboardCheck />}
-          title="Clients by phase"
-          accentColor={T.SECTION_CLIENTS}
-          noBottomMargin
-        >
-          <ClientsByPhaseBlock buckets={planBlocks.data?.clients_by_phase ?? null} error={planBlocks.error} />
-        </Section>
-        <Section
-          icon={<IconBell />}
-          title="Follow-ups due"
-          count={planBlocks.data?.follow_ups.length}
-          accentColor={T.SECTION_SCHEDULE}
-          noBottomMargin
-        >
-          <FollowUpsBlock items={planBlocks.data?.follow_ups ?? null} error={planBlocks.error} />
-        </Section>
-      </div>
-      <div style={{ marginBottom: 20 }}>
-        <Section
-          icon={<IconClipboardCheck />}
-          title="My active tasks"
-          titleHref="/dashboard/coach/tasks"
-          accentColor={T.SECTION_ACTION_ITEMS}
-          noBottomMargin
-        >
-          <TaskCard order="due" />
-        </Section>
-      </div>
-
-      {/* Phase 5 — segmented time-window toggle, right-aligned above
-          the metrics bar. Controls the four windowed tiles (Total
-          Applications / Interviewing / Offers / Avg Interview Rate);
-          Active Prospects + Active Clients are point-in-time and
-          ignore the toggle. */}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
-        <MetricsWindowToggle value={metricsWindow} onChange={setMetricsWindow} />
-      </div>
-
-      <MetricsBar tiles={tiles} />
-
       <TodaysSchedule isCalendarBetaEnabled={data.calendar_beta_enabled} />
-      <MyClientsSection
-        // TODO post-v0.1: backend should filter prospects from default
-        // /api/coach/home clients response. Current filter is a frontend
-        // safety net for the prospect-renders-in-my-clients case. See
-        // Prospects v0.1 4d runlog entry.
-        clients={data.clients.filter((c) => c.lifecycle_status !== "Prospect")}
-        onOpen={(client) => {
-          // Active clients with a linked SIGNAL profile go to the
-          // existing /clients/[client_profile_id] detail. Active
-          // clients without a linked profile (converted from Prospect,
-          // not yet invited) go to the new 4d post-conversion surface
-          // keyed on coach_clients.id.
-          const href = client.client_profile_id
-            ? `/dashboard/coach/clients/${client.client_profile_id}`
-            : `/dashboard/coach/coach-clients/${client.id}`
-          router.push(href)
-        }}
-        onCreate={() => setShowCreateClient(true)}
-        onInvite={() => { setInviteOpen(true); setInviteResult(null) }}
-        onShowAll={() => router.push("/dashboard/coach/clients")}
-        onLifecycleStatusChange={(clientProfileId, next) => {
-          // Two-step update — order matters (6.5 fix surfaced by TC-597
-          // testing). Step 1: optimistic local mutation of the client
-          // row so the pill swaps color immediately. Step 2: silent
-          // background refetch so the metric tiles (totalApplications,
-          // totalInterviewing, totalOffers, avgInterviewRate) and the
-          // requiresAction list reconcile with the server's lifecycle-
-          // scope filters. Without step 2, data.metrics stays frozen
-          // at the pre-change snapshot — pill updates but tile counts
-          // don't, which Erin caught when archiving a client and
-          // seeing Total Interviewing not decrease. load() goes
-          // through the silent path automatically (hasLoadedOnceRef
-          // is already true by this point — set on the genuine first
-          // mount) so no LoadingShell flash during the refetch.
-          setData((prev) => {
-            if (!prev) return prev
-            return {
-              ...prev,
-              clients: prev.clients.map((c) =>
-                c.client_profile_id === clientProfileId
-                  ? { ...c, lifecycle_status: next }
-                  : c,
-              ),
-            }
-          })
-          load()
-        }}
-      />
 
-      <MyProspectsSection
-        prospects={data.recentProspects}
-        totalCount={data.metrics.activeProspects}
-        onOpen={(prospectId) => router.push(`/dashboard/coach/prospects/${prospectId}`)}
-        onAdd={() => router.push("/dashboard/coach/prospects")}
-        onShowAll={() => router.push("/dashboard/coach/prospects")}
-      />
+      <Section
+        icon={<IconClipboardCheck />}
+        title="Clients by phase"
+        accentColor={T.SECTION_CLIENTS}
+      >
+        <ClientsByPhaseBlock buckets={planBlocks.data?.clients_by_phase ?? null} error={planBlocks.error} />
+      </Section>
 
-      {/* Invite modal — preserved from previous build */}
-      {inviteOpen && (
-        <div style={{
-          position: "fixed", inset: 0, zIndex: 9999,
-          background: "rgba(0,0,0,0.75)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <div style={{ ...card, padding: 36, width: 480, maxWidth: "90vw" }}>
-            <div style={{ height: 3, background: T.GRAD_PRIMARY, margin: "-36px -36px 28px", borderRadius: "18px 18px 0 0" }} />
-            {inviteResult ? (
-              <div>
-                <div style={{ ...eyebrow, color: T.SUCCESS, marginBottom: 12 }}>INVITE SENT</div>
-                <p style={{ fontSize: 15, fontWeight: 900, color: T.TEXT }}>Invitation delivered</p>
-                <p style={{ fontSize: 13, color: T.MUTED, marginTop: 8, lineHeight: "20px" }}>
-                  An invite was sent to <span style={{ color: T.INK_LINK }}>{inviteEmail}</span>.
-                  They&apos;ll receive a link to accept and connect their account to your coaching dashboard.
-                </p>
-                <button
-                  onClick={() => { setInviteOpen(false); setInviteEmail(""); setInviteNote(""); setInviteResult(null) }}
-                  style={{ ...btnPrimary, background: "#FEB06A", color: "var(--sig-ink-on-bright, #04060F)", fontWeight: 900, marginTop: 24, width: "100%" }}
-                >
-                  Done
-                </button>
-              </div>
-            ) : (
-              <div>
-                <div style={{ ...eyebrow, color: T.INK_EMPHASIS, marginBottom: 16 }}>INVITE A CLIENT</div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 16,
-                    opacity: inviting ? 0.5 : 1,
-                    pointerEvents: inviting ? "none" : "auto",
-                    transition: "opacity 120ms ease",
-                  }}
-                >
-                  <div>
-                    <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 5 }}>CLIENT EMAIL</span>
-                    <input
-                      type="email"
-                      style={input}
-                      placeholder="client@example.com"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 8 }}>ACCESS LEVEL</span>
-                    <div style={{ display: "flex", gap: 10 }}>
-                      {["full", "view"].map((level) => (
-                        <label key={level} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                          <input
-                            type="radio"
-                            name="access_level"
-                            value={level}
-                            checked={inviteAccess === level}
-                            onChange={() => setInviteAccess(level)}
-                            style={{ accentColor: T.WRN_ORANGE }}
-                          />
-                          <span style={{ fontSize: 13, color: T.TEXT, fontWeight: 700 }}>
-                            {level === "full" ? "Full Access" : "View Only"}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 5 }}>PERSONAL NOTE <span style={{ color: T.DIM, fontWeight: 400 }}>(optional)</span></span>
-                    <textarea
-                      style={{ ...textarea, minHeight: 80 }}
-                      placeholder="Add a personal message to include with the invite..."
-                      value={inviteNote}
-                      onChange={(e) => setInviteNote(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
-                  <button
-                    onClick={sendInvite}
-                    disabled={inviting || !inviteEmail.trim()}
-                    style={{ ...btnPrimary, background: "#FEB06A", color: "var(--sig-ink-on-bright, #04060F)", fontWeight: 900, flex: 1, opacity: inviting || !inviteEmail.trim() ? 0.5 : 1, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}
-                  >
-                    {inviting && <SavingSpinner />}
-                    {inviting ? "Sending..." : "Send Invite →"}
-                  </button>
-                  <button
-                    onClick={() => { setInviteOpen(false); setInviteEmail(""); setInviteNote(""); setInviteResult(null) }}
-                    disabled={inviting}
-                    style={{ ...btnSecondary, fontSize: 13, opacity: inviting ? 0.5 : 1 }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Every open To-Do item assigned to me, plan tasks included, by due date. */}
+      <Section
+        icon={<IconClipboardCheck />}
+        title="My active tasks"
+        titleHref="/dashboard/coach/tasks"
+        accentColor={T.SECTION_ACTION_ITEMS}
+      >
+        <TaskCard order="due" />
+      </Section>
+
+      <Section
+        icon={<IconBell />}
+        title="Follow-ups due"
+        count={planBlocks.data?.follow_ups.length}
+        accentColor={T.SECTION_SCHEDULE}
+      >
+        <FollowUpsBlock items={planBlocks.data?.follow_ups ?? null} error={planBlocks.error} />
+      </Section>
 
       {showAddProspect && (
         <AddProspectModal

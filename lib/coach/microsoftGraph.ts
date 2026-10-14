@@ -107,6 +107,8 @@ export interface CalendarEvent {
   is_online_meeting: boolean
   online_meeting_url: string | null
   organizer_email: string | null
+  /** Attendee addresses, lowercased. The organizer is not included. */
+  attendee_emails: string[]
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -278,7 +280,7 @@ function transformEvent(ev: Record<string, any>): CalendarEvent {
   // but dedupe by email in case the organizer also appears as an attendee.
   const attendeeEmails = new Set(
     attendees
-      .map((a) => (a?.emailAddress?.address ?? "").toLowerCase())
+      .map((a) => (a?.emailAddress?.address ?? "").trim().toLowerCase())
       .filter(Boolean)
   )
   let attendeeCount = attendees.length
@@ -297,6 +299,7 @@ function transformEvent(ev: Record<string, any>): CalendarEvent {
     is_online_meeting: ev.isOnlineMeeting === true,
     online_meeting_url: ev.onlineMeeting?.joinUrl ?? null,
     organizer_email: organizerEmail,
+    attendee_emails: [...attendeeEmails],
   }
 }
 
@@ -511,7 +514,8 @@ export async function fetchTodaysEvents({
     `startDateTime=${encodeURIComponent(todayStart)}`,
     `endDateTime=${encodeURIComponent(todayEnd)}`,
     `$orderby=${encodeURIComponent("start/dateTime")}`,
-    `$top=50`,
+    // A week of events can pass 50; calendarView pages beyond this.
+    `$top=250`,
   ].join("&")
   const url = `${GRAPH_CALENDAR_VIEW_ENDPOINT}?${queryString}`
 

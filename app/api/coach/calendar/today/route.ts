@@ -2,7 +2,9 @@
 //
 // GET /api/coach/calendar/today — Phase 1d Commit 2.
 //
-// Returns today's calendar events for the calling coach. JSON API endpoint
+// Returns the calling coach's calendar events for today, or with ?range=week
+// for Monday to Sunday of the current week. Each event carries the coach's
+// clients found among its attendees, so the schedule can name and link them. JSON API endpoint
 // (Bearer auth, called by the frontend — not a browser navigation). NO beta-gate
 // here: once a coach has a connection row they can always read/disconnect it,
 // even if later removed from CALENDAR_BETA_PROFILE_IDS (the gate only controls
@@ -23,6 +25,7 @@ import {
   type CalendarEvent,
 } from "@/lib/coach/microsoftGraph"
 import { getAuthedUser, getProfileId } from "@/lib/collab/identity"
+import { resolveDelegation } from "@/lib/collab/delegation"
 import { ForbiddenError } from "@/lib/collab/errors"
 
 
@@ -100,6 +103,46 @@ function zonedMidnightUtcIso(dateStr: string, tz: string, addDays: number): stri
   const guessUtc = Date.UTC(y, m - 1, d + addDays, 0, 0, 0)
   const offset = tzOffsetMs(new Date(guessUtc), tz)
   return new Date(guessUtc - offset).toISOString()
+}
+
+// ── Attendee → client matching ───────────────────────────────────────────────
+// An event belongs to a client when one of its attendees is that client's
+// email (login email or invited email). Emails are trimmed: some stored ones
+// carry stray whitespace.
+
+type ScheduleClient = { name: string; href: string }
+
+async function clientsByEmail(
+  supabase: SupabaseClient,
+  profileId: string,
+): Promise<Map<string, ScheduleClient>> {
+  const { actingIds } = await resolveDelegation(supabase, profileId)
+  const { data: rels } = await supabase
+    .from("coach_clients")
+    .select("id, client_profile_id, name, invited_email, lifecycle_status")
+    .in("coach_profile_id", actingIds)
+  const profileIds = (rels ?? []).map((r) => r.client_profile_id).filter(Boolean) as string[]
+  const profiles = new Map<string, { name: string | null; email: string | null }>()
+  if (profileIds.length) {
+    const { data } = await supabase.from("client_profiles").select("id, name, email").in("id", profileIds)
+    for (const p of data ?? []) profiles.set(p.id as string, { name: p.name, email: p.email })
+  }
+  const out = new Map<string, ScheduleClient>()
+  for (const r of rels ?? []) {
+    const prof = r.client_profile_id ? profiles.get(r.client_profile_id as string) : undefined
+    // Same destinations as the old My Clients / My Prospects rows.
+    const href = r.client_profile_id
+      ? `/dashboard/coach/clients/${r.client_profile_id}`
+      : r.lifecycle_status === "Prospect"
+        ? `/dashboard/coach/prospects/${r.id}`
+        : `/dashboard/coach/coach-clients/${r.id}`
+    const emails = [prof?.email, r.invited_email]
+      .map((e) => (e ?? "").trim().toLowerCase())
+      .filter(Boolean)
+    const name = (r.name || prof?.name || emails[0] || "Client").trim()
+    for (const e of emails) if (!out.has(e)) out.set(e, { name, href })
+  }
+  return out
 }
 
 // ── Small response helpers ───────────────────────────────────────────────────
@@ -272,8 +315,15 @@ export async function GET(req: NextRequest) {
     month: "2-digit",
     day: "2-digit",
   }).format(new Date()) // "YYYY-MM-DD"
-  const todayStart = zonedMidnightUtcIso(todayInTz, tz, 0)
-  const todayEnd = zonedMidnightUtcIso(todayInTz, tz, 1)
+  // Week = Monday to Sunday containing today. getUTCDay on the bare date is
+  // the local weekday (0 = Sunday).
+  const range = req.nextUrl.searchParams.get("range") === "week" ? "week" : "today"
+  const back = range === "week" ? (new Date(`${todayInTz}T00:00:00Z`).getUTCDay() + 6) % 7 : 0
+  const days = range === "week" ? 7 : 1
+  const todayStart = zonedMidnightUtcIso(todayInTz, tz, -back)
+  const todayEnd = zonedMidnightUtcIso(todayInTz, tz, days - back)
+  const [y, m, d] = todayInTz.split("-").map(Number)
+  const rangeStartDate = new Date(Date.UTC(y, m - 1, d - back)).toISOString().slice(0, 10)
 
   // 4. Proactive refresh if the access token expires within 60s.
   let accessToken = conn.access_token as string
@@ -315,7 +365,17 @@ export async function GET(req: NextRequest) {
     todayEnd,
   )
   if (result instanceof NextResponse) return result
-  const events = result
+  const coachEmail = ((conn.microsoft_user_email as string | null) ?? "").toLowerCase()
+  const byEmail = await clientsByEmail(supabase, profileId)
+  const events = result.map(({ attendee_emails, ...e }) => {
+    const seen = new Set<string>()
+    const clients: ScheduleClient[] = []
+    for (const a of attendee_emails) {
+      const c = a !== coachEmail ? byEmail.get(a) : undefined
+      if (c && !seen.has(c.href)) { seen.add(c.href); clients.push(c) }
+    }
+    return { ...e, clients }
+  })
 
   // 6. Touch last_used_at — fire-and-forget (analytics; never fail the request).
   void supabase
@@ -343,6 +403,9 @@ export async function GET(req: NextRequest) {
         connected_at: conn.connected_at as string,
       },
       events,
+      range,
+      range_start: rangeStartDate,
+      today: todayInTz,
       fetched_at: new Date().toISOString(),
     },
     { status: 200 },
