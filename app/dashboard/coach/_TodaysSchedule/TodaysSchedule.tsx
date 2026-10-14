@@ -222,11 +222,11 @@ function ScheduleCard({ children, headerRight }: { children: React.ReactNode; he
           <IconCalendar />
         </span>
         <span style={{ fontSize: 16, fontWeight: 600, color: T.TEXT, letterSpacing: -0.2 }}>
-          Today&apos;s schedule
+          Schedule
         </span>
         <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 8 }}>
           {open && headerRight}
-          <CollapseToggle open={open} onToggle={() => setOpen((v) => !v)} label="Today's schedule" />
+          <CollapseToggle open={open} onToggle={() => setOpen((v) => !v)} label="Schedule" />
         </span>
       </div>
       <div style={{ display: open ? "block" : "none" }}>{children}</div>

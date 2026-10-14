@@ -9,7 +9,13 @@ vi.mock("../../../../lib/supabase-browser", () => ({
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }))
 
 import { ClientsByPhaseBlock, FollowUpsBlock } from "./HomeBlocks"
-import { TaskCard } from "../_tasks/TaskCard"
+import { DueWindowFilter, TaskCard, useDueWindow } from "../_tasks/TaskCard"
+
+// The page puts the filter in the section header and passes the window down.
+function TasksWithFilter() {
+  const [w, setW] = useDueWindow()
+  return (<><DueWindowFilter value={w} onChange={setW} /><TaskCard order="due" dueWindow={w} /></>)
+}
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
@@ -22,7 +28,8 @@ describe("Follow-ups due", () => {
     expect(row.textContent).toContain("Ava Lee")
     expect(row.textContent).toContain("Fill in the intake")
     expect(row.textContent).toContain("Waiting 5 days")
-    expect(row.getAttribute("href")).toBe("/dashboard/coach/clients/p-a")
+    // The whole row opens the client; there is no separate button.
+    expect(row.getAttribute("data-href")).toBe("/dashboard/coach/clients/p-a")
   })
   it("says when there are none", () => {
     render(<FollowUpsBlock error={null} items={[]} />)
@@ -108,7 +115,7 @@ describe("My active tasks, due window", () => {
     }))
   })
   it("keeps every overdue task in every window and widens what is coming", async () => {
-    render(<TaskCard order="due" />)
+    render(<TasksWithFilter />)
     expect(await screen.findByText("Late 0")).toBeTruthy()
 
     fireEvent.click(screen.getByRole("button", { name: "7 days" }))

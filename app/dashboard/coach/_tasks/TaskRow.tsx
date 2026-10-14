@@ -140,7 +140,7 @@ function hashName(name: string): number {
   return h
 }
 
-function Avatar({ name, title }: { name: string; title?: string }) {
+export function Avatar({ name, title }: { name: string; title?: string }) {
   const [r, g, b] = AVATAR_RGB[hashName(name.toLowerCase()) % AVATAR_RGB.length]
   return (
     <span

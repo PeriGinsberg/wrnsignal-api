@@ -8,6 +8,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { T } from "../../../../lib/dashboard-theme"
 import { getSupabaseBrowser } from "../../../../lib/supabase-browser"
+import { CompactRow, CompactRowStyles } from "../_tasks/CompactRow"
 
 export type FollowUp = { task_id: string; task: string; client: string; href: string; released_at: string; days_waiting: number }
 export type PhaseBucket = { key: string; label: string; clients: { coach_client_id: string; name: string; href: string }[] }
@@ -53,20 +54,21 @@ export function FollowUpsBlock({ items, error }: { items: FollowUp[] | null; err
   if (error) return <p style={{ ...muted, color: T.ERROR }}>{error}</p>
   if (!items) return null
   if (!items.length) return <p style={muted}>No client tasks have been waiting 3 days or more.</p>
+  // The same one-line rows as My active tasks, minus the checkbox: these are
+  // the client's tasks, not the coach's to tick.
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+      <CompactRowStyles />
       {items.map((f) => (
-        <Link key={f.task_id} href={f.href} data-testid="follow-up" style={{
-          display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 10,
-          border: `1px solid ${T.BORDER_SOFT}`, textDecoration: "none", color: T.TEXT,
-        }}>
-          <span style={{ fontSize: 13, fontWeight: 700, flex: 1, minWidth: 0 }}>
-            {f.client}<span style={{ fontWeight: 400, color: T.MUTED }}> · {f.task}</span>
-          </span>
-          <span style={{ fontSize: 12, fontWeight: 800, color: T.INK_EMPHASIS, whiteSpace: "nowrap" }}>
-            Waiting {f.days_waiting} days
-          </span>
-        </Link>
+        <CompactRow
+          key={f.task_id}
+          testId="follow-up"
+          title={f.task}
+          who={f.client}
+          meta={`Waiting ${f.days_waiting} days`}
+          tone="late"
+          href={f.href}
+        />
       ))}
     </div>
   )

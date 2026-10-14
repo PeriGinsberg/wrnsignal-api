@@ -9,18 +9,17 @@
 // agree; the moment the card does its own arithmetic, it starts disagreeing
 // with the digest email.
 //
-// The rows are the SAME TaskRow the full list uses, in its condensed form.
-// Step 3 folds Action Items into this card, and one row component is what
-// stops the two surfaces drifting.
+// Rows are CompactRow, one line each, to match the compact Schedule (redesign
+// 2026-10-13). The full Tasks page keeps TaskRow.
 
 import { useCallback, useEffect, useState } from "react"
 import { isWelcomeTodo } from "../../../../lib/welcome/model"
 import { WelcomeEmailDialog } from "../_plan/WelcomeEmailDialog"
 import { useRouter } from "next/navigation"
 import { T } from "../../../../lib/dashboard-theme"
-import { endOfDay, type Task } from "../../../../lib/tasks/model"
-import { TaskRow, TaskRowHeader, TaskRowStyles } from "./TaskRow"
-import { apiJson } from "./taskClient"
+import { endOfDay, isDueToday, isOverdue, type Task } from "../../../../lib/tasks/model"
+import { CompactRow, CompactRowStyles, type CompactTone } from "./CompactRow"
+import { apiJson, formatDue } from "./taskClient"
 
 
 // Coach Home's due-window filter. A window is overdue work plus what is due by
@@ -28,7 +27,7 @@ import { apiJson } from "./taskClient"
 // isDueThisWeek uses for seven). Undated tasks show only under All. There is
 // no row cap: with one, a coach with ten overdue tasks saw the same ten rows
 // in every window.
-type DueWindow = "7" | "14" | "30" | "all"
+export type DueWindow = "7" | "14" | "30" | "all"
 const DUE_WINDOWS: { key: DueWindow; label: string }[] = [
   { key: "7", label: "7 days" },
   { key: "14", label: "14 days" },
@@ -46,7 +45,28 @@ function inWindow(t: Task, w: DueWindow, now: Date): boolean {
   return due <= horizon
 }
 
-function WindowFilter({ value, onChange }: { value: DueWindow; onChange: (w: DueWindow) => void }) {
+/**
+ * The window, remembered per browser. Lives with the page rather than the card
+ * because the filter sits in the section header, outside the card.
+ */
+export function useDueWindow(): [DueWindow, (w: DueWindow) => void] {
+  // Read once on first render. Coach Home shows its loading shell until its
+  // data arrives, so the server render never depends on this value.
+  const [w, setW] = useState<DueWindow>(() => {
+    try {
+      const saved = localStorage.getItem(WINDOW_KEY)
+      if (saved === "7" || saved === "14" || saved === "30") return saved
+    } catch { /* stays All */ }
+    return "all"
+  })
+  function change(next: DueWindow) {
+    setW(next)
+    try { localStorage.setItem(WINDOW_KEY, next) } catch { /* not remembered */ }
+  }
+  return [w, change]
+}
+
+export function DueWindowFilter({ value, onChange }: { value: DueWindow; onChange: (w: DueWindow) => void }) {
   return (
     <div
       role="group"
@@ -65,7 +85,7 @@ function WindowFilter({ value, onChange }: { value: DueWindow; onChange: (w: Due
             aria-pressed={on}
             onClick={() => onChange(o.key)}
             style={{
-              border: "none", borderRadius: 999, padding: "6px 14px",
+              border: "none", borderRadius: 999, padding: "5px 12px",
               fontSize: 12, fontWeight: 800, letterSpacing: 0.2, fontFamily: "inherit",
               cursor: on ? "default" : "pointer",
               background: on ? T.WRN_ORANGE : "transparent",
@@ -84,12 +104,12 @@ function WindowFilter({ value, onChange }: { value: DueWindow; onChange: (w: Due
 /**
  * `order="due"` is Coach Home's "My active tasks": every open task assigned to
  * me (plan tasks included), by due date, within the picked window. The default is the
- * capped card the server builds with ?card=1.
+ * capped card the server builds with ?card=1. `dueWindow` comes from the page
+ * (useDueWindow), whose section header shows the filter.
  */
-export function TaskCard({ order = "card" }: { order?: "card" | "due" } = {}) {
+export function TaskCard({ order = "card", dueWindow = "all" }: { order?: "card" | "due"; dueWindow?: DueWindow } = {}) {
   const router = useRouter()
   const [tasks, setTasks] = useState<Task[] | null>(null)
-  const [dueWindow, setDueWindow] = useState<DueWindow>("all")
   const [total, setTotal] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
@@ -130,20 +150,6 @@ export function TaskCard({ order = "card" }: { order?: "card" | "due" } = {}) {
 
   useEffect(() => { void load() }, [load])
 
-  // Restore the coach's last window. Browser storage is a per-viewer
-  // convenience; without it the card shows All.
-  useEffect(() => {
-    if (order !== "due") return
-    try {
-      const saved = localStorage.getItem(WINDOW_KEY)
-      if (saved === "7" || saved === "14" || saved === "30") setDueWindow(saved)
-    } catch { /* stays All */ }
-  }, [order])
-
-  function changeWindow(w: DueWindow) {
-    setDueWindow(w)
-    try { localStorage.setItem(WINDOW_KEY, w) } catch { /* not remembered */ }
-  }
   useEffect(() => { void loadClients() }, [loadClients])
 
   const [welcome, setWelcome] = useState<Task | null>(null)
@@ -185,16 +191,10 @@ export function TaskCard({ order = "card" }: { order?: "card" | "due" } = {}) {
     // No card chrome of its own: this is mounted inside <Section>, which draws
     // the panel and owns the title and its "View all" link.
     <div>
-      <TaskRowStyles />
+      <CompactRowStyles />
       {welcome && (
         <WelcomeEmailDialog coachClientId={welcome.coach_client_id!} taskId={welcome.plan_activity_id!}
           onClose={() => setWelcome(null)} onDone={() => { setWelcome(null); void load() }} />
-      )}
-
-      {order === "due" && (
-        <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
-          <WindowFilter value={dueWindow} onChange={changeWindow} />
-        </div>
       )}
 
       {error && <p style={{ color: T.ERROR, fontSize: 13, margin: "10px 0 0 0" }}>{error}</p>}
@@ -211,21 +211,43 @@ export function TaskCard({ order = "card" }: { order?: "card" | "due" } = {}) {
       )}
 
       {shown.length > 0 && (
-        <>
-          <TaskRowHeader condensed />
-          <div style={{ marginTop: 8 }}>
-            {shown.map((t) => (
-              <TaskRow
+        <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+          {shown.map((t) => {
+            const who = clients.find((c) => c.id === t.client_profile_id)?.name ?? t.record?.name ?? null
+            const late = isOverdue(t, now)
+            const tone: CompactTone = late ? "late" : isDueToday(t, now) ? "today" : "plain"
+            const snippet = (t.description ?? "").split(/\r?\n/).find((l) => l.trim()) ?? null
+            // Where the work is done, else the client.
+            const href = t.link
+              ?? (t.client_profile_id ? `/dashboard/coach/clients/${t.client_profile_id}` : t.record?.href ?? null)
+            return (
+              <CompactRow
                 key={t.id}
-                task={t}
-                condensed
-                clientName={clients.find((c) => c.id === t.client_profile_id)?.name ?? null}
-                busy={busy === t.id}
-                onToggleDone={toggleDone}
+                testId="task-row"
+                title={t.title}
+                detail={snippet}
+                who={who}
+                whoExtra={t.record?.kind === "prospect" ? (
+                  <span style={{ fontSize: 10, fontWeight: 800, color: "var(--sig-avatar-2-ink, #7C5CFF)" }}>Prospect</span>
+                ) : null}
+                meta={late ? "Overdue" : t.due_at ? formatDue(t) : ""}
+                tone={tone}
+                href={href}
+                checkbox={
+                  <input
+                    type="checkbox"
+                    checked={false}
+                    disabled={busy === t.id}
+                    onChange={(e) => toggleDone(t, e.target.checked)}
+                    aria-label={`Mark "${t.title}" done`}
+                    title="Mark done"
+                    style={{ cursor: "pointer", accentColor: T.TASK_DONE, width: 16, height: 16, margin: 0 }}
+                  />
+                }
               />
-            ))}
-          </div>
-        </>
+            )
+          })}
+        </div>
       )}
 
       {/* ALWAYS SHOWN, even when everything fits. The link is the way to the
@@ -234,7 +256,7 @@ export function TaskCard({ order = "card" }: { order?: "card" | "due" } = {}) {
       <button
         onClick={() => router.push("/dashboard/coach/tasks")}
         style={{
-          background: "none", border: "none", padding: "12px 0 0 0", cursor: "pointer",
+          background: "none", border: "none", padding: "8px 8px 0", cursor: "pointer",
           color: T.TASK_HEADER, fontSize: 13, fontWeight: 600,
         }}
       >

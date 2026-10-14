@@ -20,7 +20,7 @@ import CreateClientModal from "./CreateClientModal"
 import AddProspectModal from "./prospects/AddProspectModal"
 import { CoachTopRibbon } from "./CoachTopRibbon"
 import { T, card, eyebrow } from "../../../lib/dashboard-theme"
-import { TaskCard } from "./_tasks/TaskCard"
+import { DueWindowFilter, TaskCard, useDueWindow } from "./_tasks/TaskCard"
 import { ClientsByPhaseBlock, FollowUpsBlock, usePlanBlocks } from "./_plan/HomeBlocks"
 import { LoadingShell } from "./LoadingShell"
 import { TodaysSchedule } from "./_TodaysSchedule/TodaysSchedule"
@@ -176,7 +176,7 @@ function Section({
           }}
         />
       )}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: open ? 16 : 0 }}>
+      <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 10, marginBottom: open ? 12 : 0 }}>
         <span style={{ display: "inline-flex", color: iconColor }}>{icon}</span>
         {titleHref ? (
           <Link
@@ -231,6 +231,8 @@ export default function CoachHomePage() {
 
   // Coach Home's plan blocks (follow-ups due, clients by phase).
   const planBlocks = usePlanBlocks()
+  // My active tasks' 7 / 14 / 30 / All filter, shown in that section's header.
+  const [dueWindow, setDueWindow] = useDueWindow()
 
   const load = useCallback(async () => {
     const res = await authFetch("/api/coach/home")
@@ -286,8 +288,9 @@ export default function CoachHomePage() {
         title="My active tasks"
         titleHref="/dashboard/coach/tasks"
         accentColor={T.SECTION_ACTION_ITEMS}
+        headerRight={<DueWindowFilter value={dueWindow} onChange={setDueWindow} />}
       >
-        <TaskCard order="due" />
+        <TaskCard order="due" dueWindow={dueWindow} />
       </Section>
 
       <Section
