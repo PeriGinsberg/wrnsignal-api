@@ -1,4 +1,6 @@
-// Tables and grids, against Aiden Ginsberg's Bond Sports Round 2 workbook.
+// Tables and grids, against the table version of Aiden Ginsberg's Bond Sports
+// Round 2 workbook. A fixture copy, because the version created in prod uses
+// text notes and Lead boxes in place of the tables and grid (a123d8c3).
 //
 // Pinned: every lead cell is a box the client can type in and saves under its
 // own key; read-only tables, starters and notes are text, not inputs; and the
@@ -11,7 +13,7 @@ import { join } from "node:path"
 import { SectionBlocks, type FieldApi } from "../../../components/workbook/Blocks"
 import { validateContent, type WorkbookContent } from "../../../lib/workbook/content"
 
-const raw = JSON.parse(readFileSync(join(__dirname, "../../../docs/workbooks-v1/workbooks-v1/aiden-ginsberg_bond-sports-round-2.json"), "utf8"))
+const raw = JSON.parse(readFileSync(join(__dirname, "__fixtures__/bond-sports-round-2-tables.json"), "utf8"))
 const parsed = validateContent(raw)
 if (!parsed.ok) throw new Error(parsed.errors.join("; "))
 const c: WorkbookContent = parsed.content
