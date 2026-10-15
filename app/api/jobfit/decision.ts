@@ -133,6 +133,7 @@ function isQualityDirectWhy(w: WhyCode): boolean {
 //      hasn't actually demonstrated they've done the work.
 //   3. 4+ high-severity risks       → cap at Pass    (too many red flags)
 //   4. 3  high-severity risks       → cap at Review
+//   6. Priority Apply with < 2 quality non-tool direct WHYs → Apply
 //   5. Severe tenure gap            → cap at Review
 //      When the JD demands >=3 years and the candidate is missing nearly
 //      the entire requirement (gap >= yearsRequired - 1), Apply is wrong
@@ -235,6 +236,19 @@ export function applyEvidenceGuardrails(
   // purpose is to defend against "weak evidence + real risks" combos
   // where the score over-credits a poor match; without any risks, that
   // failure mode doesn't apply.
+  // Rule 6: Priority Apply needs depth. At least two quality direct WHYs on
+  // real work (not office-tool matches); otherwise it is an Apply. The score
+  // alone can reach 96 on one match plus the family / training-program
+  // bonuses (C008), or on Excel/PowerPoint/Word alone (DEF-017).
+  const qualityWorkDirectCount = whyCodes.filter((w) => w.match_kind !== "tool" && isQualityDirectWhy(w)).length
+  // Lowers and falls through, so rule 2 can still cap further.
+  let depthReason: string | null = null
+  if (decision === "Priority Apply" && qualityWorkDirectCount < 2) {
+    depthReason = `Priority Apply needs 2+ quality direct WHYs on non-tool work (have ${qualityWorkDirectCount})`
+    console.log(`[decision] Evidence guardrail: ${decision} -> Apply (${depthReason})`)
+    decision = "Apply"
+  }
+
   if (qualityDirectCount === 0 && whyCount > 0 && riskCodes.length > 0) {
     const capped = capDecision(decision, "Review")
     if (capped !== decision) {
@@ -246,7 +260,7 @@ export function applyEvidenceGuardrails(
     }
   }
 
-  return { decision, reason: null }
+  return { decision, reason: depthReason }
 }
 
 // Cap the displayed score to the ceiling of the decision band so the

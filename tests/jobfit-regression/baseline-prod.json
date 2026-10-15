@@ -80491,8 +80491,8 @@
     "schema_version": 2,
     "id": "prod-3af6ace0-3814-4947-a1ee-e0bf37c33708",
     "label": "prod 3af6ace0 — Operations Coordinator @ CWS Operations Coordinator (2026-06-25)",
-    "decision": "Priority Apply",
-    "score": 97,
+    "decision": "Apply",
+    "score": 95,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -80919,7 +80919,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -80928,7 +80928,7 @@
         }
       ],
       "raw_score": 97,
-      "clamped_score": 97
+      "clamped_score": 95
     }
   },
   "prod-3b6a0bb7-0b94-49d3-a7e4-fe7a93be71a2": {
@@ -192243,8 +192243,8 @@
     "schema_version": 2,
     "id": "prod-8e685464-f08d-4df7-bdb3-196c9dbdbd0e",
     "label": "prod 8e685464 — Apparel and Design Chair @ BPAD (2026-04-15)",
-    "decision": "Priority Apply",
-    "score": 97,
+    "decision": "Apply",
+    "score": 95,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -193025,7 +193025,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -193034,7 +193034,7 @@
         }
       ],
       "raw_score": 97,
-      "clamped_score": 97
+      "clamped_score": 95
     }
   },
   "prod-8ea21440-9b4b-407e-9631-5f2ec726c373": {
@@ -209161,8 +209161,8 @@
     "schema_version": 2,
     "id": "prod-9d6b5813-8dcb-46a0-9080-a3a3c8b13ec9",
     "label": "prod 9d6b5813 — Merchandise Marketing Coordinator @ Bloomingdale's (2026-06-16)",
-    "decision": "Priority Apply",
-    "score": 97,
+    "decision": "Apply",
+    "score": 95,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -209523,7 +209523,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -209532,7 +209532,7 @@
         }
       ],
       "raw_score": 97,
-      "clamped_score": 97
+      "clamped_score": 95
     }
   },
   "prod-9d8bee99-c90f-4333-be47-3764762b5370": {
@@ -229248,8 +229248,8 @@
     "schema_version": 2,
     "id": "prod-ad572717-c75c-496f-919e-7a4c349b6a9b",
     "label": "prod ad572717 — Analyst, Market Access Consulting @ Precision AQ (2026-06-05)",
-    "decision": "Priority Apply",
-    "score": 97,
+    "decision": "Apply",
+    "score": 95,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -229634,7 +229634,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -229643,7 +229643,7 @@
         }
       ],
       "raw_score": 97,
-      "clamped_score": 97
+      "clamped_score": 95
     }
   },
   "prod-aea2cc9d-22ef-42aa-9e98-63d4143a02bd": {
@@ -260659,8 +260659,8 @@
     "schema_version": 2,
     "id": "prod-c432a9e0-eb55-4661-ba6b-8bf4600e16d2",
     "label": "prod c432a9e0 — Consultant, Market Access @ Precision Medicine Group (2026-06-03)",
-    "decision": "Priority Apply",
-    "score": 96,
+    "decision": "Apply",
+    "score": 95,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -261054,7 +261054,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -261063,7 +261063,7 @@
         }
       ],
       "raw_score": 96,
-      "clamped_score": 96
+      "clamped_score": 95
     }
   },
   "prod-c4e3e432-9d56-4f8f-b226-de4e6847a1c1": {
@@ -290495,8 +290495,8 @@
     "schema_version": 2,
     "id": "prod-d8611d75-1580-4e78-92d9-34a44262f0dc",
     "label": "prod d8611d75 — Marketing & Communications Intern @ Vacheron Constantin (2026-04-13)",
-    "decision": "Priority Apply",
-    "score": 97,
+    "decision": "Apply",
+    "score": 95,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -290865,7 +290865,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -290874,7 +290874,7 @@
         }
       ],
       "raw_score": 97,
-      "clamped_score": 97
+      "clamped_score": 95
     }
   },
   "prod-da3d1e29-70c2-4ac2-b5f8-795ee50166f2": {
@@ -292190,8 +292190,8 @@
     "schema_version": 2,
     "id": "prod-db32a71f-5c83-4d6a-ae13-67a1c4d6abe1",
     "label": "prod db32a71f — Associate Consultant @ Trinity Life Sciences (2026-06-23)",
-    "decision": "Priority Apply",
-    "score": 97,
+    "decision": "Apply",
+    "score": 95,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -292663,7 +292663,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -292672,7 +292672,7 @@
         }
       ],
       "raw_score": 97,
-      "clamped_score": 97
+      "clamped_score": 95
     }
   },
   "prod-dbdfff77-c95a-4675-a4cd-ffa7546209c3": {
@@ -302793,8 +302793,8 @@
     "schema_version": 2,
     "id": "prod-df8f9e8c-270d-496e-9e2b-668ae31d4909",
     "label": "prod df8f9e8c — Commercial Lease Administrator @ Wonder (2026-06-15)",
-    "decision": "Priority Apply",
-    "score": 97,
+    "decision": "Apply",
+    "score": 95,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -303150,7 +303150,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -303159,7 +303159,7 @@
         }
       ],
       "raw_score": 97,
-      "clamped_score": 97
+      "clamped_score": 95
     }
   },
   "prod-dfbf75f4-7c4a-4d5c-aa8a-90a2ee6b2496": {
@@ -309271,8 +309271,8 @@
     "schema_version": 2,
     "id": "prod-e37ae047-388e-406f-96d7-018c1cb6ef38",
     "label": "prod e37ae047 — Analyst, Market Access Consulting @ Precision AQ (2026-06-05)",
-    "decision": "Priority Apply",
-    "score": 97,
+    "decision": "Apply",
+    "score": 95,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -309657,7 +309657,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -309666,7 +309666,7 @@
         }
       ],
       "raw_score": 97,
-      "clamped_score": 97
+      "clamped_score": 95
     }
   },
   "prod-e3e5c93f-1864-4003-81fa-5a8a4f434701": {
@@ -318787,8 +318787,8 @@
     "schema_version": 2,
     "id": "prod-e9099511-289b-492d-bbaa-fabbf2edbdf3",
     "label": "prod e9099511 — Wealth Management Associate @ The Moody Street Group, LLC (2026-04-15)",
-    "decision": "Priority Apply",
-    "score": 97,
+    "decision": "Apply",
+    "score": 95,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -319311,7 +319311,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -319320,7 +319320,7 @@
         }
       ],
       "raw_score": 97,
-      "clamped_score": 97
+      "clamped_score": 95
     }
   },
   "prod-e93579f2-94eb-45a7-9438-b41f164bd095": {
