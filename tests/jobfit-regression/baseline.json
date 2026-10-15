@@ -126,13 +126,6 @@
         "label": "laboratory / bench research"
       },
       {
-        "id": "a9c9e5729c0b023c",
-        "key": "strategy_problem_solving",
-        "kind": "function",
-        "strength": 6,
-        "label": "strategy, synthesis, and problem-solving work"
-      },
-      {
         "id": "b32616aa07f1f640",
         "key": "drafting_documentation",
         "kind": "deliverable",
@@ -290,7 +283,6 @@
         "financeSubFamily": null,
         "function_tags": [
           "communications_pr",
-          "consulting_strategy",
           "data_analytics_bi",
           "premed_clinical"
         ],
@@ -393,8 +385,8 @@
     "schema_version": 2,
     "id": "batch-40926b",
     "label": "40926b — Lily Stein / Scientist I",
-    "decision": "Priority Apply",
-    "score": 97,
+    "decision": "Apply",
+    "score": 95,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -556,13 +548,6 @@
         "label": "laboratory / bench research"
       },
       {
-        "id": "a9c9e5729c0b023c",
-        "key": "strategy_problem_solving",
-        "kind": "function",
-        "strength": 6,
-        "label": "strategy, synthesis, and problem-solving work"
-      },
-      {
         "id": "b32616aa07f1f640",
         "key": "drafting_documentation",
         "kind": "deliverable",
@@ -607,15 +592,6 @@
     ],
     "matches": [
       {
-        "match_strength": "adjacent",
-        "weight": 83,
-        "coverageScore": 59,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "a9c9e5729c0b023c"
-      },
-      {
         "match_strength": "direct",
         "weight": 104,
         "coverageScore": 84,
@@ -623,15 +599,6 @@
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
         "profile_unit_id": "ecb99630b15dcb19"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 84,
-        "coverageScore": 59,
-        "match_kind": "function",
-        "match_key": "consumer_research",
-        "job_unit_key": "consumer_research",
-        "profile_unit_id": "a9c9e5729c0b023c"
       },
       {
         "match_strength": "adjacent",
@@ -717,25 +684,19 @@
     ],
     "why_codes": [
       {
-        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
-        "weight": 84,
-        "match_strength": "adjacent",
-        "match_key": "consumer_research"
-      },
-      {
-        "code": "WHY_EXECUTION_PROOF",
-        "weight": 83,
-        "match_strength": "adjacent",
-        "match_key": "analysis_reporting"
-      },
-      {
         "code": "WHY_TOOL_PROOF",
         "weight": 93,
         "match_strength": "direct",
         "match_key": "excel"
       }
     ],
-    "risk_codes": [],
+    "risk_codes": [
+      {
+        "code": "RISK_LIMITED_MATCH_EVIDENCE",
+        "severity": "medium",
+        "weight": 0
+      }
+    ],
     "scalars": {
       "job": {
         "analytics": {
@@ -808,7 +769,6 @@
         "financeSubFamily": null,
         "function_tags": [
           "communications_pr",
-          "consulting_strategy",
           "data_analytics_bi",
           "premed_clinical"
         ],
@@ -895,7 +855,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -904,15 +864,15 @@
         }
       ],
       "raw_score": 97,
-      "clamped_score": 97
+      "clamped_score": 95
     }
   },
   "batch-40926c": {
     "schema_version": 2,
     "id": "batch-40926c",
     "label": "40926c — Lily Stein / Chemist I",
-    "decision": "Review",
-    "score": 74,
+    "decision": "Pass",
+    "score": 55,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -1026,13 +986,6 @@
         "label": "laboratory / bench research"
       },
       {
-        "id": "a9c9e5729c0b023c",
-        "key": "strategy_problem_solving",
-        "kind": "function",
-        "strength": 6,
-        "label": "strategy, synthesis, and problem-solving work"
-      },
-      {
         "id": "b32616aa07f1f640",
         "key": "drafting_documentation",
         "kind": "deliverable",
@@ -1077,15 +1030,6 @@
     ],
     "matches": [
       {
-        "match_strength": "adjacent",
-        "weight": 83,
-        "coverageScore": 59,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "a9c9e5729c0b023c"
-      },
-      {
         "match_strength": "direct",
         "weight": 104,
         "coverageScore": 84,
@@ -1104,18 +1048,11 @@
         "profile_unit_id": "b32616aa07f1f640"
       }
     ],
-    "why_codes": [
-      {
-        "code": "WHY_EXECUTION_PROOF",
-        "weight": 83,
-        "match_strength": "adjacent",
-        "match_key": "analysis_reporting"
-      }
-    ],
+    "why_codes": [],
     "risk_codes": [
       {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
-        "severity": "medium",
+        "severity": "high",
         "weight": 0
       }
     ],
@@ -1182,7 +1119,6 @@
         "financeSubFamily": null,
         "function_tags": [
           "communications_pr",
-          "consulting_strategy",
           "data_analytics_bi",
           "premed_clinical"
         ],
@@ -1269,7 +1205,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Pass"
         },
         {
           "label": "penalty_sum",
@@ -1277,8 +1213,8 @@
           "note": "0"
         }
       ],
-      "raw_score": 90,
-      "clamped_score": 74
+      "raw_score": 88,
+      "clamped_score": 55
     }
   },
   "batch-40926d": {
@@ -1406,13 +1342,6 @@
         "kind": "function",
         "strength": 7,
         "label": "laboratory / bench research"
-      },
-      {
-        "id": "a9c9e5729c0b023c",
-        "key": "strategy_problem_solving",
-        "kind": "function",
-        "strength": 6,
-        "label": "strategy, synthesis, and problem-solving work"
       },
       {
         "id": "b32616aa07f1f640",
@@ -1552,7 +1481,6 @@
         "financeSubFamily": null,
         "function_tags": [
           "communications_pr",
-          "consulting_strategy",
           "data_analytics_bi",
           "premed_clinical"
         ],
@@ -1655,8 +1583,8 @@
     "schema_version": 2,
     "id": "batch-40926e",
     "label": "40926e — Lily Stein / QC Analyst I",
-    "decision": "Review",
-    "score": 74,
+    "decision": "Pass",
+    "score": 55,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -1770,13 +1698,6 @@
         "label": "laboratory / bench research"
       },
       {
-        "id": "a9c9e5729c0b023c",
-        "key": "strategy_problem_solving",
-        "kind": "function",
-        "strength": 6,
-        "label": "strategy, synthesis, and problem-solving work"
-      },
-      {
         "id": "b32616aa07f1f640",
         "key": "drafting_documentation",
         "kind": "deliverable",
@@ -1821,15 +1742,6 @@
     ],
     "matches": [
       {
-        "match_strength": "adjacent",
-        "weight": 77,
-        "coverageScore": 55,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "a9c9e5729c0b023c"
-      },
-      {
         "match_strength": "direct",
         "weight": 98,
         "coverageScore": 80,
@@ -1848,18 +1760,11 @@
         "profile_unit_id": "b32616aa07f1f640"
       }
     ],
-    "why_codes": [
-      {
-        "code": "WHY_EXECUTION_PROOF",
-        "weight": 77,
-        "match_strength": "adjacent",
-        "match_key": "analysis_reporting"
-      }
-    ],
+    "why_codes": [],
     "risk_codes": [
       {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
-        "severity": "medium",
+        "severity": "high",
         "weight": 0
       }
     ],
@@ -1926,7 +1831,6 @@
         "financeSubFamily": null,
         "function_tags": [
           "communications_pr",
-          "consulting_strategy",
           "data_analytics_bi",
           "premed_clinical"
         ],
@@ -2013,7 +1917,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Pass"
         },
         {
           "label": "penalty_sum",
@@ -2021,8 +1925,8 @@
           "note": "0"
         }
       ],
-      "raw_score": 89,
-      "clamped_score": 74
+      "raw_score": 87,
+      "clamped_score": 55
     }
   },
   "batch-40926f": {
@@ -2096,13 +2000,6 @@
         "label": "content and channel execution"
       },
       {
-        "id": "1d535c79ab298332",
-        "key": "content_execution",
-        "kind": "function",
-        "strength": 7,
-        "label": "content and channel execution"
-      },
-      {
         "id": "2efee227b2cc055a",
         "key": "content_execution",
         "kind": "function",
@@ -2150,13 +2047,6 @@
         "kind": "execution",
         "strength": 9,
         "label": "prospecting, outreach, and pipeline management"
-      },
-      {
-        "id": "6a9bd5a8d5ab7c3b",
-        "key": "communications_writing",
-        "kind": "function",
-        "strength": 8,
-        "label": "communications, writing, and messaging work"
       },
       {
         "id": "6e7af712105c0857",
@@ -2326,15 +2216,6 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 84,
-        "coverageScore": 59,
-        "match_kind": "function",
-        "match_key": "brand_messaging",
-        "job_unit_key": "brand_messaging",
-        "profile_unit_id": "1d535c79ab298332"
-      },
-      {
-        "match_strength": "adjacent",
         "weight": 85,
         "coverageScore": 61,
         "match_kind": "function",
@@ -2368,15 +2249,6 @@
         "match_key": "brand_messaging",
         "job_unit_key": "brand_messaging",
         "profile_unit_id": "65f0fa1673430ec1"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 84,
-        "coverageScore": 60,
-        "match_kind": "function",
-        "match_key": "brand_messaging",
-        "job_unit_key": "brand_messaging",
-        "profile_unit_id": "6a9bd5a8d5ab7c3b"
       },
       {
         "match_strength": "adjacent",
@@ -2503,15 +2375,6 @@
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
         "profile_unit_id": "1b7392a77d9d78b8"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 104,
-        "coverageScore": 83,
-        "match_kind": "function",
-        "match_key": "content_execution",
-        "job_unit_key": "content_execution",
-        "profile_unit_id": "1d535c79ab298332"
       },
       {
         "match_strength": "direct",
@@ -2861,13 +2724,6 @@
         "label": "content and channel execution"
       },
       {
-        "id": "1d535c79ab298332",
-        "key": "content_execution",
-        "kind": "function",
-        "strength": 7,
-        "label": "content and channel execution"
-      },
-      {
         "id": "2efee227b2cc055a",
         "key": "content_execution",
         "kind": "function",
@@ -2915,13 +2771,6 @@
         "kind": "execution",
         "strength": 9,
         "label": "prospecting, outreach, and pipeline management"
-      },
-      {
-        "id": "6a9bd5a8d5ab7c3b",
-        "key": "communications_writing",
-        "kind": "function",
-        "strength": 8,
-        "label": "communications, writing, and messaging work"
       },
       {
         "id": "6e7af712105c0857",
@@ -3091,15 +2940,6 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 86,
-        "coverageScore": 59,
-        "match_kind": "function",
-        "match_key": "brand_messaging",
-        "job_unit_key": "brand_messaging",
-        "profile_unit_id": "1d535c79ab298332"
-      },
-      {
-        "match_strength": "adjacent",
         "weight": 87,
         "coverageScore": 61,
         "match_kind": "function",
@@ -3133,15 +2973,6 @@
         "match_key": "brand_messaging",
         "job_unit_key": "brand_messaging",
         "profile_unit_id": "65f0fa1673430ec1"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 86,
-        "coverageScore": 60,
-        "match_kind": "function",
-        "match_key": "brand_messaging",
-        "job_unit_key": "brand_messaging",
-        "profile_unit_id": "6a9bd5a8d5ab7c3b"
       },
       {
         "match_strength": "adjacent",
@@ -3280,15 +3111,6 @@
       },
       {
         "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 80,
-        "match_kind": "function",
-        "match_key": "communications_writing",
-        "job_unit_key": "communications_writing",
-        "profile_unit_id": "6a9bd5a8d5ab7c3b"
-      },
-      {
-        "match_strength": "direct",
         "weight": 100,
         "coverageScore": 81,
         "match_kind": "function",
@@ -3376,15 +3198,6 @@
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
         "profile_unit_id": "1b7392a77d9d78b8"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 79,
-        "match_kind": "function",
-        "match_key": "content_execution",
-        "job_unit_key": "content_execution",
-        "profile_unit_id": "1d535c79ab298332"
       },
       {
         "match_strength": "direct",
@@ -3788,13 +3601,6 @@
         "label": "content and channel execution"
       },
       {
-        "id": "1d535c79ab298332",
-        "key": "content_execution",
-        "kind": "function",
-        "strength": 7,
-        "label": "content and channel execution"
-      },
-      {
         "id": "2efee227b2cc055a",
         "key": "content_execution",
         "kind": "function",
@@ -3842,13 +3648,6 @@
         "kind": "execution",
         "strength": 9,
         "label": "prospecting, outreach, and pipeline management"
-      },
-      {
-        "id": "6a9bd5a8d5ab7c3b",
-        "key": "communications_writing",
-        "kind": "function",
-        "strength": 8,
-        "label": "communications, writing, and messaging work"
       },
       {
         "id": "6e7af712105c0857",
@@ -4000,15 +3799,6 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 79,
-        "coverageScore": 55,
-        "match_kind": "function",
-        "match_key": "brand_messaging",
-        "job_unit_key": "brand_messaging",
-        "profile_unit_id": "1d535c79ab298332"
-      },
-      {
-        "match_strength": "adjacent",
         "weight": 80,
         "coverageScore": 57,
         "match_kind": "function",
@@ -4042,15 +3832,6 @@
         "match_key": "brand_messaging",
         "job_unit_key": "brand_messaging",
         "profile_unit_id": "65f0fa1673430ec1"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 79,
-        "coverageScore": 56,
-        "match_kind": "function",
-        "match_key": "brand_messaging",
-        "job_unit_key": "brand_messaging",
-        "profile_unit_id": "6a9bd5a8d5ab7c3b"
       },
       {
         "match_strength": "adjacent",
@@ -4189,15 +3970,6 @@
       },
       {
         "match_strength": "direct",
-        "weight": 104,
-        "coverageScore": 84,
-        "match_kind": "function",
-        "match_key": "communications_writing",
-        "job_unit_key": "communications_writing",
-        "profile_unit_id": "6a9bd5a8d5ab7c3b"
-      },
-      {
-        "match_strength": "direct",
         "weight": 105,
         "coverageScore": 85,
         "match_kind": "function",
@@ -4285,15 +4057,6 @@
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
         "profile_unit_id": "1b7392a77d9d78b8"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 105,
-        "coverageScore": 83,
-        "match_kind": "function",
-        "match_key": "content_execution",
-        "job_unit_key": "content_execution",
-        "profile_unit_id": "1d535c79ab298332"
       },
       {
         "match_strength": "direct",
@@ -4411,15 +4174,6 @@
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
         "profile_unit_id": "65f0fa1673430ec1"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 83,
-        "coverageScore": 60,
-        "match_kind": "deliverable",
-        "match_key": "drafting_documentation",
-        "job_unit_key": "drafting_documentation",
-        "profile_unit_id": "6a9bd5a8d5ab7c3b"
       },
       {
         "match_strength": "adjacent",
@@ -4820,13 +4574,6 @@
         "label": "content and channel execution"
       },
       {
-        "id": "1d535c79ab298332",
-        "key": "content_execution",
-        "kind": "function",
-        "strength": 7,
-        "label": "content and channel execution"
-      },
-      {
         "id": "2efee227b2cc055a",
         "key": "content_execution",
         "kind": "function",
@@ -4874,13 +4621,6 @@
         "kind": "execution",
         "strength": 9,
         "label": "prospecting, outreach, and pipeline management"
-      },
-      {
-        "id": "6a9bd5a8d5ab7c3b",
-        "key": "communications_writing",
-        "kind": "function",
-        "strength": 8,
-        "label": "communications, writing, and messaging work"
       },
       {
         "id": "6e7af712105c0857",
@@ -5050,15 +4790,6 @@
       },
       {
         "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 80,
-        "match_kind": "function",
-        "match_key": "communications_writing",
-        "job_unit_key": "communications_writing",
-        "profile_unit_id": "6a9bd5a8d5ab7c3b"
-      },
-      {
-        "match_strength": "direct",
         "weight": 99,
         "coverageScore": 81,
         "match_kind": "function",
@@ -5155,15 +4886,6 @@
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
         "profile_unit_id": "65f0fa1673430ec1"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 79,
-        "coverageScore": 56,
-        "match_kind": "deliverable",
-        "match_key": "drafting_documentation",
-        "job_unit_key": "drafting_documentation",
-        "profile_unit_id": "6a9bd5a8d5ab7c3b"
       },
       {
         "match_strength": "adjacent",
@@ -5539,13 +5261,6 @@
         "label": "content and channel execution"
       },
       {
-        "id": "1d535c79ab298332",
-        "key": "content_execution",
-        "kind": "function",
-        "strength": 7,
-        "label": "content and channel execution"
-      },
-      {
         "id": "2efee227b2cc055a",
         "key": "content_execution",
         "kind": "function",
@@ -5593,13 +5308,6 @@
         "kind": "execution",
         "strength": 9,
         "label": "prospecting, outreach, and pipeline management"
-      },
-      {
-        "id": "6a9bd5a8d5ab7c3b",
-        "key": "communications_writing",
-        "kind": "function",
-        "strength": 8,
-        "label": "communications, writing, and messaging work"
       },
       {
         "id": "6e7af712105c0857",
@@ -5769,15 +5477,6 @@
       },
       {
         "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 80,
-        "match_kind": "function",
-        "match_key": "communications_writing",
-        "job_unit_key": "communications_writing",
-        "profile_unit_id": "6a9bd5a8d5ab7c3b"
-      },
-      {
-        "match_strength": "direct",
         "weight": 99,
         "coverageScore": 81,
         "match_kind": "function",
@@ -5865,15 +5564,6 @@
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
         "profile_unit_id": "1b7392a77d9d78b8"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 79,
-        "match_kind": "function",
-        "match_key": "content_execution",
-        "job_unit_key": "content_execution",
-        "profile_unit_id": "1d535c79ab298332"
       },
       {
         "match_strength": "direct",
@@ -5991,15 +5681,6 @@
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
         "profile_unit_id": "65f0fa1673430ec1"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 56,
-        "match_kind": "deliverable",
-        "match_key": "drafting_documentation",
-        "job_unit_key": "drafting_documentation",
-        "profile_unit_id": "6a9bd5a8d5ab7c3b"
       },
       {
         "match_strength": "adjacent",
@@ -6363,13 +6044,6 @@
         "label": "drafting, documentation, and written deliverables"
       },
       {
-        "id": "e468c36a71188fed",
-        "key": "operations_execution",
-        "kind": "execution",
-        "strength": 4,
-        "label": "operations, process, and workflow execution"
-      },
-      {
         "id": "eb341f1f31372731",
         "key": "operations_execution",
         "kind": "execution",
@@ -6435,15 +6109,6 @@
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
-        "profile_unit_id": "e468c36a71188fed"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 80,
-        "coverageScore": 58,
-        "match_kind": "deliverable",
-        "match_key": "drafting_documentation",
-        "job_unit_key": "drafting_documentation",
         "profile_unit_id": "eb341f1f31372731"
       },
       {
@@ -6499,15 +6164,6 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "de8ff8f43011dd6f"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 95,
-        "coverageScore": 78,
-        "match_kind": "execution",
-        "match_key": "operations_execution",
-        "job_unit_key": "operations_execution",
-        "profile_unit_id": "e468c36a71188fed"
       },
       {
         "match_strength": "direct",
@@ -6820,13 +6476,6 @@
         "label": "drafting, documentation, and written deliverables"
       },
       {
-        "id": "e468c36a71188fed",
-        "key": "operations_execution",
-        "kind": "execution",
-        "strength": 4,
-        "label": "operations, process, and workflow execution"
-      },
-      {
         "id": "eb341f1f31372731",
         "key": "operations_execution",
         "kind": "execution",
@@ -6884,15 +6533,6 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "de8ff8f43011dd6f"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 94,
-        "coverageScore": 78,
-        "match_kind": "execution",
-        "match_key": "operations_execution",
-        "job_unit_key": "operations_execution",
-        "profile_unit_id": "e468c36a71188fed"
       },
       {
         "match_strength": "direct",
@@ -7215,13 +6855,6 @@
         "label": "drafting, documentation, and written deliverables"
       },
       {
-        "id": "e468c36a71188fed",
-        "key": "operations_execution",
-        "kind": "execution",
-        "strength": 4,
-        "label": "operations, process, and workflow execution"
-      },
-      {
         "id": "eb341f1f31372731",
         "key": "operations_execution",
         "kind": "execution",
@@ -7270,15 +6903,6 @@
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
         "profile_unit_id": "d4e7da78b1c8b24f"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 84,
-        "coverageScore": 58,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "e468c36a71188fed"
       },
       {
         "match_strength": "adjacent",
@@ -7342,15 +6966,6 @@
         "match_key": "stakeholder_coordination",
         "job_unit_key": "stakeholder_coordination",
         "profile_unit_id": "d4e7da78b1c8b24f"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 79,
-        "coverageScore": 58,
-        "match_kind": "stakeholder",
-        "match_key": "stakeholder_coordination",
-        "job_unit_key": "stakeholder_coordination",
-        "profile_unit_id": "e468c36a71188fed"
       },
       {
         "match_strength": "adjacent",
@@ -7707,13 +7322,6 @@
         "label": "drafting, documentation, and written deliverables"
       },
       {
-        "id": "e468c36a71188fed",
-        "key": "operations_execution",
-        "kind": "execution",
-        "strength": 4,
-        "label": "operations, process, and workflow execution"
-      },
-      {
         "id": "eb341f1f31372731",
         "key": "operations_execution",
         "kind": "execution",
@@ -7762,15 +7370,6 @@
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
         "profile_unit_id": "d4e7da78b1c8b24f"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 76,
-        "coverageScore": 54,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "e468c36a71188fed"
       },
       {
         "match_strength": "adjacent",
@@ -8101,13 +7700,6 @@
         "label": "drafting, documentation, and written deliverables"
       },
       {
-        "id": "e468c36a71188fed",
-        "key": "operations_execution",
-        "kind": "execution",
-        "strength": 4,
-        "label": "operations, process, and workflow execution"
-      },
-      {
         "id": "eb341f1f31372731",
         "key": "operations_execution",
         "kind": "execution",
@@ -8164,15 +7756,6 @@
         "match_kind": "execution",
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "e468c36a71188fed"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 76,
-        "coverageScore": 54,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
         "profile_unit_id": "eb341f1f31372731"
       },
       {
@@ -8210,15 +7793,6 @@
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
         "profile_unit_id": "de8ff8f43011dd6f"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 75,
-        "coverageScore": 54,
-        "match_kind": "deliverable",
-        "match_key": "drafting_documentation",
-        "job_unit_key": "drafting_documentation",
-        "profile_unit_id": "e468c36a71188fed"
       },
       {
         "match_strength": "adjacent",
@@ -8282,15 +7856,6 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "de8ff8f43011dd6f"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 95,
-        "coverageScore": 78,
-        "match_kind": "execution",
-        "match_key": "operations_execution",
-        "job_unit_key": "operations_execution",
-        "profile_unit_id": "e468c36a71188fed"
       },
       {
         "match_strength": "direct",
@@ -8624,13 +8189,6 @@
         "label": "drafting, documentation, and written deliverables"
       },
       {
-        "id": "e468c36a71188fed",
-        "key": "operations_execution",
-        "kind": "execution",
-        "strength": 4,
-        "label": "operations, process, and workflow execution"
-      },
-      {
         "id": "eb341f1f31372731",
         "key": "operations_execution",
         "kind": "execution",
@@ -8679,15 +8237,6 @@
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
         "profile_unit_id": "d4e7da78b1c8b24f"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 76,
-        "coverageScore": 54,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "e468c36a71188fed"
       },
       {
         "match_strength": "adjacent",
@@ -8759,15 +8308,6 @@
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
-        "profile_unit_id": "e468c36a71188fed"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 74,
-        "coverageScore": 54,
-        "match_kind": "deliverable",
-        "match_key": "drafting_documentation",
-        "job_unit_key": "drafting_documentation",
         "profile_unit_id": "eb341f1f31372731"
       },
       {
@@ -8814,15 +8354,6 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "de8ff8f43011dd6f"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 101,
-        "coverageScore": 82,
-        "match_kind": "execution",
-        "match_key": "operations_execution",
-        "job_unit_key": "operations_execution",
-        "profile_unit_id": "e468c36a71188fed"
       },
       {
         "match_strength": "direct",
@@ -9302,13 +8833,6 @@
         "label": "docker tool usage"
       },
       {
-        "id": "a0c0d9c4be831071",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 5,
-        "label": "Software Engineering"
-      },
-      {
         "id": "a0d221080816ac8c",
         "key": "typescript",
         "kind": "tool",
@@ -9589,15 +9113,6 @@
         "match_key": "software_engineering",
         "job_unit_key": "software_engineering",
         "profile_unit_id": "8f150aea9b118471"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 97,
-        "coverageScore": 78,
-        "match_kind": "function",
-        "match_key": "software_engineering",
-        "job_unit_key": "software_engineering",
-        "profile_unit_id": "a0c0d9c4be831071"
       },
       {
         "match_strength": "direct",
@@ -10003,13 +9518,6 @@
         "kind": "tool",
         "strength": 5,
         "label": "docker tool usage"
-      },
-      {
-        "id": "a0c0d9c4be831071",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 5,
-        "label": "Software Engineering"
       },
       {
         "id": "a0d221080816ac8c",
@@ -10480,13 +9988,6 @@
         "label": "docker tool usage"
       },
       {
-        "id": "a0c0d9c4be831071",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 5,
-        "label": "Software Engineering"
-      },
-      {
         "id": "a0d221080816ac8c",
         "key": "typescript",
         "kind": "tool",
@@ -10704,15 +10205,6 @@
         "match_key": "software_engineering",
         "job_unit_key": "software_engineering",
         "profile_unit_id": "8f150aea9b118471"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 97,
-        "coverageScore": 78,
-        "match_kind": "function",
-        "match_key": "software_engineering",
-        "job_unit_key": "software_engineering",
-        "profile_unit_id": "a0c0d9c4be831071"
       },
       {
         "match_strength": "direct",
@@ -11165,13 +10657,6 @@
         "kind": "tool",
         "strength": 5,
         "label": "docker tool usage"
-      },
-      {
-        "id": "a0c0d9c4be831071",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 5,
-        "label": "Software Engineering"
       },
       {
         "id": "a0d221080816ac8c",
@@ -11654,13 +11139,6 @@
         "label": "docker tool usage"
       },
       {
-        "id": "a0c0d9c4be831071",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 5,
-        "label": "Software Engineering"
-      },
-      {
         "id": "a0d221080816ac8c",
         "key": "typescript",
         "kind": "tool",
@@ -12010,13 +11488,6 @@
     ],
     "profile_evidence_units": [
       {
-        "id": "0766b2806818be73",
-        "key": "client_commercial_work",
-        "kind": "stakeholder",
-        "strength": 7,
-        "label": "generic client-facing or commercial support work"
-      },
-      {
         "id": "1a3e0101cc79b106",
         "key": "excel",
         "kind": "tool",
@@ -12240,15 +11711,6 @@
         "profile_unit_id": "f0b9e45a07adb866"
       },
       {
-        "match_strength": "direct",
-        "weight": 96,
-        "coverageScore": 79,
-        "match_kind": "stakeholder",
-        "match_key": "client_commercial_work",
-        "job_unit_key": "client_commercial_work",
-        "profile_unit_id": "0766b2806818be73"
-      },
-      {
         "match_strength": "adjacent",
         "weight": 75,
         "coverageScore": 55,
@@ -12321,15 +11783,6 @@
         "profile_unit_id": "3e4df12aa6ad1048"
       },
       {
-        "match_strength": "adjacent",
-        "weight": 84,
-        "coverageScore": 59,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "0766b2806818be73"
-      },
-      {
         "match_strength": "direct",
         "weight": 104,
         "coverageScore": 83,
@@ -12348,15 +11801,15 @@
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 96,
-        "match_strength": "direct",
-        "match_key": "client_commercial_work"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 104,
         "match_strength": "direct",
         "match_key": "prospecting_pipeline_management"
+      },
+      {
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 75,
+        "match_strength": "adjacent",
+        "match_key": "client_commercial_work"
       },
       {
         "code": "WHY_EXECUTION_PROOF",
@@ -12558,13 +12011,6 @@
       }
     ],
     "profile_evidence_units": [
-      {
-        "id": "0766b2806818be73",
-        "key": "client_commercial_work",
-        "kind": "stakeholder",
-        "strength": 7,
-        "label": "generic client-facing or commercial support work"
-      },
       {
         "id": "1a3e0101cc79b106",
         "key": "excel",
@@ -12850,15 +12296,6 @@
         "match_key": "financial_analysis",
         "job_unit_key": "financial_analysis",
         "profile_unit_id": "f0b9e45a07adb866"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 74,
-        "coverageScore": 55,
-        "match_kind": "stakeholder",
-        "match_key": "stakeholder_coordination",
-        "job_unit_key": "stakeholder_coordination",
-        "profile_unit_id": "0766b2806818be73"
       },
       {
         "match_strength": "adjacent",
@@ -13171,13 +12608,6 @@
         "label": "drafting, documentation, and written deliverables"
       },
       {
-        "id": "e468c36a71188fed",
-        "key": "operations_execution",
-        "kind": "execution",
-        "strength": 4,
-        "label": "operations, process, and workflow execution"
-      },
-      {
         "id": "eb341f1f31372731",
         "key": "operations_execution",
         "kind": "execution",
@@ -13234,15 +12664,6 @@
         "match_kind": "execution",
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "e468c36a71188fed"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 76,
-        "coverageScore": 54,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
         "profile_unit_id": "eb341f1f31372731"
       },
       {
@@ -13289,15 +12710,6 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "de8ff8f43011dd6f"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 95,
-        "coverageScore": 78,
-        "match_kind": "execution",
-        "match_key": "operations_execution",
-        "job_unit_key": "operations_execution",
-        "profile_unit_id": "e468c36a71188fed"
       },
       {
         "match_strength": "direct",
@@ -14604,13 +14016,6 @@
         "label": "legal, policy, and regulatory research"
       },
       {
-        "id": "c7c7376e470a3357",
-        "key": "policy_regulatory_research",
-        "kind": "function",
-        "strength": 4,
-        "label": "legal, policy, and regulatory research"
-      },
-      {
         "id": "d3051060ee29c338",
         "key": "drafting_documentation",
         "kind": "deliverable",
@@ -14683,15 +14088,6 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 77,
-        "coverageScore": 54,
-        "match_kind": "execution",
-        "match_key": "analysis_reporting",
-        "job_unit_key": "analysis_reporting",
-        "profile_unit_id": "c7c7376e470a3357"
-      },
-      {
-        "match_strength": "adjacent",
         "weight": 80,
         "coverageScore": 57,
         "match_kind": "execution",
@@ -14725,15 +14121,6 @@
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
         "profile_unit_id": "a81eaa356d78e822"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 80,
-        "coverageScore": 58,
-        "match_kind": "deliverable",
-        "match_key": "drafting_documentation",
-        "job_unit_key": "drafting_documentation",
-        "profile_unit_id": "c7c7376e470a3357"
       },
       {
         "match_strength": "direct",
@@ -14824,15 +14211,6 @@
         "match_key": "policy_regulatory_research",
         "job_unit_key": "policy_regulatory_research",
         "profile_unit_id": "a81eaa356d78e822"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 96,
-        "coverageScore": 78,
-        "match_kind": "function",
-        "match_key": "policy_regulatory_research",
-        "job_unit_key": "policy_regulatory_research",
-        "profile_unit_id": "c7c7376e470a3357"
       },
       {
         "match_strength": "adjacent",

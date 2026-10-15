@@ -5167,6 +5167,17 @@ return {
   }
 }
 
+// The profile text carries the intake answers above the résumé ("Target
+// roles: Brand Marketing Associate", "Strengths: great with outreach"). Those
+// say what the candidate wants or claims, not what they have done, so they
+// must not become evidence units or tool mentions (DEF-026: 247 of 629 prod
+// runs mined them, and a target role could become a direct match).
+const INTAKE_HEADER_LINE = /^\s*(?:\d+\.\s*)?(?:target roles|target role|secondary or adjacent roles|target locations?|target industries|strengths|concerns|constraints|timeline|job type|current status|what types of roles|how open)\b/i
+
+function stripIntakeHeaderLines(text: string): string {
+  return String(text || "").split("\n").filter((l) => !INTAKE_HEADER_LINE.test(l)).join("\n")
+}
+
 export function extractProfileSignals(
   profileTextRaw: string,
   overrides?: Partial<StructuredProfileSignals>
@@ -5177,10 +5188,12 @@ export function extractProfileSignals(
   const resumeSectionMatch = String(profileTextRaw || "").match(
     /resume_paste:\s*([\s\S]*?)(?:\n\s*cover_letter:|\n\s*extra_context:|$)/i
   )
-  const resumeEvidenceText = resumeSectionMatch?.[1]?.trim() || String(profileTextRaw || "")
+  const resumeEvidenceText = stripIntakeHeaderLines(
+    resumeSectionMatch?.[1]?.trim() || String(profileTextRaw || "")
+  )
 
   const built = buildUnitsFromLines(splitEvidenceLines(resumeEvidenceText), "profile")
-  const extractedTools = extractToolMentions(profileTextRaw)
+  const extractedTools = extractToolMentions(stripIntakeHeaderLines(profileTextRaw))
 
   const baseFamilies = inferTargetFamiliesFromTags(built.functionTags)
 
