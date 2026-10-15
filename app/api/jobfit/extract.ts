@@ -1745,12 +1745,43 @@ function phraseText(spec: PhraseSpec): string {
   return typeof spec === "string" ? spec : spec.phrase
 }
 
-function includesPhrase(hay: string, spec: PhraseSpec): boolean {
+// y <-> ies tolerance for a phrase's LAST word (DEF-021, C008: the JD's
+// "brand strategies" missed "brand strategy"). Returns a regex fragment, or
+// null to leave the phrase exact.
+//
+// Deliberately narrow. General -s plural tolerance was measured on the
+// 696-case suite (2026-10-15): singular phrases matching plural text moved 72
+// verdicts, plural phrases matching singular text moved 36. Each needs its own
+// audited pass; y <-> ies alone moved 1.
+//
+// Multi-word phrases only. A bare word is already the loosest match a rule
+// has, and its plural is often a different sense: bare "territory" picked up
+// "innovation territories" on a brand internship once "territories" matched.
+function inflectedPattern(p: string): string | null {
+  const m = p.match(/^(.*\s)([a-z]+)$/)
+  if (!m) return null
+  const [, head, w] = m
+  if (w.length < 4) return null
+  const h = escapeRegExp(head)
+  if (w.endsWith("ies")) return `${h}${w.slice(0, -3)}(?:y|ies)`
+  if (/[^aeiou]y$/.test(w)) return `${h}${w.slice(0, -1)}(?:y|ies)`
+  return null
+}
+
+// The singular form a phrase reduces to, so a rule listing both "strategy"
+// and "strategies" counts one hit, not two, once both match either spelling.
+function phraseLemma(spec: PhraseSpec): string {
+  const p = norm(phraseText(spec))
+  return inflectedPattern(p) ? p.replace(/ies$/, "y") : p
+}
+
+function includesPhrase(hay: string, spec: PhraseSpec, inflect = false): boolean {
   const p = norm(phraseText(spec))
   if (!p) return false
   const wordBoundary = typeof spec === "string" ? true : spec.wordBoundary ?? true
+  const body = (inflect && wordBoundary && inflectedPattern(p)) || escapeRegExp(p)
   const matched = wordBoundary
-    ? new RegExp(`(^|\\W)${escapeRegExp(p)}($|\\W)`, "i").test(hay)
+    ? new RegExp(`(^|\\W)${body}($|\\W)`, "i").test(hay)
     : hay.includes(p)
   if (!matched) return false
   if (typeof spec !== "string") {
@@ -1766,8 +1797,11 @@ function includesAny(hay: string, phrases: PhraseSpec[]): boolean {
   return phrases.some((p) => includesPhrase(hay, p))
 }
 
-function countHits(hay: string, phrases: PhraseSpec[]): number {
-  return phrases.reduce((acc, p) => acc + (includesPhrase(hay, p) ? 1 : 0), 0)
+function countHits(hay: string, phrases: PhraseSpec[], inflect = false): number {
+  if (!inflect) return phrases.reduce((acc, p) => acc + (includesPhrase(hay, p) ? 1 : 0), 0)
+  const hit = new Set<string>()
+  for (const p of phrases) if (includesPhrase(hay, p, true)) hit.add(phraseLemma(p))
+  return hit.size
 }
 
 function countWeakHits(hay: string, phrases?: PhraseSpec[]): number {
@@ -2720,7 +2754,7 @@ function buildUnitsFromLines(
 
     for (const rule of CAPABILITY_RULES) {
       const phrases = side === "job" ? rule.jobPhrases : rule.profilePhrases
-      const hits = countHits(n, phrases)
+      const hits = countHits(n, phrases, side === "job")
       const minMatches = rule.minMatches ?? 1
       if (hits < minMatches) continue
 
