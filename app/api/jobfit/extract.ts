@@ -82,6 +82,20 @@ const QUANT_ANALYSIS_ANCHORS: string[] = [
   "market research", "competitive analysis",
 ]
 
+// partnerships_sponsorships exclusions. A JD "sponsorship" is usually work
+// authorization ("without company sponsorship now or in the future") or a
+// credential the firm pays for, not partnership work. A résumé line that only
+// says what the candidate is targeting is aspiration, not evidence.
+const SPONSORSHIP_NOT_PARTNERSHIP = [
+  "visa", "immigration", "authorization", "authorized", "right to work", "work in the united states",
+  "without sponsorship", "company sponsorship", "future sponsorship", "employer sponsorship",
+  "need for sponsorship", "require sponsorship", "requires sponsorship", "sponsorship now",
+  "offer sponsorship", "eligible for sponsorship", "sponsorship available", "relocation or sponsorship",
+  "h-1b", "h1b", "green card",
+  "license", "licensing", "certification", "series",
+]
+const PARTNER_PROFILE_NOT_EVIDENCE = ["visa", "immigration", "targeting", "seeking", "interested in"]
+
 const CAPABILITY_RULES: CapabilityRule[] = [
   {
     key: "brand_messaging",
@@ -119,6 +133,50 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "brand events",
     ],
     adjacentKeys: ["content_execution", "visual_communication"],
+  },
+  {
+    // Brand partnerships and sponsorship work (C008: UTA's Marketing & Brand
+    // Partnerships program vs a résumé that built partnerships with Live
+    // Nation and artist management and ran sponsorships). No bare
+    // "partnership": "in partnership with our team" is how JDs describe
+    // teamwork. Sponsorship phrases skip immigration and credential
+    // sponsorship ("visa sponsorship", "will sponsor your Series 7").
+    key: "partnerships_sponsorships",
+    label: "brand partnerships and sponsorship work",
+    kind: "function",
+    functionTag: "brand_marketing",
+    profilePhrases: [
+      "brand partnerships",
+      "brand partnership",
+      "build partnerships",
+      "built partnerships",
+      "building partnerships",
+      "partnership development",
+      "developed partnerships",
+      "secured partnerships",
+      "partner relations",
+      "brand deals",
+      "sponsorships",
+      "sponsorship",
+      "secured sponsors",
+      "sponsor relations",
+    ].map((phrase) => ({ phrase, negativeContext: PARTNER_PROFILE_NOT_EVIDENCE })),
+    jobPhrases: [
+      "brand partnerships",
+      "brand partnership",
+      "partnership development",
+      "partner development",
+      "strategic partnerships",
+      "partnership marketing",
+      "partner marketing",
+      "brand deals",
+      "brand integrations",
+      "talent partnerships",
+      "influencer partnerships",
+      { phrase: "sponsorships", negativeContext: SPONSORSHIP_NOT_PARTNERSHIP },
+      { phrase: "sponsorship", negativeContext: SPONSORSHIP_NOT_PARTNERSHIP },
+    ],
+    adjacentKeys: ["brand_messaging", "account_management", "client_commercial_work"],
   },
   {
     key: "communications_writing",

@@ -76,6 +76,7 @@ export type RequirementCoverage = {
 
 const ADJACENCY: Record<string, string[]> = {
   brand_messaging: ["content_execution", "visual_communication", "communications_writing"],
+  partnerships_sponsorships: ["brand_messaging", "account_management", "client_commercial_work"],
   communications_writing: ["drafting_documentation", "stakeholder_coordination"],
   visual_communication: ["brand_messaging", "content_execution"],
   content_execution: ["brand_messaging", "visual_communication", "performance_optimization"],
