@@ -1,6 +1,6 @@
 "use client"
 
-// The record's two buttons, Add Note and Add Task, for the pages keyed by the
+// The record's buttons, Add Note, Add Task and Message, for the pages keyed by the
 // relationship (coach_clients.id): the prospect page and the converted-client
 // page. The client page has the same pair in ClientHeaderStrip, keyed by the
 // client's profile.
@@ -15,6 +15,7 @@ import { T, btnSecondary } from "../../../../lib/dashboard-theme"
 import { TaskFormModal } from "../_tasks/TaskFormModal"
 import { apiJson, type Assignee } from "../_tasks/taskClient"
 import { AddNotePanel, type NoteSubmitInput } from "../clients/[clientId]/AddNotePanel"
+import { MessagePanel } from "../_messaging/MessagePanel"
 
 /** Tomorrow noon local, as an ISO instant: the task form's default due date. */
 function tomorrowIso(): string {
@@ -43,6 +44,8 @@ export type RecordNoteTaskOptions = {
   onNoteSaved: () => void
   /** After a task saves, so the page's Tasks section re-reads. */
   onTaskSaved: () => void
+  /** After a message sends, so the page's Communications section re-reads. */
+  onMessageSent?: () => void
 }
 
 /**
@@ -52,9 +55,10 @@ export type RecordNoteTaskOptions = {
  * (in its Notes section) opens the same panel rather than a second form.
  */
 export function useRecordNoteTaskActions(opts: RecordNoteTaskOptions): { openNote: () => void; element: ReactNode } {
-  const { coachClientId, name, recordLabel, onNoteSaved, onTaskSaved } = opts
+  const { coachClientId, name, recordLabel, onNoteSaved, onTaskSaved, onMessageSent } = opts
   const [noteOpen, setNoteOpen] = useState(false)
   const [taskOpen, setTaskOpen] = useState(false)
+  const [messageOpen, setMessageOpen] = useState(false)
   const [assignees, setAssignees] = useState<Assignee[]>([])
   const [me, setMe] = useState<string | null>(null)
 
@@ -85,6 +89,7 @@ export function useRecordNoteTaskActions(opts: RecordNoteTaskOptions): { openNot
     <>
       <button type="button" onClick={() => setNoteOpen(true)} style={headerButton}>Add Note</button>
       <button type="button" onClick={() => setTaskOpen(true)} style={headerButton}>Add Task</button>
+      <button type="button" onClick={() => setMessageOpen(true)} style={headerButton}>Message</button>
       {taskOpen && (
         <TaskFormModal
           task={null}
@@ -102,6 +107,12 @@ export function useRecordNoteTaskActions(opts: RecordNoteTaskOptions): { openNot
         onClose={() => setNoteOpen(false)}
         onSaved={onNoteSaved}
         onSubmit={submitNote}
+      />
+      <MessagePanel
+        open={messageOpen}
+        onClose={() => setMessageOpen(false)}
+        coachClientId={coachClientId}
+        onSent={onMessageSent}
       />
     </>
   )

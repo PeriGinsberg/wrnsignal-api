@@ -168,6 +168,7 @@ async function main() {
       html_body: d.HtmlBody ?? null,
       triggered_by: actor,
       postmark_message_id: m.MessageID,
+      provider_message_id: m.MessageID,
       backfilled: true,
     }))
   }

@@ -21,6 +21,7 @@ import { leadSourceLabel } from "../../../../../lib/prospects/model"
 import ProfilePersonasTab, { type ClientProfileFull, type ClientPersonaFull } from "./ProfilePersonasTab"
 import { NotesTab } from "./NotesTab"
 import { AddNotePanel, type NoteSubmitInput } from "./AddNotePanel"
+import { MessagePanel } from "../../_messaging/MessagePanel"
 import { TaskList } from "../../_tasks/TaskList"
 import { TaskFormModal } from "../../_tasks/TaskFormModal"
 
@@ -377,6 +378,8 @@ export default function CoachClientPage() {
   // needsAttentionRefreshKey similarly drives the dashboard's
   // Needs-Attention section.
   const [addNoteOpen, setAddNoteOpen] = useState(false)
+  const [messageOpen, setMessageOpen] = useState(false)
+  const [emailsKey, setEmailsKey] = useState(0)
 
   // Add Task, from the header. Separate state from the Tasks tab so the modal
   // opens over whichever tab the coach happens to be on, the same way Add Note
@@ -823,6 +826,7 @@ export default function CoachClientPage() {
           inviteError={inviteError}
           onAddNote={() => setAddNoteOpen(true)}
           onAddTask={() => setAddTaskOpen(true)}
+          onMessage={coachClientId ? () => setMessageOpen(true) : undefined}
           onSourceJob={() => setTab("source")}
           onRemoveClient={() => {
             if (!removingClient) handleRemoveClient()
@@ -2160,7 +2164,7 @@ export default function CoachClientPage() {
       )}
 
       {/* Communications: every email SIGNAL sent this client, as sent */}
-      {tab === "communications" && <CommunicationsTab coachClientId={coachClientId} />}
+      {tab === "communications" && <CommunicationsTab coachClientId={coachClientId} refreshKey={emailsKey} />}
 
       {/* TAB 7 — History (read-only event timeline) */}
       {tab === "history" && <HistoryTab coachClientId={coachClientId} />}
@@ -2188,6 +2192,15 @@ export default function CoachClientPage() {
           presetDueAt={tomorrowIso()}
           onClose={() => setAddTaskOpen(false)}
           onSaved={() => setTasksRefresh((n) => n + 1)}
+        />
+      )}
+
+      {coachClientId && (
+        <MessagePanel
+          open={messageOpen}
+          onClose={() => setMessageOpen(false)}
+          coachClientId={coachClientId}
+          onSent={() => setEmailsKey((k) => k + 1)}
         />
       )}
 

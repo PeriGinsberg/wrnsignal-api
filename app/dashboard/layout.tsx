@@ -113,6 +113,7 @@ const COACH_NAV: NavGroup[] = [
       { href: "/dashboard/coach/settings/prospects", label: "Prospects", matchPrefix: true },
       { href: "/dashboard/coach/settings/services", label: "Services", matchPrefix: true },
       { href: "/dashboard/coach/settings/documents", label: "Documents", matchPrefix: true },
+      { href: "/dashboard/coach/settings/messaging", label: "Messaging", matchPrefix: true },
       { label: "Billing", disabled: true },
     ],
   },
