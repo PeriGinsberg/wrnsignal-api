@@ -9823,8 +9823,8 @@
     "schema_version": 2,
     "id": "batch-40926r",
     "label": "40926r — Dimitri / Software Engineer",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [],
@@ -10241,7 +10241,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -10250,7 +10250,7 @@
         }
       ],
       "raw_score": 75,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "batch-40926s": {

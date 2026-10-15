@@ -123,6 +123,8 @@ function isQualityDirectWhy(w: WhyCode): boolean {
 // and zero evidence matches.
 //
 // Rules:
+//   0. Unreadable posting           → Review         (no requirements beyond
+//      office tools, zero WHYs, no gate, no other risk; can lift a Pass)
 //   1. Zero WHY codes               → cap at Pass    (no evidence of any fit)
 //   2. Zero QUALITY direct WHY codes → cap at Review  (only weak/boilerplate proof)
 //      "Quality" means match_strength=direct AND weight >= 75 AND profile_fact
@@ -142,12 +144,36 @@ export function applyEvidenceGuardrails(
   decision: Decision,
   whyCodes: WhyCode[] = [],
   riskCodes: RiskCode[] = [],
-  opts: { yearsRequired?: number | null; yearsExperienceApprox?: number | null } = {}
-): { decision: Decision; reason: string | null } {
+  opts: {
+    yearsRequired?: number | null
+    yearsExperienceApprox?: number | null
+    unreadableJob?: boolean
+    gateType?: GateTriggered["type"]
+  } = {}
+): { decision: Decision; reason: string | null; pinScore?: number } {
   const whyCount = whyCodes.length
   const directCount = whyCodes.filter((w) => w.match_strength === "direct").length
   const qualityDirectCount = whyCodes.filter(isQualityDirectWhy).length
   const highRiskCount = riskCodes.filter((r) => r.severity === "high").length
+
+  // Rule 0: unreadable posting. When the JD yielded no requirement beyond
+  // office tools, zero WHYs means the engine could not read the posting, not
+  // that the candidate fits nothing (C008, DEF-022). The result is Review in
+  // both directions: it lifts a score-based Pass and caps an Apply, because
+  // the score was built from requirements that were never extracted. Only
+  // when nothing else spoke: no gate, and no risk beyond the limited-match
+  // note itself and the low ambiguous-role note. The score is pinned to the
+  // bottom of the Review band so it never reads as nearly Apply.
+  if (
+    opts.unreadableJob &&
+    whyCount === 0 &&
+    (opts.gateType ?? "none") === "none" &&
+    riskCodes.every((r) => r.code === "RISK_LIMITED_MATCH_EVIDENCE" || r.code === "RISK_AMBIGUOUS_ROLE")
+  ) {
+    const reason = `unreadable posting — no requirements beyond office tools, zero WHY codes`
+    console.log(`[decision] Evidence guardrail: ${decision} -> Review (${reason})`)
+    return { decision: "Review", reason, pinScore: 60 }
+  }
 
   // Rule 1: zero WHY codes means we found nothing — Pass.
   if (whyCount === 0) {

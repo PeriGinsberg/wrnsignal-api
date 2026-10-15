@@ -199,6 +199,13 @@ export function hasRequiredDegree(
   return degrees.some((d) => d.level === level && d.requiredness === "required")
 }
 
+// The engine read no requirement from the posting beyond office tools: every
+// requirement unit is a tool (or there are none). A zero-match result on such
+// a JD says nothing about fit (C008, DEF-022). Used by scoring + decision.
+export function jobHasNoReadableRequirements(job: { requirement_units?: { kind: string }[] }): boolean {
+  return !(job.requirement_units ?? []).some((u) => u.kind !== "tool")
+}
+
 export type StructuredJobSignals = {
   rawHash: string
   jobTitle: string | null

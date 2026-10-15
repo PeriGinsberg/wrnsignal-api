@@ -15,7 +15,7 @@ import type {
   StructuredProfileSignals,
   WhyCode,
 } from "./signals"
-import { hasRequiredDegree } from "./signals"
+import { hasRequiredDegree, jobHasNoReadableRequirements } from "./signals"
 import { getFinanceSubFamilyDistance, NON_DIFFERENTIATING_JOB_TOOLS } from "./extract"
 import { familyDisplayName } from "./deterministicBulletRendererV4"
 
@@ -1725,7 +1725,18 @@ export function scoreJobFit(
 
   // Sparse evidence floor — when there are very few why_codes generated,
   // surface that as the explanation for the lower score
-  if (selectedMatches.length === 0) {
+  if (selectedMatches.length === 0 && jobHasNoReadableRequirements(job)) {
+    // The posting itself gave the engine nothing to match against, so say
+    // that rather than implying the profile is missing something (C008).
+    riskOnlyCodes.push({
+      code: "RISK_LIMITED_MATCH_EVIDENCE",
+      job_fact: "SIGNAL could not read clear requirements from this posting.",
+      profile_fact: "No requirements to match against.",
+      risk: "This posting describes the role in general terms, so SIGNAL could not score your fit against specific requirements. Read the posting yourself and judge whether your experience lines up before deciding.",
+      severity: "high",
+      weight: 0,
+    })
+  } else if (selectedMatches.length === 0) {
     riskOnlyCodes.push({
       code: "RISK_LIMITED_MATCH_EVIDENCE",
       job_fact: "This role's stated requirements are difficult to map to your profile.",

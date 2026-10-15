@@ -94523,8 +94523,8 @@
     "schema_version": 2,
     "id": "prod-443ea22f-d41f-42f5-b5fd-50a39d780835",
     "label": "prod 443ea22f — Recruiting Coordinator @ The GEO Group, Inc. (2026-05-21)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [],
@@ -94897,7 +94897,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -94906,7 +94906,7 @@
         }
       ],
       "raw_score": 62,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-44491cdf-4cc3-4ac4-90ac-3778e7bb2d4a": {
@@ -186567,8 +186567,8 @@
     "schema_version": 2,
     "id": "prod-88b66889-8a7a-4dee-bf9f-72ee1f437c58",
     "label": "prod 88b66889 — US Procurement Consultant Internship 2026 @ Proxima (2026-04-15)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [],
@@ -186846,7 +186846,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -186855,7 +186855,7 @@
         }
       ],
       "raw_score": 86,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-890683c6-2292-43df-9938-0888e1e5a984": {
@@ -206454,8 +206454,8 @@
     "schema_version": 2,
     "id": "prod-96ae41d7-dc45-4c8a-8ad5-b36d3f57c854",
     "label": "prod 96ae41d7 — Intern, Origination @ Luminace (2026-04-12)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [],
@@ -206840,7 +206840,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -206849,7 +206849,7 @@
         }
       ],
       "raw_score": 66,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-96b1e991-2496-4a33-819e-b273db5a5b73": {
@@ -279383,8 +279383,8 @@
     "schema_version": 2,
     "id": "prod-cf2ece01-dec7-4bc0-af59-6f8bff83a78d",
     "label": "prod cf2ece01 — Trademark Paralegal @ Authentic Brands Group (2026-06-02)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [],
@@ -279634,7 +279634,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -279643,7 +279643,7 @@
         }
       ],
       "raw_score": 66,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-cf6d294d-0794-4a25-8e9a-88325dc85902": {
@@ -280398,8 +280398,8 @@
     "schema_version": 2,
     "id": "prod-d02bb559-4a73-4685-8f5a-ed08da99905a",
     "label": "prod d02bb559 — Summer Internship @ Alloy Development (2026-04-12)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [],
@@ -280784,7 +280784,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -280793,7 +280793,7 @@
         }
       ],
       "raw_score": 66,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-d04d3a3a-6bba-4811-ad57-7c801f1ffd8e": {
@@ -309914,8 +309914,8 @@
     "schema_version": 2,
     "id": "prod-dfcf8169-5718-452a-8022-f1817b983a3f",
     "label": "prod dfcf8169 — Associate Scientist @ Regeneron (2026-04-22)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -310182,7 +310182,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -310191,7 +310191,7 @@
         }
       ],
       "raw_score": 86,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-dfeb4b3a-0386-4307-a4c0-26e40e61341e": {
@@ -321566,8 +321566,8 @@
     "schema_version": 2,
     "id": "prod-e74f02e9-d01a-4eeb-9760-d1da2f7f9489",
     "label": "prod e74f02e9 — Associate Research Scientist @ InVitro Cell Research (ICR) (2026-05-23)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [],
@@ -321816,7 +321816,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -321825,7 +321825,7 @@
         }
       ],
       "raw_score": 84,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-e78408de-7367-4890-8c30-b109d678a3ef": {

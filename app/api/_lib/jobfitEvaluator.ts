@@ -33,6 +33,7 @@ import type {
   Decision,
   LocationConstraint,
 } from "../jobfit/signals"
+import { jobHasNoReadableRequirements } from "../jobfit/signals"
 import { renderBulletsV4, RENDERER_V4_STAMP } from "../jobfit/deterministicBulletRendererV4"
 import { extractJobSignalsLLM } from "../jobfit/extractJobSignalsLLM"
 import { llmJobExtractionToSignals } from "../jobfit/llmJobSignalsAdapter"
@@ -357,6 +358,8 @@ export async function runJobFit(args: {
   const guardrail = applyEvidenceGuardrails(decisionAfterRisk, scored.whyCodes, riskCodes, {
     yearsRequired: jobSignals.yearsRequired,
     yearsExperienceApprox: profileSignals.yearsExperienceApprox,
+    unreadableJob: jobHasNoReadableRequirements(jobSignals),
+    gateType: gate.type,
   })
   const decisionPreLedger = guardrail.decision
 
@@ -390,7 +393,11 @@ export async function runJobFit(args: {
   // force_pass forces decisionFinal="Pass", so this is ≤55). The old
   // coarse-only ≤25 tier is RETIRED; the "Blocked on" reason line above carries
   // severity, so it no longer needs to live in the number.
-  const gateScore = capScoreForDecision(scoreAfterBoost, decisionFinal)
+  // An unreadable-posting Review (guardrail rule 0) shows a pinned score,
+  // unless the ledger has since moved the decision.
+  const gateScore = guardrail.pinScore != null && decisionFinal === "Review"
+    ? guardrail.pinScore
+    : capScoreForDecision(scoreAfterBoost, decisionFinal)
 
   // Per-scan detector confirmation — needEv is true iff a detector flag is on,
   // which happens via detectorFlagsForPath (dev master, or a per-path prod flip).
