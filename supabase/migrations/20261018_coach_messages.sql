@@ -28,7 +28,8 @@
 --    signature added to the end of every message (coaches edit that in
 --    My Settings > Messaging).
 --
--- 3. Peri and Erin's sending addresses, filled in from their coach profiles.
+-- 3. Peri and Erin's sending addresses, filled in from their coach profiles:
+--    Peri sends as peri@; Erin logs in as erin+coach@ but sends as erin@.
 --
 -- Additive: new columns with defaults and a new table. Safe to run twice.
 --
@@ -91,7 +92,9 @@ INSERT INTO coach_messaging_settings (coach_profile_id, sending_email)
 SELECT p.id, s.sending_email
   FROM (VALUES
           ('peri@workforcereadynow.com', 'peri@workforcereadynow.com'),
-          ('erin+coach@workforcereadynow.com', 'erin+coach@workforcereadynow.com')
+          -- Erin signs in as erin+coach@ (her plain address is taken by a
+          -- client profile); her mail comes from her real address.
+          ('erin+coach@workforcereadynow.com', 'erin@workforcereadynow.com')
        ) AS s(login_email, sending_email)
   JOIN client_profiles p ON lower(trim(p.email)) = s.login_email AND p.is_coach = true
 ON CONFLICT (coach_profile_id) DO UPDATE SET sending_email = EXCLUDED.sending_email;
