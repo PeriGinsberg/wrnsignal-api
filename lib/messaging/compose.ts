@@ -1,12 +1,32 @@
 // lib/messaging/compose.ts
 //
 // A coach's message as an email: what they typed, then their signature, as
-// plain text and as HTML. No layout, no header, no logo: it should read like an
-// email they wrote in their own inbox.
+// plain text and as HTML. No layout and no header: it should read like an
+// email they wrote in their own inbox. The HTML ends with the WRN and SIGNAL
+// logos under the signature, for every coach; the plain text has no images.
 //
 // The text is escaped before it becomes HTML, so nothing typed can change the
 // email's markup. Paragraphs split on blank lines, single line breaks are kept,
 // and bare http(s) links become links.
+
+import { ASSET_BASE } from "../email/signature"
+
+/**
+ * The two marks under every coach's signature, stacked, at the sizes the
+ * automatic emails' signature uses (lib/email/signature.ts). Also read by the
+ * Message panel and Settings to preview the signature as it goes out.
+ */
+export const SIGNATURE_LOGOS = [
+  { src: `${ASSET_BASE}/WRN_Transparent_Logo.png`, width: 170, alt: "Workforce Ready Now", href: "https://workforcereadynow.com" },
+  { src: `${ASSET_BASE}/SIGNAL_logo_navy_email.png`, width: 190, alt: "SIGNAL, stop applying blind", href: "https://stopapplyingblind.com" },
+] as const
+
+function logosHtml(): string {
+  return SIGNATURE_LOGOS.map((l, i) =>
+    `<a href="${l.href}" target="_blank" style="display:block;text-decoration:none;${i ? "margin-top:14px;" : ""}">` +
+    `<img src="${l.src}" width="${l.width}" alt="${l.alt}" style="display:block;border:0;width:${l.width}px;max-width:${l.width}px;height:auto;" /></a>`,
+  ).join("\n")
+}
 
 export const MESSAGE_SUBJECT_MAX = 200
 export const MESSAGE_BODY_MAX = 20000
@@ -34,5 +54,5 @@ export function composeMessage(body: string, signature: string | null): { html: 
   const html = [...paragraphs(main), ...paragraphs(sig)]
     .map((p) => `<p style="margin:0 0 14px 0;font-family:${FONT};font-size:15px;line-height:1.55;color:${INK};">${linkify(esc(p)).replace(/\n/g, "<br>")}</p>`)
     .join("\n")
-  return { html: `<div>\n${html}\n</div>`, text }
+  return { html: `<div>\n${html}\n<div style="padding-top:6px;">\n${logosHtml()}\n</div>\n</div>`, text }
 }

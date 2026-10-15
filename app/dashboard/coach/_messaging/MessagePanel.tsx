@@ -19,6 +19,7 @@ import { TYPE } from "../../../../lib/theme/surfaces"
 import { T, input, textarea, btnPrimary, btnSecondary, eyebrow, label } from "../../../../lib/dashboard-theme"
 import { SavingSpinner } from "../SavingSpinner"
 import { apiJson } from "../_tasks/taskClient"
+import { SignaturePreview } from "./SignaturePreview"
 
 export type MessageContext = {
   to: string | null
@@ -251,9 +252,9 @@ export function MessagePanel({ open, onClose, coachClientId, onSent }: Props) {
                 />
                 <div style={{ marginTop: 8 }}>
                   <span style={{ fontSize: TYPE.label, color: T.DIM }}>Your signature, added when it sends (edit it in My Settings &gt; Messaging):</span>
-                  <pre style={{ margin: "4px 0 0", whiteSpace: "pre-wrap", fontFamily: "inherit", fontSize: TYPE.secondary, color: ctx?.signature ? T.MUTED : T.DIM }}>
-                    {ctx?.signature || "No signature yet."}
-                  </pre>
+                  <div style={{ marginTop: 6 }}>
+                    <SignaturePreview signature={ctx?.signature ?? null} />
+                  </div>
                 </div>
               </div>
 

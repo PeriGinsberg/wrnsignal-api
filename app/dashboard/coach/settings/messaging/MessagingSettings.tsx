@@ -7,6 +7,7 @@ import { useEffect, useState } from "react"
 import { T, textarea, btnPrimary, label } from "../../../../../lib/dashboard-theme"
 import { apiJson } from "../../_tasks/taskClient"
 import { SavingSpinner } from "../../SavingSpinner"
+import { SignaturePreview } from "../../_messaging/SignaturePreview"
 
 type Settings = { sending_email: string | null; signature: string | null }
 
@@ -79,8 +80,13 @@ export function MessagingSettings() {
           onChange={(e) => { setSignature(e.target.value); setSaved(false) }}
         />
         <p style={{ fontSize: 12, color: T.DIM, margin: "4px 0 0" }}>
-          Plain text, added to the end of every message you send.
+          Plain text, added to the end of every message you send, with the WRN and SIGNAL logos under it.
         </p>
+      </div>
+
+      <div>
+        <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 6 }}>HOW IT LOOKS</span>
+        <SignaturePreview signature={signature} />
       </div>
 
       {error && <div style={{ fontSize: 13, color: T.ERROR, fontWeight: 700 }}>{error}</div>}

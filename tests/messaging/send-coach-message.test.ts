@@ -67,6 +67,11 @@ async function main() {
   ok("single line break kept", c.html.includes(".<br>Thanks"))
   ok("signature lines kept", c.html.includes("Peri<br>WRN"))
   ok("no signature, no trailing block", composeMessage("Hi", null).text === "Hi\n")
+  ok("HTML ends with the WRN then SIGNAL logo, linked", /WRN_Transparent_Logo\.png[\s\S]*SIGNAL_logo_navy_email\.png/.test(c.html)
+    && c.html.includes(`href="https://workforcereadynow.com"`) && c.html.includes(`href="https://stopapplyingblind.com"`), c.html)
+  ok("logos come after the signature", c.html.indexOf("Peri<br>WRN") < c.html.indexOf("WRN_Transparent_Logo"))
+  ok("logos even with no signature text", composeMessage("Hi", null).html.includes("SIGNAL_logo_navy_email.png"))
+  ok("plain text carries no images", !c.text.includes(".png"))
 
   console.log("sending address")
   ok("verified domain allowed", isAllowedSendingAddress("erin+coach@workforcereadynow.com"))
