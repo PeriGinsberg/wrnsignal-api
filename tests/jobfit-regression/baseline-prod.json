@@ -599,6 +599,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -838,6 +845,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -3354,6 +3362,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -3646,6 +3661,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -5572,6 +5588,13 @@
         "label": "brand messaging and campaign work"
       },
       {
+        "id": "d38cc26922f8e2a1",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "d58acff8071da8ca",
         "key": "consumer_research",
         "kind": "function",
@@ -5814,6 +5837,15 @@
         "match_key": "brand_messaging",
         "job_unit_key": "brand_messaging",
         "profile_unit_id": "cfa028813f6aeb07"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 80,
+        "coverageScore": 56,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "d38cc26922f8e2a1"
       },
       {
         "match_strength": "adjacent",
@@ -7485,6 +7517,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -7607,6 +7646,15 @@
         "match_key": "client_commercial_work",
         "job_unit_key": "client_commercial_work",
         "profile_unit_id": "3fa5aac5a57abcf9"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 83,
+        "coverageScore": 61,
+        "match_kind": "stakeholder",
+        "match_key": "client_commercial_work",
+        "job_unit_key": "client_commercial_work",
+        "profile_unit_id": "816fc9c34d458fd6"
       },
       {
         "match_strength": "adjacent",
@@ -7813,6 +7861,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -8737,6 +8786,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -8996,6 +9052,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -11571,7 +11628,7 @@
     "id": "prod-095f8aa7-7cb2-4e73-a99c-1b38d75c5893",
     "label": "prod 095f8aa7 — Social Media & Content Production Intern/Part-Time @ TrueTigerLLC (2026-04-27)",
     "decision": "Apply",
-    "score": 88,
+    "score": 89,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -11582,6 +11639,14 @@
         "strength": 6,
         "label": "content and channel execution",
         "requiredness": "supporting"
+      },
+      {
+        "id": "48315b4fe110c0bd",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work",
+        "requiredness": "core"
       },
       {
         "id": "deac1063865f93b4",
@@ -11852,6 +11917,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -12046,6 +12118,15 @@
       },
       {
         "match_strength": "adjacent",
+        "weight": 87,
+        "coverageScore": 60,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "eae79b9b6d3c348f"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 79,
         "coverageScore": 56,
         "match_kind": "function",
@@ -12160,6 +12241,51 @@
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
         "profile_unit_id": "c93aad87d7cfbe90"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 85,
+        "coverageScore": 58,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "1f2bca81cb930b0f"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "71b50481087c78a3"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "aeac0e2bb6c2bfb0"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "c93aad87d7cfbe90"
+      },
+      {
+        "match_strength": "direct",
+        "weight": 107,
+        "coverageScore": 84,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "eae79b9b6d3c348f"
       }
     ],
     "why_codes": [
@@ -12174,6 +12300,12 @@
         "weight": 100,
         "match_strength": "direct",
         "match_key": "content_execution"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 107,
+        "match_strength": "direct",
+        "match_key": "partnerships_sponsorships"
       }
     ],
     "risk_codes": [
@@ -12330,8 +12462,8 @@
           "note": "7.800000000000001"
         }
       ],
-      "raw_score": 88,
-      "clamped_score": 88
+      "raw_score": 89,
+      "clamped_score": 89
     }
   },
   "prod-09aa50eb-774d-4d1f-aea6-3f5384d55173": {
@@ -14682,6 +14814,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -15864,6 +16003,14 @@
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
+      {
+        "id": "5f524dc0e01aa683",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 5,
+        "label": "brand partnerships and sponsorship work",
+        "requiredness": "supporting"
+      },
       {
         "id": "6b78fa2453a94124",
         "key": "powerpoint",
@@ -22389,6 +22536,13 @@
         "label": "brand messaging and campaign work"
       },
       {
+        "id": "d38cc26922f8e2a1",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "d58acff8071da8ca",
         "key": "consumer_research",
         "kind": "function",
@@ -25255,6 +25409,13 @@
         "label": "powerpoint tool usage"
       },
       {
+        "id": "2dede37320375215",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "31af55a585d94bfb",
         "key": "word",
         "kind": "tool",
@@ -25659,6 +25820,7 @@
         "financeSubFamily": "asset_management",
         "function_tags": [
           "accounting_finops",
+          "brand_marketing",
           "data_analytics_bi",
           "finance_corp",
           "operations_general",
@@ -27752,9 +27914,25 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
+      {
+        "match_strength": "adjacent",
+        "weight": 76,
+        "coverageScore": 56,
+        "match_kind": "stakeholder",
+        "match_key": "account_management",
+        "job_unit_key": "account_management",
+        "profile_unit_id": "eae79b9b6d3c348f"
+      },
       {
         "match_strength": "adjacent",
         "weight": 77,
@@ -27952,6 +28130,15 @@
         "match_key": "brand_messaging",
         "job_unit_key": "brand_messaging",
         "profile_unit_id": "eacbe4085cef9394"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 81,
+        "coverageScore": 56,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "eae79b9b6d3c348f"
       },
       {
         "match_strength": "adjacent",
@@ -28260,6 +28447,12 @@
         "weight": 99,
         "match_strength": "direct",
         "match_key": "visual_communication"
+      },
+      {
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 76,
+        "match_strength": "adjacent",
+        "match_key": "account_management"
       },
       {
         "code": "WHY_TOOL_PROOF",
@@ -29833,6 +30026,13 @@
         "label": "customer service, guest experience, and issue resolution"
       },
       {
+        "id": "2af599273d0cb46b",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 7,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "331ad12bde8b03e5",
         "key": "google slides",
         "kind": "tool",
@@ -29997,6 +30197,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "content_social",
           "operations_general",
           "sales_bd"
@@ -30639,6 +30840,14 @@
         "requiredness": "supporting"
       },
       {
+        "id": "319851174f0c11a2",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work",
+        "requiredness": "core"
+      },
+      {
         "id": "637087387e474282",
         "key": "powerpoint",
         "kind": "tool",
@@ -31043,6 +31252,33 @@
         "profile_unit_id": "80829ecaefa8e7e5"
       },
       {
+        "match_strength": "adjacent",
+        "weight": 85,
+        "coverageScore": 58,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "44e3592aecd88180"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "ad41e8adc928994b"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "d5540c64b1adb29a"
+      },
+      {
         "match_strength": "direct",
         "weight": 60,
         "coverageScore": 78,
@@ -31063,6 +31299,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+        "weight": 88,
+        "match_strength": "adjacent",
+        "match_key": "partnerships_sponsorships"
+      },
+      {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 107,
         "match_strength": "direct",
@@ -31079,12 +31321,6 @@
         "weight": 100,
         "match_strength": "direct",
         "match_key": "content_execution"
-      },
-      {
-        "code": "WHY_EXECUTION_PROOF",
-        "weight": 82,
-        "match_strength": "adjacent",
-        "match_key": "analysis_reporting"
       },
       {
         "code": "WHY_TOOL_PROOF",
@@ -31426,6 +31662,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -31729,6 +31972,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -31867,6 +32111,14 @@
         "kind": "execution",
         "strength": 6,
         "label": "post-sale support, follow-up, and replenishment support",
+        "requiredness": "core"
+      },
+      {
+        "id": "b470ce7713eed99c",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work",
         "requiredness": "core"
       }
     ],
@@ -34269,6 +34521,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -34630,6 +34889,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -36123,6 +36383,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -36397,6 +36664,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -39329,6 +39597,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -39832,6 +40107,14 @@
         "requiredness": "supporting"
       },
       {
+        "id": "8f0686c1caa6c3e1",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 5,
+        "label": "brand partnerships and sponsorship work",
+        "requiredness": "supporting"
+      },
+      {
         "id": "92d09d24b1adad4e",
         "key": "operations_execution",
         "kind": "execution",
@@ -40302,6 +40585,33 @@
         "match_strength": "adjacent",
         "weight": 76,
         "coverageScore": 54,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "323aee407a32bebb"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 55,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "9566663a56211f37"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 55,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "c2013c5f83793913"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 76,
+        "coverageScore": 54,
         "match_kind": "execution",
         "match_key": "prospecting_pipeline_management",
         "job_unit_key": "prospecting_pipeline_management",
@@ -40319,6 +40629,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+        "weight": 78,
+        "match_strength": "adjacent",
+        "match_key": "partnerships_sponsorships"
+      },
+      {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 98,
         "match_strength": "direct",
@@ -40335,12 +40651,6 @@
         "weight": 99,
         "match_strength": "direct",
         "match_key": "content_execution"
-      },
-      {
-        "code": "WHY_EXECUTION_PROOF",
-        "weight": 77,
-        "match_strength": "adjacent",
-        "match_key": "prospecting_pipeline_management"
       },
       {
         "code": "WHY_TOOL_PROOF",
@@ -46816,6 +47126,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -47105,6 +47422,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -47482,6 +47800,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -50709,8 +51034,8 @@
     "schema_version": 2,
     "id": "prod-27ea6c01-5529-46d3-9837-411912557994",
     "label": "prod 27ea6c01 — Account Executive-Sports @ Audacy (2026-06-04)",
-    "decision": "Apply",
-    "score": 93,
+    "decision": "Priority Apply",
+    "score": 97,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -50720,6 +51045,14 @@
         "kind": "execution",
         "strength": 4,
         "label": "prospecting, outreach, and pipeline management",
+        "requiredness": "supporting"
+      },
+      {
+        "id": "a04149046e28b6df",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 5,
+        "label": "brand partnerships and sponsorship work",
         "requiredness": "supporting"
       }
     ],
@@ -50737,6 +51070,13 @@
         "kind": "stakeholder",
         "strength": 10,
         "label": "customer service, guest experience, and issue resolution"
+      },
+      {
+        "id": "2af599273d0cb46b",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 7,
+        "label": "brand partnerships and sponsorship work"
       },
       {
         "id": "331ad12bde8b03e5",
@@ -50820,6 +51160,15 @@
       {
         "match_strength": "direct",
         "weight": 98,
+        "coverageScore": 79,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "2af599273d0cb46b"
+      },
+      {
+        "match_strength": "direct",
+        "weight": 98,
         "coverageScore": 81,
         "match_kind": "execution",
         "match_key": "prospecting_pipeline_management",
@@ -50850,16 +51199,16 @@
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 98,
         "match_strength": "direct",
+        "match_key": "partnerships_sponsorships"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 98,
+        "match_strength": "direct",
         "match_key": "prospecting_pipeline_management"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_LIMITED_MATCH_EVIDENCE",
-        "severity": "medium",
-        "weight": 0
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -50873,6 +51222,7 @@
         "financeSubFamily": null,
         "flaggableTools": [],
         "function_tags": [
+          "brand_marketing",
           "sales_bd"
         ],
         "gradYearHint": null,
@@ -50921,6 +51271,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "content_social",
           "operations_general",
           "sales_bd"
@@ -50973,17 +51324,17 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
@@ -50991,8 +51342,8 @@
           "note": "0"
         }
       ],
-      "raw_score": 93,
-      "clamped_score": 93
+      "raw_score": 97,
+      "clamped_score": 97
     }
   },
   "prod-27fe1967-89a3-4289-9167-8cd415499b9e": {
@@ -57216,7 +57567,7 @@
     "id": "prod-2c3e280c-777f-478a-9a8a-22b2986d4a21",
     "label": "prod 2c3e280c — Events and Special Projects Coordinator @ Best Food Forward Foundation (2026-06-25)",
     "decision": "Pass",
-    "score": 49,
+    "score": 53,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -57372,6 +57723,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -57491,6 +57849,15 @@
         "weight": 86,
         "coverageScore": 61,
         "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "816fc9c34d458fd6"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 61,
+        "match_kind": "function",
         "match_key": "communications_writing",
         "job_unit_key": "communications_writing",
         "profile_unit_id": "6c98822218a73d34"
@@ -57556,6 +57923,12 @@
         "weight": 87,
         "match_strength": "adjacent",
         "match_key": "accounting_operations"
+      },
+      {
+        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+        "weight": 86,
+        "match_strength": "adjacent",
+        "match_key": "brand_messaging"
       },
       {
         "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
@@ -57680,6 +58053,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -57751,8 +58125,8 @@
           "note": "22.8"
         }
       ],
-      "raw_score": 49,
-      "clamped_score": 49
+      "raw_score": 53,
+      "clamped_score": 53
     }
   },
   "prod-2c642267-a226-4f28-9930-4f08ebbbc9c3": {
@@ -59163,6 +59537,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -59415,6 +59796,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -59979,6 +60361,14 @@
         "requiredness": "supporting"
       },
       {
+        "id": "9c44f0a6888d4861",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work",
+        "requiredness": "core"
+      },
+      {
         "id": "abcf6b7fa647f117",
         "key": "crm",
         "kind": "tool",
@@ -60478,6 +60868,11 @@
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": 0
       },
       {
         "code": "RISK_MISSING_TOOLS",
@@ -68298,6 +68693,13 @@
         "label": "customer service, guest experience, and issue resolution"
       },
       {
+        "id": "2af599273d0cb46b",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 7,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "331ad12bde8b03e5",
         "key": "google slides",
         "kind": "tool",
@@ -68376,6 +68778,15 @@
       }
     ],
     "matches": [
+      {
+        "match_strength": "adjacent",
+        "weight": 85,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "2af599273d0cb46b"
+      },
       {
         "match_strength": "adjacent",
         "weight": 84,
@@ -68539,6 +68950,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "content_social",
           "operations_general",
           "sales_bd"
@@ -73411,6 +73823,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -77414,6 +77833,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -77605,6 +78031,15 @@
         "match_key": "brand_messaging",
         "job_unit_key": "brand_messaging",
         "profile_unit_id": "eacbe4085cef9394"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 79,
+        "coverageScore": 56,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "eae79b9b6d3c348f"
       },
       {
         "match_strength": "direct",
@@ -80173,6 +80608,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -80413,6 +80855,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -94814,6 +95257,13 @@
         "label": "brand messaging and campaign work"
       },
       {
+        "id": "d38cc26922f8e2a1",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "d58acff8071da8ca",
         "key": "consumer_research",
         "kind": "function",
@@ -95047,6 +95497,15 @@
         "match_key": "brand_messaging",
         "job_unit_key": "brand_messaging",
         "profile_unit_id": "cfa028813f6aeb07"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 80,
+        "coverageScore": 56,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "d38cc26922f8e2a1"
       },
       {
         "match_strength": "adjacent",
@@ -97397,7 +97856,7 @@
     "id": "prod-4829c757-4198-4bb8-8d22-d90b477ff5b6",
     "label": "prod 4829c757 — Public Relations Specialist @ WECU (2026-06-23)",
     "decision": "Apply",
-    "score": 87,
+    "score": 89,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -97408,6 +97867,14 @@
         "strength": 5,
         "label": "communications, writing, and messaging work",
         "requiredness": "supporting"
+      },
+      {
+        "id": "46c5d189d56678e4",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work",
+        "requiredness": "core"
       },
       {
         "id": "618aeb93d387c82f",
@@ -98031,6 +98498,60 @@
       },
       {
         "match_strength": "adjacent",
+        "weight": 87,
+        "coverageScore": 60,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "30f8c137ae1bc158"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "5fe2d420057d0d33"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "689e6d0b40b1f5ed"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "7a7f812c325bc755"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "a29c2ce335ce1433"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "f0d39d87ba31f27d"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 79,
         "coverageScore": 56,
         "match_kind": "function",
@@ -98213,6 +98734,12 @@
     "why_codes": [
       {
         "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+        "weight": 88,
+        "match_strength": "adjacent",
+        "match_key": "partnerships_sponsorships"
+      },
+      {
+        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
         "weight": 80,
         "match_strength": "adjacent",
         "match_key": "policy_regulatory_research"
@@ -98262,6 +98789,7 @@
         "financeSubFamily": null,
         "flaggableTools": [],
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "content_social",
           "creative_design",
@@ -98277,7 +98805,7 @@
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "execution",
-        "jobFamily": "Legal",
+        "jobFamily": "Marketing",
         "jobIndustry": null,
         "jobTitle": "Public Relations Specialist",
         "location": {
@@ -98378,8 +98906,8 @@
           "note": "8.399999999999999"
         }
       ],
-      "raw_score": 87,
-      "clamped_score": 87
+      "raw_score": 89,
+      "clamped_score": 89
     }
   },
   "prod-483a3e7b-6f15-4d79-b412-4e97a95665b0": {
@@ -99146,6 +99674,13 @@
         "label": "powerpoint tool usage"
       },
       {
+        "id": "2dede37320375215",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "31af55a585d94bfb",
         "key": "word",
         "kind": "tool",
@@ -99495,6 +100030,7 @@
         "financeSubFamily": "asset_management",
         "function_tags": [
           "accounting_finops",
+          "brand_marketing",
           "data_analytics_bi",
           "finance_corp",
           "operations_general",
@@ -100361,6 +100897,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -100633,6 +101176,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -108096,6 +108640,14 @@
         "requiredness": "supporting"
       },
       {
+        "id": "133aee30041f0de9",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work",
+        "requiredness": "core"
+      },
+      {
         "id": "2e283152e6a692df",
         "key": "crm_usage",
         "kind": "tool",
@@ -108299,6 +108851,11 @@
         "code": "RISK_EXPERIENCE",
         "severity": "medium",
         "weight": -18
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": 0
       },
       {
         "code": "RISK_MISSING_TOOLS",
@@ -108903,6 +109460,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -109142,6 +109706,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -113258,6 +113823,13 @@
         "label": "powerpoint tool usage"
       },
       {
+        "id": "2dede37320375215",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "31af55a585d94bfb",
         "key": "word",
         "kind": "tool",
@@ -113468,6 +114040,15 @@
       },
       {
         "match_strength": "adjacent",
+        "weight": 79,
+        "coverageScore": 57,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "2dede37320375215"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 78,
         "coverageScore": 55,
         "match_kind": "function",
@@ -113632,9 +114213,9 @@
     "why_codes": [
       {
         "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
-        "weight": 78,
+        "weight": 79,
         "match_strength": "adjacent",
-        "match_key": "communications_writing"
+        "match_key": "brand_messaging"
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -113744,6 +114325,7 @@
         "financeSubFamily": "asset_management",
         "function_tags": [
           "accounting_finops",
+          "brand_marketing",
           "data_analytics_bi",
           "finance_corp",
           "operations_general",
@@ -126050,6 +126632,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -130646,6 +131235,13 @@
         "label": "customer service, guest experience, and issue resolution"
       },
       {
+        "id": "2af599273d0cb46b",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 7,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "331ad12bde8b03e5",
         "key": "google slides",
         "kind": "tool",
@@ -130724,6 +131320,15 @@
       }
     ],
     "matches": [
+      {
+        "match_strength": "adjacent",
+        "weight": 74,
+        "coverageScore": 55,
+        "match_kind": "stakeholder",
+        "match_key": "account_management",
+        "job_unit_key": "account_management",
+        "profile_unit_id": "2af599273d0cb46b"
+      },
       {
         "match_strength": "adjacent",
         "weight": 76,
@@ -130871,6 +131476,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "content_social",
           "operations_general",
           "sales_bd"
@@ -131800,6 +132406,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -131991,6 +132604,15 @@
         "match_key": "brand_messaging",
         "job_unit_key": "brand_messaging",
         "profile_unit_id": "eacbe4085cef9394"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 60,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "eae79b9b6d3c348f"
       },
       {
         "match_strength": "direct",
@@ -140938,6 +141560,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -143004,6 +143633,14 @@
         "requiredness": "core"
       },
       {
+        "id": "62b355c7a3e47758",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work",
+        "requiredness": "supporting"
+      },
+      {
         "id": "84c070c0b07d98dc",
         "key": "canva",
         "kind": "tool",
@@ -143269,6 +143906,33 @@
         "profile_unit_id": "dc59ca1db487c207"
       },
       {
+        "match_strength": "adjacent",
+        "weight": 79,
+        "coverageScore": 54,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "44e3592aecd88180"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 80,
+        "coverageScore": 55,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "ad41e8adc928994b"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 81,
+        "coverageScore": 57,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "d5540c64b1adb29a"
+      },
+      {
         "match_strength": "direct",
         "weight": 60,
         "coverageScore": 82,
@@ -143288,6 +143952,12 @@
       }
     ],
     "why_codes": [
+      {
+        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+        "weight": 81,
+        "match_strength": "adjacent",
+        "match_key": "partnerships_sponsorships"
+      },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 108,
@@ -143336,6 +144006,7 @@
           "photoshop"
         ],
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "content_social"
         ],
@@ -149821,6 +150492,13 @@
         "label": "customer service, guest experience, and issue resolution"
       },
       {
+        "id": "2af599273d0cb46b",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 7,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "331ad12bde8b03e5",
         "key": "google slides",
         "kind": "tool",
@@ -149899,6 +150577,15 @@
       }
     ],
     "matches": [
+      {
+        "match_strength": "adjacent",
+        "weight": 79,
+        "coverageScore": 55,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "2af599273d0cb46b"
+      },
       {
         "match_strength": "adjacent",
         "weight": 78,
@@ -150006,6 +150693,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "content_social",
           "operations_general",
           "sales_bd"
@@ -155031,6 +155719,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -155302,6 +155997,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -157552,6 +158248,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -157786,6 +158489,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -158982,6 +159686,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -159531,6 +160242,14 @@
         "requiredness": "core"
       },
       {
+        "id": "a8ee76f8d28fd79f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 5,
+        "label": "brand partnerships and sponsorship work",
+        "requiredness": "supporting"
+      },
+      {
         "id": "b60f2badaea668e3",
         "key": "excel",
         "kind": "tool",
@@ -159831,6 +160550,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -160031,6 +160757,15 @@
         "match_key": "brand_messaging",
         "job_unit_key": "brand_messaging",
         "profile_unit_id": "eacbe4085cef9394"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 85,
+        "coverageScore": 60,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "eae79b9b6d3c348f"
       },
       {
         "match_strength": "direct",
@@ -160303,6 +161038,51 @@
         "profile_unit_id": "5c59651d7067c549"
       },
       {
+        "match_strength": "adjacent",
+        "weight": 77,
+        "coverageScore": 54,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "1f2bca81cb930b0f"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 55,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "71b50481087c78a3"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 55,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "aeac0e2bb6c2bfb0"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 77,
+        "coverageScore": 55,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "c93aad87d7cfbe90"
+      },
+      {
+        "match_strength": "direct",
+        "weight": 99,
+        "coverageScore": 80,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "eae79b9b6d3c348f"
+      },
+      {
         "match_strength": "direct",
         "weight": 60,
         "coverageScore": 82,
@@ -160339,6 +161119,12 @@
         "weight": 105,
         "match_strength": "direct",
         "match_key": "content_execution"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 99,
+        "match_strength": "direct",
+        "match_key": "partnerships_sponsorships"
       }
     ],
     "risk_codes": [
@@ -165197,6 +165983,14 @@
         "requiredness": "supporting"
       },
       {
+        "id": "319851174f0c11a2",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work",
+        "requiredness": "core"
+      },
+      {
         "id": "637087387e474282",
         "key": "powerpoint",
         "kind": "tool",
@@ -165601,6 +166395,33 @@
         "profile_unit_id": "80829ecaefa8e7e5"
       },
       {
+        "match_strength": "adjacent",
+        "weight": 85,
+        "coverageScore": 58,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "44e3592aecd88180"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "ad41e8adc928994b"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "d5540c64b1adb29a"
+      },
+      {
         "match_strength": "direct",
         "weight": 60,
         "coverageScore": 78,
@@ -165621,6 +166442,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+        "weight": 88,
+        "match_strength": "adjacent",
+        "match_key": "partnerships_sponsorships"
+      },
+      {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 107,
         "match_strength": "direct",
@@ -165637,12 +166464,6 @@
         "weight": 100,
         "match_strength": "direct",
         "match_key": "content_execution"
-      },
-      {
-        "code": "WHY_EXECUTION_PROOF",
-        "weight": 82,
-        "match_strength": "adjacent",
-        "match_key": "analysis_reporting"
       },
       {
         "code": "WHY_TOOL_PROOF",
@@ -166336,6 +167157,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -166573,6 +167401,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -170737,6 +171566,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -171017,6 +171853,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -174361,6 +175198,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -183828,6 +184672,14 @@
         "requiredness": "supporting"
       },
       {
+        "id": "74ef15903f76aa7b",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work",
+        "requiredness": "core"
+      },
+      {
         "id": "7f10d9d2390fe9f8",
         "key": "salesforce",
         "kind": "tool",
@@ -184295,6 +185147,33 @@
       {
         "match_strength": "adjacent",
         "weight": 85,
+        "coverageScore": 58,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "323aee407a32bebb"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "9566663a56211f37"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "c2013c5f83793913"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 85,
         "coverageScore": 59,
         "match_kind": "function",
         "match_key": "product_positioning",
@@ -184380,6 +185259,11 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -3.9199999999999995
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -190349,6 +191233,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -191650,6 +192541,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -191841,6 +192739,15 @@
         "match_key": "brand_messaging",
         "job_unit_key": "brand_messaging",
         "profile_unit_id": "eacbe4085cef9394"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 60,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "eae79b9b6d3c348f"
       },
       {
         "match_strength": "direct",
@@ -193470,6 +194377,13 @@
         "label": "customer service, guest experience, and issue resolution"
       },
       {
+        "id": "2af599273d0cb46b",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 7,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "331ad12bde8b03e5",
         "key": "google slides",
         "kind": "tool",
@@ -193548,6 +194462,15 @@
       }
     ],
     "matches": [
+      {
+        "match_strength": "adjacent",
+        "weight": 74,
+        "coverageScore": 55,
+        "match_kind": "stakeholder",
+        "match_key": "account_management",
+        "job_unit_key": "account_management",
+        "profile_unit_id": "2af599273d0cb46b"
+      },
       {
         "match_strength": "adjacent",
         "weight": 76,
@@ -193695,6 +194618,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "content_social",
           "operations_general",
           "sales_bd"
@@ -197793,6 +198717,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -198063,6 +198994,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -203510,6 +204442,13 @@
         "label": "customer service, guest experience, and issue resolution"
       },
       {
+        "id": "2af599273d0cb46b",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 7,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "331ad12bde8b03e5",
         "key": "google slides",
         "kind": "tool",
@@ -203672,6 +204611,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "content_social",
           "operations_general",
           "sales_bd"
@@ -214369,6 +215309,13 @@
         "label": "customer service, guest experience, and issue resolution"
       },
       {
+        "id": "2af599273d0cb46b",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 7,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "331ad12bde8b03e5",
         "key": "google slides",
         "kind": "tool",
@@ -214538,6 +215485,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "content_social",
           "operations_general",
           "sales_bd"
@@ -222535,6 +223483,14 @@
         "strength": 7,
         "label": "photoshop tool usage",
         "requiredness": "supporting"
+      },
+      {
+        "id": "b7a7db9b584a85ef",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 5,
+        "label": "brand partnerships and sponsorship work",
+        "requiredness": "core"
       }
     ],
     "profile_evidence_units": [
@@ -223024,6 +223980,15 @@
         "profile_unit_id": "ef7493a1508bc4d0"
       },
       {
+        "match_strength": "adjacent",
+        "weight": 85,
+        "coverageScore": 60,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "7c1a58f1cc06d956"
+      },
+      {
         "match_strength": "direct",
         "weight": 60,
         "coverageScore": 79,
@@ -223162,6 +224127,7 @@
           "photoshop"
         ],
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "content_social",
           "data_analytics_bi",
@@ -226171,6 +227137,13 @@
         "label": "brand messaging and campaign work"
       },
       {
+        "id": "d38cc26922f8e2a1",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "d58acff8071da8ca",
         "key": "consumer_research",
         "kind": "function",
@@ -226416,6 +227389,15 @@
       },
       {
         "match_strength": "adjacent",
+        "weight": 80,
+        "coverageScore": 56,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "d38cc26922f8e2a1"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 78,
         "coverageScore": 54,
         "match_kind": "function",
@@ -226431,6 +227413,15 @@
         "match_key": "canva",
         "job_unit_key": "canva",
         "profile_unit_id": "182e96d3e7263669"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 83,
+        "coverageScore": 60,
+        "match_kind": "stakeholder",
+        "match_key": "client_commercial_work",
+        "job_unit_key": "client_commercial_work",
+        "profile_unit_id": "d38cc26922f8e2a1"
       },
       {
         "match_strength": "adjacent",
@@ -226709,6 +227700,12 @@
       },
       {
         "code": "WHY_EXECUTION_PROOF",
+        "weight": 83,
+        "match_strength": "adjacent",
+        "match_key": "client_commercial_work"
+      },
+      {
+        "code": "WHY_EXECUTION_PROOF",
         "weight": 87,
         "match_strength": "adjacent",
         "match_key": "operations_execution"
@@ -226719,11 +227716,6 @@
         "code": "RISK_EXPERIENCE",
         "severity": "medium",
         "weight": -18
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -227013,6 +228005,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "word tool usage"
+      },
+      {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
       },
       {
         "id": "819b963c8a106416",
@@ -227310,6 +228309,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -227475,6 +228475,13 @@
         "kind": "execution",
         "strength": 6,
         "label": "analysis, reporting, and measurement work"
+      },
+      {
+        "id": "3b3b16b3e0ad36d5",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
       },
       {
         "id": "3e6e780ce6fec555",
@@ -228155,6 +229162,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "finance_corp",
@@ -240411,6 +241419,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -240654,6 +241669,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -241259,6 +242275,13 @@
         "label": "customer service, guest experience, and issue resolution"
       },
       {
+        "id": "2af599273d0cb46b",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 7,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "331ad12bde8b03e5",
         "key": "google slides",
         "kind": "tool",
@@ -241337,6 +242360,15 @@
       }
     ],
     "matches": [
+      {
+        "match_strength": "adjacent",
+        "weight": 79,
+        "coverageScore": 55,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "2af599273d0cb46b"
+      },
       {
         "match_strength": "adjacent",
         "weight": 78,
@@ -241440,6 +242472,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "content_social",
           "operations_general",
           "sales_bd"
@@ -249512,10 +250545,18 @@
     "id": "prod-bbe141a0-d3ec-4731-a059-984a0e082037",
     "label": "prod bbe141a0 — Account Executive-Sports @ Audacy (2026-05-28)",
     "decision": "Apply",
-    "score": 83,
+    "score": 87,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
+      {
+        "id": "8034aebecb8de38b",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 5,
+        "label": "brand partnerships and sponsorship work",
+        "requiredness": "supporting"
+      },
       {
         "id": "8abb3a147ecb4799",
         "key": "prospecting_pipeline_management",
@@ -249539,6 +250580,13 @@
         "kind": "stakeholder",
         "strength": 10,
         "label": "customer service, guest experience, and issue resolution"
+      },
+      {
+        "id": "2af599273d0cb46b",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 7,
+        "label": "brand partnerships and sponsorship work"
       },
       {
         "id": "331ad12bde8b03e5",
@@ -249621,6 +250669,15 @@
     "matches": [
       {
         "match_strength": "direct",
+        "weight": 98,
+        "coverageScore": 79,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "2af599273d0cb46b"
+      },
+      {
+        "match_strength": "direct",
         "weight": 104,
         "coverageScore": 85,
         "match_kind": "execution",
@@ -249650,17 +250707,18 @@
     "why_codes": [
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 98,
+        "match_strength": "direct",
+        "match_key": "partnerships_sponsorships"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 104,
         "match_strength": "direct",
         "match_key": "prospecting_pipeline_management"
       }
     ],
     "risk_codes": [
-      {
-        "code": "RISK_LIMITED_MATCH_EVIDENCE",
-        "severity": "medium",
-        "weight": 0
-      },
       {
         "code": "RISK_SALES_SUBSEGMENT",
         "severity": "high",
@@ -249680,6 +250738,7 @@
         "financeSubFamily": null,
         "flaggableTools": [],
         "function_tags": [
+          "brand_marketing",
           "sales_bd"
         ],
         "gradYearHint": null,
@@ -249728,6 +250787,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "content_social",
           "operations_general",
           "sales_bd"
@@ -249798,8 +250858,8 @@
           "note": "10"
         }
       ],
-      "raw_score": 83,
-      "clamped_score": 83
+      "raw_score": 87,
+      "clamped_score": 87
     }
   },
   "prod-bbfa1bbc-1d9e-441c-bdea-417aabb178ee": {
@@ -259194,6 +260254,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -266209,8 +267276,8 @@
     "schema_version": 2,
     "id": "prod-c99ce965-525d-4b55-8c80-dc92d4aa45c7",
     "label": "prod c99ce965 — Marketing & Business Development Manager @ BCLP (2026-05-17)",
-    "decision": "Priority Apply",
-    "score": 97,
+    "decision": "Apply",
+    "score": 93,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -266237,6 +267304,14 @@
         "strength": 5,
         "label": "excel tool usage",
         "requiredness": "supporting"
+      },
+      {
+        "id": "93e4a6fd25a4fe35",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work",
+        "requiredness": "core"
       },
       {
         "id": "b6b312a78d0471ed",
@@ -266537,6 +267612,33 @@
         "profile_unit_id": "f91af8afa7c80def"
       },
       {
+        "match_strength": "adjacent",
+        "weight": 85,
+        "coverageScore": 58,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "323aee407a32bebb"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "9566663a56211f37"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "c2013c5f83793913"
+      },
+      {
         "match_strength": "direct",
         "weight": 60,
         "coverageScore": 78,
@@ -266575,6 +267677,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+        "weight": 86,
+        "match_strength": "adjacent",
+        "match_key": "partnerships_sponsorships"
+      },
+      {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 98,
         "match_strength": "direct",
@@ -266587,7 +267695,13 @@
         "match_key": "prospecting_pipeline_management"
       }
     ],
-    "risk_codes": [],
+    "risk_codes": [
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": -3.9199999999999995
+      }
+    ],
     "scalars": {
       "job": {
         "analytics": {
@@ -266708,26 +267822,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": 0,
-          "note": "0"
+          "points": -4,
+          "note": "3.9199999999999995"
         }
       ],
-      "raw_score": 97,
-      "clamped_score": 97
+      "raw_score": 93,
+      "clamped_score": 93
     }
   },
   "prod-c9a58da4-5dba-49ed-a31c-f4f155d9a883": {
@@ -266825,6 +267939,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "word tool usage"
+      },
+      {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
       },
       {
         "id": "819b963c8a106416",
@@ -266979,6 +268100,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -274054,6 +275176,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -274321,6 +275450,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -274912,6 +276042,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -275219,6 +276356,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -275679,7 +276817,7 @@
     "id": "prod-d1eb1b68-0dad-401c-8c8e-184e019a7d2a",
     "label": "prod d1eb1b68 — Business Analyst @ Empower (2026-05-11)",
     "decision": "Review",
-    "score": 63,
+    "score": 67,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -275827,6 +276965,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -275905,6 +277050,15 @@
       }
     ],
     "matches": [
+      {
+        "match_strength": "adjacent",
+        "weight": 79,
+        "coverageScore": 57,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "816fc9c34d458fd6"
+      },
       {
         "match_strength": "direct",
         "weight": 101,
@@ -275988,6 +277142,12 @@
       }
     ],
     "why_codes": [
+      {
+        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+        "weight": 79,
+        "match_strength": "adjacent",
+        "match_key": "brand_messaging"
+      },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 96,
@@ -276108,6 +277268,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -276179,8 +277340,8 @@
           "note": "4"
         }
       ],
-      "raw_score": 63,
-      "clamped_score": 63
+      "raw_score": 67,
+      "clamped_score": 67
     }
   },
   "prod-d1fbf908-78ab-4265-aac8-6f2c9b372b7f": {
@@ -278627,7 +279788,7 @@
     "id": "prod-d3558a7f-60a0-4689-a00a-8ef51aefcfe0",
     "label": "prod d3558a7f — Business Development Coordinator @ King & Spalding (2026-06-19)",
     "decision": "Pass",
-    "score": 54,
+    "score": 55,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -278686,6 +279847,14 @@
         "strength": 7,
         "label": "word tool usage",
         "requiredness": "supporting"
+      },
+      {
+        "id": "bbd488a147292aa2",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work",
+        "requiredness": "core"
       }
     ],
     "profile_evidence_units": [
@@ -278814,6 +279983,33 @@
       },
       {
         "match_strength": "adjacent",
+        "weight": 85,
+        "coverageScore": 58,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "44e3592aecd88180"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "ad41e8adc928994b"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "d5540c64b1adb29a"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 84,
         "coverageScore": 58,
         "match_kind": "execution",
@@ -278823,6 +280019,12 @@
       }
     ],
     "why_codes": [
+      {
+        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+        "weight": 88,
+        "match_strength": "adjacent",
+        "match_key": "partnerships_sponsorships"
+      },
       {
         "code": "WHY_EXECUTION_PROOF",
         "weight": 82,
@@ -278873,6 +280075,7 @@
           "excel"
         ],
         "function_tags": [
+          "brand_marketing",
           "data_analytics_bi",
           "operations_general",
           "sales_bd"
@@ -278992,8 +280195,8 @@
           "note": "15.8"
         }
       ],
-      "raw_score": 54,
-      "clamped_score": 54
+      "raw_score": 58,
+      "clamped_score": 55
     }
   },
   "prod-d3c967b6-1a10-4be3-b7ed-8f5c5b123a0c": {
@@ -281826,6 +283029,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -282017,6 +283227,15 @@
         "match_key": "brand_messaging",
         "job_unit_key": "brand_messaging",
         "profile_unit_id": "eacbe4085cef9394"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 87,
+        "coverageScore": 60,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "eae79b9b6d3c348f"
       },
       {
         "match_strength": "direct",
@@ -282670,6 +283889,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -282843,6 +284069,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -286415,6 +287642,14 @@
         "requiredness": "supporting"
       },
       {
+        "id": "ce312bcf48ab029a",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work",
+        "requiredness": "core"
+      },
+      {
         "id": "d951596431bdf955",
         "key": "communications_writing",
         "kind": "function",
@@ -286675,6 +287910,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -286866,6 +288108,15 @@
         "match_key": "brand_messaging",
         "job_unit_key": "brand_messaging",
         "profile_unit_id": "eacbe4085cef9394"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 80,
+        "coverageScore": 56,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "eae79b9b6d3c348f"
       },
       {
         "match_strength": "direct",
@@ -287109,6 +288360,51 @@
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
         "profile_unit_id": "c93aad87d7cfbe90"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 85,
+        "coverageScore": 58,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "1f2bca81cb930b0f"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "71b50481087c78a3"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "aeac0e2bb6c2bfb0"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "c93aad87d7cfbe90"
+      },
+      {
+        "match_strength": "direct",
+        "weight": 107,
+        "coverageScore": 84,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "eae79b9b6d3c348f"
       }
     ],
     "why_codes": [
@@ -287129,6 +288425,12 @@
         "weight": 100,
         "match_strength": "direct",
         "match_key": "content_execution"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 107,
+        "match_strength": "direct",
+        "match_key": "partnerships_sponsorships"
       }
     ],
     "risk_codes": [],
@@ -288459,6 +289761,13 @@
         "kind": "function",
         "strength": 5,
         "label": "brand messaging and campaign work"
+      },
+      {
+        "id": "d38cc26922f8e2a1",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       },
       {
         "id": "d58acff8071da8ca",
@@ -294480,6 +295789,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -297174,6 +298490,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -297349,6 +298672,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -306797,6 +308121,13 @@
         "label": "powerpoint tool usage"
       },
       {
+        "id": "2dede37320375215",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "31af55a585d94bfb",
         "key": "word",
         "kind": "tool",
@@ -307006,6 +308337,15 @@
         "profile_unit_id": "f0b9e45a07adb866"
       },
       {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "2dede37320375215"
+      },
+      {
         "match_strength": "direct",
         "weight": 104,
         "coverageScore": 82,
@@ -307102,22 +308442,17 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
         "weight": -3.6399999999999997
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": 0
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": 0
       },
       {
         "code": "RISK_MISSING_TOOLS",
@@ -307199,6 +308534,7 @@
         "financeSubFamily": "asset_management",
         "function_tags": [
           "accounting_finops",
+          "brand_marketing",
           "data_analytics_bi",
           "finance_corp",
           "operations_general",
@@ -307247,7 +308583,7 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_after_gate",
@@ -307265,7 +308601,7 @@
           "note": "25.64"
         }
       ],
-      "raw_score": 57,
+      "raw_score": 61,
       "clamped_score": 55
     }
   },
@@ -312170,6 +313506,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -312370,6 +313713,15 @@
         "match_key": "brand_messaging",
         "job_unit_key": "brand_messaging",
         "profile_unit_id": "eacbe4085cef9394"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 80,
+        "coverageScore": 56,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "eae79b9b6d3c348f"
       },
       {
         "match_strength": "adjacent",
@@ -319360,6 +320712,13 @@
         "label": "brand messaging and campaign work"
       },
       {
+        "id": "d38cc26922f8e2a1",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "d58acff8071da8ca",
         "key": "consumer_research",
         "kind": "function",
@@ -319602,6 +320961,15 @@
         "match_key": "brand_messaging",
         "job_unit_key": "brand_messaging",
         "profile_unit_id": "cfa028813f6aeb07"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 85,
+        "coverageScore": 60,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "d38cc26922f8e2a1"
       },
       {
         "match_strength": "adjacent",
@@ -321626,6 +322994,14 @@
         "kind": "function",
         "strength": 7,
         "label": "accounting and financial operations work",
+        "requiredness": "supporting"
+      },
+      {
+        "id": "bb305af420fd83ac",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 5,
+        "label": "brand partnerships and sponsorship work",
         "requiredness": "supporting"
       },
       {
@@ -327547,6 +328923,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -327856,6 +329239,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -336661,6 +338045,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -336879,6 +338270,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -337272,6 +338664,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -340604,6 +342003,13 @@
         "label": "word tool usage"
       },
       {
+        "id": "816fc9c34d458fd6",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "819b963c8a106416",
         "key": "event_operations_live_execution",
         "kind": "execution",
@@ -340996,6 +342402,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
           "operations_general",
@@ -341076,10 +342483,18 @@
     "id": "prod-fdb9cf1d-b853-4fa3-8b61-904919011061",
     "label": "prod fdb9cf1d — Public Relations Specialist @ WECU (2026-06-09)",
     "decision": "Apply",
-    "score": 87,
+    "score": 89,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
+      {
+        "id": "084d99ce0a9338da",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work",
+        "requiredness": "core"
+      },
       {
         "id": "1b0a8f6fcbad1a36",
         "key": "analysis_reporting",
@@ -341710,6 +343125,60 @@
       },
       {
         "match_strength": "adjacent",
+        "weight": 87,
+        "coverageScore": 60,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "30f8c137ae1bc158"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "5fe2d420057d0d33"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "689e6d0b40b1f5ed"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "7a7f812c325bc755"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "a29c2ce335ce1433"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "partnerships_sponsorships",
+        "job_unit_key": "partnerships_sponsorships",
+        "profile_unit_id": "f0d39d87ba31f27d"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 79,
         "coverageScore": 56,
         "match_kind": "function",
@@ -341892,6 +343361,12 @@
     "why_codes": [
       {
         "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+        "weight": 88,
+        "match_strength": "adjacent",
+        "match_key": "partnerships_sponsorships"
+      },
+      {
+        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
         "weight": 80,
         "match_strength": "adjacent",
         "match_key": "policy_regulatory_research"
@@ -341941,6 +343416,7 @@
         "financeSubFamily": null,
         "flaggableTools": [],
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "content_social",
           "creative_design",
@@ -341956,7 +343432,7 @@
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "execution",
-        "jobFamily": "Legal",
+        "jobFamily": "Marketing",
         "jobIndustry": null,
         "jobTitle": "Public Relations Specialist",
         "location": {
@@ -342057,8 +343533,8 @@
           "note": "8.399999999999999"
         }
       ],
-      "raw_score": 87,
-      "clamped_score": 87
+      "raw_score": 89,
+      "clamped_score": 89
     }
   },
   "prod-fde3c2fb-8f53-4efb-bbb2-98c6621cad16": {
@@ -344139,6 +345615,13 @@
         "kind": "function",
         "strength": 10,
         "label": "communications, writing, and messaging work"
+      },
+      {
+        "id": "eae79b9b6d3c348f",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work"
       }
     ],
     "matches": [
@@ -344339,6 +345822,15 @@
         "match_key": "brand_messaging",
         "job_unit_key": "brand_messaging",
         "profile_unit_id": "eacbe4085cef9394"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 87,
+        "coverageScore": 60,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "eae79b9b6d3c348f"
       },
       {
         "match_strength": "direct",

@@ -11502,6 +11502,13 @@
         "label": "powerpoint tool usage"
       },
       {
+        "id": "2dede37320375215",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "31af55a585d94bfb",
         "key": "word",
         "kind": "tool",
@@ -11712,6 +11719,15 @@
       },
       {
         "match_strength": "adjacent",
+        "weight": 77,
+        "coverageScore": 57,
+        "match_kind": "stakeholder",
+        "match_key": "client_commercial_work",
+        "job_unit_key": "client_commercial_work",
+        "profile_unit_id": "2dede37320375215"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 75,
         "coverageScore": 55,
         "match_kind": "stakeholder",
@@ -11807,7 +11823,7 @@
       },
       {
         "code": "WHY_EXECUTION_PROOF",
-        "weight": 75,
+        "weight": 77,
         "match_strength": "adjacent",
         "match_key": "client_commercial_work"
       },
@@ -11903,6 +11919,7 @@
         "financeSubFamily": "asset_management",
         "function_tags": [
           "accounting_finops",
+          "brand_marketing",
           "data_analytics_bi",
           "finance_corp",
           "operations_general",
@@ -12024,6 +12041,13 @@
         "kind": "tool",
         "strength": 6,
         "label": "powerpoint tool usage"
+      },
+      {
+        "id": "2dede37320375215",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
       },
       {
         "id": "31af55a585d94bfb",
@@ -12400,6 +12424,7 @@
         "financeSubFamily": "asset_management",
         "function_tags": [
           "accounting_finops",
+          "brand_marketing",
           "data_analytics_bi",
           "finance_corp",
           "operations_general",
@@ -18963,6 +18988,13 @@
         "label": "customer service, guest experience, and issue resolution"
       },
       {
+        "id": "7d819e08b77a0e47",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "870693a7f05f6d92",
         "key": "illustrator",
         "kind": "tool",
@@ -19158,6 +19190,15 @@
         "match_key": "brand_messaging",
         "job_unit_key": "brand_messaging",
         "profile_unit_id": "62116e2b9c4b3b38"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 79,
+        "coverageScore": 57,
+        "match_kind": "function",
+        "match_key": "brand_messaging",
+        "job_unit_key": "brand_messaging",
+        "profile_unit_id": "7d819e08b77a0e47"
       },
       {
         "match_strength": "adjacent",
@@ -30024,6 +30065,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "e5dfcb9c6319511c",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "eb996cfb1019aa6c",
         "key": "operations_execution",
         "kind": "execution",
@@ -30191,6 +30239,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "brand_marketing",
           "data_analytics_bi",
           "operations_general",
           "sales_bd"
@@ -31928,6 +31977,13 @@
     ],
     "profile_evidence_units": [
       {
+        "id": "1ac33550f4bd9f0b",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "24e9b1fa32766608",
         "key": "consumer_research",
         "kind": "function",
@@ -32426,6 +32482,7 @@
         "financeSubFamily": "other_finance",
         "function_tags": [
           "accounting_finops",
+          "brand_marketing",
           "consulting_strategy",
           "consumer_insights_research",
           "data_analytics_bi",
@@ -33681,6 +33738,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "6e2dea474112abd8",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 10,
+        "label": "brand partnerships and sponsorship work"
+      },
+      {
         "id": "788380bc730d1ded",
         "key": "client_commercial_work",
         "kind": "stakeholder",
@@ -33749,6 +33813,13 @@
         "kind": "function",
         "strength": 10,
         "label": "strategy, synthesis, and problem-solving work"
+      },
+      {
+        "id": "e190e5dbb734eeb3",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 5,
+        "label": "brand partnerships and sponsorship work"
       },
       {
         "id": "f09fdf3ce2d88a28",
@@ -34228,6 +34299,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": "ib",
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "consulting_strategy",
           "consumer_insights_research",
@@ -34375,6 +34447,14 @@
         "strength": 5,
         "label": "aws tool usage",
         "requiredness": "supporting"
+      },
+      {
+        "id": "62280ef1f0c3d70d",
+        "key": "partnerships_sponsorships",
+        "kind": "function",
+        "strength": 9,
+        "label": "brand partnerships and sponsorship work",
+        "requiredness": "core"
       },
       {
         "id": "a9d21bb492844897",
@@ -34541,6 +34621,11 @@
         "weight": -30
       },
       {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": 0
+      },
+      {
         "code": "RISK_MISSING_TOOLS",
         "severity": "high",
         "weight": -8
@@ -34568,6 +34653,7 @@
           "python"
         ],
         "function_tags": [
+          "brand_marketing",
           "communications_pr",
           "finance_corp",
           "software_it"
