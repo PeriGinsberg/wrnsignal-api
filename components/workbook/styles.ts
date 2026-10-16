@@ -147,6 +147,28 @@ textarea.wb-input{resize:vertical;overflow:hidden}
 .wb-textarea-box:focus{outline:none;border-color:var(--blue)}
 .wb-actions{display:flex;gap:10px;flex-wrap:wrap}
 
+.wb-resource{border:1px solid var(--border);background:#fff;padding:24px;display:flex;flex-direction:column;gap:14px}
+.wb-video{position:relative;width:100%;aspect-ratio:16/9;background:var(--navy)}
+.wb-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.wb-checkrow{display:flex;gap:14px;align-items:center;min-height:48px;padding:8px 12px;border:1px solid var(--border);background:var(--bg);font-size:17px;font-weight:600;cursor:pointer}
+.wb-checkrow.on{border:2px solid var(--teal)}
+.wb-checkrow input{width:20px;height:20px;accent-color:var(--teal);flex-shrink:0;margin:0}
+.wb-pick input[type=checkbox]{width:20px;height:20px;accent-color:var(--blue);flex-shrink:0;margin:0}
+.wb-quiz label.right{border:2px solid var(--teal);background:#EAFAFA}
+.wb-quiz label.wrong{border:2px solid var(--line);background:var(--peach)}
+.wb-optmark{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-ink);white-space:nowrap}
+.wb-feedback{background:var(--pale);padding:20px 24px;display:flex;flex-direction:column;gap:10px}
+.wb-verdict{font-weight:700;font-size:17px}
+.wb-numrow{display:flex;align-items:baseline;gap:10px;max-width:420px}
+.wb-numaff{font-size:18px;font-weight:600;white-space:nowrap}
+.wb-sort{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.wb-sort-item{border:1px solid var(--border);background:#fff;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.wb-sort-note{font-size:14px;font-weight:600;background:var(--peach);padding:4px 8px;align-self:flex-start}
+.wb-sort-note.same{background:#D6F5F5;color:#005F5F}
+.wb-reveal{border:1.5px dashed var(--navy);background:#fff;padding:22px 24px;display:flex;flex-direction:column;gap:10px}
+.wb-nav-day{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;padding:14px 12px 6px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.wb-done{background:#D6F5F5;color:#005F5F;padding:28px 32px;display:flex;flex-direction:column;gap:14px}
+
 .wb-pager{display:flex;justify-content:space-between;align-items:center;gap:16px;border-top:1px solid var(--border);padding-top:28px;flex-wrap:wrap}
 .wb-bottombar{display:none}
 .wb-progress{height:4px;background:#E6EAF0}

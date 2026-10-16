@@ -1,0 +1,585 @@
+{
+ "schema_version": 1,
+ "slug": "deloitte-case-bootcamp-01",
+ "title": "Case Interview Bootcamp: Friday and Saturday",
+ "block_types_note": "Workbook 01 of the Deloitte Enterprise Strategy bootcamp, built from docs/workbooks-v1/workbooks-v1/Sami_Deloitte_Friday_Saturday_Workbook_01.docx and the CC build prompt of 2026-10-16. Video lengths checked on YouTube 2026-10-16. The Deloitte prep tool URL in the prompt (caseinterviewprep.deloitte.com) does not resolve; the tool link here is the one on Deloitte's own case interview tips page.",
+ "section_word": "Module",
+ "client": { "first_name": "Sami", "full_name": "Sami Zivitz" },
+ "interview": {
+  "company": "Deloitte",
+  "role": "Enterprise Strategy Analyst (2027)",
+  "date": "2026-10-21",
+  "time": null,
+  "interviewer_name": null,
+  "interviewer_title": null,
+  "location": "Round 1: two 30-minute case interviews"
+ },
+ "coach": { "first_name": "Peri" },
+ "completion": {
+  "title": "You finished Friday and Saturday.",
+  "body": "You’re not expected to be great at case interviews yet. You’ve learned what they are, watched real examples, practiced the basic skills, and worked through your first case. On Sunday, we’ll take what you’ve learned and practice it together.\n\nPress Send to Peri so Peri can read your answers before Sunday."
+ },
+ "results": {
+  "confidence": "m9.confidence",
+  "confusing": ["m9.confused", "m9.nervous"],
+  "practice": ["m9.practice", "m7.try_sunday"]
+ },
+ "sections": [
+  {
+   "id": "m1-welcome",
+   "number": 1,
+   "day": "Friday",
+   "minutes": "About 15 minutes",
+   "title": "Welcome to Your Deloitte Interview Prep",
+   "blocks": [
+    { "type": "text", "size": "lead", "body": "Hi Sami. Over the next two days you’ll learn what a case interview is, watch two real examples, and work through your first practice cases. You don’t need any business background to start. Everything is explained as you go." },
+    { "type": "callout", "tone": "paleblue", "title": "How this workbook works", "body": "Work through one module at a time. Friday is Modules 1 to 4. Saturday is Modules 5 to 9.\n\nYour answers save automatically as you type. You can close this page and come back later, and you’ll pick up where you left off.\n\nSome questions check your answer and explain it. Getting one wrong is completely fine: you’ll see why, and you move on. Nothing here is graded.\n\nIf something doesn’t make sense, press “Ask Peri” under any question. Your questions go to Peri when you press Send to Peri at the top of the page." },
+    { "type": "heading", "text": "Your interview" },
+    { "type": "list", "style": "bullets", "items": [
+      "Wednesday, October 21 is Round 1: two case interviews, 30 minutes each.",
+      "Deloitte describes these interviews as a chance to show clear thinking, practical judgment, a professional manner, creativity, comfort with unfamiliar problems, and how you approach a business problem.",
+      "If you’re selected, Round 2 is Friday, October 23.",
+      "Every interviewer runs a case a little differently, and the structure and timing can vary. Treat what you learn here as the usual shape of a case, not a script."
+    ] },
+    { "type": "callout", "tone": "peach", "title": "From the recruiter’s email", "body": "Reply to the recruiter about your availability, watch for the separate employment application, and consider going to the October 20 reception, which Deloitte strongly encourages." },
+    { "type": "heading", "text": "What is a case interview?" },
+    { "type": "text", "body": "A case interview is a conversation about a business problem. The interviewer describes a real-sounding situation at a company, then asks you to help figure it out." },
+    { "type": "text", "body": "It isn’t a test of what you already know about business. It’s a chance to show how you think when you’re handed a problem you haven’t seen before." },
+    { "type": "callout", "tone": "paleblue", "title": "A simple example", "body": "The interviewer says: “Our client runs a chain of bakeries. Their profits have dropped over the past two years. The owner wants to know why, and what to do about it.”\n\nProfit is the money a company keeps after paying all its bills. So profit can fall for two basic reasons: less money is coming in, or more money is going out.\n\nYour job isn’t to know the answer right away. It’s to ask good questions, figure out where to look, use the facts the interviewer gives you, and finish with a sensible suggestion." },
+    { "type": "heading", "text": "Why companies use them" },
+    { "type": "text", "body": "Consultants spend their days on problems like the bakery’s. A client has a problem that isn’t clear yet, and the team has to work out what’s going on and what to do. A case lets the interviewer watch you do a small version of that job in 30 minutes." },
+    { "type": "heading", "text": "What the interviewer is looking for" },
+    { "type": "list", "style": "bullets", "items": [
+      "Do you make sure you understand the question before you jump in?",
+      "Can you break a big problem into a few smaller pieces?",
+      "Do you use the facts you’re given, including numbers?",
+      "Can you explain your thinking out loud, clearly?",
+      "Do you land on a recommendation, even if you aren’t 100% sure?",
+      "Do you stay calm and pleasant when something is hard?"
+    ] },
+    { "type": "callout", "tone": "peach", "title": "You don’t need industry knowledge", "body": "Nobody expects you to know how banks, gyms or hospitals work. The interviewer gives you the facts you need. If you need a fact you don’t have, you ask for it. Asking is part of the job." },
+    { "type": "callout", "tone": "paleblue", "title": "Why talking out loud matters", "body": "The interviewer can’t see inside your head. Good thinking done in silence looks the same as being stuck. Saying “I’m going to look at costs first, because…” lets them follow along and give you credit for your thinking, even before you reach an answer." },
+    { "type": "callout", "tone": "paleblue", "title": "It’s okay to pause and ask", "body": "Asking a question when something is unclear is expected. So is saying, “Could I take a moment to organize my thoughts?” Interviewers are used to giving candidates a short pause to plan. A calm 30 seconds of thinking is better than rushing into a messy answer." },
+    { "type": "heading", "text": "You’ve done more of this than you think" },
+    { "type": "text", "body": "You’ve already handled unfamiliar problems with senior people watching. A few examples from your own work:" },
+    { "type": "list", "style": "bullets", "items": [
+      "At Consensus Health you developed an enterprise AI-use policy, working directly with the General Counsel. There was no template to copy. You had to work out what the company needed and put it in a form its leaders could use.",
+      "You presented HCC risk-adjustment research to the Board of Directors. That’s explaining complicated information clearly to senior people, which is exactly what you do at the end of a case.",
+      "You improved how the company managed its records and information. That meant looking at how something worked, spotting what wasn’t working, and suggesting a better way.",
+      "As President of Phi Alpha Delta, you lead a chapter of more than 200 members and a seven-person executive board, with real budgets and real decisions."
+    ] },
+    { "type": "text", "body": "None of this means you already know how to do a case. Cases have their own habits, and you’ll learn them over the next two days. It does mean the core skills, staying steady with something new and explaining your thinking to senior people, aren’t foreign to you." },
+    { "type": "heading", "text": "Quick check" },
+    { "type": "text", "body": "Three short questions. Choose an answer, press Check my answer, and read the explanation. Your first answer is saved, and you can’t change it afterwards, so take a moment before you press." },
+    { "type": "quiz", "key": "m1.q1", "number": 1, "skill": "How a case interview works",
+      "question": "A retailer tells you its sales went up last year, but its profit went down. What should you do first?",
+      "options": [
+        "Recommend closing the weakest stores",
+        "Ask a few questions to understand the problem, such as the time period and whether costs went up",
+        "List every trend you know about the retail industry"
+      ],
+      "correct": ["Ask a few questions to understand the problem, such as the time period and whether costs went up"],
+      "explanation": "Start by understanding the problem. You don’t know yet why profit fell, so recommending store closures would be a guess. Listing industry trends sounds smart but doesn’t help this company. A couple of quick questions (Over what period? Did costs go up? Did prices change?) tells you where to look." },
+    { "type": "quiz", "key": "m1.q2", "number": 2, "skill": "How a case interview works",
+      "question": "What is the interviewer mainly looking for?",
+      "options": [
+        "The one correct answer",
+        "How you think through the problem and explain it",
+        "Detailed knowledge of the industry",
+        "How fast you can do math in your head"
+      ],
+      "correct": ["How you think through the problem and explain it"],
+      "explanation": "Cases rarely have one correct answer. Interviewers care most about how you get to your answer: whether you understand the question, organize your approach, use the facts, and explain clearly. Math matters, but being calm and accurate counts for more than being fast." },
+    { "type": "quiz", "key": "m1.q3", "number": 3, "multi": true, "skill": "How a case interview works",
+      "question": "Which of these are fine to do during a case interview?",
+      "options": [
+        "Ask a question when something is unclear",
+        "Take a short pause to organize your thoughts",
+        "Say your thinking out loud as you work",
+        "Pretend to know a fact you’re unsure of",
+        "Change your mind when new information comes in"
+      ],
+      "correct": [
+        "Ask a question when something is unclear",
+        "Take a short pause to organize your thoughts",
+        "Say your thinking out loud as you work",
+        "Change your mind when new information comes in"
+      ],
+      "explanation": "Everything except pretending. Asking questions, pausing and thinking out loud are normal and expected. Changing your mind when the facts change is a strength, not a weakness. Pretending to know something is the one real risk. If you’re unsure, say so and ask, or say what you’d assume and why." },
+    { "type": "heading", "text": "Try it in your own words" },
+    { "type": "text", "body": "Go back to the retailer: sales went up, but profit went down. First, say the problem out loud as if you were talking to the interviewer. Then type it below, and write one question you’d ask first. When both boxes have an answer, you can open an example to compare." },
+    { "type": "field", "key": "m1.restate", "input": "long", "number": 1, "label": "The retailer’s problem, in your own words", "placeholder": "So the company is selling more, but…" },
+    { "type": "field", "key": "m1.question", "input": "long", "number": 2, "label": "One question you’d ask first", "placeholder": "Before I dig in, I’d like to know…" },
+    { "type": "reveal", "title": "One way to say it", "after": ["m1.restate", "m1.question"],
+      "body": "Restating: “So the company is selling more than before, but keeping less money. They want to understand why profit fell even though sales grew.”\n\nA good first question: “Over what time period are we looking? And do we know whether costs went up, or whether they lowered prices to sell more?”\n\nYours doesn’t need to match. What matters is that you repeated the problem back, which shows you understood it, and that your question helps you decide where to look." },
+    { "type": "coach_only", "title": "For Peri", "body": "Check whether her restatement is accurate and whether her first question points toward money in versus money out. If she missed m1.q2 (what interviewers look for), spend five minutes on that on Sunday before running a case." }
+   ]
+  },
+  {
+   "id": "m2-first-video",
+   "number": 2,
+   "day": "Friday",
+   "minutes": "About 1 hour 30 minutes: a 1 hour 16 minute video, then 10 minutes of reflection",
+   "title": "Watch a Real Case Interview",
+   "blocks": [
+    { "type": "callout", "tone": "peach", "title": "Before you watch", "body": "You are not watching this because you’re expected to perform like this candidate today. You’re watching to understand what a case interview actually looks and sounds like." },
+    { "type": "text", "body": "This is a full mock case interview, recorded by Management Consulted, a company that coaches people for consulting interviews. The case is a market study: helping a client understand a market before making a decision." },
+    { "type": "text", "body": "It’s long, so watch it in one or two sittings. If you’re comfortable, you can speed it up a little in YouTube’s settings (the gear icon on the video)." },
+    { "type": "heading", "text": "What to notice as you watch" },
+    { "type": "list", "style": "numbers", "items": [
+      "How the interview begins. What does the interviewer say first, and what does the candidate do right after?",
+      "Whether the candidate asks questions, and what kind.",
+      "How the candidate organizes their thinking before diving in.",
+      "What happens when the interviewer gives new information, like a number or a chart.",
+      "How the candidate explains the final recommendation."
+    ] },
+    { "type": "text", "body": "You don’t need to take notes on all five. Keep the list in mind and jot down anything that stands out." },
+    { "type": "video", "key": "m2.video", "title": "Deloitte Case Interview Example: Market Study", "url": "https://www.youtube.com/watch?v=lmQt9ak2jjA", "length": "1 hr 16 min", "source": "Management Consulted, on YouTube" },
+    { "type": "heading", "text": "After you watch" },
+    { "type": "text", "body": "Three short questions. There are no right or wrong answers. Write what you actually think. Peri reads these before Sunday." },
+    { "type": "field", "key": "m2.surprised", "input": "long", "number": 1, "label": "What surprised you about the interview?" },
+    { "type": "field", "key": "m2.effective", "input": "long", "number": 2, "label": "What did the candidate do that you thought was effective?" },
+    { "type": "field", "key": "m2.difficult", "input": "long", "number": 3, "label": "What part looked most difficult?" },
+    { "type": "callout", "tone": "paleblue", "title": "To finish this module", "body": "Tick “I watched this video” above if you haven’t yet. With that and your three answers, Module 2 is done." },
+    { "type": "link", "kind": "article", "title": "Deloitte: Preparing for the Case and Scenario Interview", "url": "https://www.deloitte.com/us/en/careers/join-deloitte/recruiting-tips/case-and-scenario-interview-tips.html", "body": "Deloitte’s own short guide to case interviews, about 5 minutes to read. Worth it, because it’s how Deloitte itself describes what it looks for." },
+    { "type": "coach_only", "title": "For Peri", "body": "Her answer to “what looked most difficult” is the best early signal of where Sunday should start." }
+   ]
+  },
+  {
+   "id": "m3-five-steps",
+   "number": 3,
+   "day": "Friday",
+   "minutes": "About 20 minutes",
+   "title": "The Five Steps of a Case Interview",
+   "blocks": [
+    { "type": "text", "size": "lead", "body": "Almost every case follows the same five steps. Learn them and you’ll always know what to do next, even when the topic is unfamiliar." },
+    { "type": "text", "body": "For each step you’ll read what it means, see a short example, then answer one question. The examples all use the same made-up company: a coffee chain whose profits are down." },
+
+    { "type": "heading", "text": "Step 1: Understand the problem" },
+    { "type": "text", "body": "What is the company trying to figure out? Before doing anything else, repeat the problem back in your own words and ask about anything unclear." },
+    { "type": "callout", "tone": "paleblue", "title": "Example", "body": "Interviewer: “A coffee chain’s profits are down. Why?”\n\nYou: “Just to make sure I understand: the coffee chain is making less profit than before, and they want to know what’s causing it. Over what period did profit drop? And is it all their shops, or just some?”" },
+    { "type": "word_track", "label": "Something you can say", "body": "“Before I jump in, I want to make sure I understand the problem.”" },
+    { "type": "text", "body": "This is an example of natural interview language, not a script to memorize. Say it in a way that sounds like you." },
+    { "type": "quiz", "key": "m3.q1", "skill": "Understanding the problem",
+      "question": "The interviewer says: “Our client, a bike maker, wants to grow.” What’s the best first response?",
+      "options": [
+        "Great. They should start selling electric bikes.",
+        "Grow how? Do they mean more sales, more profit, or new markets, and by when?",
+        "Let me tell you what I know about the bike industry."
+      ],
+      "correct": ["Grow how? Do they mean more sales, more profit, or new markets, and by when?"],
+      "explanation": "“Grow” could mean many things. Asking what success looks like (more sales? more profit? new countries?) and by when tells you what problem you’re actually solving. Jumping to electric bikes is a guess made before you understand the goal." },
+
+    { "type": "heading", "text": "Step 2: Break it into smaller questions" },
+    { "type": "text", "body": "What are the main things you should look into? A big question like “why are profits down?” is hard to answer all at once. Break it into a few smaller questions that are easier to answer, then work through them one at a time. Consultants call this structuring the problem." },
+    { "type": "callout", "tone": "paleblue", "title": "Example", "body": "Profit is the money coming in minus the money going out. So “why is profit down?” becomes two smaller questions:\n\n1. Is less money coming in? Fewer customers, lower prices, or customers buying less.\n\n2. Is more money going out? Higher rent, staff pay, coffee beans, or other costs." },
+    { "type": "word_track", "label": "Something you can say", "body": "“Could I take a moment to organize my thoughts?”" },
+    { "type": "text", "body": "Asking for a short pause to plan is normal. Use it to jot down your two to four smaller questions." },
+    { "type": "quiz", "key": "m3.q2", "skill": "Breaking a problem down",
+      "question": "The coffee chain’s profits are down. Which is the most useful way to break this down?",
+      "options": [
+        "Money coming in versus money going out",
+        "Coffee versus tea",
+        "Good managers versus bad managers",
+        "Everything I know about coffee"
+      ],
+      "correct": ["Money coming in versus money going out"],
+      "explanation": "Splitting the problem into money coming in (revenue) and money going out (costs) covers every possible reason profit could fall, and you can check each half with facts. Coffee versus tea, or managers, might matter later, but each covers only part of the picture." },
+
+    { "type": "heading", "text": "Step 3: Ask for information and work through it" },
+    { "type": "text", "body": "What facts or numbers would help? Ask the interviewer for information about the part you think matters most. When they give you numbers, work through them out loud." },
+    { "type": "callout", "tone": "paleblue", "title": "Example", "body": "You: “I’d like to start with costs. Do we have information on how the coffee chain’s costs have changed?”\n\nInterviewer: “Yes. Total costs rose from $40 million to $46 million.”\n\nYou: “So costs went up $6 million. Do we know which costs grew the most?”" },
+    { "type": "quiz", "key": "m3.q3", "skill": "Asking for information",
+      "question": "You think the coffee chain might have fewer customers than before. What should you ask for?",
+      "options": [
+        "The number of customers each year for the last few years",
+        "A list of every drink on the menu",
+        "The story of how the company was founded"
+      ],
+      "correct": ["The number of customers each year for the last few years"],
+      "explanation": "Ask for the fact that would show whether your guess is right. If customers are falling, customer numbers over time will show it. The menu and the company history might be interesting, but they won’t tell you whether your guess is right." },
+
+    { "type": "heading", "text": "Step 4: Explain what the information tells you" },
+    { "type": "text", "body": "What have you learned? What might be causing the problem? When you get a fact, don’t just repeat it. Say what it means." },
+    { "type": "text", "body": "Your early guess about the cause has a name. Consultants call it a hypothesis. It’s simply an early guess that you’ll check against the facts, and it’s fine for it to change." },
+    { "type": "callout", "tone": "paleblue", "title": "Example", "body": "Interviewer: “Rent went up 30% after the chain moved its shops to busier streets.”\n\nWeak: “Rent went up 30%.”\n\nStrong: “So one big reason profit fell looks like higher rent from the move. Next I’d want to know whether the busier streets brought in enough extra customers to make up for it.”" },
+    { "type": "quiz", "key": "m3.q4", "skill": "Explaining what the facts mean",
+      "question": "The interviewer tells you: “Customer numbers stayed flat, but ingredient costs doubled.” Which response explains what this means?",
+      "options": [
+        "Customer numbers stayed flat and ingredient costs doubled.",
+        "So the problem looks like it’s on the cost side, mainly ingredients, not a lack of customers. I’d want to see whether prices went up to cover it.",
+        "Interesting. Can I have more data?"
+      ],
+      "correct": ["So the problem looks like it’s on the cost side, mainly ingredients, not a lack of customers. I’d want to see whether prices went up to cover it."],
+      "explanation": "The second answer tells the interviewer what you learned (it’s costs, not customers) and what you’d check next. The first just repeats the facts. The third asks for more without using what you were given." },
+
+    { "type": "heading", "text": "Step 5: Make a recommendation" },
+    { "type": "text", "body": "What should the company do, and why? End with a clear answer: tell the interviewer what you’ve learned and what you think the company should do. A simple pattern is your answer, two reasons, one risk, and one next step." },
+    { "type": "text", "body": "You’ll rarely have every fact. That’s fine. Give your best answer and say what you’d check next." },
+    { "type": "callout", "tone": "paleblue", "title": "Example", "body": "“I recommend the coffee chain renegotiate its ingredient contracts and raise prices slightly on its most popular drinks. Two reasons: ingredient costs doubled and are the main reason profit fell, and customer numbers are steady, so demand looks healthy. The risk is that higher prices could push some customers away. As a next step, I’d test the price change in a few shops first.”" },
+    { "type": "quiz", "key": "m3.q5", "skill": "Making a recommendation",
+      "question": "Which closing is strongest?",
+      "options": [
+        "I’m not sure. There are a lot of factors.",
+        "They should cut ingredient costs, because those doubled while customers stayed steady. The risk is that quality could drop, so I’d test cheaper suppliers in a few shops first.",
+        "Coffee is a tough business and profits are always tight."
+      ],
+      "correct": ["They should cut ingredient costs, because those doubled while customers stayed steady. The risk is that quality could drop, so I’d test cheaper suppliers in a few shops first."],
+      "explanation": "The second gives a clear answer, the reason behind it, a risk, and a next step, all in a few sentences. The first leaves the interviewer with nothing. The third is a general comment, not a recommendation for this company." },
+
+    { "type": "heading", "text": "The five steps, together" },
+    { "type": "list", "style": "numbers", "items": [
+      "Understand the problem. What is the company trying to figure out?",
+      "Break it into smaller questions. What are the main things to look into?",
+      "Ask for information and work through it. What facts or numbers would help?",
+      "Explain what the information tells you. What have we learned, and what might be causing the problem?",
+      "Make a recommendation. What should the company do, and why?"
+    ] },
+    { "type": "field", "key": "m3.own", "input": "long", "label": "Write the five steps the way you’d remember them, in your own words.", "placeholder": "1. …" },
+    { "type": "coach_only", "title": "For Peri", "body": "Results shows which of the five steps she missed on the first try. Her own-words version of the steps shows whether the sequence stuck." }
+   ]
+  },
+  {
+   "id": "m4-guided-case",
+   "number": 4,
+   "day": "Friday",
+   "minutes": "About 25 to 30 minutes",
+   "title": "Your First Guided Case",
+   "blocks": [
+    { "type": "text", "size": "lead", "body": "Now you’ll use the five steps on a full practice case. You’ll go one question at a time, with an explanation after each one. Take your time." },
+    { "type": "text", "body": "Try saying each answer out loud before you type or choose it. It’s good practice for Wednesday, when you’ll be talking, not writing." },
+    { "type": "callout", "tone": "paleblue", "title": "The case", "body": "A national fitness company runs 100 gym locations.\n\nLast year its membership grew by 20%. But its annual profit fell from $12 million to $8 million.\n\nThe CEO wants to understand why profit fell when more people joined." },
+
+    { "type": "heading", "text": "Question 1: What would you ask first?" },
+    { "type": "text", "body": "This is Step 1, understanding the problem. Which of these would be useful to ask the interviewer before you dig in?" },
+    { "type": "quiz", "key": "m4.q1", "multi": true, "skill": "Understanding the problem",
+      "question": "Choose every question that would help you understand the problem.",
+      "options": [
+        "Over what time period did profit fall? Just last year, or longer?",
+        "Did membership prices change?",
+        "Has the company opened or closed any gyms recently?",
+        "What is the CEO’s favorite workout?",
+        "Is profit down at every gym, or only at some?"
+      ],
+      "correct": [
+        "Over what time period did profit fall? Just last year, or longer?",
+        "Did membership prices change?",
+        "Has the company opened or closed any gyms recently?",
+        "Is profit down at every gym, or only at some?"
+      ],
+      "explanation": "Four of these help. The time period, price changes, new or closed gyms, and whether the drop is everywhere or in a few places all tell you where to look. The CEO’s favorite workout doesn’t." },
+    { "type": "field", "key": "m4.ask", "input": "long", "label": "Write one more question of your own that you’d want answered." },
+
+    { "type": "heading", "text": "Question 2: What might be causing the problem?" },
+    { "type": "text", "body": "Remember, profit is money coming in minus money going out. More members usually means more money coming in. So how could profit still fall?" },
+    { "type": "quiz", "key": "m4.q2", "multi": true, "skill": "Breaking a problem down",
+      "question": "Choose every reason that could explain it.",
+      "options": [
+        "Each member pays less than before, for example because of discounts",
+        "Costs went up faster than membership, for example rent, staff or equipment",
+        "The company spent a lot opening new gyms",
+        "Membership grew, so money coming in can’t be part of the problem"
+      ],
+      "correct": [
+        "Each member pays less than before, for example because of discounts",
+        "Costs went up faster than membership, for example rent, staff or equipment",
+        "The company spent a lot opening new gyms"
+      ],
+      "explanation": "The first three are all possible. Members could be paying less (discounts or cheaper plans), costs could be rising faster than the extra money from new members, or new gyms could be expensive to open. The last one is the trap: more members doesn’t guarantee more money coming in. If 20% more members each pay a lot less, money coming in can still fall." },
+
+    { "type": "heading", "text": "Question 3: Which information would you request?" },
+    { "type": "quiz", "key": "m4.q3", "multi": true, "skill": "Asking for information",
+      "question": "You want to test those possible causes. Which facts would help most? Choose all that apply.",
+      "options": [
+        "The average price each member pays, this year compared with last year",
+        "The company’s costs, broken down by type: rent, staff, equipment, marketing",
+        "Profit at older gyms compared with newer gyms",
+        "The history of the company’s logo"
+      ],
+      "correct": [
+        "The average price each member pays, this year compared with last year",
+        "The company’s costs, broken down by type: rent, staff, equipment, marketing",
+        "Profit at older gyms compared with newer gyms"
+      ],
+      "explanation": "Each of the first three checks one possible cause. Price per member checks money coming in. The cost breakdown checks money going out. Older versus newer gyms checks whether opening new gyms is the issue. The logo history tells you nothing about profit." },
+
+    { "type": "heading", "text": "Question 4: How much did profit fall, in percentage terms?" },
+    { "type": "text", "body": "Percentages show how big a change is. Saying “profit fell by a third” tells the interviewer much more than “profit fell by $4 million” on its own." },
+    { "type": "callout", "tone": "paleblue", "title": "How to work out a percentage drop", "body": "(Old number minus new number) divided by the old number, then times 100.\n\nThe old number is where you started: here, the profit before it fell." },
+    { "type": "numeric", "key": "m4.pct", "skill": "Case math", "answer": 33.3, "tolerance": 0.5, "either_sign": true, "suffix": "%",
+      "question": "Profit went from $12 million to $8 million. By what percent did it fall?",
+      "hint": "Use a calculator if you like. Round to one decimal place, and type just the number.",
+      "explanation": "(12 - 8) ÷ 12 × 100 = 4 ÷ 12 × 100 = 33.3%.\n\nWhy divide by 12 and not 8? A percentage change is always measured against where you started. Profit started at $12 million, so the $4 million drop is a third of the starting amount. Dividing by 8 would give 50%, which makes the drop sound bigger than it was.\n\nIn an interview, say it as a full sentence: “Profit fell by $4 million, which is about a third, or 33%.”" },
+
+    { "type": "heading", "text": "Question 5: New information" },
+    { "type": "callout", "tone": "paleblue", "title": "The interviewer tells you", "body": "This year the company opened 15 new gyms, so 85 of its 100 gyms are older ones.\n\nNew gyms are expensive to open: rent before the doors open, equipment, hiring and training staff, and marketing.\n\nThe older gyms are mostly stable. The price each member pays hasn’t changed." },
+    { "type": "field", "key": "m4.hypothesis", "input": "long", "label": "What do you now think is the main reason profit fell? This early guess is your hypothesis.", "placeholder": "I think profit fell mainly because…" },
+    { "type": "field", "key": "m4.confirm", "input": "long", "label": "What one fact would confirm or weaken your guess?" },
+    { "type": "reveal", "title": "How the numbers work out", "after": ["m4.hypothesis", "m4.confirm"],
+      "body": "Here is one set of numbers that fits the case, so you can see how both things can be true at once.\n\nThe 85 older gyms made about $12 million in profit last year, and about $12 million again this year. They’re stable.\n\nThe 15 new gyms brought in lots of new members, which is why membership grew 20%. But in their first year they cost more to open and run than they brought in. Together they lost about $4 million.\n\nTotal: $12 million from the older gyms, minus $4 million lost at the new ones, equals $8 million.\n\nSo membership went up and profit went down for the same reason: the company grew. New gyms bring in members right away, but they often take a while to start making money.\n\nA good fact to check: how long new gyms usually take to become profitable, and whether these 15 are on track." },
+
+    { "type": "heading", "text": "Question 6: What would you recommend looking into next?" },
+    { "type": "field", "key": "m4.next", "input": "long", "label": "In two or three sentences: what should the company look into next, and why?" },
+    { "type": "reveal", "title": "One strong answer", "after": ["m4.next"],
+      "body": "“I’d look closely at the 15 new gyms, one by one. Are some already close to breaking even, while others are far behind? That tells the company whether the drop is a normal first-year cost or a sign that some locations were poor choices.\n\nBefore opening any more gyms, I’d want to know how long new gyms usually take to make a profit. And I’d keep protecting the 85 older gyms, since they’re the stable core of the business.”\n\nYour answer might focus on something else, like prices or costs. That’s fine, as long as you explain why." },
+
+    { "type": "callout", "tone": "peach", "title": "What you just did", "body": "You worked through a full case using the five steps.\n\nYou asked questions to understand the problem. You broke “why did profit fall?” into money coming in and money going out. You chose which facts to ask for. You worked out a percentage drop and said it in a sentence. You updated your guess when new information arrived. And you suggested a next step.\n\nThat’s the whole shape of a case interview. Tomorrow you’ll practice each part again, in more depth." },
+    { "type": "coach_only", "title": "For Peri", "body": "Look at m4.pct first: if she divided by 8 (50%), the denominator idea needs a two-minute recap. Her hypothesis after the new information shows whether she connects “new gyms” to “startup losses” without being told." }
+   ]
+  },
+  {
+   "id": "m5-break-it-down",
+   "number": 5,
+   "day": "Saturday",
+   "minutes": "About 20 to 25 minutes",
+   "title": "How to Break Down a Business Problem",
+   "blocks": [
+    { "type": "text", "size": "lead", "body": "Yesterday you split “why is profit down?” into money coming in and money going out. Today you’ll practice breaking down problems that are less tidy." },
+    { "type": "text", "body": "A complicated business problem gets easier when you break it into a few smaller questions. You probably already do this in everyday life." },
+    { "type": "callout", "tone": "paleblue", "title": "An everyday example", "body": "Say you’re deciding whether to move into a new apartment. You might ask:\n\nCan I afford it? Rent, deposit, utilities.\n\nIs the location right? Commute, safety, what’s nearby.\n\nIs the place itself good? Size, condition, roommates.\n\nIs the timing right? Lease dates, your plans for next year.\n\nThat’s four groups of questions. Each one is small enough to answer, and together they cover the whole decision." },
+    { "type": "heading", "text": "The same idea, for a business" },
+    { "type": "text", "body": "For a company that’s losing profit, the smaller questions might be:" },
+    { "type": "list", "style": "bullets", "items": [
+      "Is the company earning less money from customers?",
+      "Is it spending more money to operate?",
+      "Has something changed about its products or its customers?",
+      "Is a recent investment costing more than expected?"
+    ] },
+    { "type": "text", "body": "Putting your questions into clear groups like this helps in three ways. You’re less likely to miss something big. The interviewer can follow your plan. And when new facts arrive, you know which group they belong to." },
+    { "type": "callout", "tone": "peach", "title": "A word about frameworks", "body": "Online you’ll find ready-made lists, often called frameworks, that people memorize for case interviews. Be careful with them. No single list works for every case, and interviewers can tell when someone forces a memorized list onto a problem it doesn’t fit. Build your groups from the question in front of you." },
+    { "type": "heading", "text": "Your turn: sort the considerations" },
+    { "type": "callout", "tone": "paleblue", "title": "The case", "body": "A regional restaurant chain is thinking about opening 15 new locations. Before deciding, what should the company think about?" },
+    { "type": "sort", "key": "m5.sort", "title": "Sort the considerations", "skill": "Breaking a problem down",
+      "prompt": "Below are eight things the company could think about. For each one, choose the group where you think it fits best. When all eight have a group, press Compare with the sample.",
+      "categories": ["Customer demand", "Costs and money", "Competition", "Ability to run the new locations"],
+      "items": [
+        { "text": "Do enough people in the new areas want this kind of food?", "category": "Customer demand" },
+        { "text": "How much will rent and building each restaurant cost?", "category": "Costs and money" },
+        { "text": "Are similar restaurants already nearby?", "category": "Competition" },
+        { "text": "Can we hire and train enough managers and staff?", "category": "Ability to run the new locations" },
+        { "text": "How long until a new location starts making money?", "category": "Costs and money" },
+        { "text": "Can our current suppliers deliver to the new areas?", "category": "Ability to run the new locations" },
+        { "text": "Would customers in these areas pay our prices?", "category": "Customer demand" },
+        { "text": "Could a competitor cut its prices when we arrive?", "category": "Competition" }
+      ],
+      "explanation": "Some items could fit in more than one group. “How long until a new location makes money” is about money, but it also depends on demand. That’s normal. What matters is that your groups cover the big areas and don’t leave one out completely." },
+    { "type": "heading", "text": "Your three biggest questions" },
+    { "type": "text", "body": "Now put it in your own words. If you were advising the restaurant chain, what are the three biggest questions you’d want answered before deciding? Then say which one you’d start with." },
+    { "type": "field", "key": "m5.q1", "input": "long", "number": 1, "label": "Biggest question 1" },
+    { "type": "field", "key": "m5.q2", "input": "long", "number": 2, "label": "Biggest question 2" },
+    { "type": "field", "key": "m5.q3", "input": "long", "number": 3, "label": "Biggest question 3" },
+    { "type": "field", "key": "m5.first", "input": "long", "label": "Which of your three would you look at first, and why?" },
+    { "type": "reveal", "title": "A sample approach", "after": ["m5.q1", "m5.q2", "m5.q3", "m5.first"],
+      "body": "Here’s one way to open this case out loud:\n\n“Before deciding on 15 new restaurants, I’d want to answer four questions. First, demand: are there enough customers in the new areas who want our food at our prices? Second, money: what will each location cost to open, and how long until it pays back? Third, competition: who’s already there, and how might they react? Fourth, our ability to run them: can we hire managers, train staff and supply 15 more restaurants without hurting the ones we have?\n\nI’d start with demand, because if the customers aren’t there, nothing else matters.”\n\nYour questions don’t need to match. Check two things: did you cover the main areas, and did you give a reason for where you’d start?" },
+    { "type": "coach_only", "title": "For Peri", "body": "Results shows how her sorting compared with the sample. Watch whether her three questions are specific to restaurants or generic." }
+   ]
+  },
+  {
+   "id": "m6-case-math",
+   "number": 6,
+   "day": "Saturday",
+   "minutes": "About 20 to 25 minutes",
+   "title": "Case Math Without the Panic",
+   "blocks": [
+    { "type": "text", "size": "lead", "body": "Case math is mostly simple arithmetic. The hard part is staying calm and explaining what you’re doing. This module covers the five calculations that come up most in beginner cases, then one that puts two together." },
+    { "type": "text", "body": "For each one you’ll read what it means and see an example. Then you’ll solve a similar question: type your answer and press Check my answer to see the full working." },
+    { "type": "callout", "tone": "paleblue", "title": "Habits that help", "body": "Say the setup before you calculate: “Revenue is price times number sold, so that’s $5 times 400.”\n\nKeep track of units: dollars, customers, per month, per year.\n\nRound to easy numbers when it’s sensible, and say that you’re doing it.\n\nIf you make a mistake, correct it calmly and keep going. Interviewers notice how you recover." },
+    { "type": "callout", "tone": "peach", "title": "About calculators", "body": "Use a calculator here if you like. Whether you can use one in the real interview is up to Deloitte and your interviewer, so don’t count on it. Either way, practice saying the setup out loud. If you want to know, it’s fine to ask your recruiter." },
+
+    { "type": "heading", "text": "1. Revenue = price × number sold" },
+    { "type": "text", "body": "Revenue is all the money a company takes in from selling things, before it pays any costs." },
+    { "type": "callout", "tone": "paleblue", "title": "Example", "body": "A bookstore sells 300 books a week at $20 each.\n\nRevenue = $20 × 300 = $6,000 a week." },
+    { "type": "numeric", "key": "m6.revenue", "skill": "Case math", "answer": 2000, "prefix": "$", "suffix": "per day",
+      "question": "A coffee shop sells 400 cups a day at $5 each. What is its revenue per day?",
+      "explanation": "$5 × 400 = $2,000 a day.\n\nSay it as: “Revenue is price times number sold, so $5 times 400 cups is $2,000 a day.”" },
+
+    { "type": "heading", "text": "2. Profit = revenue - costs" },
+    { "type": "text", "body": "Profit is what’s left after the company pays all its bills." },
+    { "type": "callout", "tone": "paleblue", "title": "Example", "body": "A service company brings in $50 million and spends $42 million.\n\nProfit = $50 million - $42 million = $8 million." },
+    { "type": "numeric", "key": "m6.profit", "skill": "Case math", "answer": 6000000, "prefix": "$",
+      "question": "A software company has revenue of $30 million and costs of $24 million. What is its profit?",
+      "hint": "You can type 6,000,000 or 6M.",
+      "explanation": "$30 million - $24 million = $6 million." },
+
+    { "type": "heading", "text": "3. Percentage change" },
+    { "type": "text", "body": "This tells you how big a change is compared with where you started. Take the new number minus the old number, divide by the old number, and multiply by 100. If the result is negative, it’s a decrease." },
+    { "type": "callout", "tone": "paleblue", "title": "Example", "body": "Customers went from 200 to 250.\n\n(250 - 200) ÷ 200 × 100 = 50 ÷ 200 × 100 = 25%.\n\nThat’s a 25% increase." },
+    { "type": "numeric", "key": "m6.pct", "skill": "Case math", "answer": 25, "either_sign": true, "suffix": "%",
+      "question": "A store’s monthly sales fell from $80,000 to $60,000. By what percent did they fall?",
+      "explanation": "(60,000 - 80,000) ÷ 80,000 × 100 = -20,000 ÷ 80,000 × 100 = -25%. Sales fell by 25%.\n\nNotice that you divide by $80,000, the starting amount, just like in the gym case." },
+
+    { "type": "heading", "text": "4. Cost savings" },
+    { "type": "text", "body": "When a company cuts a cost by a percentage, the saving is the original cost times that percentage." },
+    { "type": "callout", "tone": "paleblue", "title": "Example", "body": "A company spends $2 million a year on shipping and finds a way to cut it by 10%.\n\nSaving = $2,000,000 × 10% = $200,000 a year." },
+    { "type": "numeric", "key": "m6.savings", "skill": "Case math", "answer": 240000, "prefix": "$", "suffix": "per year",
+      "question": "A law firm spends $600,000 a year on printing and paper. Going digital would cut that by 40%. How much would it save each year?",
+      "hint": "40% is the same as 0.4.",
+      "explanation": "$600,000 × 0.4 = $240,000 a year." },
+
+    { "type": "heading", "text": "5. Payback" },
+    { "type": "text", "body": "Payback answers one question: if a company spends money now to save money every year, how many years until the savings cover what it spent? Payback = the amount spent ÷ the savings per year." },
+    { "type": "text", "body": "This simple version ignores things like interest. In a beginner case that’s usually fine. Just say you’re keeping it simple." },
+    { "type": "callout", "tone": "paleblue", "title": "Example", "body": "A project costs $2 million and saves $500,000 a year.\n\nPayback = $2,000,000 ÷ $500,000 = 4 years." },
+    { "type": "numeric", "key": "m6.payback", "skill": "Case math", "answer": 3, "suffix": "years",
+      "question": "A new machine costs $900,000 and saves $300,000 a year. How many years until it pays for itself?",
+      "explanation": "$900,000 ÷ $300,000 = 3 years. After three years the savings have covered the cost, and everything after that is a gain." },
+
+    { "type": "heading", "text": "Putting two together" },
+    { "type": "text", "body": "Real cases often mix two steps. This one uses revenue, plus a change of units." },
+    { "type": "numeric", "key": "m6.annual", "skill": "Case math", "answer": 12000000, "prefix": "$", "suffix": "per year",
+      "question": "A streaming service has 40,000 customers paying $25 a month. What is its revenue for a full year?",
+      "hint": "Work out the monthly revenue first, then think about how many months there are in a year. You can type 12,000,000 or 12M.",
+      "explanation": "Monthly: 40,000 × $25 = $1,000,000.\n\nYearly: $1,000,000 × 12 = $12,000,000, or $12 million.\n\nThis is where units matter: the price was per month, so you have to turn it into a year." },
+    { "type": "field", "key": "m6.hardest", "input": "long", "optional": true, "label": "Optional: which of these felt hardest, and why?" },
+    { "type": "coach_only", "title": "For Peri", "body": "Results lists every math answer she entered and the expected answer. Unit slips (monthly versus yearly) and the denominator in percentage change are the usual misses." }
+   ]
+  },
+  {
+   "id": "m7-second-video",
+   "number": 7,
+   "day": "Saturday",
+   "minutes": "About 1 hour 5 minutes: a 52 minute video, then reflection",
+   "title": "Watch a Second Case Interview",
+   "blocks": [
+    { "type": "text", "size": "lead", "body": "This video shows a different kind of consulting problem: one about people and how organizations work, which Deloitte calls Human Capital. Watching a second case helps you see what stays the same from case to case." },
+    { "type": "callout", "tone": "peach", "title": "Keep this in mind", "body": "This example is about organizational consulting. It does not necessarily represent the exact Enterprise Strategy interview you’ll get. Watch for the steps and habits, not the topic." },
+    { "type": "heading", "text": "Your viewing assignment" },
+    { "type": "text", "body": "This time, watch actively. Each time the interviewer gives the candidate a new problem, a question or a new piece of information, pause the video before the candidate answers. Take 30 seconds and ask yourself:" },
+    { "type": "list", "style": "bullets", "items": [
+      "What question would I ask?",
+      "What would I look into first?",
+      "What information would I need?",
+      "What would I recommend?"
+    ] },
+    { "type": "text", "body": "Then press play and compare your thinking with the candidate’s. You don’t need to write these down. The point is to practice thinking before you hear the answer." },
+    { "type": "video", "key": "m7.video", "title": "Deloitte Human Capital Case Study Interview Example", "url": "https://www.youtube.com/watch?v=cydnRA25gAw", "length": "52 min", "source": "Management Consulted, on YouTube" },
+    { "type": "heading", "text": "After you watch" },
+    { "type": "text", "body": "Three short questions. As before, there are no right or wrong answers." },
+    { "type": "field", "key": "m7.different", "input": "long", "number": 1, "label": "What did this candidate do differently from the first candidate?" },
+    { "type": "field", "key": "m7.better", "input": "long", "number": 2, "label": "What did you understand better the second time?" },
+    { "type": "field", "key": "m7.try_sunday", "input": "long", "number": 3, "label": "What is one thing you want to try during Sunday’s practice?" },
+    { "type": "link", "kind": "tool", "optional": true, "title": "Deloitte Case Prep Tool", "url": "https://usrecruiting.deloitte.com/case-prep-tool", "body": "Deloitte’s own practice tool, with sample cases you can work through. Optional, and not part of this weekend’s assignment. Use it after you finish this workbook if you want more practice." },
+    { "type": "coach_only", "title": "For Peri", "body": "Her “one thing to try on Sunday” also appears in Results under what she wants to practice." }
+   ]
+  },
+  {
+   "id": "m8-independent-case",
+   "number": 8,
+   "day": "Saturday",
+   "minutes": "About 30 to 40 minutes",
+   "title": "Your First Independent Strategy Case",
+   "blocks": [
+    { "type": "text", "size": "lead", "body": "This is your first case on your own. There are no tips before each question, just the facts. Work through it as if an interviewer were sitting across from you." },
+    { "type": "text", "body": "Say your answers out loud before you type them. No perfect answer is expected. Example answers unlock as you go, once you’ve written your own." },
+    { "type": "callout", "tone": "paleblue", "title": "The case", "body": "A regional bank with 80 branches is considering spending $6 million on an AI-powered customer support system. It would answer customers’ questions by chat and by phone.\n\nLeadership hopes it will improve service, with faster answers at any hour, and reduce costs.\n\nSome employees worry about mistakes, and about whether customers will trust it.\n\nThe question: should the bank go ahead?" },
+
+    { "type": "heading", "text": "Stage 1: Understand the decision" },
+    { "type": "field", "key": "m8.goal", "input": "long", "number": 1, "label": "In your own words, what is the bank trying to decide? What would success look like?" },
+
+    { "type": "heading", "text": "Stage 2: Ask questions" },
+    { "type": "text", "body": "Write three questions you’d ask the interviewer before making a recommendation. Think about money, customers and risk." },
+    { "type": "field", "key": "m8.ask1", "input": "long", "number": 2, "label": "Question 1" },
+    { "type": "field", "key": "m8.ask2", "input": "long", "number": 3, "label": "Question 2" },
+    { "type": "field", "key": "m8.ask3", "input": "long", "number": 4, "label": "Question 3" },
+    { "type": "reveal", "title": "Questions a strong candidate might ask", "after": ["m8.ask1", "m8.ask2", "m8.ask3"],
+      "body": "What does the bank spend on customer support today?\n\nHow many customer questions does it get, and what kinds? Simple ones like “what’s my balance?”, or complicated ones like a mortgage problem?\n\nHow much could the system save each year, and when would the savings start?\n\nWhat happens when the system gets something wrong, and how would customers reach a person?\n\nAre there privacy rules or banking rules the system has to follow?\n\nYou don’t need all of these. Two or three good ones are plenty." },
+
+    { "type": "heading", "text": "Stage 3: Look at the numbers" },
+    { "type": "callout", "tone": "paleblue", "title": "The interviewer gives you these facts", "body": "Today the bank spends $4 million a year on customer support, mostly the pay of its call center staff.\n\nThe AI system costs $6 million to buy and set up, paid once.\n\nOnce it’s running, the bank expects it to cut its support costs by 25% a year.\n\nFor this calculation, assume the savings are fully realized and there are no other new yearly costs." },
+    { "type": "numeric", "key": "m8.savings", "number": 5, "skill": "Case math", "answer": 1000000, "prefix": "$", "suffix": "per year",
+      "question": "How much would the bank save each year?",
+      "hint": "You can type 1,000,000 or 1M.",
+      "explanation": "$4 million × 25% = $1 million a year. Another way to see it: 25% is a quarter, and a quarter of $4 million is $1 million." },
+    { "type": "numeric", "key": "m8.payback", "number": 6, "skill": "Case math", "answer": 6, "suffix": "years",
+      "question": "How many years would it take for the savings to cover the $6 million cost?",
+      "explanation": "$6 million ÷ $1 million a year = 6 years.\n\nThat’s a long time, and it’s worth saying so out loud: “Six years is a fairly long payback, so I’d want to be confident the savings are real and that the system will last.”" },
+    { "type": "callout", "tone": "paleblue", "title": "One more fact", "body": "The company selling the system says it will probably need a major, expensive upgrade after about 5 years." },
+    { "type": "quiz", "key": "m8.q_life", "number": 7, "skill": "Explaining what the facts mean",
+      "question": "What does that mean for the investment?",
+      "options": [
+        "Nothing changes. It still pays for itself in 6 years.",
+        "At these savings, it won’t have paid for itself by the time the expensive upgrade is due.",
+        "The bank should spend more so the system works faster."
+      ],
+      "correct": ["At these savings, it won’t have paid for itself by the time the expensive upgrade is due."],
+      "explanation": "In 5 years the system saves about $5 million, which is less than the $6 million it cost. So on these numbers it hasn’t paid for itself when the expensive upgrade arrives.\n\nThat doesn’t automatically mean no. Better service might be worth something too. But it’s an important point to raise, and it’s exactly what interviewers listen for: what a number means, not just what it is." },
+
+    { "type": "heading", "text": "Stage 4: Consider the risks" },
+    { "type": "callout", "tone": "paleblue", "title": "More new information", "body": "The bank ran a small test. Routine questions, like checking a balance or locking a lost card, were answered much faster.\n\nBut complicated financial questions, like disputes or loan problems, were handed to a person more often than before, and those customers waited longer." },
+    { "type": "quiz", "key": "m8.risks", "number": 8, "multi": true, "skill": "Spotting risks",
+      "question": "Which of these are real risks the bank should weigh? Choose all that apply.",
+      "options": [
+        "Customer experience: people with complicated problems could get frustrated",
+        "Privacy: the system handles sensitive financial information",
+        "Accuracy: the system could give someone a wrong answer about their money",
+        "Employees: staff may worry about their jobs, and some roles would change",
+        "Setting it up: installing it, training staff and connecting it to the bank’s systems could take longer or cost more than planned"
+      ],
+      "correct": [
+        "Customer experience: people with complicated problems could get frustrated",
+        "Privacy: the system handles sensitive financial information",
+        "Accuracy: the system could give someone a wrong answer about their money",
+        "Employees: staff may worry about their jobs, and some roles would change",
+        "Setting it up: installing it, training staff and connecting it to the bank’s systems could take longer or cost more than planned"
+      ],
+      "explanation": "All five are real. That’s typical of strategy cases: a decision usually has a money side and a people side. A strong answer doesn’t list everything. It names the biggest one or two risks and suggests how to reduce them." },
+    { "type": "field", "key": "m8.biggest", "input": "long", "number": 9, "label": "Which risk worries you most, and how could the bank reduce it?" },
+    { "type": "field", "key": "m8.test", "input": "long", "number": 10, "label": "How does the test result change your thinking? What would you want to test next?" },
+
+    { "type": "heading", "text": "Stage 5: Make a recommendation" },
+    { "type": "pick", "key": "m8.rec", "label": "11. What do you recommend?", "options": ["Move forward with the full system", "Test it on a smaller scale first", "Hold off for now"], "help": "More than one answer can be right. What matters is how well you back it up." },
+    { "type": "field", "key": "m8.why", "input": "long", "number": 12, "label": "Why? Give your two main reasons." },
+    { "type": "field", "key": "m8.evidence", "input": "long", "number": 13, "label": "Which facts from the case support your recommendation?" },
+    { "type": "field", "key": "m8.nextstep", "input": "long", "number": 14, "label": "What should the bank do next?" },
+    { "type": "word_track", "label": "Say it out loud", "body": "Now put it together and say your whole recommendation out loud in about 45 seconds: your answer, your reasons, the biggest risk, and the next step. Time yourself if you can." },
+    { "type": "reveal", "title": "One example answer", "after": ["m8.rec", "m8.why", "m8.evidence", "m8.nextstep"],
+      "body": "“I’d recommend testing the system on a smaller scale before a full rollout.\n\nThe savings are real but modest: about $1 million a year, so a 6-year payback, and the system may need a major upgrade before then. The test also showed it’s good at routine questions but struggles with complicated ones, and those are often the customers who matter most to a bank.\n\nThe biggest risk is customer trust. If people with serious money problems get stuck, they may leave.\n\nAs a next step, I’d use it only for routine questions in a few branches, make it easy to reach a person, and track wait times, accuracy and customer satisfaction for a few months before deciding on more.”\n\nThis isn’t the only good answer. Someone could reasonably recommend going ahead if they believe faster service will win and keep customers. Someone could recommend holding off if they think the risks outweigh a long payback. A strong answer uses the numbers and the test results, names a risk, and ends with a clear next step." },
+    { "type": "coach_only", "title": "For Peri", "body": "Her recommendation is in m8.rec. Any of the three can be defended. Judge the reasoning: does she use the $1M savings, the 6-year payback and the 5-year upgrade, and does she name a real risk and a next step? Run her 45-second close live on Sunday." }
+   ]
+  },
+  {
+   "id": "m9-sunday-prep",
+   "number": 9,
+   "day": "Saturday",
+   "minutes": "About 10 minutes",
+   "title": "Your Sunday Coaching Prep",
+   "blocks": [
+    { "type": "text", "size": "lead", "body": "Last step. Your answers here help Peri plan Sunday around what you need, so be honest. “I’m confused about this part” is the most useful thing you can write." },
+    { "type": "field", "key": "m9.understand", "input": "long", "number": 1, "label": "What do you feel you understand well?" },
+    { "type": "field", "key": "m9.confused", "input": "long", "number": 2, "label": "What still confuses you?" },
+    { "type": "field", "key": "m9.nervous", "input": "long", "number": 3, "label": "What part of a case interview makes you most nervous?" },
+    { "type": "field", "key": "m9.practice", "input": "long", "number": 4, "label": "What would you most like to practice with Peri on Sunday?" },
+    { "type": "pick", "key": "m9.confidence", "label": "5. How confident do you feel about case interviews right now?",
+      "options": ["1: Very unsure", "2: A little unsure", "3: Somewhat confident", "4: Fairly confident", "5: Very confident"],
+      "help": "An honest low rating is useful information, not a poor performance. It tells Peri where to start." },
+    { "type": "callout", "tone": "paleblue", "title": "If you have extra time", "body": "Your interviewers may also ask why you want this job. You don’t need to answer that here, but Peri will practice it with you on Sunday. If you want a head start, think about which parts of your own experience you’d talk about: the AI-use policy, the board presentation, the records work, or leading Phi Alpha Delta. Only use details you can explain comfortably if someone asks a follow-up question." },
+    { "type": "callout", "tone": "peach", "title": "Before you finish", "body": "Press Send to Peri when you’re done. Peri sees everything you’ve written, plus any questions you added with Ask Peri." }
+   ]
+  }
+ ],
+ "summary": {
+  "link_label": "My notes for Sunday",
+  "eyebrow": "Before Sunday",
+  "title": "Your notes for Sunday with Peri",
+  "blocks": [
+   { "type": "interview_details" },
+   { "type": "quick_answers", "items": [
+     { "label": "What I understand well", "field": "m9.understand" },
+     { "label": "What still confuses me", "field": "m9.confused" },
+     { "label": "What makes me most nervous", "field": "m9.nervous" },
+     { "label": "What I want to practice", "field": "m9.practice" },
+     { "label": "One thing to try on Sunday", "field": "m7.try_sunday" },
+     { "label": "My confidence right now", "field": "m9.confidence" }
+   ] },
+   { "type": "checklist", "items": [
+     "Friday: Modules 1 to 4 done",
+     "Saturday: Modules 5 to 9 done",
+     "Watched both case interview videos",
+     "Read Deloitte’s case interview tips",
+     "Said at least one answer out loud",
+     "Pressed Send to Peri"
+   ] },
+   { "type": "signoff", "text": "You don’t need to be good at this yet. You need to show up with your questions. See you Sunday.", "from": "Peri" }
+  ]
+ }
+}

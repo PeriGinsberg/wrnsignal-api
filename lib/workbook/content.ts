@@ -129,11 +129,53 @@ export type Block =
    * outweigh every other question in the workbook.
    */
   | { type: "grid"; key: string; title?: string; columns: { key: string; label: string }[]; rows: number; guide?: string[] }
+  /**
+   * A video the client must watch. Embedded when the host allows it, always with
+   * a plain link out. The key stores "1" once they tick that they watched it.
+   */
+  | { type: "video"; key: string; title: string; url: string; length?: string; source?: string; body?: string }
+  /** An outside resource, read-only. `kind` says what clicking it opens. */
+  | { type: "link"; title: string; url: string; kind: "video" | "article" | "tool"; body?: string; optional?: boolean }
+  /**
+   * A knowledge check. The client chooses, presses Check, and the answer is
+   * saved and locked, so what the coach sees is their first attempt. Wrong
+   * answers are explained, never repeated: they move on either way.
+   */
+  | {
+      type: "quiz"; key: string; question: string; options: string[]; correct: string[]
+      multi?: boolean; explanation: string; skill?: string; number?: number
+    }
+  /** A math question with one right number. Saved and locked on Check, as quiz. */
+  | {
+      type: "numeric"; key: string; question: string; answer: number; explanation: string
+      /** Plus or minus. Default: 1% of the answer. */
+      tolerance?: number
+      /** Accept the answer with either sign ("fell 25%" typed as -25). */
+      either_sign?: boolean
+      prefix?: string; suffix?: string; hint?: string; skill?: string; number?: number
+    }
+  /**
+   * Sort each item into a category. One answer per item, keyed `<key>.<n>`
+   * from 1, plus `<key>.checked` once they press Check. The sample sorting is
+   * a suggestion, not a verdict: several groupings can be reasonable.
+   */
+  | {
+      type: "sort"; key: string; title?: string; prompt?: string; categories: string[]
+      items: { text: string; category: string }[]; explanation?: string; skill?: string
+    }
+  /** An example answer, locked until every key in `after` has an answer. */
+  | { type: "reveal"; title: string; body: string; after: string[]; button?: string }
 
 /** in_session: worked through with the coach. homework: done alone afterwards. */
 export type SectionMode = "in_session" | "homework"
 
-export type Section = { id: string; number: number; title: string; mode?: SectionMode; blocks: Block[] }
+export type Section = {
+  id: string; number: number; title: string; mode?: SectionMode; blocks: Block[]
+  /** A heading the nav groups sections under, e.g. "Friday". */
+  day?: string
+  /** How long it takes, as the client reads it: "About 20 minutes". */
+  minutes?: string
+}
 
 export type SummaryBlock =
   | { type: "interview_details" }
@@ -184,7 +226,17 @@ export type WorkbookContent = {
   interview: Interview | null
   coach: { first_name: string }
   sections: Section[]
-  summary: { title: string; eyebrow: string; blocks: SummaryBlock[] }
+  /** `link_label` replaces "Read This 1 Hour Before" on the header button. */
+  summary: { title: string; eyebrow: string; blocks: SummaryBlock[]; link_label?: string }
+  /** What a section is called in its header: "Section" unless this says "Module". */
+  section_word?: string
+  /** Shown at the end of the last section once every section is done. */
+  completion?: { title: string; body: string }
+  /**
+   * For the coach's Results view: which of the client's answers are their
+   * confidence rating, what confuses them, and what they want to practice.
+   */
+  results?: { confidence?: string; confusing?: string[]; practice?: string[] }
 }
 
 /** A pick answer. Text fields store a plain string. */
@@ -250,14 +302,24 @@ export function gridKeys(b: Extract<Block, { type: "grid" }>): string[] {
   return out
 }
 
+/** The item keys of a sort, then its checked key. */
+export function sortKeys(b: Extract<Block, { type: "sort" }>): string[] {
+  return [...b.items.map((_, i) => `${b.key}.${i + 1}`), `${b.key}.checked`]
+}
+
 /** The field keys one block owns, in render order. */
 export function blockFieldKeys(b: Block): string[] {
   switch (b.type) {
     case "grid":
       return gridKeys(b)
+    case "sort":
+      return sortKeys(b)
     case "field":
     case "pick":
     case "select":
+    case "video":
+    case "quiz":
+    case "numeric":
       return [b.key]
     case "star":
       return STAR_PARTS.map((p) => `${b.key}.${p.part}`)
@@ -285,6 +347,9 @@ export function blockOptionalKeys(b: Block): string[] {
       return b.optional ? [b.key] : []
     case "grid":
       return gridKeys(b)
+    // Pressing Check is not an answer; sorting every item is.
+    case "sort":
+      return [`${b.key}.checked`]
     case "story": {
       const out = STORY_PARTS.filter((p) => p.optional).map((p) => `${b.key}.${p.part}`)
       // Saying it out loud is homework the coach times in session, not a
@@ -548,7 +613,9 @@ export function isWritableKey(c: WorkbookContent, key: string): boolean {
 /** Answer values accepted from a client: a string, or a pick shape for pick fields. */
 export function validateAnswerValue(c: WorkbookContent, key: string, value: unknown): string | null {
   if (key.startsWith(CHECKLIST_PREFIX)) return value === "1" || value === "" ? null : "Checklist value must be \"1\" or \"\""
-  const pick = c.sections.flatMap((s) => s.blocks).find((b) => b.type === "pick" && b.key === key) as
+  const practice = practiceValueError(c, key, value)
+  if (practice !== undefined) return practice
+  const pick =c.sections.flatMap((s) => s.blocks).find((b) => b.type === "pick" && b.key === key) as
     | Extract<Block, { type: "pick" }>
     | undefined
   if (pick) {
@@ -598,6 +665,117 @@ export function validateAnswerValue(c: WorkbookContent, key: string, value: unkn
   return value.length > 20000 ? "Answer is too long" : null
 }
 
+/**
+ * Answer checks for the practice blocks (video, quiz, numeric, sort).
+ * undefined: the key belongs to none of them, so the usual checks apply.
+ */
+function practiceValueError(c: WorkbookContent, key: string, value: unknown): string | null | undefined {
+  for (const b of c.sections.flatMap((s) => s.blocks)) {
+    if (b.type === "video" && b.key === key) return value === "1" || value === "" ? null : "Video value must be \"1\" or \"\""
+    if (b.type === "quiz" && b.key === key) {
+      const chosen = b.multi ? value : typeof value === "string" ? [value] : null
+      if (!Array.isArray(chosen) || !chosen.every((v) => typeof v === "string")) {
+        return b.multi ? "A select-all answer must be a list" : "Answer must be text"
+      }
+      return chosen.every((v) => b.options.includes(v)) ? null : "A choice is not one of the options"
+    }
+    if (b.type === "numeric" && b.key === key) {
+      if (typeof value !== "string") return "Answer must be text"
+      return value.length > 100 ? "Answer is too long" : null
+    }
+    if (b.type === "sort") {
+      if (key === `${b.key}.checked`) return value === "1" || value === "" ? null : "Checked value must be \"1\" or \"\""
+      if (sortKeys(b).includes(key)) {
+        if (typeof value !== "string") return "Answer must be text"
+        return !value || b.categories.includes(value) ? null : "Answer is not one of the categories"
+      }
+    }
+  }
+  return undefined
+}
+
+/**
+ * A typed number, read the way people write money and percentages: "$2,000",
+ * "33.3%", "12M", "1.5 million", "250k". null when it is not a number.
+ */
+export function parseNumber(raw: string): number | null {
+  const s = raw.trim().toLowerCase().replace(/[$,\s%]/g, "").replace(/(dollars|percent|years?|yrs?)$/, "")
+  const m = s.match(/^(-?\d*\.?\d+)(k|thousand|m|mm|mil|million|b|bn|billion)?$/)
+  if (!m) return null
+  const scale = { k: 1e3, thousand: 1e3, m: 1e6, mm: 1e6, mil: 1e6, million: 1e6, b: 1e9, bn: 1e9, billion: 1e9 } as Record<string, number>
+  return Number(m[1]) * (m[2] ? scale[m[2]] : 1)
+}
+
+export type Grade = "correct" | "wrong" | null
+
+/** Right or wrong for a quiz or numeric answer; null while unanswered. */
+export function gradeAnswer(b: Block, v: unknown): Grade {
+  if (b.type === "quiz") {
+    const chosen = Array.isArray(v) ? v : typeof v === "string" && v ? [v] : []
+    if (!chosen.length) return null
+    const same = chosen.length === b.correct.length && b.correct.every((x) => chosen.includes(x))
+    return same ? "correct" : "wrong"
+  }
+  if (b.type === "numeric") {
+    if (typeof v !== "string" || !v.trim()) return null
+    const n = parseNumber(v)
+    if (n === null) return "wrong"
+    const tol = b.tolerance ?? Math.abs(b.answer) * 0.01
+    const hit = (x: number) => Math.abs(x - b.answer) <= tol + 1e-9
+    return hit(n) || (!!b.either_sign && hit(-n)) ? "correct" : "wrong"
+  }
+  return null
+}
+
+/** How many items of a sort match the sample, once every item is sorted. */
+export function sortMatches(b: Extract<Block, { type: "sort" }>, answers: Record<string, unknown>): { matched: number; total: number; done: boolean } {
+  const picks = b.items.map((_, i) => answers[`${b.key}.${i + 1}`])
+  return {
+    matched: b.items.filter((it, i) => picks[i] === it.category).length,
+    total: b.items.length,
+    done: picks.every((p) => typeof p === "string" && p.length > 0),
+  }
+}
+
+/** One graded question, for the coach's Results view. */
+export type GradedItem = {
+  sectionId: string; sectionTitle: string; kind: "quiz" | "numeric"
+  question: string; skill: string | null; answer: string; expected: string; grade: Grade
+}
+
+export function gradedItems(c: Pick<WorkbookContent, "sections">, answers: Record<string, unknown>): GradedItem[] {
+  const out: GradedItem[] = []
+  for (const s of c.sections) {
+    for (const b of s.blocks) {
+      if (b.type !== "quiz" && b.type !== "numeric") continue
+      out.push({
+        sectionId: s.id, sectionTitle: s.title, kind: b.type, question: b.question, skill: b.skill ?? null,
+        answer: answerText(answers[b.key]),
+        expected: b.type === "quiz" ? b.correct.join(", ") : `${b.prefix ?? ""}${b.answer.toLocaleString("en-US")}${b.suffix ? ` ${b.suffix}` : ""}`,
+        grade: gradeAnswer(b, answers[b.key]),
+      })
+    }
+  }
+  return out
+}
+
+/** Does this content have anything the Results view reports on? */
+export function hasPracticeResults(c: Pick<WorkbookContent, "sections">): boolean {
+  return c.sections.some((s) => s.blocks.some((b) => ["quiz", "numeric", "sort", "video"].includes(b.type)))
+}
+
+/** Sections grouped by `day`, in order. Sections with no day group under "". */
+export function sectionDays(c: Pick<WorkbookContent, "sections">): { day: string; sections: Section[] }[] {
+  const out: { day: string; sections: Section[] }[] = []
+  for (const s of c.sections) {
+    const d = s.day ?? ""
+    const last = out[out.length - 1]
+    if (last && last.day === d) last.sections.push(s)
+    else out.push({ day: d, sections: [s] })
+  }
+  return out
+}
+
 /** A comment or question anchor: a real section (or the general box) and, if given, a field in it. */
 export function anchorError(c: Pick<WorkbookContent, "sections">, sectionId: unknown, fieldKey: unknown): string | null {
   if (typeof sectionId !== "string" || !sectionId) return "section_id is required"
@@ -631,6 +809,7 @@ const BLOCK_TYPES = new Set([
   "text", "heading", "list", "callout", "coach_note", "big_quote", "field",
   "word_track", "pick", "star", "scenario", "coach_only",
   "select", "story", "coverage", "table", "grid",
+  "video", "link", "quiz", "numeric", "sort", "reveal",
 ])
 const SUMMARY_TYPES = new Set([
   "interview_details", "hook", "tmay", "story_map", "quick_answers", "questions", "checklist", "signoff",
@@ -719,7 +898,38 @@ export function validateContent(raw: unknown): { ok: true; content: WorkbookCont
           errors.push(`${bt}: grid guide needs one text cell per column`)
         }
       }
-      if (["field", "pick", "star", "scenario", "select", "story", "grid"].includes(b.type)) {
+      const okUrl = (u: unknown) => typeof u === "string" && /^https:\/\/\S+$/.test(u)
+      if (b.type === "video" && (!str(b.title) || !okUrl(b.url))) errors.push(`${bt}: video needs a title and an https url`)
+      if (b.type === "link") {
+        if (!str(b.title) || !okUrl(b.url)) errors.push(`${bt}: link needs a title and an https url`)
+        if (!["video", "article", "tool"].includes(b.kind)) errors.push(`${bt}: link kind must be video, article or tool`)
+      }
+      if (b.type === "quiz") {
+        const opts = Array.isArray(b.options) ? b.options : []
+        if (!str(b.question) || opts.length < 2 || !opts.every(str)) errors.push(`${bt}: quiz needs a question and two or more options`)
+        else if (new Set(opts).size !== opts.length) errors.push(`${bt}: quiz options must be unique`)
+        if (!Array.isArray(b.correct) || !b.correct.length || !b.correct.every((x: unknown) => opts.includes(x))) {
+          errors.push(`${bt}: quiz correct answers must be among its options`)
+        } else if (!b.multi && b.correct.length !== 1) errors.push(`${bt}: a single-answer quiz has exactly one correct answer`)
+        if (!str(b.explanation)) errors.push(`${bt}: quiz needs an explanation`)
+      }
+      if (b.type === "numeric") {
+        if (!str(b.question) || typeof b.answer !== "number" || !Number.isFinite(b.answer)) errors.push(`${bt}: numeric needs a question and a number answer`)
+        if (b.tolerance != null && (typeof b.tolerance !== "number" || b.tolerance < 0)) errors.push(`${bt}: numeric tolerance must be a number of 0 or more`)
+        if (!str(b.explanation)) errors.push(`${bt}: numeric needs an explanation`)
+      }
+      if (b.type === "sort") {
+        const cats = Array.isArray(b.categories) ? b.categories : []
+        if (cats.length < 2 || !cats.every(str)) errors.push(`${bt}: sort needs two or more categories`)
+        if (!Array.isArray(b.items) || !b.items.length || !b.items.every((it: any) => str(it?.text) && cats.includes(it?.category))) {
+          errors.push(`${bt}: every sort item needs text and one of the categories`)
+        }
+      }
+      if (b.type === "reveal") {
+        if (!str(b.title) || !str(b.body)) errors.push(`${bt}: reveal needs a title and a body`)
+        if (!Array.isArray(b.after) || !b.after.length || !b.after.every(str)) errors.push(`${bt}: reveal needs the keys it waits for`)
+      }
+      if (["field", "pick", "star", "scenario", "select", "story", "grid", "video", "quiz", "numeric", "sort"].includes(b.type)) {
         if (!str(b.key) || b.key.startsWith(CHECKLIST_PREFIX)) { errors.push(`${bt}: key is required and must not be reserved`); continue }
         for (const k of blockFieldKeys(b)) {
           if (keys.has(k)) errors.push(`${bt}: duplicate field key "${k}"`)
@@ -728,6 +938,20 @@ export function validateContent(raw: unknown): { ok: true; content: WorkbookCont
       }
     }
   }
+
+  // A reveal waiting on a key that does not exist would never unlock.
+  for (const [i, s] of (Array.isArray(c.sections) ? c.sections : []).entries()) {
+    for (const [j, b] of (Array.isArray(s?.blocks) ? s.blocks : []).entries()) {
+      if (b?.type !== "reveal" || !Array.isArray(b.after)) continue
+      for (const k of b.after) if (!keys.has(k)) errors.push(`sections[${i}].blocks[${j}]: reveal waits for "${k}", which is not in the content`)
+    }
+  }
+  if (c.results != null) {
+    const r = c.results
+    const refs = [...(r.confidence ? [r.confidence] : []), ...(r.confusing ?? []), ...(r.practice ?? [])]
+    for (const k of refs) if (!keys.has(k)) errors.push(`results: field "${k}" is not in the content`)
+  }
+  if (c.completion != null && (!str(c.completion.title) || !str(c.completion.body))) errors.push("completion needs a title and a body")
 
   const sb = c.summary?.blocks
   if (!Array.isArray(sb)) errors.push("summary.blocks must be an array")

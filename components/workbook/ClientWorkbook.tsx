@@ -10,7 +10,7 @@
 import React, { useCallback, useEffect, useId, useState, type ReactNode } from "react"
 import Link from "next/link"
 import {
-  GENERAL_SECTION_ID, answerText, lastHomeworkSectionId, progress,
+  GENERAL_SECTION_ID, answerText, lastHomeworkSectionId, progress, sectionDays,
   type AnswerValue, type WorkbookContent,
 } from "../../lib/workbook/content"
 import { ModeTag, SectionBlocks, SectionHeader, type FieldApi } from "./Blocks"
@@ -91,6 +91,9 @@ function Loaded({ data }: { data: Loaded }) {
 
   const section = c.sections[idx]
   const prog = progress(c, auto.values)
+  const days = sectionDays(c)
+  const allDone = c.sections.every((s) => prog.sectionsDone.has(s.id))
+  const summaryLabel = c.summary.link_label ?? "Read This 1 Hour Before"
   const lastBack = sends.find((s) => s.direction === "to_client")?.sent_at ?? null
   const lastToCoach = sends.find((s) => s.direction === "to_coach")?.sent_at ?? null
   const drafts = comments.filter((x) => x.author_role === "client" && !x.released_at)
@@ -253,16 +256,30 @@ function Loaded({ data }: { data: Loaded }) {
         {c.interview?.company && <span style={{ fontSize: 15, fontWeight: 600 }}>{c.interview.company}</span>}
       </div>
       <ol className="wb-nav-list">
-        {c.sections.map((s, i) => (
-          <li key={s.id}>
-            <button type="button" className="wb-nav-item" aria-current={i === idx ? "true" : undefined} onClick={() => go(i)}>
-              <span className={`wb-nav-num${prog.sectionsDone.has(s.id) ? " done" : ""}`}>{String(s.number).padStart(2, "0")}</span>
-              <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                <span>{s.title}</span>
-                {s.mode === "homework" && <ModeTag mode={s.mode} />}
-              </span>
-            </button>
-          </li>
+        {days.map((d) => (
+          <React.Fragment key={d.day || "_"}>
+            {d.day && (
+              <li className="wb-nav-day">
+                <span>{d.day}</span>
+                {d.sections.every((s) => prog.sectionsDone.has(s.id)) && <span className="wb-tag ok">Complete</span>}
+              </li>
+            )}
+            {d.sections.map((s) => {
+              const i = c.sections.indexOf(s)
+              return (
+                <li key={s.id}>
+                  <button type="button" className="wb-nav-item" aria-current={i === idx ? "true" : undefined} onClick={() => go(i)}>
+                    <span className={`wb-nav-num${prog.sectionsDone.has(s.id) ? " done" : ""}`}>{String(s.number).padStart(2, "0")}</span>
+                    <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      <span>{s.title}</span>
+                      {prog.sectionsDone.has(s.id) && <span className="wb-muted" style={{ fontSize: 13 }}>Done</span>}
+                      {s.mode === "homework" && <ModeTag mode={s.mode} />}
+                    </span>
+                  </button>
+                </li>
+              )
+            })}
+          </React.Fragment>
         ))}
       </ol>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -284,7 +301,7 @@ function Loaded({ data }: { data: Loaded }) {
         <div className="wb-brand"><i />WORKFORCE READY NOW</div>
         <div className="wb-header-actions">
           <span className="wb-hide-phone">{saveLabel}</span>
-          <Link href={`/dashboard/workbooks/${wb.id}/summary`} className="wb-btn wb-hide-phone">Read This 1 Hour Before</Link>
+          <Link href={`/dashboard/workbooks/${wb.id}/summary`} className="wb-btn wb-hide-phone">{summaryLabel}</Link>
           <button type="button" className="wb-btn wb-btn-solid" onClick={() => setSendOpen(true)}>Send to {coach}</button>
         </div>
       </header>
@@ -297,14 +314,43 @@ function Loaded({ data }: { data: Loaded }) {
         <span className="wb-serif" style={{ fontSize: 22, fontWeight: 600 }}>{c.client.full_name}</span>
         <span style={{ fontSize: 14 }}>{[c.title, c.interview?.company, c.interview?.role].filter(Boolean).join(" · ")}</span>
         <span>{saveLabel}</span>
-        <Link href={`/dashboard/workbooks/${wb.id}/summary`} className="wb-link" style={{ alignSelf: "flex-start" }}>Read This 1 Hour Before</Link>
+        <span className="wb-muted" style={{ fontSize: 14 }}>{prog.sectionsDone.size} of {c.sections.length} done, {prog.filled} of {prog.total} answers</span>
+        <div className="wb-progress"><i style={{ width: `${prog.total ? (prog.filled / prog.total) * 100 : 0}%` }} /></div>
+        <Link href={`/dashboard/workbooks/${wb.id}/summary`} className="wb-link" style={{ alignSelf: "flex-start" }}>{summaryLabel}</Link>
       </div>
 
       <div className="wb-shell">
         {nav}
         <main className="wb-main">
-          <SectionHeader section={section} total={c.sections.length} />
+          <SectionHeader section={section} total={c.sections.length} word={c.section_word} />
           <SectionBlocks api={api} section={section} />
+
+          {c.completion && idx === c.sections.length - 1 && (
+            <div className="wb-row">
+              <div className="wb-col">
+                {allDone ? (
+                  <div className="wb-done" role="status">
+                    <span className="wb-eyebrow-ink">All done</span>
+                    <span className="wb-h2">{c.completion.title}</span>
+                    {c.completion.body.split(/\n\n+/).map((p, i) => <p key={i} className="wb-p">{p}</p>)}
+                    {days.filter((d) => d.day).map((d) => (
+                      <span key={d.day} style={{ fontWeight: 600 }}>{d.day}: complete</span>
+                    ))}
+                    <div><button type="button" className="wb-btn wb-btn-solid" style={{ minHeight: 52 }} onClick={() => setSendOpen(true)}>Send to {coach}</button></div>
+                  </div>
+                ) : (
+                  <div className="wb-card-soft">
+                    <span className="wb-eyebrow-ink">Almost there</span>
+                    <p className="wb-p" style={{ fontSize: 16 }}>
+                      Still to finish: {c.sections.filter((s) => !prog.sectionsDone.has(s.id)).map((s) => `${String(s.number).padStart(2, "0")} ${s.title}`).join(", ")}.
+                      Your finish screen appears here once every module is done.
+                    </p>
+                  </div>
+                )}
+              </div>
+              <div />
+            </div>
+          )}
 
           {homeworkSection === section.id && (
             <div className="wb-row">
