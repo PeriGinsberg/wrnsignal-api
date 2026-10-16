@@ -74,7 +74,7 @@ async function calendly<T>(path: string, init: RequestInit = {}): Promise<T> {
 // ignored on purpose (IGNORED below).
 const SESSIONS: { keys: string[]; deliverable: string | null }[] = [
   { keys: ["signaldnaassessment"], deliverable: "Your SIGNAL DNA Assessment" },
-  { keys: ["decode"], deliverable: "Your SIGNAL DNA Decode and Career Path Session" },
+  { keys: ["decode", "careerplanning"], deliverable: "Career Planning Decoded" },
   { keys: ["resumeworkshop"], deliverable: "Resume Workshop" },
   { keys: ["resumereview", "finalize"], deliverable: "Resume" },
   { keys: ["jobsearchstrategy", "strategynetworking"], deliverable: "SIGNAL Setup and Job Search Strategy" },

@@ -49,26 +49,26 @@ export const SEED_DELIVERABLES: SeedDeliverable[] = [
     ]
   },
   {
-    "phase": "Know",
-    "name": "Your SIGNAL DNA Decode and Career Path Session",
+    "phase": "Build",
+    "name": "Career Planning Decoded",
     "tasks": [
       {
         "order": 1,
-        "name": "Book Decode session",
+        "name": "Book Career Planning Decoded session",
         "details": null,
         "type": "client",
         "owner": "Client"
       },
       {
         "order": 2,
-        "name": "Prepare for Decode session",
+        "name": "Prepare for Career Planning Decoded",
         "details": null,
         "type": "coach",
         "owner": "Peri"
       },
       {
         "order": 3,
-        "name": "Run Decode session",
+        "name": "Run Career Planning Decoded",
         "details": "Walk through report and path comparison, capture questions and reactions, confirm paths",
         "type": "coach",
         "owner": "Peri"
@@ -210,7 +210,7 @@ export const SEED_DELIVERABLES: SeedDeliverable[] = [
     "tasks": [
       {
         "order": 1,
-        "name": "Book Job Search Strategy/Networking session",
+        "name": "Book Job Search Strategy Session",
         "details": null,
         "type": "client",
         "owner": "Client"
@@ -272,7 +272,7 @@ export const SEED_DELIVERABLES: SeedDeliverable[] = [
       },
       {
         "order": 6,
-        "name": "Book Review Networking Plan session",
+        "name": "Book Review Networking Plan session (optional)",
         "details": "Client sends outreach from their own email",
         "type": "client",
         "owner": "Client"
@@ -474,7 +474,7 @@ export const SEED_PACKAGES: SeedPackage[] = [
     "deliverables": [
       "Your SIGNAL DNA Assessment",
       "Your SIGNAL DNA Report",
-      "Your SIGNAL DNA Decode and Career Path Session"
+      "Career Planning Decoded"
     ]
   },
   {
@@ -484,8 +484,8 @@ export const SEED_PACKAGES: SeedPackage[] = [
     "deliverables": [
       "Your SIGNAL DNA Assessment",
       "Your SIGNAL DNA Report",
-      "Your SIGNAL DNA Decode and Career Path Session",
       "Resume Workshop",
+      "Career Planning Decoded",
       "Resume",
       "Cover Letter",
       "LinkedIn Rebuild"
@@ -498,8 +498,8 @@ export const SEED_PACKAGES: SeedPackage[] = [
     "deliverables": [
       "Your SIGNAL DNA Assessment",
       "Your SIGNAL DNA Report",
-      "Your SIGNAL DNA Decode and Career Path Session",
       "Resume Workshop",
+      "Career Planning Decoded",
       "Resume",
       "Cover Letter",
       "LinkedIn Rebuild",
@@ -514,8 +514,8 @@ export const SEED_PACKAGES: SeedPackage[] = [
     "deliverables": [
       "Your SIGNAL DNA Assessment",
       "Your SIGNAL DNA Report",
-      "Your SIGNAL DNA Decode and Career Path Session",
       "Resume Workshop",
+      "Career Planning Decoded",
       "Resume",
       "Cover Letter",
       "LinkedIn Rebuild",

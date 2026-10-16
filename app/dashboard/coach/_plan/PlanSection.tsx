@@ -11,6 +11,11 @@
 // any time, in any order; setting a due date on one offers to activate it. The
 // library package never changes. The rules are in lib/plan/service.ts; this
 // only shows what they allow.
+//
+// An Active client step with an email in Settings > Services > Release emails
+// also offers "Send email": the Message panel opens with that email filled in,
+// and sending it releases the step (lib/release/service.ts). Release alone
+// still releases it without an email.
 
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react"
 import { card, eyebrow } from "../../../../lib/dashboard-theme"
@@ -28,6 +33,7 @@ import {
   type TaskType,
 } from "@/lib/plan/model"
 import { WelcomeEmailDialog } from "./WelcomeEmailDialog"
+import { MessagePanel } from "../_messaging/MessagePanel"
 import { TaskDetails } from "@/app/components/TaskDetails"
 
 const NAVY = PHASE_COLORS.text
@@ -95,6 +101,10 @@ export function PlanSection({ coachClientId, refreshKey = 0, onChanged }: {
   const [askActivate, setAskActivate] = useState<PlanTask | null>(null)
   // Releasing the welcome task opens the welcome email first.
   const [welcome, setWelcome] = useState<string | null>(null)
+  // Send email on a step: which step, and whether its panel is open. The step
+  // stays set after closing so the coach's edits survive a reopen.
+  const [releaseFor, setReleaseFor] = useState<{ taskId: string; taskName: string } | null>(null)
+  const [releaseOpen, setReleaseOpen] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
 
   const load = useCallback(async () => {
@@ -204,6 +214,7 @@ export function PlanSection({ coachClientId, refreshKey = 0, onChanged }: {
                       key={d.id} d={d} assignees={assignees} busy={busy}
                       onSend={send} onConfirm={(text, body) => setConfirm({ text, body })}
                       onAskActivate={setAskActivate}
+                      onSendEmail={(t) => { setReleaseFor({ taskId: t.id, taskName: t.name }); setReleaseOpen(true) }}
                     />
                   ))}
                 </div>
@@ -235,6 +246,11 @@ export function PlanSection({ coachClientId, refreshKey = 0, onChanged }: {
           onDone={(message) => { setWelcome(null); setNotice(message); void load(); onChanged?.() }} />
       )}
 
+      {releaseFor && coachClientId && (
+        <MessagePanel open={releaseOpen} onClose={() => setReleaseOpen(false)} coachClientId={coachClientId} release={releaseFor}
+          onSent={() => { void load(); onChanged?.() }} />
+      )}
+
       {confirm && (
         <div onClick={() => setConfirm(null)} style={{ position: "fixed", inset: 0, background: "rgba(8,32,63,0.35)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
           <div role="dialog" aria-label="Confirm" onClick={(e) => e.stopPropagation()} style={{ background: "#fff", borderRadius: 12, padding: 20, maxWidth: 420, width: "100%" }}>
@@ -250,13 +266,14 @@ export function PlanSection({ coachClientId, refreshKey = 0, onChanged }: {
   )
 }
 
-function DeliverableBlock({ d, assignees, busy, onSend, onConfirm, onAskActivate }: {
+function DeliverableBlock({ d, assignees, busy, onSend, onConfirm, onAskActivate, onSendEmail }: {
   d: PlanDeliverable
   assignees: Assignee[]
   busy: boolean
   onSend: (body: Record<string, unknown>) => Promise<boolean>
   onConfirm: (text: string, body: Record<string, unknown>) => void
   onAskActivate: (t: PlanTask) => void
+  onSendEmail: (t: PlanTask) => void
 }) {
   const [newName, setNewName] = useState("")
   const [newType, setNewType] = useState<TaskType>("coach")
@@ -288,6 +305,7 @@ function DeliverableBlock({ d, assignees, busy, onSend, onConfirm, onAskActivate
         {d.tasks.map((t, i) => (
           <TaskRow key={t.id} t={t} first={i === 0} last={i === d.tasks.length - 1} locked={d.not_needed}
             assignees={assignees} busy={busy} onSend={onSend} onMove={(dir) => move(i, dir)} onAskActivate={onAskActivate}
+            onSendEmail={() => onSendEmail(t)}
             onRemove={() => onConfirm(`Remove "${t.name}" from this client's plan?`, { action: "remove_task", task_id: t.id })} />
         ))}
       </div>
@@ -309,7 +327,7 @@ function DeliverableBlock({ d, assignees, busy, onSend, onConfirm, onAskActivate
   )
 }
 
-function TaskRow({ t, first, last, locked, assignees, busy, onSend, onMove, onRemove, onAskActivate }: {
+function TaskRow({ t, first, last, locked, assignees, busy, onSend, onMove, onRemove, onAskActivate, onSendEmail }: {
   t: PlanTask
   first: boolean
   last: boolean
@@ -320,6 +338,7 @@ function TaskRow({ t, first, last, locked, assignees, busy, onSend, onMove, onRe
   onMove: (dir: -1 | 1) => void
   onRemove: () => void
   onAskActivate: (t: PlanTask) => void
+  onSendEmail: () => void
 }) {
   const greyed = locked || t.state === "not_needed"
   const options = assignees.some((a) => a.id === t.assignee_profile_id) || !t.assignee_profile_id
@@ -353,6 +372,10 @@ function TaskRow({ t, first, last, locked, assignees, busy, onSend, onMove, onRe
         style={{ ...fieldStyle, colorScheme: "light" }} />
       {!locked && (
         <span style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+          {t.has_release_email && t.owner === "client" && t.state === "active" && !t.welcome_release && (
+            <button type="button" style={{ ...small, background: NAVY, color: "#FEB06A", border: "none" }} disabled={busy}
+              onClick={onSendEmail}>Send email</button>
+          )}
           {actionsFor(t).map((a) => (
             <Fragment key={a}>
               <button type="button" style={small} disabled={busy}

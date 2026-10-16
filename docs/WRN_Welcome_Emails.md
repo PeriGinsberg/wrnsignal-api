@@ -2,7 +2,8 @@
 
 Chosen by the first client task SIGNAL releases (first deliverable in the plan).
 Merge fields: [First Name], [Drive folder link], [Scheduling link] (the Calendly link for that session type).
-Peri's signature is added automatically by SIGNAL, so no sign-off line is included.
+Each ends with the sign-off "Best, Peri"; SIGNAL adds the signature under it.
+Updated 2026-10-16 to match Settings: the new session order (Resume Workshop before Career Planning Decoded) and the optional plan review.
 
 ---
 
@@ -23,7 +24,7 @@ I've created your personal Google Drive folder. Everything we build together wil
 [Drive folder link]
 
 YOUR FIRST STEP: YOUR SIGNAL DNA ASSESSMENT
-We start with Stage One, Know. Use the link below to schedule your Your SIGNAL DNA assessment:
+We start with Stage One, Know. Use the link below to schedule Your SIGNAL DNA Assessment:
 [Scheduling link]
 
 The assessment is a live 1-on-1 session with me on Microsoft Teams. There's nothing to study or prepare. Come ready to answer honestly, using real examples from school, work, and your activities.
@@ -31,11 +32,13 @@ The assessment is a live 1-on-1 session with me on Microsoft Teams. There's noth
 Join using a laptop but have your phone with you, since you'll use it to answer the questions during the session.
 
 WHAT HAPPENS NEXT
-After the assessment, I personally read every response and write Your SIGNAL DNA report. Then we walk through it together in a live decode session, where we identify up to four career paths that make sense for you. Everything after that is aimed using what we learn.
+After the assessment, I personally read every response and write Your SIGNAL DNA report. Next comes your Resume Workshop, where we work through your entire background. Then we walk through your report together in your Career Planning Decoded session, where we identify 3 to 5 career paths worth exploring. Everything after that is aimed using what we learn.
 
 If you have questions before we meet, call, text, or email me anytime at (561) 843-6269.
 
 Let's get started.
+
+Best, Peri
 
 ---
 
@@ -71,11 +74,13 @@ If you have questions before we meet, call, text, or email me anytime at (561) 8
 
 Let's get started.
 
+Best, Peri
+
 ---
 
 ## 3. Starts with Search
 Packages: Job Search Strategy
-Scheduling link: Job Search Strategy/Networking
+Scheduling link: Job Search Strategy Session
 
 **Subject:** Welcome to Workforce Ready Now
 
@@ -93,17 +98,19 @@ BEFORE WE MEET
 Upload your current resume to the Resume folder.
 
 YOUR FIRST STEP: YOUR JOB SEARCH STRATEGY SESSION
-Use the link below to schedule your Job Search Strategy session:
+Use the link below to schedule your Job Search Strategy Session:
 [Scheduling link]
 
 The session is a live 1-on-1 meeting with me on Microsoft Teams. I'll set you up in SIGNAL, walk you through how to decide which postings to pursue, and confirm the details for your networking campaign. Come with the roles, industries, and locations you're targeting.
 
 WHAT HAPPENS NEXT
-After the session, we build your list of targeted professionals and your outreach messaging behind the scenes. Then we review the plan together so you're ready to launch.
+After the session, we build your list of targeted professionals and your outreach messaging behind the scenes. Then I share your plan in SIGNAL so you're ready to launch, with the option to walk through it together.
 
 If you have questions before we meet, call, text, or email me anytime at (561) 843-6269.
 
 Let's get started.
+
+Best, Peri
 
 ---
 
@@ -138,3 +145,5 @@ Between sessions you'll have practice assignments, including AI interview practi
 If you have questions before we meet, call, text, or email me anytime at (561) 843-6269.
 
 Let's get started.
+
+Best, Peri

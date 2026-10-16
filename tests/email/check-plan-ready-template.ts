@@ -14,7 +14,8 @@ if (!TOKEN) throw new Error("Set POSTMARK_API_KEY")
 const MUST_HAVE = [
   "Find it in your Coaching Hub under Shared documents. It has your email and LinkedIn messages, when to send each one, and a weekly checklist.",
   "SIGNAL will show you when each follow-up is due, so you never have to track dates yourself.",
-  "Bring your questions to our next session. I'm looking forward to seeing who you connect with.",
+  "If you'd like to work through this plan together, set up a 30-minute session here: https://calendly.com/peri-workforcereadynow/review-networking-plan",
+  "I'm looking forward to seeing who you connect with.",
 ]
 const BROKEN = ["Shared docu LinkedIn", "never have to t<", "never have to t\n"]
 

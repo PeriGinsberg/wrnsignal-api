@@ -113,6 +113,10 @@ export const LABELS: Record<CoachClientEventType, (e: CoachClientEvent) => strin
     return `Welcome email sent${to}${cc}${which}`
   },
   welcome_email_skipped: (e) => e.context?.task ? `Welcome task "${e.context.task}" released without an email` : "Welcome task released without an email",
+  release_email_sent: (e) => {
+    const to = e.context?.to ? ` to ${e.context.to}` : ""
+    return e.context?.task ? `Email sent${to} and "${e.context.task}" released` : `Release email sent${to}`
+  },
   sow_withdrawn: (e) => {
     const name = e.context?.name ? ` for ${e.context.name}` : ""
     return e.context?.replaced_by ? `SOW${name} withdrawn: the ${e.context.replaced_by} SOW was sent instead` : `SOW${name} withdrawn`

@@ -24,7 +24,7 @@ const PROD_REF = "ejhnokcnahauvrcbcmic" // DEVELOPMENT.md, "The mental model"
 const FEES: Record<string, number> = {
   "Your SIGNAL DNA Assessment": 100,
   "Your SIGNAL DNA Report": 150,
-  "Your SIGNAL DNA Decode and Career Path Session": 100,
+  "Career Planning Decoded": 100,
   "Resume Workshop": 100,
   "Resume": 150,
   "Cover Letter": 125,

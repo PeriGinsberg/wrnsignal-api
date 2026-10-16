@@ -13,6 +13,10 @@
 //
 // SMS is shown only when the record has a phone number, and is disabled until
 // it is built.
+//
+// RELEASE MODE (the release prop): opened by "Send email" on a Plan step. The
+// draft starts from that step's template (lib/release/service.ts), Send is
+// blocked while any [bracket] is left, and sending also releases the step.
 
 import { useEffect, useRef, useState } from "react"
 import { TYPE } from "../../../../lib/theme/surfaces"
@@ -20,6 +24,7 @@ import { T, input, textarea, btnPrimary, btnSecondary, eyebrow, label } from "..
 import { SavingSpinner } from "../SavingSpinner"
 import { apiJson } from "../_tasks/taskClient"
 import { SignaturePreview } from "./SignaturePreview"
+import { leftoverBrackets, releaseProblem } from "@/lib/release/model"
 
 export type MessageContext = {
   to: string | null
@@ -40,6 +45,8 @@ type Props = {
   coachClientId: string
   /** After a send, so the page's Communications list re-reads. */
   onSent?: () => void
+  /** Release mode: the Plan step whose email this is. Sending releases it. */
+  release?: { taskId: string; taskName: string } | null
 }
 
 const fieldLabel = { ...label, color: T.INK_LINK, display: "block", marginBottom: 6 } as const
@@ -55,7 +62,7 @@ function ReadOnlyField({ name, value, missing }: { name: string; value: string |
   )
 }
 
-export function MessagePanel({ open, onClose, coachClientId, onSent }: Props) {
+export function MessagePanel({ open, onClose, coachClientId, onSent, release = null }: Props) {
   const [ctx, setCtx] = useState<MessageContext | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [subject, setSubject] = useState("")
@@ -66,6 +73,10 @@ export function MessagePanel({ open, onClose, coachClientId, onSent }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [sent, setSent] = useState<Sent | null>(null)
   const subjectRef = useRef<HTMLInputElement | null>(null)
+  // Release mode: which step's template the draft was started from, so
+  // closing and reopening the same step keeps the coach's edits.
+  const [loadedFor, setLoadedFor] = useState<string | null>(null)
+  const releaseTaskId = release?.taskId ?? null
 
   const dirty = subject.trim() !== "" || body.trim() !== ""
 
@@ -77,8 +88,28 @@ export function MessagePanel({ open, onClose, coachClientId, onSent }: Props) {
     setConfirmDelete(false)
   }
 
-  // A different record starts a fresh draft.
-  useEffect(() => { clearDraft(); setSent(null) }, [coachClientId])
+  // A different record, or a different step, starts a fresh draft.
+  useEffect(() => { clearDraft(); setSent(null); setLoadedFor(null) }, [coachClientId, releaseTaskId])
+
+  // Release mode: start the draft from the step's template.
+  useEffect(() => {
+    if (!open || !releaseTaskId || loadedFor === releaseTaskId) return
+    let live = true
+    void (async () => {
+      try {
+        const j = await apiJson<{ draft: { subject: string; body: string } }>(
+          `/api/coach/coach-clients/${coachClientId}/plan/release-email?task_id=${encodeURIComponent(releaseTaskId)}`,
+        )
+        if (!live) return
+        setSubject(j.draft.subject)
+        setBody(j.draft.body)
+        setLoadedFor(releaseTaskId)
+      } catch (e) {
+        if (live) setLoadError((e instanceof Error && e.message) || "Couldn't load this step's email.")
+      }
+    })()
+    return () => { live = false }
+  }, [open, releaseTaskId, loadedFor, coachClientId])
 
   // Re-read the context each time it opens: the signature may have changed.
   useEffect(() => {
@@ -113,17 +144,26 @@ export function MessagePanel({ open, onClose, coachClientId, onSent }: Props) {
     return () => window.removeEventListener("keydown", onKey)
   })
 
-  const canSend = !!ctx?.to && !!ctx?.from && subject.trim() !== "" && body.trim() !== "" && !sending
+  // Release mode only: a coach's own message may hold a bracket on purpose.
+  const left = release ? leftoverBrackets(`${subject}
+${body}`) : []
+  const problem = release ? releaseProblem(subject, body) : null
+  const canSend = !!ctx?.to && !!ctx?.from && subject.trim() !== "" && body.trim() !== "" && !sending && !problem
 
   async function send() {
     if (!canSend) return
     setSending(true)
     setError(null)
     try {
-      const j = await apiJson<Sent>(`/api/coach/coach-clients/${coachClientId}/messages`, {
-        method: "POST",
-        body: JSON.stringify({ channel: "email", subject: subject.trim(), body, cc_parent: ccParent }),
-      })
+      const j = release
+        ? await apiJson<Sent>(`/api/coach/coach-clients/${coachClientId}/plan/release-email`, {
+            method: "POST",
+            body: JSON.stringify({ task_id: release.taskId, subject: subject.trim(), body, cc_parent: ccParent }),
+          })
+        : await apiJson<Sent>(`/api/coach/coach-clients/${coachClientId}/messages`, {
+            method: "POST",
+            body: JSON.stringify({ channel: "email", subject: subject.trim(), body, cc_parent: ccParent }),
+          })
       clearDraft()
       setSent({ to: j.to, redirected: j.redirected })
       onSent?.()
@@ -138,6 +178,7 @@ export function MessagePanel({ open, onClose, coachClientId, onSent }: Props) {
     if (!dirty) { close(); return }
     if (!confirmDelete) { setConfirmDelete(true); return }
     clearDraft()
+    setLoadedFor(null) // Release mode: reopening starts again from the template
     close()
   }
 
@@ -175,7 +216,9 @@ export function MessagePanel({ open, onClose, coachClientId, onSent }: Props) {
       >
         <div style={{ padding: "20px 24px 16px", borderBottom: `1px solid ${T.BORDER_SOFT}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <div style={{ ...eyebrow, color: T.INK_EMPHASIS, fontSize: TYPE.micro, marginBottom: 4 }}>NEW MESSAGE</div>
+            <div style={{ ...eyebrow, color: T.INK_EMPHASIS, fontSize: TYPE.micro, marginBottom: 4 }}>
+              {release ? `RELEASE: ${release.taskName.toUpperCase()}` : "NEW MESSAGE"}
+            </div>
             <div style={{ fontSize: 18, fontWeight: 950, color: T.TEXT, letterSpacing: -0.3 }}>
               {ctx?.client_name ? `Message ${ctx.client_name}` : "Message"}
             </div>
@@ -185,7 +228,9 @@ export function MessagePanel({ open, onClose, coachClientId, onSent }: Props) {
 
         {sent ? (
           <div style={{ padding: 24, flex: 1, display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ fontSize: TYPE.secondary, color: T.TEXT, fontWeight: 700 }}>Message sent.</div>
+            <div style={{ fontSize: TYPE.secondary, color: T.TEXT, fontWeight: 700 }}>
+              {release ? `Email sent and "${release.taskName}" released.` : "Message sent."}
+            </div>
             <div style={{ fontSize: TYPE.secondary, color: T.MUTED }}>
               {sent.redirected
                 ? `Test send: it went to ${sent.to} instead, because this is not production.`
@@ -258,6 +303,15 @@ export function MessagePanel({ open, onClose, coachClientId, onSent }: Props) {
                 </div>
               </div>
 
+              {release && left.length > 0 && (
+                <div role="status" style={{ padding: 10, background: "rgba(254,176,106,0.08)", border: `1px solid ${T.ORANGE_BORDER}`, borderRadius: 8 }}>
+                  <span style={{ fontSize: TYPE.secondary, color: T.TEXT, fontWeight: 700 }}>{problem}</span>
+                  <div style={{ fontSize: TYPE.micro, color: T.MUTED, marginTop: 4 }}>
+                    Replace each [bracket] in the subject and message, then Send.
+                  </div>
+                </div>
+              )}
+
               {error && (
                 <div style={{ padding: 10, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8 }}>
                   <span style={{ fontSize: TYPE.secondary, color: T.ERROR, fontWeight: 700 }}>{error}</span>
@@ -282,7 +336,7 @@ export function MessagePanel({ open, onClose, coachClientId, onSent }: Props) {
                 style={{ ...btnPrimary, fontSize: TYPE.secondary, padding: "10px 18px", opacity: canSend ? 1 : 0.5, display: "inline-flex", alignItems: "center", gap: 8 }}
               >
                 {sending && <SavingSpinner />}
-                {sending ? "Sending…" : "Send"}
+                {sending ? "Sending…" : release ? "Send and release" : "Send"}
               </button>
             </div>
           </>
