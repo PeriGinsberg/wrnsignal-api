@@ -2095,6 +2095,7 @@ export default function CoachClientPage() {
           clientId={clientId}
           clientName={clientProfile?.name || null}
           refreshKey={notesRefreshKey}
+          onAddNote={() => setAddNoteOpen(true)}
         />
       )}
 

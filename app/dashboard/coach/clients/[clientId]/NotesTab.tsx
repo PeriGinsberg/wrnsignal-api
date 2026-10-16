@@ -55,9 +55,11 @@ type Props = {
   // Bumped by the parent when a note is added externally (e.g., from the
   // global Add Note panel) so the tab refetches.
   refreshKey: number
+  // Opens the parent's Add Note panel, the same one the header button opens.
+  onAddNote?: () => void
 }
 
-export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props) {
+export function NotesTab({ authFetch, clientId, clientName, refreshKey, onAddNote }: Props) {
   const [notes, setNotes] = useState<NoteRow[]>([])
   const [filter, setFilter] = useState<"" | NoteType>("")
   const [loading, setLoading] = useState(true)
@@ -185,6 +187,15 @@ export function NotesTab({ authFetch, clientId, clientName, refreshKey }: Props)
           </button>
         ))}
       </div>
+
+      {onAddNote && (
+        <button
+          style={{ ...btnSecondary, padding: "6px 14px", marginBottom: 12 }}
+          onClick={onAddNote}
+        >
+          Add note
+        </button>
+      )}
 
       {error && (
         <div style={{ marginBottom: 14, padding: 12, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 10 }}>
