@@ -18,6 +18,7 @@ import { WorkbookFrame } from "@/components/workbook/WorkbookFrame"
 import { SectionBlocks, SectionHeader, type FieldApi } from "@/components/workbook/Blocks"
 import { Summary, type InterviewRow } from "@/components/workbook/Summary"
 import { PracticeResults } from "@/components/workbook/PracticeResults"
+import { PerformancePackage } from "@/components/academy/PerformancePackage"
 import { wbFetch, fmtWhen, type Comment, type Send } from "@/components/workbook/api"
 import { AddWorkbookModal } from "./AddWorkbookModal"
 
@@ -134,6 +135,12 @@ function reviewItems(s: Section): ReviewItem[] {
     if (b.type === "video") out.push({ key: b.key, label: `Video: ${b.title}`, block: b })
     if (b.type === "quiz" || b.type === "numeric") out.push({ key: b.key, label: b.question, block: b })
     if (b.type === "select") out.push({ key: b.key, label: b.label })
+    if (b.type === "drill") {
+      const group = `${b.number != null ? `${b.number} ` : ""}${b.title ?? b.question}`
+      out.push({ group, key: b.key, label: `${b.write_label} (first submission)`, block: b })
+      out.push({ group, key: `${b.key}.secs`, label: `Seconds spoken (${b.speak_seconds}s allowed)`, block: b })
+      if (b.check) out.push({ group, key: `${b.key}.check`, label: b.check.question, block: b })
+    }
     if (b.type === "sort") b.items.forEach((it, i) => out.push({ group: b.title ?? "Sorting", key: `${b.key}.${i + 1}`, label: it.text, block: b }))
     if (b.type === "field") out.push({ key: b.key, label: b.style === "hook" ? `${b.label}: "${b.prefix ?? ""}..."` : b.label })
     if (b.type === "pick") out.push({ key: b.key, label: b.label })
@@ -256,6 +263,11 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
         {sending ? "Sending" : d.workbook.status === "draft" ? `Send to ${first}` : `Send back to ${first}`}
       </button>
       {sendMsg && <span className="wb-saved" role="status">{sendMsg}</span>}
+      {d.workbook.status !== "draft" && (
+        <div style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}>
+          <PerformancePackage clientId={clientId} workbookId={workbookId} compact />
+        </div>
+      )}
     </div>
   )
 

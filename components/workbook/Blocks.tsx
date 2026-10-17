@@ -456,7 +456,7 @@ export function youtubeEmbed(url: string): string | null {
   return m ? `https://www.youtube-nocookie.com/embed/${m[1]}?rel=0` : null
 }
 
-const KIND_LABEL = { video: "Video", article: "Article", tool: "Practice tool" } as const
+const KIND_LABEL = { video: "Video", article: "Article", tool: "Practice tool", practice: "Practice round" } as const
 
 function Video({ api, b }: { api: FieldApi; b: Extract<Block, { type: "video" }> }) {
   const embed = youtubeEmbed(b.url)
@@ -501,9 +501,13 @@ function LinkCard({ b }: { b: Extract<Block, { type: "link" }> }) {
       <span className="wb-serif" style={{ fontSize: 22, fontWeight: 600, lineHeight: 1.25 }}>{b.title}</span>
       {b.body && paragraphs(b.body)}
       <div>
-        <a className="wb-btn" href={b.url} target="_blank" rel="noopener noreferrer">
-          {b.kind === "tool" ? "Open the tool" : b.kind === "video" ? "Watch" : "Read it"}
-        </a>
+        {b.kind === "practice" ? (
+          <a className="wb-btn wb-btn-solid" href={b.url}>Start the practice case</a>
+        ) : (
+          <a className="wb-btn" href={b.url} target="_blank" rel="noopener noreferrer">
+            {b.kind === "tool" ? "Open the tool" : b.kind === "video" ? "Watch" : "Read it"}
+          </a>
+        )}
       </div>
     </div>
   )
@@ -645,6 +649,130 @@ function Sort({ api, b }: { api: FieldApi; b: Extract<Block, { type: "sort" }> }
   )
 }
 
+function clock(ms: number): string {
+  const t = Math.max(0, Math.ceil(ms / 1000))
+  return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`
+}
+
+/**
+ * A timed speaking drill. Think, speak against the clock, write it down,
+ * submit, compare. What they write is saved only on Submit and then locked,
+ * the same as a knowledge check, so the coach sees the answer they gave
+ * before they read the model one. The timer can be skipped: writing still
+ * counts, and `<key>.secs` simply stays empty.
+ */
+function Drill({ api, b }: { api: FieldApi; b: Extract<Block, { type: "drill" }> }) {
+  const saved = api.get(b.key)
+  const locked = typeof saved === "string" && saved.trim().length > 0
+  const [draft, setDraft] = React.useState("")
+  const [phase, setPhase] = React.useState<"ready" | "think" | "speak" | "write">("ready")
+  const [left, setLeft] = React.useState(0)
+  const t0 = React.useRef(0)
+  const timer = React.useRef<ReturnType<typeof setInterval> | null>(null)
+  React.useEffect(() => () => { if (timer.current) clearInterval(timer.current) }, [])
+
+  const run = (which: "think" | "speak") => {
+    if (timer.current) clearInterval(timer.current)
+    const limit = (which === "think" ? b.prep_seconds : b.speak_seconds) * 1000
+    t0.current = Date.now()
+    setPhase(which)
+    setLeft(limit)
+    timer.current = setInterval(() => {
+      const l = limit - (Date.now() - t0.current)
+      setLeft(l)
+      if (l <= 0) {
+        if (which === "think") run("speak")
+        else stopSpeaking()
+      }
+    }, 200)
+  }
+  const stopSpeaking = () => {
+    if (timer.current) clearInterval(timer.current)
+    const secs = Math.round((Date.now() - t0.current) / 1000)
+    if (api.editable) api.set(`${b.key}.secs`, String(Math.min(secs, b.speak_seconds)))
+    setPhase("write")
+  }
+  const start = () => (b.prep_seconds > 0 ? run("think") : run("speak"))
+
+  const secs = api.get(`${b.key}.secs`)
+  const check = typeof api.get(`${b.key}.check`) === "string" ? (api.get(`${b.key}.check`) as string) : ""
+  const id = `f-${b.key}`
+  const showWrite = locked || phase === "write" || !api.editable
+  const value = locked ? (saved as string) : draft
+
+  return (
+    <div className="wb-field wb-drill">
+      <div className="wb-field-head" style={b.number == null ? { gridTemplateColumns: "minmax(0,1fr)" } : undefined}>
+        {b.number != null && <span className="wb-field-num">{b.number}</span>}
+        <div className="wb-col" style={{ gap: 4 }}>
+          {b.title && <span className="wb-label">{b.title}</span>}
+          <span className="wb-field-label">{b.question}</span>
+        </div>
+      </div>
+      <span className="wb-muted" style={{ fontSize: 14 }}>
+        {b.prep_seconds > 0 ? `${b.prep_seconds} seconds to think, then ` : ""}{clock(b.speak_seconds * 1000)} to say your answer out loud.
+      </span>
+
+      {!locked && api.editable && phase === "ready" && (
+        <div className="wb-actions" style={{ alignItems: "center" }}>
+          <button type="button" className="wb-btn wb-btn-solid" onClick={start}>Start the timer</button>
+          <button type="button" className="wb-linkbtn" onClick={() => setPhase("write")}>Skip the timer</button>
+        </div>
+      )}
+      {(phase === "think" || phase === "speak") && (
+        <div className={`wb-timer ${phase}`} aria-live="polite">
+          <span className="wb-timer-clock">{clock(left)}</span>
+          <span className="wb-timer-say">{phase === "think" ? "Think. Plan your headline." : "Speak. Say your answer out loud now."}</span>
+          <div className="wb-timer-bar"><div style={{ width: `${Math.max(0, Math.min(100, (left / ((phase === "think" ? b.prep_seconds : b.speak_seconds) * 1000)) * 100))}%` }} /></div>
+          <div className="wb-actions">
+            {phase === "think"
+              ? <button type="button" className="wb-btn wb-btn-solid" onClick={() => run("speak")}>I&rsquo;m ready to speak</button>
+              : <button type="button" className="wb-btn wb-btn-solid" onClick={stopSpeaking}>Done speaking</button>}
+          </div>
+        </div>
+      )}
+
+      {showWrite && (
+        <div className="wb-col" style={{ gap: 8 }}>
+          <label htmlFor={id} className="wb-label">{b.write_label}</label>
+          {b.input === "long"
+            ? <AutoText id={id} value={value} readOnly={!api.editable || locked} onChange={setDraft} placeholder="Write what you said" />
+            : <input id={id} type="text" className="wb-input" value={value} readOnly={!api.editable || locked}
+                placeholder={api.editable && !locked ? "Write what you said" : ""} onChange={(e) => setDraft(e.target.value)} />}
+          {typeof secs === "string" && secs && <span className="wb-muted" style={{ fontSize: 14 }}>You spoke for {secs} seconds.</span>}
+          {!locked && api.editable && (
+            <div className="wb-actions">
+              <button type="button" className="wb-btn wb-btn-solid" disabled={!draft.trim()}
+                onClick={() => api.set(b.key, draft.trim())}>Submit and compare</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {(locked || !api.editable) && (
+        <div className="wb-feedback">
+          <span className="wb-callout-title">{b.model_title ?? "One strong answer"}</span>
+          {paragraphs(b.model)}
+          <span className="wb-muted" style={{ fontSize: 14 }}>Other answers can be just as good. Compare the shape, not the words.</span>
+        </div>
+      )}
+      {(locked || !api.editable) && b.check && (
+        <fieldset className="wb-pick">
+          <legend className="wb-field-label" style={{ marginBottom: 6 }}>{b.check.question}</legend>
+          {b.check.options.map((o) => (
+            <label key={o} className={check === o ? "on" : ""}>
+              <input type="radio" name={`chk-${b.key}`} checked={check === o} disabled={!api.editable}
+                onChange={() => api.set(`${b.key}.check`, o)} />
+              <span style={{ flex: 1 }}>{o}</span>
+            </label>
+          ))}
+        </fieldset>
+      )}
+      <div className="wb-field-foot"><SaveLine api={api} k={b.key} />{api.fieldFoot?.(b.key)}</div>
+    </div>
+  )
+}
+
 function Reveal({ api, b }: { api: FieldApi; b: Extract<Block, { type: "reveal" }> }) {
   const [open, setOpen] = React.useState(false)
   const all = api.all()
@@ -746,6 +874,8 @@ function Main({ api, b }: { api: FieldApi; b: Block }): ReactNode {
       return <Sort api={api} b={b} />
     case "reveal":
       return <Reveal api={api} b={b} />
+    case "drill":
+      return <Drill api={api} b={b} />
     case "coach_only":
       return api.showCoachOnly ? (
         <div className="wb-coachonly">

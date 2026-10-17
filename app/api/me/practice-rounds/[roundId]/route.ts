@@ -5,10 +5,12 @@
 // have just recorded them; replaying is the coach's job, and not minting those
 // URLs keeps the number of signed links in circulation down.
 
-import { type NextRequest } from "next/server"
+import { after, type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
 import { clientPracticeScope, loadRound, raiseCoachTask, signTakes, NotFoundError } from "@/lib/practice/server"
-import { ANSWER_SECONDS, isComplete, latestTakes } from "@/lib/practice/model"
+import { ANSWER_SECONDS, answerSecondsFor, isComplete, latestTakes, selfAssessmentDone } from "@/lib/practice/model"
+import { getCase } from "@/lib/academy/cases"
+import { transcribeTake } from "@/lib/academy/transcribe"
 import { logCoachClientEvent } from "../../../_lib/coachClientEvents"
 import { practiceRoundLink } from "@/lib/tasks/links"
 
@@ -48,6 +50,54 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ roun
     // that are about to be replaced.
     const canPlay = round.status === "submitted" || round.status === "feedback_sent"
     const urls = canPlay ? await signTakes(db, [...newest.values()]) : {}
+
+    // A CASE ROUND SHOWS ONLY WHAT HAS BEEN ASKED. An interviewer does not
+    // hand over question 7 before question 1, and question 7 carries new
+    // information, so the questions stop at the first one not yet answered.
+    // The answer key never leaves the server: it is not on these rows at all.
+    if (round.kind === "case") {
+      const def = getCase(round.case_id)
+      const sa = def?.self_assessment ?? []
+      const firstOpen = round.questions.findIndex((q) => !newest.has(q.id))
+      const visible = firstOpen < 0 ? round.questions : round.questions.slice(0, firstOpen + 1)
+      return withCorsJson(req, {
+        ok: true,
+        round: {
+          id: round.id,
+          kind: "case",
+          title: round.title,
+          status: round.status,
+          submitted_at: round.submitted_at,
+          coach_name: String(coach?.name ?? "").trim().split(/\s+/)[0] || "Your coach",
+          scenario: round.scenario ?? "",
+          instructions: def?.instructions ?? [],
+          minutes: def?.minutes ?? null,
+          total: round.questions.length,
+          feedback_sent_at: round.feedback_sent_at ?? null,
+          overall: round.feedback_sent_at ? round.fb_overall ?? null : null,
+          questions: visible.map((q) => ({
+            id: q.id,
+            position: q.position,
+            title: q.title ?? null,
+            text: q.text,
+            exhibit: q.exhibit ?? null,
+            seconds: answerSecondsFor(q),
+            prep_seconds: q.prep_seconds ?? 0,
+            answered: newest.has(q.id),
+            works: round.feedback_sent_at ? q.fb_works ?? null : null,
+            fix: round.feedback_sent_at ? q.fb_fix ?? null : null,
+            takes: takes.filter((t) => t.question_id === q.id).length,
+            url: (() => { const t = newest.get(q.id); return t ? urls[t.id] ?? null : null })(),
+          })),
+          self_assessment: {
+            questions: sa,
+            answers: round.self_assessment ?? {},
+            done: selfAssessmentDone(sa.map((x) => x.key), round.self_assessment),
+          },
+        },
+        complete: isComplete(round.questions, takes),
+      })
+    }
 
     return withCorsJson(req, {
       ok: true,
@@ -106,21 +156,71 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ rou
         return withCorsJson(req, { ok: false, error: "That recording does not belong to this round" }, 400)
       }
       const duration = Number(body?.duration_ms)
-      const { error } = await db.from("practice_takes").insert({
+      const isCase = round.kind === "case"
+      const audioPath = body?.audio_path ? String(body.audio_path) : null
+      if (audioPath && !audioPath.startsWith(`${roundId}/${questionId}/`)) {
+        return withCorsJson(req, { ok: false, error: "That recording does not belong to this round" }, 400)
+      }
+      if (isCase) {
+        // ONE TAKE PER QUESTION, IN ORDER. It is a simulation: a second take
+        // would make the baseline something other than what happened. A
+        // repeat of a registration that already landed (a retry after a lost
+        // response) is answered as success, not as an error.
+        const newest = latestTakes(takes)
+        if (newest.has(questionId)) return withCorsJson(req, { ok: true, already: true })
+        const firstOpen = round.questions.find((q) => !newest.has(q.id))
+        if (firstOpen?.id !== questionId) {
+          return withCorsJson(req, { ok: false, error: "Answer the questions in order" }, 409)
+        }
+      }
+      const iso = (v: unknown) => {
+        const d = typeof v === "string" ? new Date(v) : null
+        return d && !Number.isNaN(d.getTime()) ? d.toISOString() : null
+      }
+      const { data: inserted, error } = await db.from("practice_takes").insert({
         round_id: roundId,
         question_id: questionId,
         storage_path: path,
         mime: String(body?.mime ?? "video/webm"),
         duration_ms: Number.isFinite(duration) ? Math.round(duration) : null,
-      })
+        audio_path: audioPath,
+        question_shown_at: iso(body?.question_shown_at),
+        response_started_at: iso(body?.response_started_at),
+        response_ended_at: iso(body?.response_ended_at),
+        transcript_status: isCase ? "pending" : null,
+      }).select("id").single()
       if (error) throw new Error(error.message)
+      // After the response: a transcript takes a few seconds and the student
+      // should be on the next question by then.
+      if (isCase) after(() => transcribeTake(db, inserted.id).then(() => undefined))
       return withCorsJson(req, { ok: true })
+    }
+
+    // ── Self-assessment (case rounds) ─────────────────────────────────
+    // Saved as they type, partial or not; Submit is what requires all five.
+    if (action === "self_assessment") {
+      const def = round.kind === "case" ? getCase(round.case_id) : null
+      if (!def) return withCorsJson(req, { ok: false, error: "This round has no self-assessment" }, 400)
+      const raw = body?.answers && typeof body.answers === "object" ? body.answers : {}
+      const answers: Record<string, string> = {}
+      for (const q of def.self_assessment) answers[q.key] = String(raw[q.key] ?? "").slice(0, 4000)
+      const now = new Date().toISOString()
+      const { error } = await db.from("practice_rounds")
+        .update({ self_assessment: answers, self_assessed_at: now, updated_at: now }).eq("id", roundId)
+      if (error) throw new Error(error.message)
+      return withCorsJson(req, { ok: true, saved_at: now })
     }
 
     // ── Submit ────────────────────────────────────────────────────────
     if (action === "submit") {
       if (!isComplete(round.questions, takes)) {
         return withCorsJson(req, { ok: false, error: "Record an answer to every question first" }, 400)
+      }
+      if (round.kind === "case") {
+        const keys = (getCase(round.case_id)?.self_assessment ?? []).map((q) => q.key)
+        if (!selfAssessmentDone(keys, round.self_assessment)) {
+          return withCorsJson(req, { ok: false, error: "Answer every self-assessment question first" }, 400)
+        }
       }
       const now = new Date().toISOString()
       const { error } = await db
@@ -144,7 +244,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ rou
         // the description because there was nowhere else to put it, which
         // produced a URL the coach had to read and retype.
         description:
-          `${first} recorded ${round.questions.length} answer${round.questions.length === 1 ? "" : "s"}.`,
+          round.kind === "case"
+            ? `${first} finished the case (${round.questions.length} answers) and the self-assessment.`
+            : `${first} recorded ${round.questions.length} answer${round.questions.length === 1 ? "" : "s"}.`,
         link: practiceRoundLink(roundId),
       })
 

@@ -168,6 +168,16 @@ textarea.wb-input{resize:vertical;overflow:hidden}
 .wb-reveal{border:1.5px dashed var(--navy);background:#fff;padding:22px 24px;display:flex;flex-direction:column;gap:10px}
 .wb-nav-day{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;padding:14px 12px 6px;display:flex;justify-content:space-between;gap:8px;align-items:center}
 .wb-done{background:#D6F5F5;color:#005F5F;padding:28px 32px;display:flex;flex-direction:column;gap:14px}
+.wb-drill{border:1px solid var(--border);background:#fff;padding:22px 24px}
+.wb-timer{background:var(--navy);color:#fff;padding:20px 22px;display:flex;flex-direction:column;gap:10px}
+.wb-timer.think{background:#0B3A6E}
+.wb-timer-clock{font-size:44px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.wb-timer-say{font-size:17px;font-weight:600}
+.wb-timer-bar{height:5px;background:rgba(255,255,255,.2)}
+.wb-timer-bar div{height:5px;background:var(--teal);transition:width .2s linear}
+.wb-timer.think .wb-timer-bar div{background:var(--blue)}
+.wb-timer .wb-btn-solid{background:#fff;color:var(--navy);border-color:#fff}
+.wb-linkbtn{background:none;border:none;padding:8px 4px;font:inherit;font-size:15px;font-weight:600;color:var(--navy);text-decoration:underline;cursor:pointer}
 
 .wb-pager{display:flex;justify-content:space-between;align-items:center;gap:16px;border-top:1px solid var(--border);padding-top:28px;flex-wrap:wrap}
 .wb-bottombar{display:none}

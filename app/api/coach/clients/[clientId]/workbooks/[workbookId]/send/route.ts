@@ -56,6 +56,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cli
       console.error("[workbooks/send-back] closing the review task failed:", e?.message ?? e)
     }
 
+    // A Casing Academy workbook leads to a case round created with it as a
+    // draft. Sharing the workbook opens the round too, so the link in its
+    // last module works the moment the client can read it. No email: the
+    // workbook's own share is the one the client hears about.
+    if (firstShare) {
+      try {
+        const now = new Date().toISOString()
+        const { error: rErr } = await getSupabaseAdmin().from("practice_rounds")
+          .update({ status: "sent", sent_at: now, updated_at: now })
+          .eq("workbook_id", workbookId).eq("client_profile_id", scope.subjectId)
+          .eq("kind", "case").eq("status", "draft").is("deleted_at", null)
+        if (rErr) throw new Error(rErr.message)
+      } catch (e: any) {
+        console.error("[workbooks/send] opening the linked case round failed:", e?.message ?? e)
+      }
+    }
+
     if (scope.linkId) {
       await logCoachClientEvent({
         coachClientId: scope.linkId,

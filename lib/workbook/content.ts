@@ -135,7 +135,8 @@ export type Block =
    */
   | { type: "video"; key: string; title: string; url: string; length?: string; source?: string; body?: string }
   /** An outside resource, read-only. `kind` says what clicking it opens. */
-  | { type: "link"; title: string; url: string; kind: "video" | "article" | "tool"; body?: string; optional?: boolean }
+  /** `practice` is a SIGNAL practice round the workbook leads to: a /dashboard/ path, opened in place. */
+  | { type: "link"; title: string; url: string; kind: "video" | "article" | "tool" | "practice"; body?: string; optional?: boolean }
   /**
    * A knowledge check. The client chooses, presses Check, and the answer is
    * saved and locked, so what the coach sees is their first attempt. Wrong
@@ -165,6 +166,27 @@ export type Block =
     }
   /** An example answer, locked until every key in `after` has an answer. */
   | { type: "reveal"; title: string; body: string; after: string[]; button?: string }
+  /**
+   * A timed speaking drill: think time, then say the answer out loud against a
+   * clock, then write it down. Submitting locks what they wrote (the coach sees
+   * the first attempt, not a version edited after reading the model), shows
+   * the model answer, and asks the self-check.
+   *
+   * Keys: `<key>` the written answer, `<key>.secs` seconds spoken (recorded by
+   * the timer, optional), and `<key>.check` the self-check choice when there is
+   * one.
+   */
+  | {
+      type: "drill"; key: string; question: string
+      prep_seconds: number; speak_seconds: number
+      /** What to write: "Your one-sentence headline". */
+      write_label: string
+      input?: "short" | "long"
+      model: string
+      model_title?: string
+      check?: { question: string; options: string[] }
+      title?: string; number?: number; skill?: string
+    }
 
 /** in_session: worked through with the coach. homework: done alone afterwards. */
 export type SectionMode = "in_session" | "homework"
@@ -307,9 +329,16 @@ export function sortKeys(b: Extract<Block, { type: "sort" }>): string[] {
   return [...b.items.map((_, i) => `${b.key}.${i + 1}`), `${b.key}.checked`]
 }
 
+/** A drill's keys: the written answer, the seconds spoken, the self-check. */
+export function drillKeys(b: Extract<Block, { type: "drill" }>): string[] {
+  return [b.key, `${b.key}.secs`, ...(b.check ? [`${b.key}.check`] : [])]
+}
+
 /** The field keys one block owns, in render order. */
 export function blockFieldKeys(b: Block): string[] {
   switch (b.type) {
+    case "drill":
+      return drillKeys(b)
     case "grid":
       return gridKeys(b)
     case "sort":
@@ -350,6 +379,9 @@ export function blockOptionalKeys(b: Block): string[] {
     // Pressing Check is not an answer; sorting every item is.
     case "sort":
       return [`${b.key}.checked`]
+    // The timer is there to help; skipping it is allowed.
+    case "drill":
+      return [`${b.key}.secs`]
     case "story": {
       const out = STORY_PARTS.filter((p) => p.optional).map((p) => `${b.key}.${p.part}`)
       // Saying it out loud is homework the coach times in session, not a
@@ -683,6 +715,13 @@ function practiceValueError(c: WorkbookContent, key: string, value: unknown): st
       if (typeof value !== "string") return "Answer must be text"
       return value.length > 100 ? "Answer is too long" : null
     }
+    if (b.type === "drill") {
+      if (key === `${b.key}.secs`) return value === "" || (typeof value === "string" && /^\d{1,4}$/.test(value)) ? null : "Seconds must be a whole number"
+      if (b.check && key === `${b.key}.check`) {
+        if (typeof value !== "string") return "Answer must be text"
+        return !value || b.check.options.includes(value) ? null : "Answer is not one of the options"
+      }
+    }
     if (b.type === "sort") {
       if (key === `${b.key}.checked`) return value === "1" || value === "" ? null : "Checked value must be \"1\" or \"\""
       if (sortKeys(b).includes(key)) {
@@ -809,7 +848,7 @@ const BLOCK_TYPES = new Set([
   "text", "heading", "list", "callout", "coach_note", "big_quote", "field",
   "word_track", "pick", "star", "scenario", "coach_only",
   "select", "story", "coverage", "table", "grid",
-  "video", "link", "quiz", "numeric", "sort", "reveal",
+  "video", "link", "quiz", "numeric", "sort", "reveal", "drill",
 ])
 const SUMMARY_TYPES = new Set([
   "interview_details", "hook", "tmay", "story_map", "quick_answers", "questions", "checklist", "signoff",
@@ -901,8 +940,9 @@ export function validateContent(raw: unknown): { ok: true; content: WorkbookCont
       const okUrl = (u: unknown) => typeof u === "string" && /^https:\/\/\S+$/.test(u)
       if (b.type === "video" && (!str(b.title) || !okUrl(b.url))) errors.push(`${bt}: video needs a title and an https url`)
       if (b.type === "link") {
-        if (!str(b.title) || !okUrl(b.url)) errors.push(`${bt}: link needs a title and an https url`)
-        if (!["video", "article", "tool"].includes(b.kind)) errors.push(`${bt}: link kind must be video, article or tool`)
+        // An https link out, or a path inside SIGNAL (a practice round the workbook leads to).
+        if (!str(b.title) || !(okUrl(b.url) || /^\/dashboard\/\S+$/.test(b.url))) errors.push(`${bt}: link needs a title and an https url or a /dashboard/ path`)
+        if (!["video", "article", "tool", "practice"].includes(b.kind)) errors.push(`${bt}: link kind must be video, article, tool or practice`)
       }
       if (b.type === "quiz") {
         const opts = Array.isArray(b.options) ? b.options : []
@@ -925,11 +965,20 @@ export function validateContent(raw: unknown): { ok: true; content: WorkbookCont
           errors.push(`${bt}: every sort item needs text and one of the categories`)
         }
       }
+      if (b.type === "drill") {
+        if (!str(b.question) || !str(b.write_label) || !str(b.model)) errors.push(`${bt}: drill needs a question, a write_label and a model answer`)
+        if (!Number.isInteger(b.prep_seconds) || b.prep_seconds < 0 || b.prep_seconds > 600) errors.push(`${bt}: drill prep_seconds must be a whole number from 0 to 600`)
+        if (!Number.isInteger(b.speak_seconds) || b.speak_seconds < 5 || b.speak_seconds > 900) errors.push(`${bt}: drill speak_seconds must be a whole number from 5 to 900`)
+        if (b.input != null && !["short", "long"].includes(b.input)) errors.push(`${bt}: drill input must be short or long`)
+        if (b.check != null && (!str(b.check.question) || !Array.isArray(b.check.options) || b.check.options.length < 2 || !b.check.options.every(str))) {
+          errors.push(`${bt}: drill check needs a question and two or more options`)
+        }
+      }
       if (b.type === "reveal") {
         if (!str(b.title) || !str(b.body)) errors.push(`${bt}: reveal needs a title and a body`)
         if (!Array.isArray(b.after) || !b.after.length || !b.after.every(str)) errors.push(`${bt}: reveal needs the keys it waits for`)
       }
-      if (["field", "pick", "star", "scenario", "select", "story", "grid", "video", "quiz", "numeric", "sort"].includes(b.type)) {
+      if (["field", "pick", "star", "scenario", "select", "story", "grid", "video", "quiz", "numeric", "sort", "drill"].includes(b.type)) {
         if (!str(b.key) || b.key.startsWith(CHECKLIST_PREFIX)) { errors.push(`${bt}: key is required and must not be reserved`); continue }
         for (const k of blockFieldKeys(b)) {
           if (keys.has(k)) errors.push(`${bt}: duplicate field key "${k}"`)

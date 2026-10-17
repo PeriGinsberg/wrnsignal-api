@@ -1,0 +1,1043 @@
+{
+  "schema_version": 1,
+  "slug": "amex-case-accelerator-01",
+  "title": "Case Accelerator: Think Clearly. Answer Faster. Make the Point.",
+  "block_types_note": "Saturday workbook for Will Friedman, American Express Enterprise Strategy, interview 2026-10-21. Built 2026-10-17 from the SIGNAL Casing Academy Phase 1 build prompt. Module 7 links to the case round created alongside it by scripts/create-case-academy.ts, which replaces __PRACTICE_ROUND_ID__. All case data is fictional.",
+  "section_word": "Module",
+  "client": {
+    "first_name": "Will",
+    "full_name": "William Friedman"
+  },
+  "interview": {
+    "company": "American Express",
+    "role": "Enterprise Strategy",
+    "date": "2026-10-21",
+    "time": null,
+    "interviewer_name": null,
+    "interviewer_title": null,
+    "location": "Virtual, through HireVue, with American Express colleagues: an interviewer-led case of about 20 to 25 minutes"
+  },
+  "coach": {
+    "first_name": "Peri"
+  },
+  "completion": {
+    "title": "You're done for today.",
+    "body": "You practiced leading with your headline, structuring fast, prioritizing, working the numbers and closing like a consultant, and then you did all of it in a recorded case.\n\nPress Send to Peri so Peri can review your answers and recordings before Sunday. Nothing else to do until then."
+  },
+  "sections": [
+    {
+      "id": "m1-amex-case",
+      "number": 1,
+      "day": "Saturday",
+      "minutes": "About 10 minutes",
+      "title": "Understand the Amex Case",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Hi Will. You already know how to think through business problems. This workbook is about getting to a useful answer faster and explaining it clearly.",
+          "size": "lead"
+        },
+        {
+          "type": "text",
+          "body": "You do not need the perfect answer to every question. You need a logical approach, good business judgment, and the ability to communicate what matters."
+        },
+        {
+          "type": "text",
+          "body": "Today you'll learn a few techniques, practice them, and then complete a recorded case interview. Your coach will review your work before your Sunday session."
+        },
+        {
+          "type": "callout",
+          "tone": "paleblue",
+          "body": "Today is entirely on your own. Peri won't be giving feedback today, and nobody is watching live.\n\nWork through the modules in order. Your answers save as you type, so you can stop and pick up where you left off.\n\nSome exercises are timed. Say your answers out loud, even though you're alone. Speaking is the skill we're building, and it feels different from thinking.\n\nWhen you submit an answer in a drill or a check, it locks. That's on purpose: Peri wants to see your first attempt, not a polished one.\n\nThe whole thing takes 75 to 90 minutes, including the 25-minute practice case at the end.",
+          "title": "How today works"
+        },
+        {
+          "type": "heading",
+          "text": "How the Amex case works"
+        },
+        {
+          "type": "text",
+          "body": "Your American Express Enterprise Strategy case is interviewer-led and runs about 20 to 25 minutes. It's virtual, through HireVue, with American Express colleagues asking the questions."
+        },
+        {
+          "type": "text",
+          "body": "Interviewer-led means the interviewer controls the direction and the pace. They ask one specific question, you answer it, and then they move you on, often with new information. You are not expected to drive the case yourself."
+        },
+        {
+          "type": "callout",
+          "tone": "peach",
+          "body": "Answer the question you were actually asked. If they ask how you'd structure the problem, give a structure and say where you'd start. Don't solve the whole case in your first answer. The next question is coming, and it will probably take you somewhere new.",
+          "title": "The most common mistake"
+        },
+        {
+          "type": "table",
+          "title": "The parts of the case",
+          "columns": [
+            "Part",
+            "What they ask",
+            "What a strong answer does"
+          ],
+          "rows": [
+            [
+              "Business scenario",
+              "The set-up: the company, its situation and what it wants.",
+              "Plays the problem back in a sentence or two, including any constraint."
+            ],
+            [
+              "Structuring",
+              "\"How would you approach this?\" or \"What would you look at?\"",
+              "Gives 2 to 4 categories built for this problem, and says which one to start with."
+            ],
+            [
+              "Brainstorming",
+              "\"What could the company do?\"",
+              "Gives practical ideas in groups, then picks the best two and says why."
+            ],
+            [
+              "Quantitative",
+              "A calculation from numbers they give you.",
+              "States the approach, gets the math right, and says what the result means."
+            ],
+            [
+              "Recommendation",
+              "\"What would you tell the CEO?\"",
+              "Leads with the decision, gives two reasons, one risk and a next step."
+            ]
+          ]
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "Problem structuring",
+            "Hypothesis development",
+            "Brainstorming",
+            "Quantitative reasoning",
+            "Business judgment",
+            "Synthesis",
+            "Clear, concise communication"
+          ],
+          "title": "What the case is designed to test"
+        },
+        {
+          "type": "link",
+          "kind": "article",
+          "title": "The official American Express practice case",
+          "url": "https://www.americanexpress.com/content/dam/amex/en-us/company/careers/amex-strategy-team/spg-practice-case.pdf?linknav=practice-case",
+          "body": "Spend five minutes skimming it now. Don't solve it. Notice how the questions come one at a time, and how each one asks for something specific."
+        },
+        {
+          "type": "field",
+          "key": "m1.noticed",
+          "input": "long",
+          "label": "From the practice case: what's one thing you noticed about how the questions are asked?",
+          "number": 1
+        },
+        {
+          "type": "quiz",
+          "key": "m1.q_format",
+          "question": "The interviewer asks: \"What factors would you look at to understand why profits fell?\" What should you do?",
+          "options": [
+            "Lay out how you would solve the whole case, start to finish",
+            "Give a short structure for that question and say where you would start",
+            "Ask for all the data before saying anything",
+            "Give your recommendation straight away"
+          ],
+          "correct": [
+            "Give a short structure for that question and say where you would start"
+          ],
+          "explanation": "In an interviewer-led case, each question is a step. A structure plus a starting point answers this one. The interviewer will hand you data or a new question next, so solving the whole case now wastes time and can take you somewhere they didn't plan to go.",
+          "number": 2,
+          "skill": "Answering the question asked"
+        },
+        {
+          "type": "quiz",
+          "key": "m1.q_hirevue",
+          "question": "Which of these is true about your Amex interview?",
+          "options": [
+            "It's a recorded, one-way video where you never speak to anyone",
+            "It's virtual, through HireVue, with American Express colleagues asking the questions",
+            "It's a written case you complete on your own",
+            "You choose which part of the case to start with"
+          ],
+          "correct": [
+            "It's virtual, through HireVue, with American Express colleagues asking the questions"
+          ],
+          "explanation": "HireVue is the platform, and American Express colleagues run the case. Expect a conversation the interviewer steers, so practice answering out loud, one question at a time.",
+          "number": 3,
+          "skill": "Knowing the format"
+        },
+        {
+          "type": "quiz",
+          "key": "m1.q_skills",
+          "question": "Which of these is the case designed to test? Choose every one that fits.",
+          "options": [
+            "Problem structuring",
+            "Memorizing standard frameworks",
+            "Quantitative reasoning",
+            "Clear, concise communication",
+            "Doing math as fast as possible, even if it's wrong",
+            "Business judgment"
+          ],
+          "correct": [
+            "Problem structuring",
+            "Quantitative reasoning",
+            "Clear, concise communication",
+            "Business judgment"
+          ],
+          "explanation": "Structure, numbers, judgment and communication are all on the list. Memorized frameworks and rushed math are not: a structure built for the question beats a recited one, and a correct calculation done steadily beats a fast wrong one.",
+          "multi": true,
+          "number": 4,
+          "skill": "Knowing what's assessed"
+        }
+      ]
+    },
+    {
+      "id": "m2-headline",
+      "number": 2,
+      "day": "Saturday",
+      "minutes": "About 15 minutes",
+      "title": "Headline First",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "You usually get to a sound conclusion. The risk is that the interviewer waits too long to hear it. In a 20-minute case, the point of your answer has to come first, so they can follow your reasoning instead of trying to guess where it's going.",
+          "size": "lead"
+        },
+        {
+          "type": "callout",
+          "tone": "paleblue",
+          "body": "\"A credit card company's customer base is growing, but its profits are falling. What would you investigate first?\"",
+          "title": "The question"
+        },
+        {
+          "type": "word_track",
+          "label": "A long answer (about 45 seconds)",
+          "body": "So, there are a lot of things that could be going on here. Profit is revenue minus cost, so on the revenue side I'd want to understand the different revenue streams, like annual fees, interest and interchange, and on the cost side there's acquisition, servicing, marketing and credit losses. I'd also want to understand the competitive landscape, and whether the customers we're adding now are different from our existing customers, maybe younger or with lower credit scores, and how long they've been with us. So I think, ultimately, I'd probably start by looking at whether the new customers are actually profitable."
+        },
+        {
+          "type": "word_track",
+          "label": "A stronger answer (about 12 seconds)",
+          "body": "I'd start by checking whether new customers are profitable. Specifically, I'd compare the revenue they generate with acquisition costs, servicing expenses, and credit losses."
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "The answer is in the first sentence. The interviewer knows where you're going straight away.",
+            "It's specific. It names the three costs that matter, not every cost there is.",
+            "It's the same thinking as the long answer, minus the tour. Your analysis isn't lost; your listener just doesn't have to wait for it.",
+            "It leaves room for the interviewer to steer. They can say \"good, here's the data\" instead of interrupting you."
+          ],
+          "title": "Why the second answer is stronger"
+        },
+        {
+          "type": "callout",
+          "tone": "peach",
+          "body": "Headline: your answer, in one sentence.\nBecause: one or two reasons or specifics.\nStop. Let the interviewer ask for more.",
+          "title": "The pattern"
+        },
+        {
+          "type": "text",
+          "body": "Three practice questions. For each: press Start the timer, use the think time to find your headline, then say your answer out loud. Afterwards, write down the one sentence you led with (or should have). Then compare."
+        },
+        {
+          "type": "drill",
+          "key": "m2.d1",
+          "question": "A bank's mobile app downloads doubled last year, but the number of customers using it each month is flat. What's your first hypothesis?",
+          "prep_seconds": 25,
+          "speak_seconds": 45,
+          "write_label": "Your one-sentence headline",
+          "model": "My first hypothesis is that new users aren't finding enough value to come back after downloading the app. I'd check where they drop off: whether they finish setting it up, and whether they use it again in their first 30 days.",
+          "check": {
+            "question": "Did you lead with your conclusion?",
+            "options": [
+              "Yes: my first sentence was my answer",
+              "Partly: my answer came in my second or third sentence",
+              "No: I built up to it"
+            ]
+          },
+          "title": "Practice question 1",
+          "number": 1,
+          "skill": "Headline first"
+        },
+        {
+          "type": "drill",
+          "key": "m2.d2",
+          "question": "A regional airline is considering ending its least-used route. What's the most important thing to know before deciding?",
+          "prep_seconds": 25,
+          "speak_seconds": 45,
+          "write_label": "Your one-sentence headline",
+          "model": "The most important thing is whether the route makes money once you count its knock-on effects. A route can lose money on its own but still feed passengers into profitable connecting flights, so I'd compare the profit of the whole network with and without it.",
+          "check": {
+            "question": "Did you lead with your conclusion?",
+            "options": [
+              "Yes: my first sentence was my answer",
+              "Partly: my answer came in my second or third sentence",
+              "No: I built up to it"
+            ]
+          },
+          "title": "Practice question 2",
+          "number": 2,
+          "skill": "Headline first"
+        },
+        {
+          "type": "drill",
+          "key": "m2.d3",
+          "question": "A credit card company's premium card has strong sign-ups, but many customers cancel after the first year. Why might that be happening, and where would you look first?",
+          "prep_seconds": 25,
+          "speak_seconds": 45,
+          "write_label": "Your one-sentence headline",
+          "model": "My guess is that customers sign up for the welcome bonus and leave when the annual fee comes due, because they aren't getting enough value to justify it. I'd start by comparing how much of the card's benefits the cancelling customers actually used against the fee they paid.",
+          "check": {
+            "question": "Did you lead with your conclusion?",
+            "options": [
+              "Yes: my first sentence was my answer",
+              "Partly: my answer came in my second or third sentence",
+              "No: I built up to it"
+            ]
+          },
+          "title": "Practice question 3",
+          "number": 3,
+          "skill": "Headline first"
+        },
+        {
+          "type": "field",
+          "key": "m2.reflect",
+          "input": "long",
+          "label": "Looking at your three answers: what tends to come before your headline when it isn't first?",
+          "number": 4,
+          "placeholder": "For example: restating the question, listing everything I could look at, thinking out loud"
+        },
+        {
+          "type": "coach_only",
+          "body": "Watch the .secs values against the 45 seconds allowed and the self-check. If Will reports \"Partly\" or \"No\" on two or three, the headline habit is the first thing to drill live Sunday. His reflection answer usually names the pre-headline habit (restating, listing, thinking aloud): use his words when you coach it.",
+          "title": "What to look for"
+        }
+      ]
+    },
+    {
+      "id": "m3-structure",
+      "number": 3,
+      "day": "Saturday",
+      "minutes": "About 15 minutes",
+      "title": "Structure Fast",
+      "blocks": [
+        {
+          "type": "big_quote",
+          "text": "Your structure is a way to organize your thinking. It doesn't need to be complicated. It needs to help you answer the question."
+        },
+        {
+          "type": "text",
+          "body": "You don't need a memorized framework. Frameworks are useful starting points, but an interviewer can tell when one is being recited rather than chosen. A structure built for the question is faster to say, easier to follow, and more convincing."
+        },
+        {
+          "type": "list",
+          "style": "numbers",
+          "items": [
+            "Name the business objective in a few words. What does the company actually want?",
+            "Choose 2 to 4 categories that would explain it, without much overlap.",
+            "Say which category you would investigate first, and why, in one sentence."
+          ],
+          "title": "Three steps"
+        },
+        {
+          "type": "callout",
+          "tone": "paleblue",
+          "body": "Question: \"A chain of gyms wants to raise its membership prices. How would you think about it?\"\n\nObjective: raise revenue without losing so many members that it backfires.\n\nCategories: (1) Customers: how price-sensitive our members are, by segment. (2) Competitors: what nearby gyms charge for something similar. (3) Economics: how many members we could lose and still come out ahead.\n\nStart: customers, because member price sensitivity decides whether the other two matter.\n\nThat takes about 30 seconds to say.",
+          "title": "A worked example"
+        },
+        {
+          "type": "callout",
+          "tone": "peach",
+          "body": "Fast doesn't mean rushed. Take the think time, write your categories down, then speak. Interviewers expect a pause to organize your thoughts. What they don't want is the organizing done out loud.",
+          "title": "Use the pause"
+        },
+        {
+          "type": "text",
+          "body": "Four timed exercises. Think for 30 seconds, then say your structure out loud in up to a minute. Then write it down: the objective, your categories, and where you'd start."
+        },
+        {
+          "type": "drill",
+          "key": "m3.d1",
+          "question": "A national chain of fitness studios has seen revenue fall 15% over the past year. How would you structure your approach to finding out why?",
+          "prep_seconds": 30,
+          "speak_seconds": 60,
+          "write_label": "Your objective, categories and starting point",
+          "model": "Objective: find what's driving the 15% drop so we can reverse it.\n\nCategories: (1) Members: do we have fewer members, or are members paying less (cheaper plans, discounts)? (2) Spending per visit: fewer classes, personal training or retail per member. (3) Outside factors: new competitors, at-home fitness, or a few locations pulling the average down.\n\nStart: split revenue into number of members times revenue per member, by location. In one step, that tells us whether it's a volume or a price problem, and whether it's everywhere or concentrated.",
+          "check": {
+            "question": "Compare your answer with the model. Did you do all three?",
+            "options": [
+              "Yes: objective, 2 to 4 categories, and where I would start",
+              "Two of the three",
+              "One or none"
+            ]
+          },
+          "input": "long",
+          "title": "Revenue decline",
+          "number": 1,
+          "skill": "Structuring"
+        },
+        {
+          "type": "drill",
+          "key": "m3.d2",
+          "question": "A payments company is deciding whether to launch a buy now, pay later option for its small-business customers. How would you structure the decision?",
+          "prep_seconds": 30,
+          "speak_seconds": 60,
+          "write_label": "Your objective, categories and starting point",
+          "model": "Objective: decide whether buy now, pay later would earn an attractive return without taking on too much risk.\n\nCategories: (1) Demand: would the businesses' customers use it, and would it raise sales for those businesses? (2) Economics: the fees we'd earn against credit losses and funding costs. (3) Fit and risk: competitors, regulation, and our ability to manage credit.\n\nStart: demand. If it doesn't raise sales for the businesses, they won't pay for it and the rest doesn't matter.",
+          "check": {
+            "question": "Compare your answer with the model. Did you do all three?",
+            "options": [
+              "Yes: objective, 2 to 4 categories, and where I would start",
+              "Two of the three",
+              "One or none"
+            ]
+          },
+          "input": "long",
+          "title": "Product launch",
+          "number": 2,
+          "skill": "Structuring"
+        },
+        {
+          "type": "drill",
+          "key": "m3.d3",
+          "question": "A streaming service is losing more subscribers each month than it used to. How would you structure the problem?",
+          "prep_seconds": 30,
+          "speak_seconds": 60,
+          "write_label": "Your objective, categories and starting point",
+          "model": "Objective: bring monthly cancellations back down without giving away too much margin.\n\nCategories: (1) Who is leaving: which segments, and how long after joining. (2) Why they leave: price, content, a competing service, failed payments. (3) What we can change: pricing tiers, content, re-engagement offers, the cancellation flow.\n\nStart: who is leaving. Cancellations concentrated among people finishing a free trial need a very different fix from long-time subscribers leaving.",
+          "check": {
+            "question": "Compare your answer with the model. Did you do all three?",
+            "options": [
+              "Yes: objective, 2 to 4 categories, and where I would start",
+              "Two of the three",
+              "One or none"
+            ]
+          },
+          "input": "long",
+          "title": "Customer retention",
+          "number": 3,
+          "skill": "Structuring"
+        },
+        {
+          "type": "drill",
+          "key": "m3.d4",
+          "question": "A U.S. credit card issuer is considering expanding into Canada. How would you structure your recommendation?",
+          "prep_seconds": 30,
+          "speak_seconds": 60,
+          "write_label": "Your objective, categories and starting point",
+          "model": "Objective: decide whether Canada offers profitable growth that's worth the cost and risk of entering.\n\nCategories: (1) Market attractiveness: the size, growth and profitability of Canadian cards. (2) Our ability to win: competitors, how Canadians choose a card, and what advantage we'd bring. (3) Entry economics and risk: build, partner or acquire, regulation, and time to break even.\n\nStart: market attractiveness. If the profit pool is small or shrinking, how we'd enter doesn't matter.",
+          "check": {
+            "question": "Compare your answer with the model. Did you do all three?",
+            "options": [
+              "Yes: objective, 2 to 4 categories, and where I would start",
+              "Two of the three",
+              "One or none"
+            ]
+          },
+          "input": "long",
+          "title": "Market expansion",
+          "number": 4,
+          "skill": "Structuring"
+        },
+        {
+          "type": "callout",
+          "tone": "paleblue",
+          "body": "The models above are one reasonable structure each, not the answer. Different categories can be just as good if they fit the question, don't overlap much, and lead somewhere you'd actually investigate.",
+          "title": "Other approaches can be just as good"
+        },
+        {
+          "type": "coach_only",
+          "body": "Check category count (2 to 4) and whether each structure ends with a starting point. Will's risk is not a weak structure; it is too many categories or sub-bullets read aloud. If his written versions are long, ask him on Sunday to say the same structure in 30 seconds.",
+          "title": "What to look for"
+        }
+      ]
+    },
+    {
+      "id": "m4-brainstorm",
+      "number": 4,
+      "day": "Saturday",
+      "minutes": "About 12 minutes",
+      "title": "Brainstorm and Prioritize",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Brainstorming isn't a competition to produce the longest list. The interviewer wants to see practical ideas, organized so they're easy to follow, and a clear view on which ones are best.",
+          "size": "lead"
+        },
+        {
+          "type": "list",
+          "style": "numbers",
+          "items": [
+            "Pick 2 or 3 groups first, before any ideas (for example: product, pricing, partnerships).",
+            "Put 2 or 3 practical ideas in each group.",
+            "Choose your top two, judged on impact, cost and fit with the objective.",
+            "Give one sentence of reasoning for each."
+          ],
+          "title": "How to do it"
+        },
+        {
+          "type": "heading",
+          "text": "Your turn: a financial services growth example"
+        },
+        {
+          "type": "callout",
+          "tone": "paleblue",
+          "body": "A mid-sized U.S. bank wants to earn more revenue from its existing small-business customers, without a large increase in costs.",
+          "title": "The situation"
+        },
+        {
+          "type": "field",
+          "key": "m4.ideas",
+          "input": "long",
+          "label": "List every initiative you can think of in about three minutes. Don't filter yet.",
+          "number": 1
+        },
+        {
+          "type": "field",
+          "key": "m4.groups",
+          "input": "long",
+          "label": "Now organize your ideas into 2 or 3 groups. Name each group and list its ideas.",
+          "number": 2
+        },
+        {
+          "type": "field",
+          "key": "m4.top2",
+          "input": "short",
+          "label": "Your top two initiatives",
+          "number": 3
+        },
+        {
+          "type": "field",
+          "key": "m4.why",
+          "input": "long",
+          "label": "Why those two? One or two sentences each.",
+          "number": 4
+        },
+        {
+          "type": "reveal",
+          "title": "One way to answer",
+          "body": "Groups: (1) Sell more of what customers need: business credit cards, merchant payment processing, payroll services, equipment loans. (2) Make banking with us easier: an app with invoicing and cash-flow tools, faster loan decisions. (3) Pricing and bundles: packages that combine a checking account, card and payments at one price.\n\nTop two: merchant payment processing, because many small businesses already process card payments somewhere else and switching them earns fees on every sale; and bundled packages, because they raise revenue per customer and make customers less likely to leave, at very little cost.\n\nGood answers vary. What matters is clear groups, practical ideas and a reason for each pick that ties back to the goal.",
+          "after": [
+            "m4.ideas",
+            "m4.groups",
+            "m4.top2",
+            "m4.why"
+          ]
+        },
+        {
+          "type": "text",
+          "body": "Two timed exercises. Think for 30 seconds, then speak for up to 75 seconds: name your groups, give a few ideas, and finish with your top two and why."
+        },
+        {
+          "type": "drill",
+          "key": "m4.d1",
+          "question": "An insurance company wants more of its car insurance customers to also buy home insurance from it. What initiatives could it try? Name your top two.",
+          "prep_seconds": 30,
+          "speak_seconds": 75,
+          "write_label": "Your groups and your top two, with a reason for each",
+          "model": "Groups: (1) The offer: a discount for bundling, one combined policy and one bill. (2) The moment: prompts when people renew, move or buy a home. (3) The channel: agents, the app, or partnerships with mortgage lenders.\n\nTop two: a bundling discount offered at renewal, because it reaches every customer at a moment they're already thinking about insurance; and a mortgage-lender partnership, because buying a home is exactly when people need home insurance.",
+          "check": {
+            "question": "Did you group your ideas and give a reason for each of your top two?",
+            "options": [
+              "Yes: grouped, two picks, a reason for each",
+              "I grouped them, but my reasons were thin or missing",
+              "I listed ideas without grouping them"
+            ]
+          },
+          "input": "long",
+          "title": "Cross-selling",
+          "number": 5,
+          "skill": "Brainstorming"
+        },
+        {
+          "type": "drill",
+          "key": "m4.d2",
+          "question": "A travel rewards card wants cardholders to use more of their points, because customers who redeem points stay longer. What could it do? Name your top two.",
+          "prep_seconds": 30,
+          "speak_seconds": 75,
+          "write_label": "Your groups and your top two, with a reason for each",
+          "model": "Groups: (1) Make redeeming easier: one-tap redemption in the app, paying with points at checkout. (2) Better options: everyday redemptions like dining or statement credits, not just flights. (3) Nudges: balance reminders, showing what a balance can buy, personalized suggestions.\n\nTop two: pay with points at checkout, because it removes the effort that stops people redeeming; and personalized \"your points could buy\" reminders, because they're cheap to send and turn an abstract balance into something concrete.",
+          "check": {
+            "question": "Did you group your ideas and give a reason for each of your top two?",
+            "options": [
+              "Yes: grouped, two picks, a reason for each",
+              "I grouped them, but my reasons were thin or missing",
+              "I listed ideas without grouping them"
+            ]
+          },
+          "input": "long",
+          "title": "Engagement",
+          "number": 6,
+          "skill": "Brainstorming"
+        }
+      ]
+    },
+    {
+      "id": "m5-quant",
+      "number": 5,
+      "day": "Saturday",
+      "minutes": "About 18 minutes",
+      "title": "Quantitative Speed and Business Meaning",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Case math is rarely hard. What goes wrong is the setup, the units, or stopping at the number. A steady, repeatable approach fixes all three, and saying it out loud lets the interviewer follow you, and catch an error before it costs you.",
+          "size": "lead"
+        },
+        {
+          "type": "list",
+          "style": "numbers",
+          "items": [
+            "Identify what needs to be calculated.",
+            "State the equation, in words, before using any numbers.",
+            "Put the numbers in.",
+            "Calculate, keeping track of units (monthly or annual, millions or billions).",
+            "Explain what the result means for the business."
+          ],
+          "title": "Five steps, every time"
+        },
+        {
+          "type": "callout",
+          "tone": "peach",
+          "body": "Accuracy matters more than speed. A correct answer in 90 seconds beats a wrong one in 30. Take your time here, use paper, and do a quick sanity check: does the size of the answer make sense?",
+          "title": "Don't rush the math"
+        },
+        {
+          "type": "table",
+          "title": "A worked example",
+          "columns": [
+            "Step",
+            "Said out loud"
+          ],
+          "rows": [
+            [
+              "What to calculate",
+              "\"We need the annual revenue from the new fee.\""
+            ],
+            [
+              "Equation",
+              "\"That's customers who pay, times the fee, times 12 months.\""
+            ],
+            [
+              "Numbers",
+              "\"500,000 customers times $5 times 12.\""
+            ],
+            [
+              "Calculate",
+              "\"$2.5 million a month, so $30 million a year.\""
+            ],
+            [
+              "Meaning",
+              "\"$30 million is meaningful, but only if the fee doesn't drive customers away. I'd want to check how many would leave.\""
+            ]
+          ]
+        },
+        {
+          "type": "text",
+          "body": "All the companies and numbers below are fictional. Work each one on paper, enter your answer, then write what it means. The worked solution shows after you check your answer."
+        },
+        {
+          "type": "heading",
+          "text": "1. Revenue"
+        },
+        {
+          "type": "numeric",
+          "key": "m5.rev",
+          "question": "A card issuer has 4 million cardholders. Each spends an average of $1,500 a month on the card, and the issuer earns 2% of that spending as net revenue. What is the issuer's annual net revenue from card spending?",
+          "answer": 1440000000,
+          "explanation": "Cardholders x monthly spend x 12 x 2% = 4,000,000 x $1,500 x 12 x 0.02.\n\nMonthly spend is 4 million x $1,500 = $6 billion. A year is $72 billion. 2% of $72 billion is $1.44 billion.",
+          "prefix": "$",
+          "hint": "Type the number. Money can be written in full or with M or B, for example 72M or 1.2B.",
+          "number": 1,
+          "skill": "Revenue"
+        },
+        {
+          "type": "field",
+          "key": "m5.rev_mean",
+          "input": "long",
+          "label": "In one or two sentences: what does this mean for the business?",
+          "number": 2
+        },
+        {
+          "type": "reveal",
+          "title": "One good interpretation",
+          "body": "\"About $1.4 billion a year, so every 1% increase in spending per cardholder is worth roughly $14 million. That's why getting existing cardholders to spend more is such a valuable lever.\"",
+          "after": [
+            "m5.rev",
+            "m5.rev_mean"
+          ],
+          "button": "Show an interpretation"
+        },
+        {
+          "type": "heading",
+          "text": "2. Profit"
+        },
+        {
+          "type": "numeric",
+          "key": "m5.profit",
+          "question": "A bank's new savings product earns $30 million of revenue a year. Running costs are $12 million a year and marketing costs $6 million a year. What is the annual profit?",
+          "answer": 12000000,
+          "explanation": "Profit = revenue - running costs - marketing = $30M - $12M - $6M = $12 million.",
+          "prefix": "$",
+          "hint": "Type the number. Money can be written in full or with M or B, for example 72M or 1.2B.",
+          "number": 3,
+          "skill": "Profit"
+        },
+        {
+          "type": "numeric",
+          "key": "m5.margin",
+          "question": "And what is the profit margin (profit as a percentage of revenue)?",
+          "answer": 40,
+          "explanation": "Margin = profit / revenue = $12M / $30M = 0.4, or 40%.",
+          "suffix": "%",
+          "number": 4,
+          "skill": "Profit"
+        },
+        {
+          "type": "field",
+          "key": "m5.profit_mean",
+          "input": "long",
+          "label": "In one or two sentences: what does this mean for the business?",
+          "number": 5
+        },
+        {
+          "type": "reveal",
+          "title": "One good interpretation",
+          "body": "\"A 40% margin is healthy, and marketing is a third of the cost. The question is whether that marketing is still needed once the product is established. If not, the margin could rise to 60%.\"",
+          "after": [
+            "m5.profit",
+            "m5.margin",
+            "m5.profit_mean"
+          ],
+          "button": "Show an interpretation"
+        },
+        {
+          "type": "heading",
+          "text": "3. Customer economics"
+        },
+        {
+          "type": "numeric",
+          "key": "m5.ltv",
+          "question": "A card costs $300 to acquire each new customer. Each customer generates $150 of profit a year and stays 4 years on average. What is the lifetime profit per customer after the acquisition cost?",
+          "answer": 300,
+          "explanation": "Lifetime profit = annual profit x years - acquisition cost = $150 x 4 - $300 = $600 - $300 = $300.",
+          "prefix": "$",
+          "number": 6,
+          "skill": "Customer economics"
+        },
+        {
+          "type": "numeric",
+          "key": "m5.payback",
+          "question": "How many years does it take to earn back the acquisition cost?",
+          "answer": 2,
+          "explanation": "Payback = acquisition cost / annual profit = $300 / $150 = 2 years.",
+          "suffix": "years",
+          "number": 7,
+          "skill": "Customer economics"
+        },
+        {
+          "type": "field",
+          "key": "m5.ltv_mean",
+          "input": "long",
+          "label": "In one or two sentences: what does this mean for the business?",
+          "number": 8
+        },
+        {
+          "type": "reveal",
+          "title": "One good interpretation",
+          "body": "\"Each customer is worth $300 after acquisition, and pays back in 2 of their 4 years. That's attractive, but it depends on retention: if customers left after 2 years instead of 4, the company would only break even.\"",
+          "after": [
+            "m5.ltv",
+            "m5.payback",
+            "m5.ltv_mean"
+          ],
+          "button": "Show an interpretation"
+        },
+        {
+          "type": "heading",
+          "text": "4. Market sizing"
+        },
+        {
+          "type": "numeric",
+          "key": "m5.market",
+          "question": "Estimate annual spending at coffee shops by U.S. adults. Use these numbers: 260 million adults; 40% buy from coffee shops; those buyers make 2 purchases a week at $6 each; count 50 weeks a year.",
+          "answer": 62400000000,
+          "explanation": "Buyers = 260M x 40% = 104 million. Spend per buyer per year = 2 x $6 x 50 = $600. Total = 104 million x $600 = $62.4 billion.",
+          "prefix": "$",
+          "hint": "Type the number. Money can be written in full or with M or B, for example 72M or 1.2B.",
+          "number": 9,
+          "skill": "Market sizing"
+        },
+        {
+          "type": "field",
+          "key": "m5.market_mean",
+          "input": "long",
+          "label": "In one or two sentences: what does this mean for the business?",
+          "number": 10
+        },
+        {
+          "type": "reveal",
+          "title": "One good interpretation",
+          "body": "\"About $60 billion a year, made of very frequent, small purchases. For a card company, that frequency is the attraction: being the card used for coffee means being in the customer's hand several times a week.\"",
+          "after": [
+            "m5.market",
+            "m5.market_mean"
+          ],
+          "button": "Show an interpretation"
+        },
+        {
+          "type": "heading",
+          "text": "5. Growth rates"
+        },
+        {
+          "type": "numeric",
+          "key": "m5.growth",
+          "question": "A payments app processed $8 billion last year and $10 billion this year. What was the growth rate?",
+          "answer": 25,
+          "explanation": "Growth = (this year - last year) / last year = ($10B - $8B) / $8B = $2B / $8B = 25%.",
+          "suffix": "%",
+          "number": 11,
+          "skill": "Growth rates"
+        },
+        {
+          "type": "numeric",
+          "key": "m5.next",
+          "question": "If it grows at the same rate again, what will it process next year?",
+          "answer": 12500000000,
+          "explanation": "Next year = $10B x 1.25 = $12.5 billion.",
+          "prefix": "$",
+          "hint": "Type the number. Money can be written in full or with M or B, for example 72M or 1.2B.",
+          "number": 12,
+          "skill": "Growth rates"
+        },
+        {
+          "type": "field",
+          "key": "m5.growth_mean",
+          "input": "long",
+          "label": "In one or two sentences: what does this mean for the business?",
+          "number": 13
+        },
+        {
+          "type": "reveal",
+          "title": "One good interpretation",
+          "body": "\"Strong growth, but I'd be careful assuming 25% continues: growth rates usually slow as a business gets bigger. I'd want to know whether the growth comes from new users or from existing users processing more.\"",
+          "after": [
+            "m5.growth",
+            "m5.next",
+            "m5.growth_mean"
+          ],
+          "button": "Show an interpretation"
+        },
+        {
+          "type": "coach_only",
+          "body": "Grades and first attempts are on the Results tab. A missed answer with a sensible interpretation is a setup or units slip (check annualizing and millions/billions); a right answer with \"it's big\" as the interpretation is the communication gap we are working on. On Sunday, ask: \"What does that number mean for the business?\"",
+          "title": "What to look for"
+        }
+      ]
+    },
+    {
+      "id": "m6-recommendation",
+      "number": 6,
+      "day": "Saturday",
+      "minutes": "About 10 minutes",
+      "title": "Executive Recommendation",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "The end of a case is where it's easiest to lose time: there's a lot you could say, and it all feels relevant. A senior executive wants four things, in this order, in about a minute.",
+          "size": "lead"
+        },
+        {
+          "type": "list",
+          "style": "numbers",
+          "items": [
+            "Recommendation: your decision, in the first sentence.",
+            "Two supporting reasons: the strongest two, not all of them.",
+            "One important risk or uncertainty: the one that could change the answer.",
+            "Next step: something concrete the company should do now."
+          ],
+          "title": "The four parts"
+        },
+        {
+          "type": "callout",
+          "tone": "paleblue",
+          "body": "Situation: a bank is deciding whether to close 20 of its 200 branches. You found that 15 of the 20 lose money and their customers mostly bank on the app; the other 5 serve areas with no nearby competitor.\n\n\"I recommend closing 15 of the 20 branches and keeping the other 5. First, the 15 lose money and most of their customers already bank on the app, so we'd save the costs without losing many customers. Second, the 5 we keep are the only bank nearby, so closing them would push customers to a competitor. The main risk is that older customers at the closing branches leave rather than switch to the app. As a next step, I'd contact those customers before closing to help them move to the app or a nearby branch, and track how many we keep.\"\n\nAbout 50 seconds.",
+          "title": "A worked example"
+        },
+        {
+          "type": "callout",
+          "tone": "peach",
+          "body": "Don't recap the case. The executive was there for it. Start with the decision, not with \"So, we looked at three things\".",
+          "title": "The trap"
+        },
+        {
+          "type": "text",
+          "body": "Two timed exercises. Think for 30 seconds, then give the recommendation out loud in up to 60 seconds. Then write down what you said."
+        },
+        {
+          "type": "drill",
+          "key": "m6.d1",
+          "question": "You've analyzed whether a retailer should launch a store credit card. Your findings: customers with the card spend 20% more a year; a partner bank would pay the retailer $40 per new account plus a share of card revenue; at a similar competitor, 15% of shoppers signed up; the main concern is customer complaints about high interest rates. Give your recommendation to the CEO.",
+          "prep_seconds": 30,
+          "speak_seconds": 60,
+          "write_label": "Your recommendation, as you said it",
+          "model": "\"I recommend launching the card with the partner bank. First, cardholders spend 20% more a year, so it grows sales from customers we already have. Second, it costs us little: the bank pays us $40 per account plus a share of revenue, and a similar retailer signed up 15% of shoppers. The main risk is customer complaints about interest rates, which could hurt our brand. As a next step, I'd negotiate clear, simple terms with the bank, and launch in a few regions first to measure sign-ups and complaints before rolling out nationally.\"",
+          "check": {
+            "question": "How many of the four parts did you say, in about 60 seconds?",
+            "options": [
+              "All four: recommendation, two reasons, one risk, next step",
+              "Three of the four",
+              "Two or fewer, or I went well over 60 seconds"
+            ]
+          },
+          "input": "long",
+          "title": "Store credit card",
+          "number": 1,
+          "skill": "Recommendation"
+        },
+        {
+          "type": "drill",
+          "key": "m6.d2",
+          "question": "You've analyzed an insurer's plan to sell policies through a car dealership partner. Your findings: the partner would bring 50,000 new customers a year; each is worth $200 of profit a year; the partnership costs $6 million a year; customers who buy at dealerships have historically switched insurers more often. Give your recommendation.",
+          "prep_seconds": 30,
+          "speak_seconds": 60,
+          "write_label": "Your recommendation, as you said it",
+          "model": "\"I recommend going ahead, with a one-year trial before committing long term. First, 50,000 customers at $200 each is $10 million of profit a year, against a $6 million cost, so about $4 million ahead in year one. Second, it reaches people at the moment they need insurance, without more advertising. The main risk is that dealership customers switch insurers more often, so the value could be lower than it looks after year one. Next step: agree a one-year contract and track how many of those customers renew before extending it.\"",
+          "check": {
+            "question": "How many of the four parts did you say, in about 60 seconds?",
+            "options": [
+              "All four: recommendation, two reasons, one risk, next step",
+              "Three of the four",
+              "Two or fewer, or I went well over 60 seconds"
+            ]
+          },
+          "input": "long",
+          "title": "Dealership partnership",
+          "number": 2,
+          "skill": "Recommendation"
+        },
+        {
+          "type": "coach_only",
+          "body": "This is Will's highest-leverage module: the .secs against 60 shows whether he can close in a minute. If he goes over, Sunday's drill is the four-part close on repeat with a 60-second timer, prompting: \"What would you tell the Chief Strategy Officer?\"",
+          "title": "What to look for"
+        }
+      ]
+    },
+    {
+      "id": "m7-practice",
+      "number": 7,
+      "day": "Saturday",
+      "minutes": "About 30 minutes, including the case",
+      "title": "Prepare for the Practice Round",
+      "blocks": [
+        {
+          "type": "text",
+          "body": "You are about to complete a new case that you have not seen before.",
+          "size": "lead"
+        },
+        {
+          "type": "text",
+          "body": "Use what you practiced. Take a moment to organize your thoughts when needed. Lead with your main point. Show your approach to calculations. Explain what the numbers mean."
+        },
+        {
+          "type": "big_quote",
+          "text": "Do not try to give the longest answer. Give the clearest useful answer."
+        },
+        {
+          "type": "list",
+          "style": "bullets",
+          "items": [
+            "A quiet room for about 25 minutes, where you won't be interrupted.",
+            "A laptop or desktop with a camera and microphone, in Chrome or Safari. A phone works, but a bigger screen is easier for the numbers.",
+            "Paper and a pen for the math.",
+            "Your browser will ask to use your camera and microphone. Allow it."
+          ],
+          "title": "Before you start"
+        },
+        {
+          "type": "callout",
+          "tone": "paleblue",
+          "body": "Eight questions, one at a time, in a fixed order, like a real interviewer-led case. Each question shows its time limit, and most give you think time first. Recording starts when the think time ends, and each answer is saved when you finish it. There are no re-takes: treat it like the real thing.\n\nAfter the last question, you'll answer five short self-assessment questions. Then press Send.",
+          "title": "How the practice case works"
+        },
+        {
+          "type": "field",
+          "key": "m7.focus",
+          "input": "short",
+          "label": "Before you start: the one thing you'll focus on during the case",
+          "number": 1,
+          "placeholder": "For example: headline first, every time"
+        },
+        {
+          "type": "link",
+          "kind": "practice",
+          "title": "Amex Case Accelerator: Baseline Simulation",
+          "url": "/dashboard/practice/__PRACTICE_ROUND_ID__",
+          "body": "About 20 to 25 minutes, plus 5 minutes for the self-assessment. When you've sent it, come back here and finish this module."
+        },
+        {
+          "type": "select",
+          "key": "m7.done",
+          "label": "Have you finished the practice case and the self-assessment?",
+          "options": [
+            "Yes, I finished and sent it"
+          ],
+          "placeholder": "Choose once you've sent it"
+        },
+        {
+          "type": "field",
+          "key": "m7.after",
+          "input": "long",
+          "label": "Now that it's done: how did it feel, compared with how you expected it to go?",
+          "optional": true,
+          "number": 2
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "link_label": "My Saturday notes",
+    "eyebrow": "Before Sunday",
+    "title": "Your notes for Sunday with Peri",
+    "blocks": [
+      {
+        "type": "interview_details"
+      },
+      {
+        "type": "quick_answers",
+        "items": [
+          {
+            "label": "What comes before my headline when it isn't first",
+            "field": "m2.reflect"
+          },
+          {
+            "label": "My focus for the case",
+            "field": "m7.focus"
+          },
+          {
+            "label": "How the case felt",
+            "field": "m7.after"
+          },
+          {
+            "label": "The pattern",
+            "static": "Headline. Because. Stop."
+          },
+          {
+            "label": "The close",
+            "static": "Recommendation, two reasons, one risk, next step. About 60 seconds."
+          }
+        ]
+      },
+      {
+        "type": "checklist",
+        "items": [
+          "I finished all seven modules",
+          "I completed the practice case and the self-assessment",
+          "I pressed Send to Peri"
+        ]
+      }
+    ]
+  }
+}

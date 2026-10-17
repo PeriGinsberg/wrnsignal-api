@@ -15,9 +15,12 @@ import { MAX_QUESTIONS } from "@/lib/practice/model"
 import { T } from "@/lib/dashboard-theme"
 import { TYPE } from "@/lib/theme/surfaces"
 import { AutoGrowTextarea } from "@/components/ui/AutoGrowTextarea"
+import { CaseReview, type Academy, type CaseAnswer } from "./CaseReview"
+import { PerformancePackage } from "@/components/academy/PerformancePackage"
 
 type Q = {
   id: string; position: number; text: string; source: "bank" | "custom"
+  title?: string | null; exhibit?: string | null; qkey?: string | null
   fb_works?: string | null; fb_fix?: string | null
 }
 type Answer = {
@@ -38,6 +41,8 @@ type Round = {
   client_profile_id: string
   sent_at: string | null
   submitted_at: string | null
+  kind?: "interview" | "case"
+  self_assessment?: Record<string, string> | null
   questions: Q[]
 }
 
@@ -48,6 +53,7 @@ export default function CoachPracticeRoundPage() {
 
   const [round, setRound] = useState<Round | null>(null)
   const [answers, setAnswers] = useState<Answer[]>([])
+  const [academy, setAcademy] = useState<Academy | null>(null)
   const [draft, setDraft] = useState<{ text: string; source: "bank" | "custom" }[]>([])
   const [custom, setCustom] = useState("")
   const [busy, setBusy] = useState<null | "save" | "send" | "feedback">(null)
@@ -82,6 +88,7 @@ export default function CoachPracticeRoundPage() {
     } else {
       setRound(j.round)
       setAnswers(j.answers ?? [])
+      setAcademy(j.academy ?? null)
       setDraft(j.round.questions.map((q: Q) => ({ text: q.text, source: q.source })))
       // Only seed the boxes once. Re-seeding on every reload would throw away
       // whatever the coach has typed since.
@@ -100,7 +107,8 @@ export default function CoachPracticeRoundPage() {
 
   useEffect(() => { void load() }, [load])
 
-  const editable = round?.status === "draft"
+  // A case round's questions come from the case library: never the builder.
+  const editable = round?.status === "draft" && round?.kind !== "case"
 
   const move = (i: number, by: number) => {
     setDraft((d) => {
@@ -220,7 +228,7 @@ export default function CoachPracticeRoundPage() {
 
       <div style={{ display: "flex", flexDirection: "column", gap: 4, margin: "10px 0 20px" }}>
         <span style={{ fontSize: TYPE.label, fontWeight: 800, letterSpacing: "0.09em", textTransform: "uppercase", color: T.INK_LINK }}>
-          PRACTICE ROUND · {round.status.toUpperCase()}
+          {round.kind === "case" ? "CASE SIMULATION" : "PRACTICE ROUND"} · {round.status.toUpperCase()}
         </span>
         <h1 style={{ margin: 0, fontSize: TYPE.title, color: T.TEXT }}>{round.title}</h1>
       </div>
@@ -228,6 +236,34 @@ export default function CoachPracticeRoundPage() {
       {msg && <div style={{ ...banner, borderColor: T.SUCCESS_BORDER, background: T.SUCCESS_BG }}>{msg}</div>}
       {err && <div style={{ ...banner, borderColor: T.ERROR_BORDER, background: T.ERROR_BG, color: T.ERROR }}>{err}</div>}
 
+      {round.kind === "case" && academy ? (
+        <CaseReview
+          roundId={round.id}
+          clientId={round.client_profile_id}
+          status={round.status}
+          questions={round.questions}
+          answers={answers as unknown as CaseAnswer[]}
+          academy={academy}
+          selfAssessment={round.self_assessment ?? null}
+          authFetch={authFetch}
+          onReload={load}
+          notes={(qid) => (
+            <div style={{ display: "grid", gap: 10 }}>
+              <FbBox label="What works" placeholder="The part they should keep doing." value={fb[qid]?.works ?? ""}
+                readOnly={!!round.feedback_sent_at} onChange={(v) => setWorks(qid, v)} />
+              <FbBox label="What to fix" placeholder="The one change that would make the biggest difference." value={fb[qid]?.fix ?? ""}
+                readOnly={!!round.feedback_sent_at} onChange={(v) => setFix(qid, v)} />
+            </div>
+          )}
+        />
+      ) : (
+      <>
+      {(round.status === "submitted" || round.status === "feedback_sent") && (
+        <section style={card}>
+          <h2 style={h2}>Export</h2>
+          <PerformancePackage clientId={round.client_profile_id} roundId={round.id} />
+        </section>
+      )}
       {/* ── The questions ─────────────────────────────────────────── */}
       <section style={card}>
         <h2 style={h2}>{editable ? "Questions" : "What you asked"}</h2>
@@ -295,6 +331,8 @@ export default function CoachPracticeRoundPage() {
           )
         })}
       </section>
+      </>
+      )}
 
       {editable && (
         <>
@@ -388,7 +426,7 @@ export default function CoachPracticeRoundPage() {
         </section>
       )}
 
-      {round.status === "sent" && (
+      {round.status === "sent" && round.kind !== "case" && (
         <div style={{ ...card }}>
           <p style={{ ...pMuted, margin: 0 }}>
             Sent{round.sent_at ? ` on ${new Date(round.sent_at).toLocaleDateString()}` : ""}. Nothing recorded yet.
