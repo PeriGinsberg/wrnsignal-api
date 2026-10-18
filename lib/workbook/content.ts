@@ -217,6 +217,45 @@ export type CoachGuide = {
   checklist_note?: string
   rubric?: CoachRubric
   notes?: string[]
+  /**
+   * The facilitation script: the primary coach experience when present. Each
+   * step says what to ask, what a strong answer includes, which Teams message
+   * to send and when, the worked calculations (essential first, stretch
+   * optional), follow-ups, hints, and when to advance. A message a step sends
+   * is shown inside that step and not repeated elsewhere.
+   */
+  steps?: CoachStep[]
+}
+
+/** One worked calculation: what it is, the setup, the answer, what it means. */
+export type CoachCalc = { label: string; work: string; answer: string; meaning?: string }
+
+export type CoachStep = {
+  title: string
+  minutes?: string
+  /** The exact questions to ask, in order. */
+  ask: string[]
+  /** What a strong answer includes. */
+  strong?: string[]
+  /** How to answer the student's likely clarifying questions. */
+  answers?: { ask?: string; answer: string }[]
+  /** What to do if the student is off track. */
+  teach?: string
+  /** Must be true before moving on (a checkpoint). */
+  checkpoint?: string
+  /** The Teams message this step sends: its label in `messages`, what triggers it, and a rescue prompt if it never comes. */
+  send?: { message: string; when: string; rescue?: string }
+  essential?: CoachCalc[]
+  stretch?: CoachCalc[]
+  interpretation?: string
+  errors?: string[]
+  follow_ups?: { ask: string; answer?: string }[]
+  hints?: string[]
+  /** Neutral prompts for a stalled student in an independent case. */
+  rescue?: string[]
+  advance?: string
+  /** Rubric item keys (or plain labels) this step evidences. */
+  assess?: string[]
 }
 
 /** Item and scale keys are what is saved, so they must stay stable once used. */
@@ -964,6 +1003,28 @@ function guideErrors(g: any): string[] {
     else if (new Set(r.items.map((x: any) => x.key)).size !== r.items.length) out.push("rubric item keys must be unique")
     if (r.scale != null && !keyed(r.scale)) out.push("rubric scale needs a key and a label on every point")
     if (r.note != null && !str(r.note)) out.push("rubric note must be text")
+  }
+  if (g.steps != null) {
+    if (!Array.isArray(g.steps) || !g.steps.length) out.push("steps must be a non-empty list")
+    else {
+      const labels = new Set((Array.isArray(g.messages) ? g.messages : []).map((m: any) => m?.label))
+      const calc = (v: unknown) => Array.isArray(v) && v.every((x: any) => x && str(x.label) && str(x.work) && str(x.answer) && (x.meaning == null || str(x.meaning)))
+      g.steps.forEach((st: any, i: number) => {
+        const at = `steps[${i}]`
+        if (!st || !str(st.title)) { out.push(`${at} needs a title`); return }
+        if (!strs(st.ask) || !st.ask.length) out.push(`${at} needs at least one question to ask`)
+        for (const k of ["strong", "errors", "hints", "rescue", "assess"]) if (st[k] != null && !strs(st[k])) out.push(`${at}.${k} must be a list of text`)
+        for (const k of ["minutes", "teach", "checkpoint", "interpretation", "advance"]) if (st[k] != null && !str(st[k])) out.push(`${at}.${k} must be text`)
+        for (const k of ["essential", "stretch"]) if (st[k] != null && !calc(st[k])) out.push(`${at}.${k} needs a label, work and answer on every calculation`)
+        if (st.answers != null && !(Array.isArray(st.answers) && st.answers.every((x: any) => x && str(x.answer) && (x.ask == null || str(x.ask))))) out.push(`${at}.answers needs an answer on every item`)
+        if (st.follow_ups != null && !(Array.isArray(st.follow_ups) && st.follow_ups.every((x: any) => x && str(x.ask) && (x.answer == null || str(x.answer))))) out.push(`${at}.follow_ups needs a question on every item`)
+        if (st.send != null) {
+          if (!str(st.send.message) || !str(st.send.when)) out.push(`${at}.send needs a message label and when to send it`)
+          else if (!labels.has(st.send.message)) out.push(`${at}.send names message "${st.send.message}", which is not in messages`)
+          if (st.send.rescue != null && !str(st.send.rescue)) out.push(`${at}.send.rescue must be text`)
+        }
+      })
+    }
   }
   return out
 }

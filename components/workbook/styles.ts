@@ -233,6 +233,24 @@ textarea.wb-input{resize:vertical;overflow:hidden}
 .wb-cc-seg button[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
 .wb-cc-rrow textarea,.wb-cc-rub textarea{font:inherit;font-size:15px;border:1px solid var(--line);padding:8px 10px;min-height:44px;resize:vertical;width:100%}
 .wb-cc-linkbtn{background:none;border:0;padding:0;font:inherit;font-size:13px;font-weight:600;color:var(--teal-ink);text-decoration:underline;cursor:pointer;align-self:flex-start}
+.wb-cc-steps{display:flex;flex-direction:column;gap:10px}
+.wb-cc-step{background:#fff;border:1.5px solid var(--navy)}
+.wb-cc-step-h{display:flex;align-items:center;gap:14px;width:100%;padding:14px 18px;background:none;border:0;font:inherit;color:var(--navy);text-align:left;cursor:pointer}
+.wb-cc-step-h b{font-family:var(--wb-font-serif),Georgia,serif;font-size:26px;color:var(--orange);width:28px;flex:none}
+.wb-cc-step-h .t{font-weight:700;font-size:17px;flex:1}
+.wb-cc-step-h .m{font-size:13px;color:var(--muted);white-space:nowrap}
+.wb-cc-step.open .wb-cc-step-h{border-bottom:1px solid var(--border);background:var(--peach)}
+.wb-cc-step-b{padding:18px;display:flex;flex-direction:column;gap:14px}
+.wb-cc-ask{border-left:4px solid var(--orange);padding:4px 0 4px 14px;display:flex;flex-direction:column;gap:6px}
+.wb-cc-ask p{margin:0;font-family:var(--wb-font-serif),Georgia,serif;font-size:20px;line-height:1.4}
+.wb-cc-calcs{display:flex;flex-direction:column;gap:6px}
+.wb-cc-work{font-variant-numeric:tabular-nums;white-space:nowrap}
+.wb-cc-stretch{border:1px dashed var(--line);padding:0 12px}
+.wb-cc-stretch summary{cursor:pointer;padding:10px 0;font-weight:600}
+.wb-cc-stretch[open]{padding-bottom:12px}
+.wb-cc-check{background:var(--pale);padding:12px 16px;display:flex;flex-direction:column;gap:4px}
+.wb-cc-sendstep{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--border);padding-top:14px}
+@media (max-width:820px){ .wb-cc-work{white-space:normal} .wb-cc-step-h .m{display:none} }
 .wb-cc button:focus-visible,.wb-cc summary:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
 @media (max-width:820px){ .wb-cc-two{grid-template-columns:minmax(0,1fr)} .wb-cc-prompt p{font-size:19px} }
 

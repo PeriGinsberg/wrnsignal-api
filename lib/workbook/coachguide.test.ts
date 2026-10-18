@@ -117,5 +117,28 @@ const data = performanceData(input) as any
 const ev = data.workbook.evaluations[0]
 ok("Performance_Data.json has structured evaluations with stable keys", ev.section_id === "c2" && ev.items[1].key === "math" && ev.items[1].rating === "prompted" && ev.items[1].rating_label === "Prompted" && ev.note === "Clear structure.")
 
+console.log("facilitation steps")
+const withSteps = JSON.parse(JSON.stringify(raw))
+withSteps.sections[0].blocks[3].guide.steps = [
+  { title: "Read the financials", minutes: "8 min", ask: ["What do these numbers tell you?"],
+    essential: [{ label: "Profit change", work: "(1 - 2) / 2", answer: "-50%", meaning: "PRIVATE-STEP-MEANING" }],
+    stretch: [{ label: "Margin", work: "1 / 9", answer: "11.1%" }],
+    interpretation: "PRIVATE-STEP-CONCLUSION", hints: ["PRIVATE-STEP-HINT"], rescue: ["PRIVATE-STEP-RESCUE"],
+    checkpoint: "PRIVATE-STEP-CHECKPOINT",
+    send: { message: "A", when: "She asks for financials.", rescue: "What data would you want?" }, assess: ["Structure"] },
+]
+const vs = validateContent(withSteps)
+ok("a guide with steps is valid", vs.ok)
+ok("a step sending a message that doesn't exist is refused", !bad((x) => { x.sections[0].blocks[3].guide.steps = [{ title: "T", ask: ["Q"], send: { message: "Z", when: "w" } }] }).ok)
+ok("a step without a question is refused", !bad((x) => { x.sections[0].blocks[3].guide.steps = [{ title: "T", ask: [] }] }).ok)
+ok("a calculation without an answer is refused", !bad((x) => { x.sections[0].blocks[3].guide.steps = [{ title: "T", ask: ["Q"], essential: [{ label: "L", work: "1+1" }] }] }).ok)
+if (vs.ok) {
+  const sj = JSON.stringify(stripCoachOnly(vs.content))
+  ok("no step text survives in the client view", !["PRIVATE-STEP-MEANING", "PRIVATE-STEP-CONCLUSION", "PRIVATE-STEP-HINT", "PRIVATE-STEP-RESCUE", "PRIVATE-STEP-CHECKPOINT", '"steps"'].some((x) => sj.includes(x)))
+  const md = workbookMarkdown({ ...input, workbook: { ...input.workbook!, content: vs.content } })
+  ok("the coach's Workbook.md carries the steps", md.includes("Step 1: Read the financials") && md.includes("PRIVATE-STEP-CONCLUSION"))
+  ok("the student-facing export has no steps", !workbookMarkdown({ ...input, workbook: { ...input.workbook!, content: vs.content } }, { coachOnly: false }).includes("PRIVATE-STEP"))
+}
+
 if (failures) { console.error(`\n${failures} failure(s)`); process.exit(1) }
 console.log("\nall coach guide checks pass")

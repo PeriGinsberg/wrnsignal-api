@@ -115,6 +115,27 @@ function guideMarkdown(g: CoachGuide): string {
   if (g.hints?.length) out.push(`**Hint ladder**\n\n${g.hints.map((h, i) => `${i + 1}. ${h}`).join("\n")}${g.hint_note ? `\n\n${g.hint_note}` : ""}`)
   if (g.checklist?.length) out.push(`**${g.checklist_title ?? "What to watch for"}**\n\n${g.checklist.map((x) => `- ${x}`).join("\n")}${g.checklist_note ? `\n\n${g.checklist_note}` : ""}`)
   if (g.rubric) out.push(`**Evaluation rubric:** ${g.rubric.items.map((i) => i.label).join("; ")}`)
+  for (const [i, st] of (g.steps ?? []).entries()) {
+    const calcs = (t: string, cs?: { label: string; work: string; answer: string; meaning?: string }[]) =>
+      cs?.length ? `${t}:\n${cs.map((c) => `- ${c.label}: ${c.work} = ${c.answer}${c.meaning ? ` (${c.meaning})` : ""}`).join("\n")}` : ""
+    out.push([
+      `**Step ${i + 1}: ${st.title}${st.minutes ? ` (${st.minutes})` : ""}**`,
+      `Ask: ${st.ask.join(" ")}`,
+      st.strong?.length ? `Strong answer:\n${st.strong.map((x) => `- ${x}`).join("\n")}` : "",
+      st.answers?.length ? `If the student asks:\n${st.answers.map((x) => `- ${x.ask ? `${x.ask}: ` : ""}${x.answer}`).join("\n")}` : "",
+      st.teach ? `Teaching move: ${st.teach}` : "",
+      calcs("Essential math", st.essential), calcs("Stretch math", st.stretch),
+      st.interpretation ? `Conclusion: ${st.interpretation}` : "",
+      st.errors?.length ? `Common errors:\n${st.errors.map((x) => `- ${x}`).join("\n")}` : "",
+      st.follow_ups?.length ? `Follow-ups:\n${st.follow_ups.map((f) => `- ${f.ask}${f.answer ? ` (${f.answer})` : ""}`).join("\n")}` : "",
+      st.hints?.length ? `Hints: ${st.hints.map((h, j) => `(${j + 1}) ${h}`).join(" ")}` : "",
+      st.rescue?.length ? `Rescue prompts: ${st.rescue.join(" / ")}` : "",
+      st.checkpoint ? `Checkpoint: ${st.checkpoint}` : "",
+      st.send ? `Send Teams message ${st.send.message} when: ${st.send.when}${st.send.rescue ? ` Rescue: ${st.send.rescue}` : ""}` : "",
+      st.advance ? `Advance when: ${st.advance}` : "",
+      st.assess?.length ? `Assess: ${st.assess.join("; ")}` : "",
+    ].filter(Boolean).join("\n\n"))
+  }
   list("Coach notes", g.notes)
   return out.join("\n\n")
 }

@@ -82,6 +82,33 @@ describe("CoachCommandCenter", () => {
     expect(save.mock.calls[0][0]).toEqual({ section_id: "c2", ratings: { math: { rating: "prompted" } }, note: null })
   })
 
+  it("runs the facilitation script: first step open, its message inline, stretch collapsed, no duplicate card", async () => {
+    const stepped: Section = { id: "c3", number: 3, title: "Case", blocks: [
+      { type: "text", body: PROMPT, case_prompt: true },
+      { type: "coach_only", guide: {
+        messages: [{ label: "A", title: "Financials", send: SEND_A, private: PRIVATE_A }],
+        steps: [
+          { title: "Open", ask: ["What's going on here?"], strong: ["Restates the problem"] },
+          { title: "Read the financials", ask: ["What do these numbers tell you?"],
+            essential: [{ label: "Profit change", work: "(1 - 2) / 2", answer: "-50%" }],
+            stretch: [{ label: "Margin", work: "1 / 9", answer: "11.1%" }],
+            send: { message: "A", when: "She asks for financials." } },
+        ],
+      } },
+    ] }
+    const { container } = render(<CoachCommandCenter section={stepped} first="Alex" evaluation={null} onSaveEvaluation={vi.fn()} />)
+    expect(screen.getByText("What's going on here?")).toBeTruthy()
+    expect(screen.queryByText("What do these numbers tell you?")).toBeNull()
+    expect(container.querySelectorAll(".wb-cc-msg").length).toBe(0)
+    fireEvent.click(screen.getByRole("button", { name: /Read the financials/ }))
+    expect(screen.getByText("What do these numbers tell you?")).toBeTruthy()
+    expect(container.querySelectorAll(".wb-cc-msg").length).toBe(1)
+    expect((container.querySelector(".wb-cc-stretch") as HTMLDetailsElement).open).toBe(false)
+    expect(screen.getByText("-50%")).toBeTruthy()
+    fireEvent.click(screen.getByRole("button", { name: "Copy message A" }))
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(SEND_A))
+  })
+
   it("still shows an older workbook's free-text coach note", () => {
     const old: Section = { id: "o", number: 1, title: "Old", blocks: [{ type: "coach_only", body: "Watch the denominator." }] }
     render(<CoachCommandCenter section={old} first="Alex" evaluation={null} onSaveEvaluation={vi.fn()} />)

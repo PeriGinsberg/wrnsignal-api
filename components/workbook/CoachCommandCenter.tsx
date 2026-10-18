@@ -14,7 +14,7 @@
 import React, { useEffect, useState } from "react"
 import {
   casePromptBlocks, sectionRubric,
-  type Block, type CoachGuide, type Evaluation, type Section,
+  type Block, type CoachCalc, type CoachGuide, type CoachStep, type Evaluation, type Section,
 } from "../../lib/workbook/content"
 
 /** Copies text, falling back to a hidden selection where the clipboard API is refused. */
@@ -118,8 +118,137 @@ function List({ label, items }: { label: string; items: string[] }) {
   )
 }
 
+type Message = NonNullable<CoachGuide["messages"]>[number]
+
+function MessageCard({ m, first }: { m: Message; first: string }) {
+  return (
+    <article className="wb-cc-msg" aria-label={`Teams message ${m.label}`}>
+      <div className="wb-cc-msg-h">
+        <div className="t">
+          <span className="wb-cc-letter">{m.label}</span>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span className="wb-cc-lbl">Teams message {m.label}</span>
+            {m.title && <span style={{ fontWeight: 600 }}>{m.title}</span>}
+          </div>
+        </div>
+        {m.send && <CopyButton text={m.send} label={`Copy message ${m.label}`} />}
+      </div>
+      {m.send
+        ? <div className="wb-cc-send"><span className="wb-cc-lbl" style={{ color: "var(--teal-ink)" }}>Sends to {first}</span><p>{m.send}</p></div>
+        : <div className="wb-cc-nosend">Nothing to send. Coaching move only.</div>}
+      {m.private && (
+        <div className="wb-cc-private">
+          <span className="wb-cc-lbl">Private · never send</span>
+          <p>{m.private}</p>
+        </div>
+      )}
+    </article>
+  )
+}
+
+function Calcs({ title, calcs }: { title: string; calcs: CoachCalc[] }) {
+  return (
+    <div className="wb-cc-calcs">
+      <span className="wb-cc-lbl">{title}</span>
+      <div className="wb-table-wrap">
+        <table className="wb-table">
+          <thead><tr><th scope="col">Calculation</th><th scope="col">Setup</th><th scope="col">Answer</th><th scope="col">What it means</th></tr></thead>
+          <tbody>{calcs.map((c, i) => (
+            <tr key={i}><td>{c.label}</td><td className="wb-cc-work">{c.work}</td><td style={{ fontWeight: 700 }}>{c.answer}</td><td>{c.meaning ?? ""}</td></tr>
+          ))}</tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+/** The facilitation script: numbered steps, one open at a time. */
+function Steps({ steps, messages, first }: { steps: CoachStep[]; messages: Message[]; first: string }) {
+  const [open, setOpen] = useState(0)
+  return (
+    <div className="wb-cc-steps" aria-label="Facilitation script">
+      <span className="wb-cc-lbl">Facilitation script · {steps.length} steps</span>
+      {steps.map((st, i) => {
+        const isOpen = open === i
+        const msg = st.send ? messages.find((m) => m.label === st.send!.message) : undefined
+        return (
+          <section key={i} className={`wb-cc-step${isOpen ? " open" : ""}`}>
+            <button type="button" className="wb-cc-step-h" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? -1 : i)}>
+              <b>{i + 1}</b>
+              <span className="t">{st.title}</span>
+              {st.send && <span className="wb-tag sent">Teams {st.send.message}</span>}
+              {st.minutes && <span className="m">{st.minutes}</span>}
+            </button>
+            {isOpen && (
+              <div className="wb-cc-step-b">
+                <div className="wb-cc-ask">
+                  <span className="wb-cc-lbl">Ask</span>
+                  {st.ask.map((q, j) => <p key={j}>{q}</p>)}
+                </div>
+                {st.strong?.length ? <List label="A strong answer" items={st.strong} /> : null}
+                {st.answers?.length ? (
+                  <div className="wb-cc-panel">
+                    <span className="wb-cc-lbl">If {first} asks</span>
+                    {st.answers.map((c, j) => <div key={j} className="wb-cc-qa">{c.ask && <i>{c.ask}</i>}<span>{c.answer}</span></div>)}
+                  </div>
+                ) : null}
+                {st.teach && <div className="wb-cc-panel"><span className="wb-cc-lbl">Teaching move</span><span>{st.teach}</span></div>}
+                {st.essential?.length ? <Calcs title="Essential math" calcs={st.essential} /> : null}
+                {st.stretch?.length ? (
+                  <details className="wb-cc-stretch">
+                    <summary>Stretch math (optional, if time and confidence allow)</summary>
+                    <Calcs title="Stretch math" calcs={st.stretch} />
+                  </details>
+                ) : null}
+                {st.interpretation && <div className="wb-cc-private"><span className="wb-cc-lbl">What she should conclude</span><p>{st.interpretation}</p></div>}
+                {st.errors?.length ? <List label="Common errors and how to correct them" items={st.errors} /> : null}
+                {st.follow_ups?.length ? (
+                  <div className="wb-cc-panel">
+                    <span className="wb-cc-lbl">Follow-ups</span>
+                    {st.follow_ups.map((f, j) => <div key={j} className="wb-cc-qa"><span>“{f.ask}”</span>{f.answer && <i>{f.answer}</i>}</div>)}
+                  </div>
+                ) : null}
+                {st.hints?.length ? (
+                  <div className="wb-cc-hints">
+                    <span className="wb-cc-lbl">Hints · open one at a time</span>
+                    {st.hints.map((h, j) => (
+                      <details key={j}><summary><b>{j + 1}</b><span>Hint {j + 1}</span></summary><p>“{h}”</p></details>
+                    ))}
+                  </div>
+                ) : null}
+                {st.rescue?.length ? <List label="Rescue prompts · only if she stalls" items={st.rescue.map((r) => `“${r}”`)} /> : null}
+                {st.checkpoint && <div className="wb-cc-check"><span className="wb-cc-lbl">Checkpoint</span><span>{st.checkpoint}</span></div>}
+                {st.send && (
+                  <div className="wb-cc-sendstep">
+                    <span className="wb-cc-lbl">Send Teams message {st.send.message} when</span>
+                    <span>{st.send.when}</span>
+                    {st.send.rescue && <span className="wb-cc-note">If it never comes: “{st.send.rescue}”</span>}
+                    {msg && <MessageCard m={msg} first={first} />}
+                  </div>
+                )}
+                {(st.advance || st.assess?.length) ? (
+                  <div className="wb-cc-row" style={{ alignItems: "flex-start" }}>
+                    {st.advance && <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: "1 1 320px" }}><span className="wb-cc-lbl">Advance when</span><span>{st.advance}</span></div>}
+                    {st.assess?.length ? <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{st.assess.map((a) => <span key={a} className="wb-tag draft">Assess: {a}</span>)}</div> : null}
+                  </div>
+                ) : null}
+                {i < steps.length - 1 && (
+                  <div><button type="button" className="wb-btn" onClick={() => setOpen(i + 1)}>Next: Step {i + 2}</button></div>
+                )}
+              </div>
+            )}
+          </section>
+        )
+      })}
+    </div>
+  )
+}
+
 function Guide({ guide: g, first }: { guide: CoachGuide; first: string }) {
   const [ticked, setTicked] = useState<Set<number>>(new Set())
+  // A message a step sends is shown inside that step, not repeated below.
+  const sent = new Set((g.steps ?? []).map((st) => st.send?.message).filter(Boolean))
+  const loose = (g.messages ?? []).filter((m) => !sent.has(m.label))
   return (
     <>
       {g.agenda?.length ? <List label="Run of show" items={g.agenda} /> : null}
@@ -138,32 +267,12 @@ function Guide({ guide: g, first }: { guide: CoachGuide; first: string }) {
         </div>
       ) : null}
 
-      {g.messages?.length ? (
+      {g.steps?.length ? <Steps steps={g.steps} messages={g.messages ?? []} first={first} /> : null}
+
+      {loose.length ? (
         <div className="wb-cc-msgs">
           <span className="wb-cc-lbl">Teams messages · send only when {first} asks</span>
-          {g.messages.map((m, i) => (
-            <article key={i} className="wb-cc-msg" aria-label={`Teams message ${m.label}`}>
-              <div className="wb-cc-msg-h">
-                <div className="t">
-                  <span className="wb-cc-letter">{m.label}</span>
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <span className="wb-cc-lbl">Teams message {m.label}</span>
-                    {m.title && <span style={{ fontWeight: 600 }}>{m.title}</span>}
-                  </div>
-                </div>
-                {m.send && <CopyButton text={m.send} label={`Copy message ${m.label}`} />}
-              </div>
-              {m.send
-                ? <div className="wb-cc-send"><span className="wb-cc-lbl" style={{ color: "var(--teal-ink)" }}>Sends to {first}</span><p>{m.send}</p></div>
-                : <div className="wb-cc-nosend">Nothing to send. Coaching move only.</div>}
-              {m.private && (
-                <div className="wb-cc-private">
-                  <span className="wb-cc-lbl">Private · never send</span>
-                  <p>{m.private}</p>
-                </div>
-              )}
-            </article>
-          ))}
+          {loose.map((m, i) => <MessageCard key={i} m={m} first={first} />)}
         </div>
       ) : null}
 
