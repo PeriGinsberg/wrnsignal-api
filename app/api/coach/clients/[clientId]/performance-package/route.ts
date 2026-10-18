@@ -73,15 +73,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clie
         .select("id, slug, status, content, created_at").eq("id", workbookId).eq("client_profile_id", scope.subjectId).maybeSingle()
       if (error) throw new Error(error.message)
       if (!wb) throw new NotFoundError()
-      const [{ data: ans, error: aErr }, { data: sends }] = await Promise.all([
+      const [{ data: ans, error: aErr }, { data: sends }, { data: evaluations }] = await Promise.all([
         db.from("workbook_answers").select("field_key, value, updated_at").eq("workbook_id", workbookId),
         db.from("workbook_sends").select("direction, sent_at").eq("workbook_id", workbookId).order("sent_at", { ascending: true }),
+        db.from("workbook_evaluations").select("section_id, ratings, note, updated_at").eq("workbook_id", workbookId),
       ])
       if (aErr) throw new Error(aErr.message)
       const answers: Record<string, { value: unknown; updated_at: string }> = {}
       for (const a of ans ?? []) answers[a.field_key] = { value: a.value, updated_at: a.updated_at }
       const content = wb.content as WorkbookContent
-      workbookPart = { id: wb.id, slug: wb.slug, title: content.title ?? null, status: wb.status, created_at: wb.created_at, content, answers, sends: sends ?? [] }
+      workbookPart = { id: wb.id, slug: wb.slug, title: content.title ?? null, status: wb.status, created_at: wb.created_at, content, answers, sends: sends ?? [], evaluations: evaluations ?? [] }
     }
 
     // ── Incomplete? ────────────────────────────────────────────────────

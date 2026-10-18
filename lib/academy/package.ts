@@ -18,9 +18,9 @@
 // lived and never written into a document.
 
 import {
-  answerText, blockFieldKeys, drillKeys, gradeAnswer, isFilled, progress,
+  answerText, blockFieldKeys, drillKeys, gradeAnswer, isFilled, progress, sectionRubric,
   STAR_PARTS, SCENARIO_PARTS,
-  type Block, type WorkbookContent,
+  type Block, type CoachGuide, type Evaluation, type WorkbookContent,
 } from "@/lib/workbook/content"
 import type { PracticeRound, PracticeTake } from "@/lib/practice/model"
 import { answerSecondsFor, latestTakes } from "@/lib/practice/model"
@@ -39,6 +39,8 @@ export type PackageInput = {
     id: string; slug: string; title: string | null; status: string; created_at: string
     content: WorkbookContent; answers: Answers
     sends: { direction: string; sent_at: string }[]
+    /** The coach's saved rubric ratings, one per section that has a rubric. */
+    evaluations?: Evaluation[]
   }
   round: null | {
     round: PracticeRound
@@ -100,6 +102,56 @@ function stamp(answers: Answers, key: string): string {
   return a && isFilled(a.value) ? ` _(saved ${fmtTime(a.updated_at)})_` : ""
 }
 
+/** A structured coach guide as Markdown, for the coach's copy of the workbook only. */
+function guideMarkdown(g: CoachGuide): string {
+  const out: string[] = []
+  const list = (title: string, items?: string[]) => { if (items?.length) out.push(`**${title}**\n\n${items.map((x) => `- ${x}`).join("\n")}`) }
+  list("Run of show", g.agenda)
+  list("How to open", g.opening)
+  if (g.clarify?.length) out.push(`**If the student asks**\n\n${g.clarify.map((c) => `- ${c.ask ? `${c.ask}: ` : ""}${c.answer}`).join("\n")}`)
+  for (const m of g.messages ?? []) {
+    out.push([`**Teams message ${m.label}${m.title ? `: ${m.title}` : ""}**`, m.send ? `Sent to the student: ${m.send}` : "Nothing sent. Coaching move only.", m.private ? `Private working: ${m.private}` : ""].filter(Boolean).join("\n\n"))
+  }
+  if (g.hints?.length) out.push(`**Hint ladder**\n\n${g.hints.map((h, i) => `${i + 1}. ${h}`).join("\n")}${g.hint_note ? `\n\n${g.hint_note}` : ""}`)
+  if (g.checklist?.length) out.push(`**${g.checklist_title ?? "What to watch for"}**\n\n${g.checklist.map((x) => `- ${x}`).join("\n")}${g.checklist_note ? `\n\n${g.checklist_note}` : ""}`)
+  if (g.rubric) out.push(`**Evaluation rubric:** ${g.rubric.items.map((i) => i.label).join("; ")}`)
+  list("Coach notes", g.notes)
+  return out.join("\n\n")
+}
+
+/** Each section's saved evaluation against its rubric, with the content's own labels. */
+export function workbookEvaluations(input: PackageInput) {
+  const wb = input.workbook
+  if (!wb) return []
+  return wb.content.sections.flatMap((s) => {
+    const r = sectionRubric(s)
+    if (!r) return []
+    const ev = (wb.evaluations ?? []).find((e) => e.section_id === s.id) ?? null
+    return [{
+      section_id: s.id, section_title: s.title,
+      scale: r.scale,
+      items: r.items.map((it) => {
+        const v = ev?.ratings?.[it.key]
+        return { key: it.key, label: it.label, rating: v?.rating ?? null, rating_label: r.scale.find((x) => x.key === v?.rating)?.label ?? null, note: v?.note ?? null }
+      }),
+      note: ev?.note ?? null,
+      updated_at: ev?.updated_at ?? null,
+    }]
+  })
+}
+
+function workbookEvaluationMarkdown(input: PackageInput): string[] {
+  const out: string[] = []
+  for (const e of workbookEvaluations(input)) {
+    out.push(`## Workbook evaluation: ${e.section_title}`, "")
+    if (!e.updated_at) { out.push(MISSING("not rated yet"), ""); continue }
+    out.push(`- Last saved: ${fmtTime(e.updated_at)}`, "", "| Skill | Rating | Note |", "| --- | --- | --- |",
+      ...e.items.map((i) => `| ${i.label} | ${i.rating_label ?? "not rated"} | ${(i.note ?? "").replace(/\n/g, " ").replace(/\|/g, "/")} |`),
+      "", `**Overall:** ${e.note?.trim() || MISSING("not written")}`, "")
+  }
+  return out
+}
+
 /** One block as Markdown: instructions as written, questions with the student's answer under them. */
 function blockMarkdown(b: Block, answers: Answers, opts: { coachOnly: boolean }): string {
   const vals: Record<string, unknown> = Object.fromEntries(Object.entries(answers).map(([k, v]) => [k, v.value]))
@@ -111,7 +163,9 @@ function blockMarkdown(b: Block, answers: Answers, opts: { coachOnly: boolean })
     case "big_quote": return quote(b.text ?? b.body ?? "")
     case "word_track": return quote(`${b.label ? `**${b.label}:** ` : ""}${b.body}`)
     case "coach_note": return `_Coach's note shown to the student:_ ${b.body}`
-    case "coach_only": return opts.coachOnly ? `**[Coach only${b.title ? `: ${b.title}` : ""}. The student never saw this.]**\n\n${b.body}` : ""
+    case "coach_only": return opts.coachOnly
+      ? [`**[Coach only${b.title ? `: ${b.title}` : ""}. The student never saw this.]**`, b.body ?? "", b.guide ? guideMarkdown(b.guide) : ""].filter(Boolean).join("\n\n")
+      : ""
     case "table": {
       const cols = b.columns ?? b.rows[0].map(() => "")
       return [`${b.title ? `**${b.title}**\n\n` : ""}| ${cols.join(" | ")} |`, `| ${cols.map(() => "---").join(" | ")} |`, ...b.rows.map((r) => `| ${r.join(" | ")} |`)].join("\n")
@@ -323,7 +377,7 @@ export function hasCoachFeedback(input: PackageInput): boolean {
 
 export function coachFeedbackMarkdown(input: PackageInput): string {
   const r = input.round
-  const head = [`# Coach feedback`, "", `- Coach: ${input.coach.name}`, `- Exported: ${fmtTime(input.generated_at)}`, ""]
+  const head = [`# Coach feedback`, "", `- Coach: ${input.coach.name}`, `- Exported: ${fmtTime(input.generated_at)}`, "", ...workbookEvaluationMarkdown(input)]
   if (!r) return [...head, MISSING("no practice round is linked, so there is no round feedback"), ""].join("\n")
   if (!hasCoachFeedback(input)) {
     return [...head, "**Status: PENDING.** The coach has not written any feedback on this round yet.", ""].join("\n")
@@ -386,6 +440,7 @@ export function performanceData(input: PackageInput): Record<string, unknown> {
       graded: wb.content.sections.flatMap((s) => s.blocks).filter((b) => b.type === "quiz" || b.type === "numeric").map((b) => ({
         key: (b as any).key, type: b.type, skill: (b as any).skill ?? null, grade: gradeAnswer(b, vals[(b as any).key]),
       })),
+      evaluations: workbookEvaluations(input),
       drills: wb.content.sections.flatMap((s) => s.blocks).filter((b): b is Extract<Block, { type: "drill" }> => b.type === "drill").map((b) => ({
         key: b.key, prep_seconds: b.prep_seconds, speak_seconds: b.speak_seconds,
         spoken_seconds: Number(vals[`${b.key}.secs`]) || null, self_check: vals[`${b.key}.check`] ?? null,

@@ -12,8 +12,8 @@
 
 import React from "react"
 import {
-  answerText, gradedItems, progress, sectionDays, sortMatches,
-  type Block, type GradedItem, type WorkbookContent,
+  answerText, gradedItems, progress, sectionDays, sectionRubric, sortMatches,
+  type Block, type Evaluation, type GradedItem, type WorkbookContent,
 } from "../../lib/workbook/content"
 
 export type SundaySummary = {
@@ -127,7 +127,9 @@ function GradedTable({ items, first }: { items: GradedItem[]; first: string }) {
   )
 }
 
-export function PracticeResults({ content: c, answers }: { content: WorkbookContent; answers: Record<string, unknown> }) {
+export function PracticeResults({ content: c, answers, evaluations = [] }: {
+  content: WorkbookContent; answers: Record<string, unknown>; evaluations?: Evaluation[]
+}) {
   const first = c.client.first_name
   const prog = progress(c, answers)
   const graded = gradedItems(c, answers)
@@ -142,6 +144,36 @@ export function PracticeResults({ content: c, answers }: { content: WorkbookCont
       <p className="wb-callout paleblue" style={{ margin: 0, padding: "14px 18px", fontSize: 16 }}>
         Coach only. Built from {first}&rsquo;s saved answers. Knowledge checks and math lock on the first answer, so these are first attempts.
       </p>
+
+      {c.sections.map((s) => {
+        const r = sectionRubric(s)
+        if (!r) return null
+        const ev = evaluations.find((e) => e.section_id === s.id)
+        const label = (k: string | null | undefined) => r.scale.find((x) => x.key === k)?.label ?? "Not rated"
+        return (
+          <Panel key={s.id} title={`Coach evaluation: ${s.title}`}>
+            {!ev && <p className="wb-p wb-muted" style={{ margin: 0 }}>Not rated yet. Rate it from the Review screen.</p>}
+            {ev && (
+              <>
+                <table className="wb-table" style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead><tr><th scope="col" style={{ textAlign: "left" }}>Skill</th><th scope="col" style={{ textAlign: "left" }}>Rating</th><th scope="col" style={{ textAlign: "left" }}>Note</th></tr></thead>
+                  <tbody>
+                    {r.items.map((it) => (
+                      <tr key={it.key}>
+                        <td>{it.label}</td>
+                        <td style={{ fontWeight: 600 }}>{label(ev.ratings[it.key]?.rating)}</td>
+                        <td>{ev.ratings[it.key]?.note ?? ""}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {ev.note && <p className="wb-p" style={{ margin: 0, whiteSpace: "pre-wrap" }}><strong>Overall:</strong> {ev.note}</p>}
+                {ev.updated_at && <span className="wb-muted" style={{ fontSize: 13 }}>Last saved {new Date(ev.updated_at).toLocaleString()}</span>}
+              </>
+            )}
+          </Panel>
+        )
+      })}
 
       <Panel title="Sunday prep summary">
         <span className="wb-eyebrow-ink">1. What {first} appears to understand</span>

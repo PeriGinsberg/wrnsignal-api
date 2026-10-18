@@ -11,7 +11,12 @@ export type Tone = "peach" | "paleblue"
 export type SelectOption = string | { group: string; items: string[] }
 
 export type Block =
-  | { type: "text"; body: string; label?: string; size?: "lead" }
+  /**
+   * `case_prompt` marks the case the client reads. The coach's Command Center
+   * shows THIS block, with a Copy button, at the top of the section, so the
+   * coach's prompt can never drift from the client's. The client ignores it.
+   */
+  | { type: "text"; body: string; label?: string; size?: "lead"; case_prompt?: boolean }
   | { type: "heading"; text: string }
   | { type: "list"; style: "bullets" | "numbers" | "quotes"; items: string[]; title?: string }
   | { type: "callout"; tone: Tone; body: string; title?: string }
@@ -114,7 +119,12 @@ export type Block =
     }
   | { type: "star"; key: string; title: string; question: string; number?: number; skill?: string }
   | { type: "scenario"; key: string; prompt: string; number?: number }
-  | { type: "coach_only"; body: string; title?: string }
+  /**
+   * Coach eyes only. Removed whole before content reaches a client, in SQL
+   * (wb_strip_coach_only) and in stripCoachOnly, whatever it carries. `body`
+   * is free text; `guide` is the structured Coach Command Center. Either or both.
+   */
+  | { type: "coach_only"; body?: string; title?: string; guide?: CoachGuide }
   /**
    * A read-only table. Without `columns` it is a list of terms: no header row,
    * and the first cell of each row reads as the word being defined.
@@ -187,6 +197,49 @@ export type Block =
       check?: { question: string; options: string[] }
       title?: string; number?: number; skill?: string
     }
+
+/**
+ * The structured coach guide for a live case: how to open, answers to likely
+ * clarifying questions, the Teams messages (what to send, kept apart from the
+ * private working beneath it), a hint ladder, what to watch for, and an
+ * evaluation rubric the coach's ratings are saved against. All optional.
+ */
+export type CoachGuide = {
+  agenda?: string[]
+  opening?: string[]
+  clarify?: { ask?: string; answer: string }[]
+  /** `send` is the only text the Copy button copies; `private` is never copied. */
+  messages?: { label: string; title?: string; send?: string; private?: string }[]
+  hints?: string[]
+  hint_note?: string
+  checklist?: string[]
+  checklist_title?: string
+  checklist_note?: string
+  rubric?: CoachRubric
+  notes?: string[]
+}
+
+/** Item and scale keys are what is saved, so they must stay stable once used. */
+export type CoachRubric = {
+  items: { key: string; label: string }[]
+  /** Default: Independent / Prompted / Not demonstrated. */
+  scale?: { key: string; label: string }[]
+  note?: string
+}
+
+export const DEFAULT_RUBRIC_SCALE: { key: string; label: string }[] = [
+  { key: "independent", label: "Independent" },
+  { key: "prompted", label: "Prompted" },
+  { key: "not_demonstrated", label: "Not demonstrated" },
+]
+
+/** A saved evaluation: one rating (a scale key) and an optional note per rubric item, plus an overall note. */
+export type Evaluation = {
+  section_id: string
+  ratings: Record<string, { rating: string | null; note?: string }>
+  note: string | null
+  updated_at?: string
+}
 
 /** in_session: worked through with the coach. homework: done alone afterwards. */
 export type SectionMode = "in_session" | "homework"
@@ -409,6 +462,39 @@ export function allFieldKeys(c: Pick<WorkbookContent, "sections">): string[] {
 /** The section a field key lives in, or null for keys the content does not own. */
 export function sectionOfField(c: Pick<WorkbookContent, "sections">, key: string): string | null {
   for (const s of c.sections) if (sectionFieldKeys(s).includes(key)) return s.id
+  return null
+}
+
+/** The client's own case-prompt blocks in a section, for the Coach Command Center. */
+export function casePromptBlocks(s: Pick<Section, "blocks">): Extract<Block, { type: "text" }>[] {
+  return s.blocks.filter((b): b is Extract<Block, { type: "text" }> => b.type === "text" && b.case_prompt === true)
+}
+
+/** The rubric a section's coach guide defines, if any, with its scale filled in. */
+export function sectionRubric(s: Pick<Section, "blocks">): (CoachRubric & { scale: { key: string; label: string }[] }) | null {
+  for (const b of s.blocks) {
+    if (b.type === "coach_only" && b.guide?.rubric) return { ...b.guide.rubric, scale: b.guide.rubric.scale ?? DEFAULT_RUBRIC_SCALE }
+  }
+  return null
+}
+
+/** Checks an evaluation the coach is saving against the rubric in the content. */
+export function evaluationError(c: Pick<WorkbookContent, "sections">, raw: unknown): string | null {
+  const e = raw as any
+  if (!e || typeof e !== "object") return "Evaluation must be an object"
+  const s = c.sections.find((x) => x.id === e.section_id)
+  if (!s) return "Unknown section"
+  const r = sectionRubric(s)
+  if (!r) return "This section has no rubric"
+  if (!e.ratings || typeof e.ratings !== "object" || Array.isArray(e.ratings)) return "ratings must be an object"
+  const items = new Set(r.items.map((i) => i.key)), scale = new Set(r.scale.map((x) => x.key))
+  for (const [k, v] of Object.entries(e.ratings as Record<string, any>)) {
+    if (!items.has(k)) return `Unknown rubric item "${k}"`
+    if (!v || typeof v !== "object") return `Rating for "${k}" must be an object`
+    if (v.rating != null && !scale.has(v.rating)) return `"${v.rating}" is not on the scale`
+    if (v.note != null && (typeof v.note !== "string" || v.note.length > 5000)) return `Note for "${k}" must be text under 5,000 characters`
+  }
+  if (e.note != null && (typeof e.note !== "string" || e.note.length > 20000)) return "note must be text under 20,000 characters"
   return null
 }
 
@@ -800,7 +886,7 @@ export function gradedItems(c: Pick<WorkbookContent, "sections">, answers: Recor
 
 /** Does this content have anything the Results view reports on? */
 export function hasPracticeResults(c: Pick<WorkbookContent, "sections">): boolean {
-  return c.sections.some((s) => s.blocks.some((b) => ["quiz", "numeric", "sort", "video"].includes(b.type)))
+  return c.sections.some((s) => s.blocks.some((b) => ["quiz", "numeric", "sort", "video"].includes(b.type) || (b.type === "coach_only" && !!b.guide?.rubric)))
 }
 
 /** Sections grouped by `day`, in order. Sections with no day group under "". */
@@ -854,6 +940,33 @@ const SUMMARY_TYPES = new Set([
   "interview_details", "hook", "tmay", "story_map", "quick_answers", "questions", "checklist", "signoff",
   "story_list", "coverage",
 ])
+
+function guideErrors(g: any): string[] {
+  const out: string[] = []
+  const str = (v: unknown) => typeof v === "string" && v.trim().length > 0
+  const strs = (v: unknown) => Array.isArray(v) && v.every(str)
+  if (typeof g !== "object" || Array.isArray(g)) return ["must be an object"]
+  for (const k of ["agenda", "opening", "hints", "checklist", "notes"]) if (g[k] != null && !strs(g[k])) out.push(`${k} must be a list of text`)
+  for (const k of ["hint_note", "checklist_title", "checklist_note"]) if (g[k] != null && !str(g[k])) out.push(`${k} must be text`)
+  if (g.clarify != null && !(Array.isArray(g.clarify) && g.clarify.every((x: any) => x && str(x.answer) && (x.ask == null || str(x.ask))))) out.push("clarify needs an answer on every item")
+  if (g.messages != null) {
+    if (!Array.isArray(g.messages)) out.push("messages must be a list")
+    else g.messages.forEach((m: any, i: number) => {
+      if (!m || !str(m.label)) out.push(`messages[${i}] needs a label`)
+      else if (!str(m.send) && !str(m.private)) out.push(`messages[${i}] needs send or private text`)
+      if (m && m.title != null && !str(m.title)) out.push(`messages[${i}].title must be text`)
+    })
+  }
+  if (g.rubric != null) {
+    const r = g.rubric
+    const keyed = (v: unknown) => Array.isArray(v) && v.length > 0 && v.every((x: any) => x && str(x.label) && typeof x.key === "string" && /^[a-z0-9_]+$/.test(x.key))
+    if (!keyed(r.items)) out.push("rubric items need a key (a-z, 0-9, _) and a label")
+    else if (new Set(r.items.map((x: any) => x.key)).size !== r.items.length) out.push("rubric item keys must be unique")
+    if (r.scale != null && !keyed(r.scale)) out.push("rubric scale needs a key and a label on every point")
+    if (r.note != null && !str(r.note)) out.push("rubric note must be text")
+  }
+  return out
+}
 
 export function validateContent(raw: unknown): { ok: true; content: WorkbookContent } | { ok: false; errors: string[] } {
   const errors: string[] = []
@@ -974,6 +1087,11 @@ export function validateContent(raw: unknown): { ok: true; content: WorkbookCont
           errors.push(`${bt}: drill check needs a question and two or more options`)
         }
       }
+      if (b.type === "coach_only") {
+        if (!str(b.body) && (b.guide == null || typeof b.guide !== "object")) errors.push(`${bt}: coach_only needs a body or a guide`)
+        if (b.guide != null) for (const e of guideErrors(b.guide)) errors.push(`${bt}: guide ${e}`)
+      }
+      if (b.type === "text" && b.case_prompt != null && typeof b.case_prompt !== "boolean") errors.push(`${bt}: case_prompt must be true or absent`)
       if (b.type === "reveal") {
         if (!str(b.title) || !str(b.body)) errors.push(`${bt}: reveal needs a title and a body`)
         if (!Array.isArray(b.after) || !b.after.length || !b.after.every(str)) errors.push(`${bt}: reveal needs the keys it waits for`)

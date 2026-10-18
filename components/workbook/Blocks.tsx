@@ -880,7 +880,7 @@ function Main({ api, b }: { api: FieldApi; b: Block }): ReactNode {
       return api.showCoachOnly ? (
         <div className="wb-coachonly">
           <span className="wb-eyebrow-ink">{b.title || "Coach only"}. The client never sees this.</span>
-          <span style={{ whiteSpace: "pre-wrap" }}>{b.body}</span>
+          <span style={{ whiteSpace: "pre-wrap" }}>{b.body ?? (b.guide ? "Structured coach guide. It opens in the Coach Command Center on the Review screen." : "")}</span>
         </div>
       ) : null
     case "coach_note":

@@ -192,6 +192,50 @@ textarea.wb-input{resize:vertical;overflow:hidden}
 @media (max-width:1280px){ .wb-review{grid-template-columns:220px minmax(0,1fr)} .wb-review>aside{grid-column:1/-1} }
 @media (max-width:820px){ .wb-review{grid-template-columns:minmax(0,1fr);padding:16px} }
 
+/* Coach Command Center (coach review screen only) */
+.wb-cc{display:flex;flex-direction:column;gap:20px}
+.wb-cc-title{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.wb-cc-title h2{margin:0;font-family:var(--wb-font-serif),Georgia,serif;font-size:24px;font-weight:600}
+.wb-cc-lbl{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--navy)}
+.wb-cc-prompt{background:var(--peach);border-left:6px solid var(--orange);padding:24px 26px;display:flex;flex-direction:column;gap:14px}
+.wb-cc-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.wb-cc-prompt p{margin:0;font-family:var(--wb-font-serif),Georgia,serif;font-size:22px;line-height:1.4;max-width:62ch;white-space:pre-line}
+.wb-cc-panel{background:#fff;border:1px solid var(--border);padding:18px 20px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.wb-cc-panel ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.wb-cc-two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.wb-cc-qa{display:flex;flex-direction:column;gap:2px;border-left:3px solid var(--teal);padding-left:12px}
+.wb-cc-qa i{font-style:normal;font-size:13px;color:var(--muted);font-weight:600}
+.wb-cc-msgs{display:flex;flex-direction:column;gap:16px}
+.wb-cc-msg{background:#fff;border:1.5px solid var(--navy);display:flex;flex-direction:column}
+.wb-cc-msg-h{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.wb-cc-msg-h .t{display:flex;align-items:center;gap:12px}
+.wb-cc-letter{font-family:var(--wb-font-serif),Georgia,serif;font-weight:700;font-size:28px;color:var(--orange);line-height:1}
+.wb-cc-send{padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.wb-cc-send p{margin:0;white-space:pre-line}
+.wb-cc-private{background:#F4F1FA;color:#4B3B7A;border-top:1.5px dashed #4B3B7A;padding:14px 18px;display:flex;flex-direction:column;gap:6px}
+.wb-cc-private .wb-cc-lbl{color:#4B3B7A}
+.wb-cc-private p{margin:0;font-size:15.5px;font-variant-numeric:tabular-nums;white-space:pre-line}
+.wb-cc-nosend{padding:16px 18px;color:var(--muted);font-size:15px}
+.wb-cc-hints{display:flex;flex-direction:column;gap:8px}
+.wb-cc-hints details{background:#fff;border:1px solid var(--border)}
+.wb-cc-hints summary{cursor:pointer;padding:12px 16px;display:flex;gap:12px;align-items:center;font-weight:600}
+.wb-cc-hints summary b{font-family:var(--wb-font-serif),Georgia,serif;color:var(--orange);font-size:20px;width:22px}
+.wb-cc-hints details p{margin:0;padding:0 16px 14px 50px;font-family:var(--wb-font-serif),Georgia,serif;font-size:19px}
+.wb-cc-note{margin:0;font-size:14px;color:var(--muted)}
+.wb-cc-checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px}
+.wb-cc-ck{display:flex;gap:10px;align-items:flex-start;background:#fff;border:1px solid var(--border);padding:10px 12px;cursor:pointer;font-size:15px}
+.wb-cc-ck input{width:18px;height:18px;margin-top:2px;accent-color:var(--teal);flex:none}
+.wb-cc-rub{display:flex;flex-direction:column;gap:8px}
+.wb-cc-rrow{background:#fff;border:1px solid var(--border);padding:10px 14px;display:flex;flex-direction:column;gap:8px}
+.wb-cc-rrow-h{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.wb-cc-seg{display:flex;flex-wrap:wrap}
+.wb-cc-seg button{font:inherit;font-size:13px;font-weight:600;padding:7px 11px;border:1px solid var(--line);background:#fff;color:var(--navy);cursor:pointer;margin-left:-1px}
+.wb-cc-seg button[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.wb-cc-rrow textarea,.wb-cc-rub textarea{font:inherit;font-size:15px;border:1px solid var(--line);padding:8px 10px;min-height:44px;resize:vertical;width:100%}
+.wb-cc-linkbtn{background:none;border:0;padding:0;font:inherit;font-size:13px;font-weight:600;color:var(--teal-ink);text-decoration:underline;cursor:pointer;align-self:flex-start}
+.wb-cc button:focus-visible,.wb-cc summary:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+@media (max-width:820px){ .wb-cc-two{grid-template-columns:minmax(0,1fr)} .wb-cc-prompt p{font-size:19px} }
+
 @media (max-width:1180px){
   .wb-row{grid-template-columns:minmax(0,1fr)}
   .wb-aside{margin-top:16px}

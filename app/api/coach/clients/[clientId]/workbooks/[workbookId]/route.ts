@@ -1,7 +1,7 @@
 // app/api/coach/clients/[clientId]/workbooks/[workbookId]/route.ts
 // GET one workbook for review: full content (coach_only included), live answers,
 // comments (coach drafts plus everything released; RLS hides the client's
-// unsent questions), send history and section marks. "See it as <client>"
+// unsent questions), send history, section marks and the coach's evaluations. "See it as <client>"
 // strips coach_only from this same content on the page (stripCoachOnly).
 
 import { type NextRequest } from "next/server"
@@ -43,12 +43,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clie
         )
       : null
 
-    const [answers, comments, sends, marks] = await Promise.all([
+    const [answers, comments, sends, marks, evaluations] = await Promise.all([
       loadAnswers(supabase, workbookId),
       loadComments(supabase, workbookId),
       loadSends(supabase, workbookId),
       supabase.from("workbook_section_marks").select("section_id, marked_at").eq("workbook_id", workbookId)
         .then((r) => must(r, "read section marks") ?? []),
+      supabase.from("workbook_evaluations").select("section_id, ratings, note, updated_at").eq("workbook_id", workbookId)
+        .then((r) => must(r, "read evaluations") ?? []),
     ])
 
     return withCorsJson(req, {
@@ -59,6 +61,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clie
       comments,
       sends,
       marks,
+      evaluations,
     }, 200)
   } catch (err) {
     return workbookError(req, err)

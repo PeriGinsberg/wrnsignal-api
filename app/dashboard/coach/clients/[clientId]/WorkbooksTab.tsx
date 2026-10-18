@@ -12,12 +12,13 @@ import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { SPACE, TYPE } from "../../../../../lib/theme/surfaces"
 import {
   GENERAL_SECTION_ID, SCENARIO_PARTS, STAR_PARTS, answerText, gradeAnswer, hasPracticeResults, stripCoachOnly,
-  type Block, type Section, type WorkbookContent,
+  type Block, type Evaluation, type Section, type WorkbookContent,
 } from "@/lib/workbook/content"
 import { WorkbookFrame } from "@/components/workbook/WorkbookFrame"
 import { SectionBlocks, SectionHeader, type FieldApi } from "@/components/workbook/Blocks"
 import { Summary, type InterviewRow } from "@/components/workbook/Summary"
 import { PracticeResults } from "@/components/workbook/PracticeResults"
+import { CoachCommandCenter } from "@/components/workbook/CoachCommandCenter"
 import { PerformancePackage } from "@/components/academy/PerformancePackage"
 import { wbFetch, fmtWhen, type Comment, type Send } from "@/components/workbook/api"
 import { AddWorkbookModal } from "./AddWorkbookModal"
@@ -38,6 +39,7 @@ type Detail = {
   comments: Comment[]
   sends: Send[]
   marks: { section_id: string }[]
+  evaluations?: Evaluation[]
 }
 
 const STATUS_LABEL: Record<ListRow["status"], string> = {
@@ -206,6 +208,14 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
     await load()
   }
 
+  const evaluationFor = (sectionId: string) => (d.evaluations ?? []).find((e) => e.section_id === sectionId) ?? null
+  const saveEvaluation = async (e: Evaluation) => {
+    const { status, body } = await wbFetch<{ evaluation: Evaluation }>(`${base}/evaluation`, { method: "PUT", body: JSON.stringify(e) })
+    if (status !== 200) return false
+    setD((p) => p && { ...p, evaluations: [...(p.evaluations ?? []).filter((x) => x.section_id !== e.section_id), body.evaluation] })
+    return true
+  }
+
   const toggleMark = async (s: Section) => {
     const reviewed = !marked.has(s.id)
     const { status } = await wbFetch(`${base}/sections/${encodeURIComponent(s.id)}/mark`, { method: "PUT", body: JSON.stringify({ reviewed }) })
@@ -284,7 +294,7 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
     return (
       <WorkbookFrame page={false}>
         {header}
-        <PracticeResults content={c} answers={values} />
+        <PracticeResults content={c} answers={values} evaluations={d.evaluations ?? []} />
       </WorkbookFrame>
     )
   }
@@ -331,12 +341,8 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
                 </button>
               </div>
 
-              {section.blocks.filter((b) => b.type === "coach_only").map((b, i) => (
-                <div key={i} className="wb-coachonly">
-                  <span className="wb-eyebrow-ink">Coach only. {first} never sees this.</span>
-                  <span>{(b as Extract<Block, { type: "coach_only" }>).body}</span>
-                </div>
-              ))}
+              <CoachCommandCenter key={section.id} section={section} first={first}
+                evaluation={evaluationFor(section.id)} onSaveEvaluation={saveEvaluation} />
 
               {reviewItems(section).map((it, i, all) => {
                 const selected = anchor?.fieldKey === it.key
