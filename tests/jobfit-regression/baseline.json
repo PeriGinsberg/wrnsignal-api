@@ -6051,6 +6051,13 @@
         "label": "account support and account management"
       },
       {
+        "id": "41e7c8a5d735d7f3",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 7,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "460c5e4b33e6925b",
         "key": "bilingual_language",
         "kind": "function",
@@ -6230,6 +6237,15 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "22279597c17483f8"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 76,
+        "coverageScore": 55,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "41e7c8a5d735d7f3"
       },
       {
         "match_strength": "direct",
@@ -6508,6 +6524,13 @@
         "label": "account support and account management"
       },
       {
+        "id": "41e7c8a5d735d7f3",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 7,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "460c5e4b33e6925b",
         "key": "bilingual_language",
         "kind": "function",
@@ -6615,6 +6638,15 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "22279597c17483f8"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 76,
+        "coverageScore": 55,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "41e7c8a5d735d7f3"
       },
       {
         "match_strength": "direct",
@@ -6901,6 +6933,13 @@
         "kind": "stakeholder",
         "strength": 6,
         "label": "account support and account management"
+      },
+      {
+        "id": "41e7c8a5d735d7f3",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 7,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "460c5e4b33e6925b",
@@ -7390,6 +7429,13 @@
         "label": "account support and account management"
       },
       {
+        "id": "41e7c8a5d735d7f3",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 7,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "460c5e4b33e6925b",
         "key": "bilingual_language",
         "kind": "function",
@@ -7794,6 +7840,13 @@
         "label": "account support and account management"
       },
       {
+        "id": "41e7c8a5d735d7f3",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 7,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "460c5e4b33e6925b",
         "key": "bilingual_language",
         "kind": "function",
@@ -8018,6 +8071,15 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "22279597c17483f8"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 76,
+        "coverageScore": 55,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "41e7c8a5d735d7f3"
       },
       {
         "match_strength": "direct",
@@ -8317,6 +8379,13 @@
         "label": "account support and account management"
       },
       {
+        "id": "41e7c8a5d735d7f3",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 7,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "460c5e4b33e6925b",
         "key": "bilingual_language",
         "kind": "function",
@@ -8550,6 +8619,15 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "22279597c17483f8"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 82,
+        "coverageScore": 59,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "41e7c8a5d735d7f3"
       },
       {
         "match_strength": "direct",
@@ -11797,6 +11875,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "886ebe88f32687ad",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "92d249e3229fc076",
         "key": "operations_execution",
         "kind": "execution",
@@ -11837,6 +11922,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "excel tool usage"
+      },
+      {
+        "id": "bc01e569591df885",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 7,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "d0fd64b187de5bc8",
@@ -12345,6 +12437,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "886ebe88f32687ad",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "92d249e3229fc076",
         "key": "operations_execution",
         "kind": "execution",
@@ -12385,6 +12484,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "excel tool usage"
+      },
+      {
+        "id": "bc01e569591df885",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 7,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "d0fd64b187de5bc8",
@@ -12809,6 +12915,13 @@
         "label": "account support and account management"
       },
       {
+        "id": "41e7c8a5d735d7f3",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 7,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "460c5e4b33e6925b",
         "key": "bilingual_language",
         "kind": "function",
@@ -12970,6 +13083,15 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "22279597c17483f8"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 76,
+        "coverageScore": 55,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "41e7c8a5d735d7f3"
       },
       {
         "match_strength": "direct",
@@ -17219,6 +17341,13 @@
     ],
     "profile_evidence_units": [
       {
+        "id": "090767f6c601c3d3",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 7,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "0bdb642bb8ff90c6",
         "key": "event_coordination",
         "kind": "execution",
@@ -17238,6 +17367,13 @@
         "kind": "execution",
         "strength": 9,
         "label": "event planning, coordination, and bookings"
+      },
+      {
+        "id": "46ee7e33922a61e8",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 9,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "56d06efb7781b85e",
@@ -17266,6 +17402,13 @@
         "kind": "execution",
         "strength": 6,
         "label": "operations, process, and workflow execution"
+      },
+      {
+        "id": "c844d83ebacdf4ec",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 9,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "de150561f1bf039c",
@@ -24703,6 +24846,13 @@
         "label": "Mechanical Engineering"
       },
       {
+        "id": "3a7f3523c6b34b25",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "3f93cfa7c25ce2c9",
         "key": "drafting_documentation",
         "kind": "deliverable",
@@ -24785,6 +24935,13 @@
         "kind": "tool",
         "strength": 10,
         "label": "catia tool usage"
+      },
+      {
+        "id": "834f21682e089b9a",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 6,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "a6055a13e357e004",
@@ -24873,6 +25030,15 @@
       },
       {
         "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 57,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "3a7f3523c6b34b25"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 74,
         "coverageScore": 53,
         "match_kind": "execution",
@@ -24915,6 +25081,15 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "75b1924803ceb150"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 76,
+        "coverageScore": 55,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "834f21682e089b9a"
       },
       {
         "match_strength": "adjacent",
@@ -30785,6 +30960,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "4ae62dcbf16f4d36",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "7061e981ca8ba716",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -30818,6 +31000,13 @@
         "kind": "execution",
         "strength": 10,
         "label": "operations, process, and workflow execution"
+      },
+      {
+        "id": "d53fe6a988f9e7f3",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 1,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "e5dfcb9c6319511c",
@@ -37062,6 +37251,13 @@
         "label": "analysis, reporting, and measurement work"
       },
       {
+        "id": "228df8a1cd806c78",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 1,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "2e09fb20d9722dcf",
         "key": "sql",
         "kind": "tool",
@@ -37102,6 +37298,13 @@
         "kind": "execution",
         "strength": 10,
         "label": "operations, process, and workflow execution"
+      },
+      {
+        "id": "e008be3f0528df48",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 8,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "f2b1636ada2e80f9",
@@ -38914,6 +39117,13 @@
         "label": "spss tool usage"
       },
       {
+        "id": "801a92ed59779947",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "840e5af894145775",
         "key": "performance_optimization",
         "kind": "execution",
@@ -38961,6 +39171,13 @@
         "kind": "tool",
         "strength": 10,
         "label": "excel tool usage"
+      },
+      {
+        "id": "9994c41de0d1abdc",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "9ab71f72712f12e6",
@@ -39681,6 +39898,7 @@
           "content_social",
           "data_analytics_bi",
           "growth_performance",
+          "operations_general",
           "premed_clinical",
           "sales_bd"
         ],
@@ -40345,6 +40563,14 @@
         "requiredness": "supporting"
       },
       {
+        "id": "d3d25d8a9c9c4e84",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management",
+        "requiredness": "supporting"
+      },
+      {
         "id": "f2d27f16845e6108",
         "key": "sql",
         "kind": "tool",
@@ -40820,7 +41046,8 @@
         ],
         "function_tags": [
           "data_analytics_bi",
-          "finance_corp"
+          "finance_corp",
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,

@@ -14093,6 +14093,13 @@
         "label": "crm usage and sales system hygiene"
       },
       {
+        "id": "b4b9f4456ced071d",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "be5001c7b967afd5",
         "key": "crm",
         "kind": "tool",
@@ -14105,6 +14112,13 @@
         "kind": "function",
         "strength": 5,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "ce5ed4939b2ecd3e",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 6,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "cf774f14af27e337",
@@ -14704,6 +14718,24 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "3e6f9ec39c760bbb"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 79,
+        "coverageScore": 57,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "b4b9f4456ced071d"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 77,
+        "coverageScore": 55,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "ce5ed4939b2ecd3e"
       },
       {
         "match_strength": "adjacent",
@@ -19312,6 +19344,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -19436,7 +19475,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -23874,6 +23914,13 @@
         "label": "strategy, synthesis, and problem-solving work"
       },
       {
+        "id": "23167fff68c76896",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "3451550223310666",
         "key": "client_commercial_work",
         "kind": "stakeholder",
@@ -26450,6 +26497,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "886ebe88f32687ad",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "92d249e3229fc076",
         "key": "operations_execution",
         "kind": "execution",
@@ -26490,6 +26544,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "excel tool usage"
+      },
+      {
+        "id": "bc01e569591df885",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 7,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "d0fd64b187de5bc8",
@@ -35713,6 +35774,14 @@
         "requiredness": "core"
       },
       {
+        "id": "d443010e916d3950",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management",
+        "requiredness": "core"
+      },
+      {
         "id": "dbf01d726869c05c",
         "key": "crm_usage",
         "kind": "tool",
@@ -36136,6 +36205,42 @@
         "profile_unit_id": "31fafbdd4cb353b4"
       },
       {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "procurement_sourcing",
+        "job_unit_key": "procurement_sourcing",
+        "profile_unit_id": "164cfafefe9b2340"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 88,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "procurement_sourcing",
+        "job_unit_key": "procurement_sourcing",
+        "profile_unit_id": "1c539cbe728ade0d"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 87,
+        "coverageScore": 60,
+        "match_kind": "function",
+        "match_key": "procurement_sourcing",
+        "job_unit_key": "procurement_sourcing",
+        "profile_unit_id": "7164db46a0b8a8ca"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "procurement_sourcing",
+        "job_unit_key": "procurement_sourcing",
+        "profile_unit_id": "f2ece3a0f60c427a"
+      },
+      {
         "match_strength": "direct",
         "weight": 60,
         "coverageScore": 82,
@@ -36157,6 +36262,12 @@
         "weight": 81,
         "match_strength": "adjacent",
         "match_key": "financial_analysis"
+      },
+      {
+        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+        "weight": 88,
+        "match_strength": "adjacent",
+        "match_key": "procurement_sourcing"
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -36216,6 +36327,7 @@
           "accounting_finops",
           "data_analytics_bi",
           "finance_corp",
+          "operations_general",
           "sales_bd"
         ],
         "gradYearHint": null,
@@ -38934,6 +39046,13 @@
         "label": "crm usage and sales system hygiene"
       },
       {
+        "id": "b4b9f4456ced071d",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "be5001c7b967afd5",
         "key": "crm",
         "kind": "tool",
@@ -38946,6 +39065,13 @@
         "kind": "function",
         "strength": 5,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "ce5ed4939b2ecd3e",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 6,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "cf774f14af27e337",
@@ -47312,6 +47438,13 @@
         "label": "crm usage and sales system hygiene"
       },
       {
+        "id": "b4b9f4456ced071d",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "be5001c7b967afd5",
         "key": "crm",
         "kind": "tool",
@@ -47324,6 +47457,13 @@
         "kind": "function",
         "strength": 5,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "ce5ed4939b2ecd3e",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 6,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "cf774f14af27e337",
@@ -61060,6 +61200,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -61162,7 +61309,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -74169,6 +74317,14 @@
     "traceMissing": false,
     "requirement_units": [
       {
+        "id": "0d1e45c0647516f2",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management",
+        "requiredness": "supporting"
+      },
+      {
         "id": "4c2e128e36d83602",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -74676,7 +74832,7 @@
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
-        "jobFamily": "Analytics",
+        "jobFamily": "Operations",
         "jobIndustry": null,
         "jobTitle": "Strategic Sourcing Intern",
         "location": {
@@ -74861,6 +75017,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -74983,7 +75146,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -75373,6 +75537,13 @@
         "label": "crm usage and sales system hygiene"
       },
       {
+        "id": "b4b9f4456ced071d",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "be5001c7b967afd5",
         "key": "crm",
         "kind": "tool",
@@ -75385,6 +75556,13 @@
         "kind": "function",
         "strength": 5,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "ce5ed4939b2ecd3e",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 6,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "cf774f14af27e337",
@@ -75624,6 +75802,24 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "3e6f9ec39c760bbb"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 81,
+        "coverageScore": 57,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "b4b9f4456ced071d"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 79,
+        "coverageScore": 55,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "ce5ed4939b2ecd3e"
       },
       {
         "match_strength": "adjacent",
@@ -82810,6 +83006,13 @@
         "label": "crm usage and sales system hygiene"
       },
       {
+        "id": "b4b9f4456ced071d",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "be5001c7b967afd5",
         "key": "crm",
         "kind": "tool",
@@ -82822,6 +83025,13 @@
         "kind": "function",
         "strength": 5,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "ce5ed4939b2ecd3e",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 6,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "cf774f14af27e337",
@@ -83583,6 +83793,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -83723,7 +83940,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -85954,6 +86172,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -86067,7 +86292,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -86242,6 +86468,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -86385,7 +86618,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -88221,6 +88455,13 @@
         "label": "crm usage and sales system hygiene"
       },
       {
+        "id": "b4b9f4456ced071d",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "be5001c7b967afd5",
         "key": "crm",
         "kind": "tool",
@@ -88233,6 +88474,13 @@
         "kind": "function",
         "strength": 5,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "ce5ed4939b2ecd3e",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 6,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "cf774f14af27e337",
@@ -89120,6 +89368,13 @@
         "label": "crm usage and sales system hygiene"
       },
       {
+        "id": "b4b9f4456ced071d",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "be5001c7b967afd5",
         "key": "crm",
         "kind": "tool",
@@ -89132,6 +89387,13 @@
         "kind": "function",
         "strength": 5,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "ce5ed4939b2ecd3e",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 6,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "cf774f14af27e337",
@@ -98221,7 +98483,7 @@
     "id": "prod-45e9f82f-d9a6-40fd-9a17-b18906b602c2",
     "label": "prod 45e9f82f — Commercial Associate @ New Leaf Energy, Inc. (2026-04-14)",
     "decision": "Pass",
-    "score": 41,
+    "score": 50,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -98256,6 +98518,14 @@
         "strength": 7,
         "label": "financial analysis and investment work",
         "requiredness": "supporting"
+      },
+      {
+        "id": "efd309b2a19299da",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 7,
+        "label": "procurement, sourcing, and supplier management",
+        "requiredness": "core"
       },
       {
         "id": "f2e4c660c222d93b",
@@ -98303,6 +98573,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -98338,12 +98615,30 @@
       },
       {
         "match_strength": "adjacent",
+        "weight": 82,
+        "coverageScore": 58,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "b30d1dfa7729f785"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 83,
         "coverageScore": 59,
         "match_kind": "execution",
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "d872f4e1982a962c"
+      },
+      {
+        "match_strength": "direct",
+        "weight": 104,
+        "coverageScore": 82,
+        "match_kind": "function",
+        "match_key": "procurement_sourcing",
+        "job_unit_key": "procurement_sourcing",
+        "profile_unit_id": "b30d1dfa7729f785"
       }
     ],
     "why_codes": [
@@ -98358,6 +98653,12 @@
         "weight": 97,
         "match_strength": "direct",
         "match_key": "analysis_reporting"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 104,
+        "match_strength": "direct",
+        "match_key": "procurement_sourcing"
       },
       {
         "code": "WHY_EXECUTION_PROOF",
@@ -98459,7 +98760,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -98527,8 +98829,8 @@
           "note": "16.919999999999998"
         }
       ],
-      "raw_score": 41,
-      "clamped_score": 41
+      "raw_score": 50,
+      "clamped_score": 50
     }
   },
   "prod-46572a48-6d3f-48cf-8592-2efb92234ece": {
@@ -99617,6 +99919,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -99740,7 +100049,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -100854,6 +101164,13 @@
         "label": "crm usage and sales system hygiene"
       },
       {
+        "id": "b4b9f4456ced071d",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "be5001c7b967afd5",
         "key": "crm",
         "kind": "tool",
@@ -100866,6 +101183,13 @@
         "kind": "function",
         "strength": 5,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "ce5ed4939b2ecd3e",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 6,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "cf774f14af27e337",
@@ -101207,6 +101531,24 @@
       },
       {
         "match_strength": "adjacent",
+        "weight": 85,
+        "coverageScore": 61,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "b4b9f4456ced071d"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 83,
+        "coverageScore": 59,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "ce5ed4939b2ecd3e"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 82,
         "coverageScore": 58,
         "match_kind": "execution",
@@ -101230,7 +101572,7 @@
       },
       {
         "code": "WHY_EXECUTION_PROOF",
-        "weight": 84,
+        "weight": 85,
         "match_strength": "adjacent",
         "match_key": "operations_execution"
       },
@@ -102604,6 +102946,13 @@
         "label": "Mechanical Engineering"
       },
       {
+        "id": "d4b9495b8db30395",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "fdf2d442517a4984",
         "key": "excel",
         "kind": "tool",
@@ -102727,7 +103076,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -103351,6 +103701,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "886ebe88f32687ad",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "92d249e3229fc076",
         "key": "operations_execution",
         "kind": "execution",
@@ -103391,6 +103748,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "excel tool usage"
+      },
+      {
+        "id": "bc01e569591df885",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 7,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "d0fd64b187de5bc8",
@@ -103793,6 +104157,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -103905,7 +104276,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -104423,6 +104795,14 @@
         "requiredness": "core"
       },
       {
+        "id": "6b1c1cb66972a395",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 9,
+        "label": "procurement, sourcing, and supplier management",
+        "requiredness": "core"
+      },
+      {
         "id": "d217adbbfb6fe03f",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -104807,6 +105187,42 @@
         "match_key": "financial_analysis",
         "job_unit_key": "financial_analysis",
         "profile_unit_id": "c865039491206999"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 87,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "procurement_sourcing",
+        "job_unit_key": "procurement_sourcing",
+        "profile_unit_id": "164cfafefe9b2340"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 87,
+        "coverageScore": 61,
+        "match_kind": "function",
+        "match_key": "procurement_sourcing",
+        "job_unit_key": "procurement_sourcing",
+        "profile_unit_id": "1c539cbe728ade0d"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 60,
+        "match_kind": "function",
+        "match_key": "procurement_sourcing",
+        "job_unit_key": "procurement_sourcing",
+        "profile_unit_id": "7164db46a0b8a8ca"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 85,
+        "coverageScore": 59,
+        "match_kind": "function",
+        "match_key": "procurement_sourcing",
+        "job_unit_key": "procurement_sourcing",
+        "profile_unit_id": "f2ece3a0f60c427a"
       }
     ],
     "why_codes": [
@@ -104815,6 +105231,12 @@
         "weight": 80,
         "match_strength": "adjacent",
         "match_key": "financial_analysis"
+      },
+      {
+        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+        "weight": 87,
+        "match_strength": "adjacent",
+        "match_key": "procurement_sourcing"
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -104853,7 +105275,8 @@
         "function_tags": [
           "communications_pr",
           "data_analytics_bi",
-          "finance_corp"
+          "finance_corp",
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -117925,6 +118348,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "886ebe88f32687ad",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "92d249e3229fc076",
         "key": "operations_execution",
         "kind": "execution",
@@ -117965,6 +118395,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "excel tool usage"
+      },
+      {
+        "id": "bc01e569591df885",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 7,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "d0fd64b187de5bc8",
@@ -118784,6 +119221,13 @@
         "label": "crm usage and sales system hygiene"
       },
       {
+        "id": "b4b9f4456ced071d",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "be5001c7b967afd5",
         "key": "crm",
         "kind": "tool",
@@ -118796,6 +119240,13 @@
         "kind": "function",
         "strength": 5,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "ce5ed4939b2ecd3e",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 6,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "cf774f14af27e337",
@@ -127143,6 +127594,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -127245,7 +127703,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -128509,6 +128968,13 @@
         "label": "crm usage and sales system hygiene"
       },
       {
+        "id": "b4b9f4456ced071d",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "be5001c7b967afd5",
         "key": "crm",
         "kind": "tool",
@@ -128521,6 +128987,13 @@
         "kind": "function",
         "strength": 5,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "ce5ed4939b2ecd3e",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 6,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "cf774f14af27e337",
@@ -134286,6 +134759,13 @@
         "label": "crm usage and sales system hygiene"
       },
       {
+        "id": "b4b9f4456ced071d",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "be5001c7b967afd5",
         "key": "crm",
         "kind": "tool",
@@ -134298,6 +134778,13 @@
         "kind": "function",
         "strength": 5,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "ce5ed4939b2ecd3e",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 6,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "cf774f14af27e337",
@@ -134600,6 +135087,24 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "3e6f9ec39c760bbb"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 61,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "b4b9f4456ced071d"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 84,
+        "coverageScore": 59,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "ce5ed4939b2ecd3e"
       },
       {
         "match_strength": "adjacent",
@@ -139736,6 +140241,13 @@
         "label": "crm usage and sales system hygiene"
       },
       {
+        "id": "b4b9f4456ced071d",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "be5001c7b967afd5",
         "key": "crm",
         "kind": "tool",
@@ -139748,6 +140260,13 @@
         "kind": "function",
         "strength": 5,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "ce5ed4939b2ecd3e",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 6,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "cf774f14af27e337",
@@ -142041,6 +142560,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -142240,7 +142766,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -143117,6 +143644,13 @@
         "label": "google docs tool usage"
       },
       {
+        "id": "62ca18998e6ea634",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 7,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "77e6da412b2aca82",
         "key": "stakeholder_coordination",
         "kind": "stakeholder",
@@ -143253,6 +143787,15 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "22279597c17483f8"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 76,
+        "coverageScore": 55,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "62ca18998e6ea634"
       },
       {
         "match_strength": "adjacent",
@@ -144758,6 +145301,13 @@
         "label": "crm usage and sales system hygiene"
       },
       {
+        "id": "b4b9f4456ced071d",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "be5001c7b967afd5",
         "key": "crm",
         "kind": "tool",
@@ -144770,6 +145320,13 @@
         "kind": "function",
         "strength": 5,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "ce5ed4939b2ecd3e",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 6,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "cf774f14af27e337",
@@ -146654,6 +147211,13 @@
         "label": "crm usage and sales system hygiene"
       },
       {
+        "id": "b4b9f4456ced071d",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "be5001c7b967afd5",
         "key": "crm",
         "kind": "tool",
@@ -146666,6 +147230,13 @@
         "kind": "function",
         "strength": 5,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "ce5ed4939b2ecd3e",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 6,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "cf774f14af27e337",
@@ -153284,6 +153855,14 @@
         "kind": "deliverable",
         "strength": 8,
         "label": "drafting, documentation, and written deliverables",
+        "requiredness": "core"
+      },
+      {
+        "id": "99503e6b92888cb3",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 7,
+        "label": "procurement, sourcing, and supplier management",
         "requiredness": "core"
       },
       {
@@ -166109,6 +166688,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -166132,6 +166718,15 @@
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
         "profile_unit_id": "d872f4e1982a962c"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 83,
+        "coverageScore": 58,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "b30d1dfa7729f785"
       },
       {
         "match_strength": "adjacent",
@@ -166243,7 +166838,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -168829,6 +169425,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -168971,7 +169574,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -187196,6 +187800,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -187330,7 +187941,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -187712,6 +188324,13 @@
         "label": "crm usage and sales system hygiene"
       },
       {
+        "id": "b4b9f4456ced071d",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "be5001c7b967afd5",
         "key": "crm",
         "kind": "tool",
@@ -187724,6 +188343,13 @@
         "kind": "function",
         "strength": 5,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "ce5ed4939b2ecd3e",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 6,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "cf774f14af27e337",
@@ -188779,11 +189405,20 @@
     "schema_version": 2,
     "id": "prod-88b66889-8a7a-4dee-bf9f-72ee1f437c58",
     "label": "prod 88b66889 — US Procurement Consultant Internship 2026 @ Proxima (2026-04-15)",
-    "decision": "Review",
-    "score": 60,
+    "decision": "Pass",
+    "score": 55,
     "gateType": "none",
     "traceMissing": false,
-    "requirement_units": [],
+    "requirement_units": [
+      {
+        "id": "b5637ab450c4a1df",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management",
+        "requiredness": "core"
+      }
+    ],
     "profile_evidence_units": [
       {
         "id": "020eb4e4e45bff96",
@@ -188930,14 +189565,14 @@
     "why_codes": [],
     "risk_codes": [
       {
-        "code": "RISK_AMBIGUOUS_ROLE",
-        "severity": "low",
-        "weight": 0
-      },
-      {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "high",
         "weight": 0
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": -8.399999999999999
       }
     ],
     "scalars": {
@@ -188952,7 +189587,9 @@
         "detectedDomain": null,
         "financeSubFamily": null,
         "flaggableTools": [],
-        "function_tags": [],
+        "function_tags": [
+          "operations_general"
+        ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
         "isContract": false,
@@ -189051,16 +189688,16 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Pass"
         },
         {
           "label": "penalty_sum",
-          "points": 0,
-          "note": "0"
+          "points": -8,
+          "note": "8.399999999999999"
         }
       ],
-      "raw_score": 86,
-      "clamped_score": 60
+      "raw_score": 78,
+      "clamped_score": 55
     }
   },
   "prod-890683c6-2292-43df-9938-0888e1e5a984": {
@@ -201868,6 +202505,13 @@
         "label": "google docs tool usage"
       },
       {
+        "id": "62ca18998e6ea634",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 7,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "77e6da412b2aca82",
         "key": "stakeholder_coordination",
         "kind": "stakeholder",
@@ -202103,6 +202747,15 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "22279597c17483f8"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 76,
+        "coverageScore": 55,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "62ca18998e6ea634"
       },
       {
         "match_strength": "adjacent",
@@ -203285,6 +203938,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -203384,7 +204044,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -212882,6 +213543,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -213009,7 +213677,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -216688,6 +217357,13 @@
         "label": "crm usage and sales system hygiene"
       },
       {
+        "id": "b4b9f4456ced071d",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "be5001c7b967afd5",
         "key": "crm",
         "kind": "tool",
@@ -216700,6 +217376,13 @@
         "kind": "function",
         "strength": 5,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "ce5ed4939b2ecd3e",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 6,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "cf774f14af27e337",
@@ -217970,6 +218653,13 @@
         "label": "strategy, synthesis, and problem-solving work"
       },
       {
+        "id": "8d9f954c9fbb3b99",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "905fe692fed61637",
         "key": "crm_usage",
         "kind": "tool",
@@ -218172,6 +218862,15 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "26f254573657a12c"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 57,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "8d9f954c9fbb3b99"
       },
       {
         "match_strength": "adjacent",
@@ -231853,6 +232552,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -231876,6 +232582,15 @@
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
         "profile_unit_id": "d872f4e1982a962c"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 83,
+        "coverageScore": 58,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "b30d1dfa7729f785"
       },
       {
         "match_strength": "adjacent",
@@ -231974,7 +232689,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -237503,6 +238219,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -237614,7 +238337,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -249105,6 +249829,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -249128,6 +249859,15 @@
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
         "profile_unit_id": "d872f4e1982a962c"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 83,
+        "coverageScore": 58,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "b30d1dfa7729f785"
       },
       {
         "match_strength": "adjacent",
@@ -249231,7 +249971,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -253971,6 +254712,13 @@
         "label": "crm usage and sales system hygiene"
       },
       {
+        "id": "b4b9f4456ced071d",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "be5001c7b967afd5",
         "key": "crm",
         "kind": "tool",
@@ -253983,6 +254731,13 @@
         "kind": "function",
         "strength": 5,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "ce5ed4939b2ecd3e",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 6,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "cf774f14af27e337",
@@ -260291,6 +261046,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -260427,7 +261189,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -275155,6 +275918,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -275263,7 +276033,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -285680,6 +286451,13 @@
         "label": "Mechanical Engineering"
       },
       {
+        "id": "d4b9495b8db30395",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "fdf2d442517a4984",
         "key": "excel",
         "kind": "tool",
@@ -285732,6 +286510,15 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "788dbfcfe94609b2"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 75,
+        "coverageScore": 54,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "d4b9495b8db30395"
       }
     ],
     "why_codes": [
@@ -285851,7 +286638,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -300150,6 +300938,13 @@
         "label": "strategy, synthesis, and problem-solving work"
       },
       {
+        "id": "23167fff68c76896",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "3451550223310666",
         "key": "client_commercial_work",
         "kind": "stakeholder",
@@ -300260,6 +301055,15 @@
         "match_key": "excel",
         "job_unit_key": "excel",
         "profile_unit_id": "863cdeba92a5410d"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 61,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "23167fff68c76896"
       },
       {
         "match_strength": "adjacent",
@@ -302593,6 +303397,13 @@
         "label": "crm usage and sales system hygiene"
       },
       {
+        "id": "b4b9f4456ced071d",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 10,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "be5001c7b967afd5",
         "key": "crm",
         "kind": "tool",
@@ -302605,6 +303416,13 @@
         "kind": "function",
         "strength": 5,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "ce5ed4939b2ecd3e",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 6,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "cf774f14af27e337",
@@ -318092,6 +318910,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "886ebe88f32687ad",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "92d249e3229fc076",
         "key": "operations_execution",
         "kind": "execution",
@@ -318132,6 +318957,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "excel tool usage"
+      },
+      {
+        "id": "bc01e569591df885",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 7,
+        "label": "procurement, sourcing, and supplier management"
       },
       {
         "id": "d0fd64b187de5bc8",
@@ -319018,6 +319850,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -319110,7 +319949,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -326948,7 +327788,7 @@
     "id": "prod-e7dfcde9-383f-490c-99c4-2b3a96560e31",
     "label": "prod e7dfcde9 — Energy Acquisition Analyst @ ComEd (2026-04-22)",
     "decision": "Review",
-    "score": 60,
+    "score": 69,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -326967,6 +327807,14 @@
         "strength": 7,
         "label": "accounting and financial operations work",
         "requiredness": "supporting"
+      },
+      {
+        "id": "817e85c2b68492a3",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 9,
+        "label": "procurement, sourcing, and supplier management",
+        "requiredness": "core"
       },
       {
         "id": "d0661e04b61190c8",
@@ -327050,6 +327898,13 @@
         "label": "Mechanical Engineering"
       },
       {
+        "id": "d4b9495b8db30395",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "fdf2d442517a4984",
         "key": "excel",
         "kind": "tool",
@@ -327111,6 +327966,15 @@
         "match_key": "policy_regulatory_research",
         "job_unit_key": "policy_regulatory_research",
         "profile_unit_id": "788dbfcfe94609b2"
+      },
+      {
+        "match_strength": "direct",
+        "weight": 105,
+        "coverageScore": 82,
+        "match_kind": "function",
+        "match_key": "procurement_sourcing",
+        "job_unit_key": "procurement_sourcing",
+        "profile_unit_id": "d4b9495b8db30395"
       }
     ],
     "why_codes": [
@@ -327131,6 +327995,12 @@
         "weight": 98,
         "match_strength": "direct",
         "match_key": "analysis_reporting"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 105,
+        "match_strength": "direct",
+        "match_key": "procurement_sourcing"
       }
     ],
     "risk_codes": [
@@ -327156,7 +328026,8 @@
           "accounting_finops",
           "communications_pr",
           "data_analytics_bi",
-          "legal_regulatory"
+          "legal_regulatory",
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -327205,7 +328076,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -327263,8 +328135,8 @@
           "note": "0"
         }
       ],
-      "raw_score": 60,
-      "clamped_score": 60
+      "raw_score": 69,
+      "clamped_score": 69
     }
   },
   "prod-e7fbe128-1ea0-4223-abe9-fe4928b87a61": {
@@ -339305,6 +340177,14 @@
         "requiredness": "supporting"
       },
       {
+        "id": "42fc97806bb8703a",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management",
+        "requiredness": "supporting"
+      },
+      {
         "id": "6f5d13a1bce17223",
         "key": "drafting_documentation",
         "kind": "deliverable",
@@ -339829,6 +340709,42 @@
         "match_kind": "execution",
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
+        "profile_unit_id": "f2ece3a0f60c427a"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 79,
+        "coverageScore": 57,
+        "match_kind": "function",
+        "match_key": "procurement_sourcing",
+        "job_unit_key": "procurement_sourcing",
+        "profile_unit_id": "164cfafefe9b2340"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 79,
+        "coverageScore": 57,
+        "match_kind": "function",
+        "match_key": "procurement_sourcing",
+        "job_unit_key": "procurement_sourcing",
+        "profile_unit_id": "1c539cbe728ade0d"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 56,
+        "match_kind": "function",
+        "match_key": "procurement_sourcing",
+        "job_unit_key": "procurement_sourcing",
+        "profile_unit_id": "7164db46a0b8a8ca"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 77,
+        "coverageScore": 55,
+        "match_kind": "function",
+        "match_key": "procurement_sourcing",
+        "job_unit_key": "procurement_sourcing",
         "profile_unit_id": "f2ece3a0f60c427a"
       }
     ],
@@ -340840,6 +341756,13 @@
         "label": "google docs tool usage"
       },
       {
+        "id": "62ca18998e6ea634",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 7,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "77e6da412b2aca82",
         "key": "stakeholder_coordination",
         "kind": "stakeholder",
@@ -340994,6 +341917,15 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "22279597c17483f8"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 77,
+        "coverageScore": 55,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "62ca18998e6ea634"
       },
       {
         "match_strength": "adjacent",
@@ -342085,6 +343017,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -342100,6 +343039,15 @@
       }
     ],
     "matches": [
+      {
+        "match_strength": "adjacent",
+        "weight": 81,
+        "coverageScore": 58,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "b30d1dfa7729f785"
+      },
       {
         "match_strength": "adjacent",
         "weight": 82,
@@ -342196,7 +343144,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -344996,6 +345945,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "b30d1dfa7729f785",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "d872f4e1982a962c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -345104,7 +346060,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],
@@ -351994,6 +352951,13 @@
         "label": "Mechanical Engineering"
       },
       {
+        "id": "d4b9495b8db30395",
+        "key": "procurement_sourcing",
+        "kind": "function",
+        "strength": 5,
+        "label": "procurement, sourcing, and supplier management"
+      },
+      {
         "id": "fdf2d442517a4984",
         "key": "excel",
         "kind": "tool",
@@ -352117,7 +353081,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "data_analytics_bi",
-          "engineering_technical"
+          "engineering_technical",
+          "operations_general"
         ],
         "gradYear": null,
         "languagesShown": [],

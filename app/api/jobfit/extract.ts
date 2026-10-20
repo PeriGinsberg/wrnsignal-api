@@ -102,6 +102,24 @@ const EVENT_WORK_VERBS = [
   "planned", "planning", "co-planned", "organized", "organizing", "organised",
   "hosted", "facilitated", "executed", "managed",
 ]
+// procurement_sourcing: recruiters "source candidates", which is not purchasing.
+const SOURCING_NOT_PROCUREMENT = [
+  "candidate", "candidates", "talent", "recruit", "recruiting", "recruiter", "recruitment",
+  "resumes", "applicants", "hires", "hiring",
+]
+// Buying context a JD line needs before bare procurement / purchasing counts.
+// No bare "sourcing" on the JD side at all: "sourcing products" for a TV
+// segment and "stock imagery sourcing" are not purchasing jobs.
+const PROCUREMENT_JOB_CONTEXT = [
+  "supplier", "suppliers", "quote", "quotes", "sourcing", "negotiate", "negotiating",
+  "negotiation", "negotiations", "order entry", "buyer", "buyers", "rfq", "spend",
+  "raw material", "raw materials",
+]
+// What a buyer sources: a bare "sourced"/"quotes" counts only next to one of these.
+const PROCUREMENT_OBJECTS = [
+  "vendor", "vendors", "supplier", "suppliers", "product", "products", "materials", "parts",
+  "bid", "bids", "pricing", "price", "cost", "lead time", "purchase", "purchases",
+]
 
 const CAPABILITY_RULES: CapabilityRule[] = [
   {
@@ -632,6 +650,57 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "banquet",
     ],
     adjacentKeys: ["operations_execution", "event_operations_live_execution"],
+  },
+  {
+    // Procurement, purchasing and supplier work (Buyer I / Procurement
+    // Specialist vs a résumé that sourced and quoted 150+ bids). No rule
+    // covered it on either side, so a buyer résumé matched nothing on a buyer
+    // posting. Bare "sourcing"/"sourced" skips recruiting ("sourced 40
+    // candidates"); bare quotes/suppliers need a purchasing object nearby.
+    key: "procurement_sourcing",
+    label: "procurement, sourcing, and supplier management",
+    kind: "function",
+    functionTag: "operations_general",
+    profilePhrases: [
+      "procurement",
+      "purchasing",
+      "purchase orders",
+      "purchase order",
+      "vendor sourcing",
+      "supplier sourcing",
+      "vendor selection",
+      "supplier management",
+      "supplier communication",
+      "supplier relationships",
+      "quote preparation",
+      "request for quote",
+      "rfq",
+      { phrase: "sourced", requiresNearby: PROCUREMENT_OBJECTS, negativeContext: SOURCING_NOT_PROCUREMENT },
+      { phrase: "sourcing", requiresNearby: PROCUREMENT_OBJECTS, negativeContext: SOURCING_NOT_PROCUREMENT },
+      { phrase: "quotes", requiresNearby: PROCUREMENT_OBJECTS },
+      { phrase: "vendors", requiresNearby: ["price", "pricing", "cost", "lead time", "quote", "quotes", "compared"] },
+    ].map((spec) => typeof spec === "string"
+      ? { phrase: spec, negativeContext: PARTNER_PROFILE_NOT_EVIDENCE }
+      : { ...spec, negativeContext: [...(spec.negativeContext || []), ...PARTNER_PROFILE_NOT_EVIDENCE] }),
+    jobPhrases: [
+      // Bare procurement / purchasing / PO need buying context on the line:
+      // "Engineering, Procurement, Estimating" is a department list, and
+      // "purchase order creation, invoice processing" is an admin side duty.
+      ...["procurement", "purchasing", "purchase orders", "purchase order"].map(
+        (phrase) => ({ phrase, requiresNearby: PROCUREMENT_JOB_CONTEXT })
+      ),
+      "strategic sourcing",
+      "supplier management",
+      "supplier relationships",
+      "supplier performance",
+      "vendor selection",
+      "request for quote",
+      "rfq",
+      "costing negotiations",
+      "quotes from suppliers",
+      { phrase: "suppliers", requiresNearby: ["quote", "quotes", "purchase", "purchasing", "sourcing", "cost", "pricing", "orders", "approved"] },
+    ],
+    adjacentKeys: ["operations_execution"],
   },
   {
     key: "coaching_instruction_facilitation",
@@ -4390,6 +4459,16 @@ export function extractJobSignals(
     /\b(consultant|consulting analyst|management consultant|strategy consultant|associate consultant|business consultant|advisory analyst|advisory associate|strategy analyst|strategy associate|transformation analyst|change management|process consultant|implementation consultant)\b/i.test(jobTitleSlice) ||
     (/\bconsulting\b/i.test(titleOnly) && !/\bengineer(s|ing)?\b/i.test(titleOnly))
 
+  // Buyer / procurement / purchasing titles are Operations (DEF-028). Title
+  // only: purchasing vocabulary in a body is common on finance and sales
+  // postings. "Media buyer" / "ad buyer" are marketing; "talent sourcing" is
+  // recruiting, so sourcing counts only as a sourcing-specialist title.
+  // "Procurement Consultant" stays with the consulting title rules.
+  const jobTitleIsProcurement =
+    /\b(buyer|buyers|procurement|purchasing|purchaser|strategic sourcing|sourcing (specialist|analyst|coordinator|manager|associate))\b/i.test(titleOnly) &&
+    !/\b(media|ad|ads|advertising|digital|programmatic|space|time) buyers?\b/i.test(titleOnly) &&
+    !/\b(talent|candidate|recruit\w*|consultant|consulting)\b/i.test(titleOnly)
+
   // Seniority detection — Manager/Director/Senior/Lead/VP signals a level above
   // early-career. Test the clean user-provided title (userTitleNorm) AND the
   // JD-body opening. Title-first matters: real titles like "Marketing Manager" /
@@ -4507,6 +4586,8 @@ export function extractJobSignals(
             ? "Healthcare"
             : jobTitleIsTrades
               ? "Trades"
+              : jobTitleIsProcurement
+                ? "Operations"
               : jobTitleIsHR
                 ? "HR"
                 : jobTitleIsProductManagement

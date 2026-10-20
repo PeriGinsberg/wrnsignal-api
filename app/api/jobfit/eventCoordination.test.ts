@@ -1,7 +1,8 @@
 #!/usr/bin/env tsx
-// Event coordination is a capability; résumé wording for event, vendor and
+// Event coordination and procurement are capabilities; résumé wording for event, vendor and
 // client-service work reaches the rules (REGISTER DEF-027, prod run 936a360b:
-// Event Sales Admin scored Pass/55 with zero matches).
+// Event Sales Admin scored Pass/55 with zero matches) and procurement (DEF-028:
+// Buyer I / Procurement Specialist scored Pass with a procurement résumé).
 // Run: npx tsx app/api/jobfit/eventCoordination.test.ts
 //
 // Synthetic text only; no résumé or JD from a real person.
@@ -15,9 +16,9 @@ function ok(label: string, cond: boolean, detail = "") {
   else { fail++; console.error(`  FAIL  ${label}${detail ? `  (${detail})` : ""}`) }
 }
 
-const jobKeys = (jd: string) => extractJobSignals(jd, { userJobTitle: "Events Assistant" }).requirement_units.map((u) => u.key)
+const jobKeys = (jd: string) => extractJobSignals(jd, { userJobTitle: "Events Assistant" }).requirement_units?.map((u) => u.key) ?? []
 const profileKeys = (resume: string) =>
-  extractProfileSignals("Name: Test Person\n\nResume:\n" + resume).profile_evidence_units.map((u) => u.key)
+  extractProfileSignals("Name: Test Person\n\nResume:\n" + resume).profile_evidence_units?.map((u) => u.key) ?? []
 
 console.log("job side")
 {
@@ -68,6 +69,48 @@ EXPERIENCE
 Analyst | Bank | 2024 - Present
 Built financial models for quarterly reviews`)
   ok("an aspiration line is not event evidence", !k.includes("event_coordination"), k.join(","))
+}
+
+// ── procurement (DEF-028) ────────────────────────────────────────────────────
+console.log("\nprocurement: job side")
+const keysFor = (jd: string, title: string) => extractJobSignals(jd, { userJobTitle: title }).requirement_units?.map((u) => u.key) ?? []
+const familyFor = (jd: string, title: string) => extractJobSignals(jd, { userJobTitle: title }).jobFamily
+{
+  const jd = `Key Responsibilities:
+- Place and reschedule purchase orders with approved suppliers
+- Request and evaluate quotes from suppliers on cost and delivery`
+  ok("buyer duties are a procurement requirement", keysFor(jd, "Buyer I").includes("procurement_sourcing"), keysFor(jd, "Buyer I").join(","))
+  ok("'Buyer I' is Operations", familyFor(jd, "Buyer I") === "Operations", familyFor(jd, "Buyer I"))
+  ok("'Procurement Consultant Intern' is not made Operations", familyFor(jd, "Procurement Consultant Intern") !== "Operations", familyFor(jd, "Procurement Consultant Intern"))
+}
+{
+  const media = `Responsibilities:
+- Plan TV and digital ad placements for brand campaigns
+- Track campaign delivery and report results to the client team`
+  ok("'Media Buyer' is not made Operations by the buyer title", familyFor(media, "Media Buyer") !== "Operations", familyFor(media, "Media Buyer"))
+}
+{
+  const jd = `Responsibilities:
+- Rotate across Construction Project Management, Engineering, Procurement, and Estimating
+- Assist with broadcast segments, including sourcing products and drafting talking points
+- Collaborate on music selection and stock imagery sourcing`
+  const k = keysFor(jd, "Analyst Intern")
+  ok("a department list, product sourcing and stock imagery are not procurement", !k.includes("procurement_sourcing"), k.join(","))
+}
+
+console.log("\nprocurement: résumé side")
+{
+  const k = profileKeys(`EXPERIENCE
+Account Manager | Supply Firm | 2024 - 2026
+Sourced, priced, and quoted 150+ bids for public-sector clients
+Compared 1 to 10 vendors per request on cost and lead time`)
+  ok("sourcing and quoting bids is procurement", k.includes("procurement_sourcing"), k.join(","))
+}
+{
+  const k = profileKeys(`EXPERIENCE
+Recruiting Intern | Staffing Agency | 2025
+Sourced 40+ candidates per week for technical roles`)
+  ok("sourcing candidates is not procurement", !k.includes("procurement_sourcing"), k.join(","))
 }
 
 console.log(`\n${pass} passed, ${fail} failed`)

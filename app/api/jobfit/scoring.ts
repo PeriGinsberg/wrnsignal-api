@@ -101,6 +101,7 @@ const ADJACENCY: Record<string, string[]> = {
   accounting_operations: ["analysis_reporting", "operations_execution"],
   operations_execution: ["stakeholder_coordination", "analysis_reporting", "drafting_documentation"],
   event_coordination: ["operations_execution", "event_operations_live_execution"],
+  procurement_sourcing: ["operations_execution"],
   strategy_problem_solving: ["analysis_reporting", "consumer_research", "stakeholder_coordination"],
   stakeholder_coordination: ["operations_execution", "communications_writing", "account_management"],
   drafting_documentation: ["communications_writing", "policy_regulatory_research"],
