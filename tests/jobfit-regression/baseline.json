@@ -1955,6 +1955,14 @@
         "requiredness": "core"
       },
       {
+        "id": "c368dddb0835e95e",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings",
+        "requiredness": "core"
+      },
+      {
         "id": "f2c4fe452cba043b",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -2103,6 +2111,13 @@
         "kind": "function",
         "strength": 10,
         "label": "brand messaging and campaign work"
+      },
+      {
+        "id": "a15b69fcd8f1a0b3",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 9,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "cf8b22b0c9345f8f",
@@ -2465,6 +2480,33 @@
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
         "profile_unit_id": "f6cefa1c4f8e25c6"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 85,
+        "coverageScore": 59,
+        "match_kind": "execution",
+        "match_key": "event_coordination",
+        "job_unit_key": "event_coordination",
+        "profile_unit_id": "8c2f1047d00af85a"
+      },
+      {
+        "match_strength": "direct",
+        "weight": 106,
+        "coverageScore": 84,
+        "match_kind": "execution",
+        "match_key": "event_coordination",
+        "job_unit_key": "event_coordination",
+        "profile_unit_id": "a15b69fcd8f1a0b3"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 85,
+        "coverageScore": 59,
+        "match_kind": "execution",
+        "match_key": "event_coordination",
+        "job_unit_key": "event_coordination",
+        "profile_unit_id": "d6cbd0edc61f87d5"
       }
     ],
     "why_codes": [
@@ -2479,6 +2521,12 @@
         "weight": 105,
         "match_strength": "direct",
         "match_key": "content_execution"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 106,
+        "match_strength": "direct",
+        "match_key": "event_coordination"
       },
       {
         "code": "WHY_EXECUTION_PROOF",
@@ -2521,7 +2569,8 @@
         "function_tags": [
           "brand_marketing",
           "content_social",
-          "data_analytics_bi"
+          "data_analytics_bi",
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": true,
@@ -2827,6 +2876,13 @@
         "kind": "function",
         "strength": 10,
         "label": "brand messaging and campaign work"
+      },
+      {
+        "id": "a15b69fcd8f1a0b3",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 9,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "cf8b22b0c9345f8f",
@@ -3704,6 +3760,13 @@
         "kind": "function",
         "strength": 10,
         "label": "brand messaging and campaign work"
+      },
+      {
+        "id": "a15b69fcd8f1a0b3",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 9,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "cf8b22b0c9345f8f",
@@ -4679,6 +4742,13 @@
         "label": "brand messaging and campaign work"
       },
       {
+        "id": "a15b69fcd8f1a0b3",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 9,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "cf8b22b0c9345f8f",
         "key": "content_execution",
         "kind": "function",
@@ -5366,6 +5436,13 @@
         "label": "brand messaging and campaign work"
       },
       {
+        "id": "a15b69fcd8f1a0b3",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 9,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "cf8b22b0c9345f8f",
         "key": "content_execution",
         "kind": "function",
@@ -5953,6 +6030,13 @@
     ],
     "profile_evidence_units": [
       {
+        "id": "22279597c17483f8",
+        "key": "operations_execution",
+        "kind": "execution",
+        "strength": 8,
+        "label": "operations, process, and workflow execution"
+      },
+      {
         "id": "22748925e512ef9f",
         "key": "excel",
         "kind": "tool",
@@ -6068,6 +6152,15 @@
     "matches": [
       {
         "match_strength": "adjacent",
+        "weight": 82,
+        "coverageScore": 60,
+        "match_kind": "deliverable",
+        "match_key": "drafting_documentation",
+        "job_unit_key": "drafting_documentation",
+        "profile_unit_id": "22279597c17483f8"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 80,
         "coverageScore": 58,
         "match_kind": "deliverable",
@@ -6128,6 +6221,15 @@
         "match_key": "excel",
         "job_unit_key": "excel",
         "profile_unit_id": "22748925e512ef9f"
+      },
+      {
+        "match_strength": "direct",
+        "weight": 97,
+        "coverageScore": 80,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "22279597c17483f8"
       },
       {
         "match_strength": "direct",
@@ -6202,7 +6304,7 @@
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 96,
+        "weight": 97,
         "match_strength": "direct",
         "match_key": "operations_execution"
       },
@@ -6385,6 +6487,13 @@
     ],
     "profile_evidence_units": [
       {
+        "id": "22279597c17483f8",
+        "key": "operations_execution",
+        "kind": "execution",
+        "strength": 8,
+        "label": "operations, process, and workflow execution"
+      },
+      {
         "id": "22748925e512ef9f",
         "key": "excel",
         "kind": "tool",
@@ -6500,6 +6609,15 @@
     "matches": [
       {
         "match_strength": "direct",
+        "weight": 96,
+        "coverageScore": 80,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "22279597c17483f8"
+      },
+      {
+        "match_strength": "direct",
         "weight": 94,
         "coverageScore": 78,
         "match_kind": "execution",
@@ -6547,7 +6665,7 @@
     "why_codes": [
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 95,
+        "weight": 96,
         "match_strength": "direct",
         "match_key": "operations_execution"
       }
@@ -6764,6 +6882,13 @@
     ],
     "profile_evidence_units": [
       {
+        "id": "22279597c17483f8",
+        "key": "operations_execution",
+        "kind": "execution",
+        "strength": 8,
+        "label": "operations, process, and workflow execution"
+      },
+      {
         "id": "22748925e512ef9f",
         "key": "excel",
         "kind": "tool",
@@ -6879,6 +7004,15 @@
     "matches": [
       {
         "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 60,
+        "match_kind": "execution",
+        "match_key": "analysis_reporting",
+        "job_unit_key": "analysis_reporting",
+        "profile_unit_id": "22279597c17483f8"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 84,
         "coverageScore": 58,
         "match_kind": "execution",
@@ -6930,6 +7064,15 @@
         "match_key": "prospecting_pipeline_management",
         "job_unit_key": "prospecting_pipeline_management",
         "profile_unit_id": "337bb6d171473845"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 81,
+        "coverageScore": 60,
+        "match_kind": "stakeholder",
+        "match_key": "stakeholder_coordination",
+        "job_unit_key": "stakeholder_coordination",
+        "profile_unit_id": "22279597c17483f8"
       },
       {
         "match_strength": "adjacent",
@@ -6995,7 +7138,7 @@
       },
       {
         "code": "WHY_EXECUTION_PROOF",
-        "weight": 85,
+        "weight": 86,
         "match_strength": "adjacent",
         "match_key": "analysis_reporting"
       },
@@ -7016,22 +7159,17 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
+        "weight": -3.6399999999999997
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
         "weight": -8.399999999999999
       },
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
-        "weight": -3.6399999999999997
       }
     ],
     "scalars": {
@@ -7175,7 +7313,7 @@
           "note": "12.04"
         }
       ],
-      "raw_score": 83,
+      "raw_score": 85,
       "clamped_score": 74
     }
   },
@@ -7230,6 +7368,13 @@
       }
     ],
     "profile_evidence_units": [
+      {
+        "id": "22279597c17483f8",
+        "key": "operations_execution",
+        "kind": "execution",
+        "strength": 8,
+        "label": "operations, process, and workflow execution"
+      },
       {
         "id": "22748925e512ef9f",
         "key": "excel",
@@ -7346,6 +7491,24 @@
     "matches": [
       {
         "match_strength": "adjacent",
+        "weight": 80,
+        "coverageScore": 56,
+        "match_kind": "function",
+        "match_key": "accounting_operations",
+        "job_unit_key": "accounting_operations",
+        "profile_unit_id": "22279597c17483f8"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 56,
+        "match_kind": "execution",
+        "match_key": "analysis_reporting",
+        "job_unit_key": "analysis_reporting",
+        "profile_unit_id": "22279597c17483f8"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 76,
         "coverageScore": 54,
         "match_kind": "execution",
@@ -7393,13 +7556,19 @@
     "why_codes": [
       {
         "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+        "weight": 80,
+        "match_strength": "adjacent",
+        "match_key": "accounting_operations"
+      },
+      {
+        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
         "weight": 88,
         "match_strength": "adjacent",
         "match_key": "brand_messaging"
       },
       {
         "code": "WHY_EXECUTION_PROOF",
-        "weight": 77,
+        "weight": 78,
         "match_strength": "adjacent",
         "match_key": "analysis_reporting"
       }
@@ -7409,11 +7578,6 @@
         "code": "RISK_FINANCIAL_MODELING",
         "severity": "medium",
         "weight": -6
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
-        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -7561,7 +7725,7 @@
           "note": "6"
         }
       ],
-      "raw_score": 86,
+      "raw_score": 89,
       "clamped_score": 74
     }
   },
@@ -7608,6 +7772,13 @@
       }
     ],
     "profile_evidence_units": [
+      {
+        "id": "22279597c17483f8",
+        "key": "operations_execution",
+        "kind": "execution",
+        "strength": 8,
+        "label": "operations, process, and workflow execution"
+      },
       {
         "id": "22748925e512ef9f",
         "key": "excel",
@@ -7724,6 +7895,15 @@
     "matches": [
       {
         "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 56,
+        "match_kind": "execution",
+        "match_key": "analysis_reporting",
+        "job_unit_key": "analysis_reporting",
+        "profile_unit_id": "22279597c17483f8"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 76,
         "coverageScore": 54,
         "match_kind": "execution",
@@ -7757,6 +7937,15 @@
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
         "profile_unit_id": "eb341f1f31372731"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 77,
+        "coverageScore": 56,
+        "match_kind": "deliverable",
+        "match_key": "drafting_documentation",
+        "job_unit_key": "drafting_documentation",
+        "profile_unit_id": "22279597c17483f8"
       },
       {
         "match_strength": "adjacent",
@@ -7823,6 +8012,15 @@
       },
       {
         "match_strength": "direct",
+        "weight": 97,
+        "coverageScore": 80,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "22279597c17483f8"
+      },
+      {
+        "match_strength": "direct",
         "weight": 95,
         "coverageScore": 78,
         "match_kind": "execution",
@@ -7876,13 +8074,13 @@
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 96,
+        "weight": 97,
         "match_strength": "direct",
         "match_key": "operations_execution"
       },
       {
         "code": "WHY_EXECUTION_PROOF",
-        "weight": 77,
+        "weight": 78,
         "match_strength": "adjacent",
         "match_key": "analysis_reporting"
       },
@@ -8098,6 +8296,13 @@
     ],
     "profile_evidence_units": [
       {
+        "id": "22279597c17483f8",
+        "key": "operations_execution",
+        "kind": "execution",
+        "strength": 8,
+        "label": "operations, process, and workflow execution"
+      },
+      {
         "id": "22748925e512ef9f",
         "key": "excel",
         "kind": "tool",
@@ -8213,6 +8418,15 @@
     "matches": [
       {
         "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 56,
+        "match_kind": "execution",
+        "match_key": "analysis_reporting",
+        "job_unit_key": "analysis_reporting",
+        "profile_unit_id": "22279597c17483f8"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 76,
         "coverageScore": 54,
         "match_kind": "execution",
@@ -8267,6 +8481,15 @@
       },
       {
         "match_strength": "adjacent",
+        "weight": 76,
+        "coverageScore": 56,
+        "match_kind": "deliverable",
+        "match_key": "drafting_documentation",
+        "job_unit_key": "drafting_documentation",
+        "profile_unit_id": "22279597c17483f8"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 74,
         "coverageScore": 54,
         "match_kind": "deliverable",
@@ -8318,6 +8541,15 @@
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
         "profile_unit_id": "f422a3650f2d7c29"
+      },
+      {
+        "match_strength": "direct",
+        "weight": 103,
+        "coverageScore": 84,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "22279597c17483f8"
       },
       {
         "match_strength": "direct",
@@ -8407,7 +8639,7 @@
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 102,
+        "weight": 103,
         "match_strength": "direct",
         "match_key": "operations_execution"
       },
@@ -8415,7 +8647,7 @@
         "code": "WHY_EXECUTION_PROOF",
         "weight": 78,
         "match_strength": "adjacent",
-        "match_key": "post_sale_support"
+        "match_key": "analysis_reporting"
       }
     ],
     "risk_codes": [
@@ -11551,6 +11783,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5e3f6f890c7b4631",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 6,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "7e25e9266e4cef10",
         "key": "excel",
         "kind": "tool",
@@ -12092,6 +12331,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5e3f6f890c7b4631",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 6,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "7e25e9266e4cef10",
         "key": "excel",
         "kind": "tool",
@@ -12542,6 +12788,13 @@
     ],
     "profile_evidence_units": [
       {
+        "id": "22279597c17483f8",
+        "key": "operations_execution",
+        "kind": "execution",
+        "strength": 8,
+        "label": "operations, process, and workflow execution"
+      },
+      {
         "id": "22748925e512ef9f",
         "key": "excel",
         "kind": "tool",
@@ -12657,6 +12910,15 @@
     "matches": [
       {
         "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 56,
+        "match_kind": "execution",
+        "match_key": "analysis_reporting",
+        "job_unit_key": "analysis_reporting",
+        "profile_unit_id": "22279597c17483f8"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 76,
         "coverageScore": 54,
         "match_kind": "execution",
@@ -12699,6 +12961,15 @@
         "match_key": "excel",
         "job_unit_key": "excel",
         "profile_unit_id": "22748925e512ef9f"
+      },
+      {
+        "match_strength": "direct",
+        "weight": 97,
+        "coverageScore": 80,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "22279597c17483f8"
       },
       {
         "match_strength": "direct",
@@ -12758,13 +13029,13 @@
     "why_codes": [
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 96,
+        "weight": 97,
         "match_strength": "direct",
         "match_key": "operations_execution"
       },
       {
         "code": "WHY_EXECUTION_PROOF",
-        "weight": 77,
+        "weight": 78,
         "match_strength": "adjacent",
         "match_key": "analysis_reporting"
       },
@@ -13043,6 +13314,13 @@
         "kind": "deliverable",
         "strength": 6,
         "label": "drafting, documentation, and written deliverables"
+      },
+      {
+        "id": "7ba1d167d79c8dd1",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 8,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "c8f889fe14550217",
@@ -13431,6 +13709,13 @@
         "kind": "execution",
         "strength": 10,
         "label": "prospecting, outreach, and pipeline management"
+      },
+      {
+        "id": "74cec92d85f5ba7f",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 7,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "790302547f93fe51",
@@ -13837,6 +14122,7 @@
         "financeSubFamily": null,
         "function_tags": [
           "healthcare_clinical",
+          "operations_general",
           "premed_clinical",
           "sales_bd"
         ],
@@ -14039,6 +14325,13 @@
         "kind": "function",
         "strength": 8,
         "label": "legal, policy, and regulatory research"
+      },
+      {
+        "id": "c2a195fc8d799ee0",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "d3051060ee29c338",
@@ -14421,6 +14714,7 @@
         "function_tags": [
           "communications_pr",
           "legal_regulatory",
+          "operations_general",
           "sales_bd"
         ],
         "gradYear": 2026,
@@ -14519,7 +14813,7 @@
         "id": "24b102ce3653f57b",
         "key": "operations_execution",
         "kind": "execution",
-        "strength": 8,
+        "strength": 10,
         "label": "operations, process, and workflow execution"
       },
       {
@@ -14554,8 +14848,8 @@
     "matches": [
       {
         "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 56,
+        "weight": 79,
+        "coverageScore": 57,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
@@ -14590,8 +14884,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 80,
+        "weight": 100,
+        "coverageScore": 81,
         "match_kind": "execution",
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
@@ -14867,6 +15161,13 @@
         "label": "analysis, reporting, and measurement work"
       },
       {
+        "id": "7c1921090e55e308",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 5,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "7c9650c5f6b1d4c1",
         "key": "financial_analysis",
         "kind": "function",
@@ -14928,6 +15229,13 @@
         "kind": "function",
         "strength": 1,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "e649227b264d5385",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 5,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "e8c14715fea0f3d7",
@@ -15409,7 +15717,8 @@
         "function_tags": [
           "accounting_finops",
           "data_analytics_bi",
-          "finance_corp"
+          "finance_corp",
+          "operations_general"
         ],
         "gradYear": 2024,
         "languagesShown": [],
@@ -16489,6 +16798,13 @@
         "label": "photoshop tool usage"
       },
       {
+        "id": "24318ddae7f9858b",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "46b5bd3f5dd549ee",
         "key": "visual_communication",
         "kind": "function",
@@ -16529,6 +16845,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "illustrator tool usage"
+      },
+      {
+        "id": "84a1ba99f0d349eb",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "907fbb2150259a1d",
@@ -16603,6 +16926,15 @@
     ],
     "matches": [
       {
+        "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 57,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "24318ddae7f9858b"
+      },
+      {
         "match_strength": "direct",
         "weight": 98,
         "coverageScore": 81,
@@ -16610,6 +16942,15 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "7b780398292e4b94"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 57,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "84a1ba99f0d349eb"
       },
       {
         "match_strength": "direct",
@@ -16878,11 +17219,25 @@
     ],
     "profile_evidence_units": [
       {
+        "id": "0bdb642bb8ff90c6",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 9,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "0d895a8d4d54b795",
         "key": "product_training_enablement",
         "kind": "deliverable",
         "strength": 9,
         "label": "product training, in-service support, and product introductions"
+      },
+      {
+        "id": "24ffbb16cb2f2d80",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 9,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "56d06efb7781b85e",
@@ -17323,6 +17678,13 @@
     ],
     "profile_evidence_units": [
       {
+        "id": "2ed1ccbfb2d7e0bd",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "33d5949e6ea49a0c",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -17370,6 +17732,13 @@
         "kind": "execution",
         "strength": 6,
         "label": "analysis, reporting, and measurement work"
+      },
+      {
+        "id": "83cdfd46298e4d76",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 8,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "85f46c94a07a95e8",
@@ -17440,6 +17809,13 @@
         "kind": "execution",
         "strength": 1,
         "label": "analysis, reporting, and measurement work"
+      },
+      {
+        "id": "f227321a63950d8c",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 6,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "f93b83fa9f7079e6",
@@ -17896,7 +18272,8 @@
           "consulting_strategy",
           "consumer_insights_research",
           "data_analytics_bi",
-          "finance_corp"
+          "finance_corp",
+          "operations_general"
         ],
         "gradYear": 2023,
         "languagesShown": [],
@@ -18162,6 +18539,13 @@
         "label": "prospecting, outreach, and pipeline management"
       },
       {
+        "id": "5873255bae499ebd",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 6,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "5cdcc30c6c15275e",
         "key": "c++",
         "kind": "tool",
@@ -18342,6 +18726,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "kubernetes tool usage"
+      },
+      {
+        "id": "fe8e6ad3ef3f161b",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 4,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "febe9087ceac421f",
@@ -18707,6 +19098,7 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
+          "operations_general",
           "sales_bd",
           "software_it"
         ],
@@ -18988,6 +19380,13 @@
         "label": "customer service, guest experience, and issue resolution"
       },
       {
+        "id": "6d8a95fc7653487c",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "7d819e08b77a0e47",
         "key": "partnerships_sponsorships",
         "kind": "function",
@@ -19058,6 +19457,13 @@
         "label": "powerpoint tool usage"
       },
       {
+        "id": "e103402d85d84c87",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "e63d9af63448e82e",
         "key": "consumer_research",
         "kind": "function",
@@ -19091,6 +19497,13 @@
         "kind": "function",
         "strength": 10,
         "label": "content and channel execution"
+      },
+      {
+        "id": "fc3366478111755d",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 9,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "fc72b942698c0aca",
@@ -19459,7 +19872,34 @@
         "match_kind": "execution",
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
+        "profile_unit_id": "6d8a95fc7653487c"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 79,
+        "coverageScore": 57,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "e103402d85d84c87"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 79,
+        "coverageScore": 57,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
         "profile_unit_id": "f71a6df572bc603c"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 56,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "fc3366478111755d"
       },
       {
         "match_strength": "direct",
@@ -20459,6 +20899,13 @@
         "label": "Nursing / Clinical"
       },
       {
+        "id": "e01fe0d36b3d9080",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 4,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "eef96cb455dcf484",
         "key": "nursing_clinical",
         "kind": "function",
@@ -21011,6 +21458,7 @@
         "function_tags": [
           "communications_pr",
           "healthcare_clinical",
+          "operations_general",
           "premed_clinical"
         ],
         "gradYear": 2024,
@@ -21202,6 +21650,13 @@
         "kind": "function",
         "strength": 8,
         "label": "clinical and patient-facing work"
+      },
+      {
+        "id": "6b3fd2ff6c17df37",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 5,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "72263ddc1deea9fe",
@@ -21986,7 +22441,7 @@
     "id": "synthetic-0410ak",
     "label": "[synthetic] 0410ak — Amara Johnson / (no title)",
     "decision": "Pass",
-    "score": 42,
+    "score": 39,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -22033,6 +22488,13 @@
     ],
     "profile_evidence_units": [
       {
+        "id": "0656c10e082591f9",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 5,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "36f921fcfb72c4ad",
         "key": "product_training_enablement",
         "kind": "deliverable",
@@ -22045,6 +22507,20 @@
         "kind": "tool",
         "strength": 7,
         "label": "powerpoint tool usage"
+      },
+      {
+        "id": "3b567c16e37860bd",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 7,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
+        "id": "434326d723c1f4e7",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 3,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "4514f656347718f2",
@@ -22082,6 +22558,13 @@
         "label": "clinical and patient-facing work"
       },
       {
+        "id": "80523721a67e6f2b",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "8d55eb8c4fa80f5e",
         "key": "coaching_instruction_facilitation",
         "kind": "deliverable",
@@ -22115,6 +22598,13 @@
         "kind": "deliverable",
         "strength": 10,
         "label": "product training, in-service support, and product introductions"
+      },
+      {
+        "id": "b8d25ebea02c1ddf",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 7,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "c3cffd0816bd1519",
@@ -22164,6 +22654,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "spss tool usage"
+      },
+      {
+        "id": "e2c967bde77a5334",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "e2ef490153a50016",
@@ -22251,6 +22748,42 @@
       },
       {
         "match_strength": "adjacent",
+        "weight": 82,
+        "coverageScore": 58,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "0656c10e082591f9"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 83,
+        "coverageScore": 59,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "3b567c16e37860bd"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 81,
+        "coverageScore": 57,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "434326d723c1f4e7"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 84,
+        "coverageScore": 61,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "80523721a67e6f2b"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 83,
         "coverageScore": 59,
         "match_kind": "execution",
@@ -22265,7 +22798,25 @@
         "match_kind": "execution",
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
+        "profile_unit_id": "b8d25ebea02c1ddf"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 83,
+        "coverageScore": 59,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
         "profile_unit_id": "caf66d24eeedeaed"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 84,
+        "coverageScore": 61,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "e2c967bde77a5334"
       }
     ],
     "why_codes": [],
@@ -22283,12 +22834,7 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": -3.9199999999999995
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": 0
+        "weight": -8.399999999999999
       },
       {
         "code": "RISK_SENIORITY_MISMATCH",
@@ -22422,12 +22968,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -18,
-          "note": "17.919999999999998"
+          "points": -22,
+          "note": "22.4"
         }
       ],
-      "raw_score": 42,
-      "clamped_score": 42
+      "raw_score": 39,
+      "clamped_score": 39
     }
   },
   "synthetic-0410al": {
@@ -22542,6 +23088,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "4e875f7e6e3b5916",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "572410c9495c83d3",
         "key": "git",
         "kind": "tool",
@@ -22596,6 +23149,13 @@
         "kind": "function",
         "strength": 10,
         "label": "clinical and patient-facing work"
+      },
+      {
+        "id": "9a16e03d4103dba8",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "b15bd19593399be1",
@@ -22859,6 +23419,7 @@
         "function_tags": [
           "communications_pr",
           "data_analytics_bi",
+          "operations_general",
           "premed_clinical"
         ],
         "gradYear": 2023,
@@ -23064,6 +23625,13 @@
         "label": "tableau tool usage"
       },
       {
+        "id": "3fe46797af48f887",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 9,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "40c07ff9a538a79a",
         "key": "tableau",
         "kind": "tool",
@@ -23237,6 +23805,13 @@
         "kind": "tool",
         "strength": 10,
         "label": "excel tool usage"
+      },
+      {
+        "id": "d11d65d7c8a883a9",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 9,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "d163e98ee6b518eb",
@@ -23966,6 +24541,7 @@
           "consumer_insights_research",
           "data_analytics_bi",
           "finance_corp",
+          "operations_general",
           "premed_clinical"
         ],
         "gradYear": 2023,
@@ -24097,6 +24673,13 @@
         "kind": "tool",
         "strength": 10,
         "label": "solidworks tool usage"
+      },
+      {
+        "id": "16bb2f0ef5b1ac28",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 6,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "1b08a61bb1e7520f",
@@ -24239,6 +24822,13 @@
         "label": "solidworks tool usage"
       },
       {
+        "id": "e926643bb0281f77",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 6,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "ef4cfefde10de438",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -24262,6 +24852,15 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "001fcf073e63fa75"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 76,
+        "coverageScore": 55,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "16bb2f0ef5b1ac28"
       },
       {
         "match_strength": "adjacent",
@@ -24343,6 +24942,15 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "deabb4622e1098cd"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 76,
+        "coverageScore": 55,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "e926643bb0281f77"
       },
       {
         "match_strength": "adjacent",
@@ -25738,6 +26346,13 @@
         "label": "canva tool usage"
       },
       {
+        "id": "ddb7a5ba000c8935",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "e669ed62a895943e",
         "key": "illustrator",
         "kind": "tool",
@@ -26106,6 +26721,15 @@
       },
       {
         "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 57,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "ddb7a5ba000c8935"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 76,
         "coverageScore": 55,
         "match_kind": "execution",
@@ -26256,6 +26880,7 @@
           "consumer_insights_research",
           "content_social",
           "data_analytics_bi",
+          "operations_general",
           "sales_bd"
         ],
         "gradYear": 2024,
@@ -28754,6 +29379,13 @@
     ],
     "profile_evidence_units": [
       {
+        "id": "14de616776a7c268",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 7,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "1a86f37ae31e52a9",
         "key": "excel",
         "kind": "tool",
@@ -28766,6 +29398,13 @@
         "kind": "function",
         "strength": 10,
         "label": "clinical and patient-facing work"
+      },
+      {
+        "id": "32471ceaa4f0ff80",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 8,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "48f2473fa643449c",
@@ -28796,11 +29435,32 @@
         "label": "analysis, reporting, and measurement work"
       },
       {
+        "id": "87be2029d57f43c2",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 4,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
+        "id": "890d9ed43cdc58f7",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 7,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "900d7bac16aac613",
         "key": "drafting_documentation",
         "kind": "deliverable",
         "strength": 4,
         "label": "drafting, documentation, and written deliverables"
+      },
+      {
+        "id": "b002bd137ed364e3",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "e0dbc7ced1bda103",
@@ -28836,6 +29496,24 @@
         "match_kind": "execution",
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
+        "profile_unit_id": "14de616776a7c268"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 77,
+        "coverageScore": 56,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "32471ceaa4f0ff80"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 76,
+        "coverageScore": 55,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
         "profile_unit_id": "64fb95bd68e18590"
       },
       {
@@ -28854,7 +29532,34 @@
         "match_kind": "execution",
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
+        "profile_unit_id": "87be2029d57f43c2"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 76,
+        "coverageScore": 55,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "890d9ed43cdc58f7"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 75,
+        "coverageScore": 54,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
         "profile_unit_id": "900d7bac16aac613"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 57,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "b002bd137ed364e3"
       },
       {
         "match_strength": "adjacent",
@@ -28884,7 +29589,7 @@
       },
       {
         "code": "WHY_EXECUTION_PROOF",
-        "weight": 76,
+        "weight": 78,
         "match_strength": "adjacent",
         "match_key": "operations_execution"
       }
@@ -29161,6 +29866,13 @@
         "label": "python tool usage"
       },
       {
+        "id": "27d5219eaddf3971",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 8,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "4f0f942b14066097",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -29180,6 +29892,13 @@
         "kind": "tool",
         "strength": 8,
         "label": "r tool usage"
+      },
+      {
+        "id": "79c8a31a16d775b3",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "85e5303c6de5c54f",
@@ -29257,6 +29976,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "python tool usage"
+      },
+      {
+        "id": "e79d77deb9159b04",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "f225d822fe909069",
@@ -29544,7 +30270,8 @@
         "degreeStatus": "has_degree",
         "financeSubFamily": null,
         "function_tags": [
-          "data_analytics_bi"
+          "data_analytics_bi",
+          "operations_general"
         ],
         "gradYear": 2024,
         "languagesShown": [],
@@ -29739,6 +30466,13 @@
         "label": "illustrator tool usage"
       },
       {
+        "id": "84a1ba99f0d349eb",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "95e01b5ff0b84001",
         "key": "visual_communication",
         "kind": "function",
@@ -29758,6 +30492,13 @@
         "kind": "tool",
         "strength": 6,
         "label": "photoshop tool usage"
+      },
+      {
+        "id": "d21293b22744fa0d",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "da34781d0878f8bc",
@@ -29958,7 +30699,7 @@
     "id": "synthetic-0410j",
     "label": "[synthetic] 0410j — Devon Carter / (no title)",
     "decision": "Pass",
-    "score": 6,
+    "score": 8,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -30065,6 +30806,20 @@
         "label": "excel tool usage"
       },
       {
+        "id": "cea6ee78f47129b0",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 6,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
+        "id": "d4154471ffee0717",
+        "key": "operations_execution",
+        "kind": "execution",
+        "strength": 10,
+        "label": "operations, process, and workflow execution"
+      },
+      {
         "id": "e5dfcb9c6319511c",
         "key": "partnerships_sponsorships",
         "kind": "function",
@@ -30084,6 +30839,13 @@
         "kind": "deliverable",
         "strength": 10,
         "label": "product training, in-service support, and product introductions"
+      },
+      {
+        "id": "f93405e047c57567",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
       }
     ],
     "matches": [
@@ -30107,12 +30869,30 @@
       },
       {
         "match_strength": "adjacent",
+        "weight": 81,
+        "coverageScore": 57,
+        "match_kind": "execution",
+        "match_key": "analysis_reporting",
+        "job_unit_key": "analysis_reporting",
+        "profile_unit_id": "d4154471ffee0717"
+      },
+      {
+        "match_strength": "adjacent",
         "weight": 76,
         "coverageScore": 52,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
         "profile_unit_id": "eb996cfb1019aa6c"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 86,
+        "coverageScore": 61,
+        "match_kind": "deliverable",
+        "match_key": "drafting_documentation",
+        "job_unit_key": "drafting_documentation",
+        "profile_unit_id": "d4154471ffee0717"
       },
       {
         "match_strength": "adjacent",
@@ -30138,11 +30918,6 @@
       },
       {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
-        "severity": "high",
-        "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
       },
@@ -30299,8 +31074,8 @@
           "note": "22"
         }
       ],
-      "raw_score": 6,
-      "clamped_score": 6
+      "raw_score": 8,
+      "clamped_score": 8
     }
   },
   "synthetic-0410k": {
@@ -30367,6 +31142,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "salesforce tool usage"
+      },
+      {
+        "id": "0a46faec98c9c8a0",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 9,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "1adaa22cc8dff886",
@@ -30451,6 +31233,13 @@
         "kind": "function",
         "strength": 7,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "4c66bf26fac7aa2a",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 6,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "56f30df65096aff9",
@@ -30586,11 +31375,25 @@
         "label": "prospecting, outreach, and pipeline management"
       },
       {
+        "id": "d0eacb9ce44f982d",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 6,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "d71ba1d0373e7880",
         "key": "crm",
         "kind": "tool",
         "strength": 6,
         "label": "crm tool usage"
+      },
+      {
+        "id": "e3e79201c012ddca",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 9,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "e673cf7d6c8fbda7",
@@ -30952,6 +31755,7 @@
           "content_social",
           "data_analytics_bi",
           "finance_corp",
+          "operations_general",
           "sales_bd"
         ],
         "gradYear": 2023,
@@ -31262,6 +32066,13 @@
         "label": "analysis, reporting, and measurement work"
       },
       {
+        "id": "8617d35e00bf487e",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "89925e0428eb9ead",
         "key": "powerpoint",
         "kind": "tool",
@@ -31309,6 +32120,13 @@
         "kind": "function",
         "strength": 10,
         "label": "legal, policy, and regulatory research"
+      },
+      {
+        "id": "b536c8d163a988ea",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "b654d521a1b32e16",
@@ -31844,6 +32662,7 @@
         "function_tags": [
           "data_analytics_bi",
           "legal_regulatory",
+          "operations_general",
           "premed_clinical",
           "sales_bd",
           "software_it"
@@ -32066,6 +32885,13 @@
         "kind": "function",
         "strength": 9,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "89bf9cc78b42a5d4",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "8d0c79f97edf17ce",
@@ -32487,6 +33313,7 @@
           "consumer_insights_research",
           "data_analytics_bi",
           "finance_corp",
+          "operations_general",
           "premed_clinical"
         ],
         "gradYear": 2024,
@@ -32672,6 +33499,13 @@
         "label": "drafting, documentation, and written deliverables"
       },
       {
+        "id": "aa342873f15ad397",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 6,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "b93e23bc78df3e4a",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -32814,6 +33648,15 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "a1d35dcea22c2373"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 76,
+        "coverageScore": 55,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "aa342873f15ad397"
       },
       {
         "match_strength": "adjacent",
@@ -33640,6 +34483,13 @@
     ],
     "profile_evidence_units": [
       {
+        "id": "01887acabeab7b0d",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 6,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "06802d0d8a70dd40",
         "key": "financial_analysis",
         "kind": "function",
@@ -33801,6 +34651,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "c574a56fd9b60b26",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "d6d5e2abd046c6fe",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -33820,6 +34677,13 @@
         "kind": "function",
         "strength": 5,
         "label": "brand partnerships and sponsorship work"
+      },
+      {
+        "id": "e23a666b40e97ed6",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 9,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "f09fdf3ce2d88a28",
@@ -34524,6 +35388,13 @@
         "label": "analysis, reporting, and measurement work"
       },
       {
+        "id": "7d9f94ac353ac85e",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 10,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "85c49771ee4ba4c0",
         "key": "clinical_patient_work",
         "kind": "function",
@@ -34543,6 +35414,13 @@
         "kind": "deliverable",
         "strength": 5,
         "label": "drafting, documentation, and written deliverables"
+      },
+      {
+        "id": "af43e346dec6c0bc",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 7,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "b9af5e6a4599a233",
@@ -34716,6 +35594,7 @@
         "function_tags": [
           "communications_pr",
           "data_analytics_bi",
+          "operations_general",
           "premed_clinical"
         ],
         "gradYear": 2024,
@@ -34950,6 +35829,13 @@
         "label": "sql tool usage"
       },
       {
+        "id": "520c6d4e49a74582",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 5,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
         "id": "5f4ea0c1e4be5267",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -34983,6 +35869,13 @@
         "kind": "execution",
         "strength": 6,
         "label": "analysis, reporting, and measurement work"
+      },
+      {
+        "id": "806cf8ceff73d743",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 5,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "914f0a0ebc6edca7",
@@ -35677,6 +36570,7 @@
           "content_social",
           "data_analytics_bi",
           "growth_performance",
+          "operations_general",
           "premed_clinical"
         ],
         "gradYear": 2024,
@@ -36196,6 +37090,20 @@
         "label": "excel tool usage"
       },
       {
+        "id": "d22655254f83c5a3",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 6,
+        "label": "event planning, coordination, and bookings"
+      },
+      {
+        "id": "dc0b647e8aa7328b",
+        "key": "operations_execution",
+        "kind": "execution",
+        "strength": 10,
+        "label": "operations, process, and workflow execution"
+      },
+      {
         "id": "f2b1636ada2e80f9",
         "key": "product_training_enablement",
         "kind": "deliverable",
@@ -36603,6 +37511,13 @@
         "kind": "execution",
         "strength": 10,
         "label": "analysis, reporting, and measurement work"
+      },
+      {
+        "id": "d64df3d6c9dbb0de",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 6,
+        "label": "event planning, coordination, and bookings"
       },
       {
         "id": "d8c3da54b4b74309",
@@ -37403,6 +38318,13 @@
         "kind": "execution",
         "strength": 7,
         "label": "operations, process, and workflow execution"
+      },
+      {
+        "id": "df68fbe5cc81ff06",
+        "key": "event_coordination",
+        "kind": "execution",
+        "strength": 4,
+        "label": "event planning, coordination, and bookings"
       }
     ],
     "matches": [
@@ -37495,6 +38417,15 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "c525d696465d758b"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 75,
+        "coverageScore": 54,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "df68fbe5cc81ff06"
       }
     ],
     "why_codes": [

@@ -95,6 +95,13 @@ const SPONSORSHIP_NOT_PARTNERSHIP = [
   "license", "licensing", "certification", "series",
 ]
 const PARTNER_PROFILE_NOT_EVIDENCE = ["visa", "immigration", "targeting", "seeking", "interested in"]
+// event_coordination: a résumé line that mentions events counts only when the
+// candidate planned or ran them, not when they attended or worked near one.
+const EVENT_WORK_VERBS = [
+  "coordinated", "coordinating", "coordinate", "coordinator", "coordination",
+  "planned", "planning", "co-planned", "organized", "organizing", "organised",
+  "hosted", "facilitated", "executed", "managed",
+]
 
 const CAPABILITY_RULES: CapabilityRule[] = [
   {
@@ -446,10 +453,23 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "fan-facing",
       "families",
       "players and families",
+      // Retail / concierge client service (Ava McTaggart, Topgolf).
+      "guest service",
+      "client service",
+      "concierge",
+      "clients per shift",
+      "customers per shift",
+      "guests per shift",
     ],
     jobPhrases: [
       "guest experience",
       "guest services",
+      // No JD "client service": finance postings use it for the Client
+      // Service Associate title and "client service oriented" traits.
+      "guest service",
+      "client inquiries",
+      "customer inquiries",
+      "guest inquiries",
       "fan services",
       "fan engagement",
       "customer service",
@@ -565,6 +585,53 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "sport coordinator",
     ],
     adjacentKeys: ["operations_execution", "stakeholder_coordination"],
+  },
+  {
+    // Planning and coordinating events: bookings, logistics, client event
+    // requirements (Topgolf Event Sales Admin vs a résumé that co-planned an
+    // on-site event and coordinated vendor timelines). Separate from
+    // event_operations_live_execution, which is game-day / venue floor work.
+    // No bare "event" / "events": most JDs mention events in passing.
+    key: "event_coordination",
+    label: "event planning, coordination, and bookings",
+    kind: "execution",
+    functionTag: "operations_general",
+    profilePhrases: [
+      "event planning",
+      "event planner",
+      "event coordination",
+      "event coordinator",
+      "event logistics",
+      "coordinated events",
+      "coordinating events",
+      "planned events",
+      "co-planned",
+      "on-site event",
+      "logistics coordination",
+      "event bookings",
+      // Résumés name the event and the verb separately: "Events Coordinator",
+      // "Coordinated sponsorship, networking, and professional development
+      // events", "Facilitated 3 celebrity-hosted events". Bare event/events
+      // only counts on a line that also says the candidate ran it.
+      { phrase: "events", requiresNearby: EVENT_WORK_VERBS },
+      { phrase: "event", requiresNearby: EVENT_WORK_VERBS },
+    ].map((spec) => typeof spec === "string"
+      ? { phrase: spec, negativeContext: PARTNER_PROFILE_NOT_EVIDENCE }
+      : { ...spec, negativeContext: PARTNER_PROFILE_NOT_EVIDENCE }),
+    jobPhrases: [
+      "event planning",
+      "plan events",
+      "event coordination",
+      "coordinate events",
+      "event logistics",
+      "event bookings",
+      "event booking",
+      "event requirements",
+      "private events",
+      "group events",
+      "banquet",
+    ],
+    adjacentKeys: ["operations_execution", "event_operations_live_execution"],
   },
   {
     key: "coaching_instruction_facilitation",
@@ -1181,6 +1248,11 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "staff coordination",
       "operational execution",
       "operating cadence",
+      "logistics coordination",
+      "vendor coordination",
+      "vendor management",
+      "coordinated vendors",
+      "coordinating vendors",
     ],
     jobPhrases: [
       "business operations",
