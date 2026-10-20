@@ -41,6 +41,14 @@ export type PracticeQuestion = {
   /** Coach feedback. Draft until the round's feedback_sent_at is set. */
   fb_works?: string | null
   fb_fix?: string | null
+  /** Case rounds only (lib/academy). Null on an interview round. */
+  qkey?: string | null
+  title?: string | null
+  exhibit?: string | null
+  /** This question's limit. Null: ANSWER_SECONDS. */
+  answer_seconds?: number | null
+  /** Think time before recording. Null or 0: none. */
+  prep_seconds?: number | null
 }
 
 export type PracticeTake = {
@@ -50,6 +58,15 @@ export type PracticeTake = {
   mime: string
   duration_ms: number | null
   created_at: string
+  /** Case rounds: the audio-only file the transcript is made from. */
+  audio_path?: string | null
+  question_shown_at?: string | null
+  response_started_at?: string | null
+  response_ended_at?: string | null
+  first_speech_ms?: number | null
+  transcript?: string | null
+  transcript_status?: "pending" | "done" | "failed" | "unavailable" | null
+  transcript_error?: string | null
 }
 
 export type PracticeRound = {
@@ -64,7 +81,25 @@ export type PracticeRound = {
   submitted_at: string | null
   fb_overall?: string | null
   feedback_sent_at?: string | null
+  /** 'case' is a Casing Academy round: fixed order, per-question timing. */
+  kind?: "interview" | "case"
+  case_id?: string | null
+  workbook_id?: string | null
+  scenario?: string | null
+  /** The student's answers after a case, keyed by the case's self_assessment keys. */
+  self_assessment?: Record<string, string> | null
+  self_assessed_at?: string | null
   questions: PracticeQuestion[]
+}
+
+/** The limit for one question: its own, or the round-wide default. */
+export function answerSecondsFor(q: Pick<PracticeQuestion, "answer_seconds">): number {
+  return q.answer_seconds ?? ANSWER_SECONDS
+}
+
+/** Every self-assessment question has a non-blank answer. */
+export function selfAssessmentDone(keys: string[], answers: Record<string, string> | null | undefined): boolean {
+  return keys.every((k) => (answers?.[k] ?? "").trim().length > 0)
 }
 
 export type QuestionInput = { text: string; source?: "bank" | "custom" }

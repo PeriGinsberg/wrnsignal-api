@@ -11,9 +11,11 @@ import { useCallback, useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
 import { Recorder } from "./Recorder"
+import { CasePlayer, type CaseRound } from "./CasePlayer"
 
 type Question = { id: string; position: number; text: string; answered: boolean; takes: number }
 type Round = {
+  kind?: "interview"
   id: string
   title: string
   status: "draft" | "sent" | "submitted"
@@ -26,7 +28,7 @@ type Round = {
 export default function PracticeRoundPage() {
   const { roundId } = useParams<{ roundId: string }>()
   const router = useRouter()
-  const [round, setRound] = useState<Round | null>(null)
+  const [round, setRound] = useState<Round | CaseRound | null>(null)
   const [complete, setComplete] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -118,6 +120,18 @@ export default function PracticeRoundPage() {
   if (loading) return <Shell><p style={p}>Loading...</p></Shell>
   if (error && !round) return <Shell><p style={{ ...p, color: "#C0322F" }}>{error}</p></Shell>
   if (!round) return null
+
+  if (round.kind === "case") {
+    return (
+      <Shell>
+        <CasePlayer round={round} authFetch={authFetch} reload={load} />
+        <button type="button" onClick={() => router.push("/dashboard")}
+          style={{ marginTop: 20, background: "none", border: "none", color: "#08203F", fontWeight: 700, cursor: "pointer", fontSize: 15, padding: "8px 0", fontFamily: "inherit" }}>
+          Back to SIGNAL
+        </button>
+      </Shell>
+    )
+  }
 
   const done = round.status === "submitted"
 

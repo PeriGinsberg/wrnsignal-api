@@ -11,12 +11,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { SPACE, TYPE } from "../../../../../lib/theme/surfaces"
 import {
-  GENERAL_SECTION_ID, SCENARIO_PARTS, STAR_PARTS, answerText, stripCoachOnly,
-  type Block, type Section, type WorkbookContent,
+  GENERAL_SECTION_ID, SCENARIO_PARTS, STAR_PARTS, answerText, gradeAnswer, hasPracticeResults, stripCoachOnly,
+  type Block, type Evaluation, type Section, type WorkbookContent,
 } from "@/lib/workbook/content"
 import { WorkbookFrame } from "@/components/workbook/WorkbookFrame"
 import { SectionBlocks, SectionHeader, type FieldApi } from "@/components/workbook/Blocks"
 import { Summary, type InterviewRow } from "@/components/workbook/Summary"
+import { PracticeResults } from "@/components/workbook/PracticeResults"
+import { CoachCommandCenter } from "@/components/workbook/CoachCommandCenter"
+import { PerformancePackage } from "@/components/academy/PerformancePackage"
 import { wbFetch, fmtWhen, type Comment, type Send } from "@/components/workbook/api"
 import { AddWorkbookModal } from "./AddWorkbookModal"
 
@@ -36,6 +39,7 @@ type Detail = {
   comments: Comment[]
   sends: Send[]
   marks: { section_id: string }[]
+  evaluations?: Evaluation[]
 }
 
 const STATUS_LABEL: Record<ListRow["status"], string> = {
@@ -124,10 +128,22 @@ export function WorkbooksTab({ clientId, clientName }: { clientId: string; clien
 
 type Anchor = { sectionId: string; fieldKey: string | null; label: string; kind?: "coach_comment" | "coach_suggestion" }
 
+type ReviewItem = { group?: string; key: string; label: string; block?: Block }
+
 /** The answer boxes a section shows the coach: one per field, grouped for STAR and scenario. */
-function reviewItems(s: Section): { group?: string; key: string; label: string }[] {
-  const out: { group?: string; key: string; label: string }[] = []
+function reviewItems(s: Section): ReviewItem[] {
+  const out: ReviewItem[] = []
   for (const b of s.blocks as Block[]) {
+    if (b.type === "video") out.push({ key: b.key, label: `Video: ${b.title}`, block: b })
+    if (b.type === "quiz" || b.type === "numeric") out.push({ key: b.key, label: b.question, block: b })
+    if (b.type === "select") out.push({ key: b.key, label: b.label })
+    if (b.type === "drill") {
+      const group = `${b.number != null ? `${b.number} ` : ""}${b.title ?? b.question}`
+      out.push({ group, key: b.key, label: `${b.write_label} (first submission)`, block: b })
+      out.push({ group, key: `${b.key}.secs`, label: `Seconds spoken (${b.speak_seconds}s allowed)`, block: b })
+      if (b.check) out.push({ group, key: `${b.key}.check`, label: b.check.question, block: b })
+    }
+    if (b.type === "sort") b.items.forEach((it, i) => out.push({ group: b.title ?? "Sorting", key: `${b.key}.${i + 1}`, label: it.text, block: b }))
     if (b.type === "field") out.push({ key: b.key, label: b.style === "hook" ? `${b.label}: "${b.prefix ?? ""}..."` : b.label })
     if (b.type === "pick") out.push({ key: b.key, label: b.label })
     if (b.type === "star") for (const p of STAR_PARTS) out.push({ group: `${b.number ?? ""} ${b.title}`.trim(), key: `${b.key}.${p.part}`, label: p.label })
@@ -142,7 +158,7 @@ function reviewItems(s: Section): { group?: string; key: string; label: string }
 function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId: string; onBack(): void }) {
   const [d, setD] = useState<Detail | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [mode, setMode] = useState<"review" | "as_client" | "summary">("review")
+  const [mode, setMode] = useState<"review" | "as_client" | "summary" | "results">("review")
   const [idx, setIdx] = useState(0)
   const [anchor, setAnchor] = useState<Anchor | null>(null)
   const [sending, setSending] = useState(false)
@@ -192,6 +208,14 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
     await load()
   }
 
+  const evaluationFor = (sectionId: string) => (d.evaluations ?? []).find((e) => e.section_id === sectionId) ?? null
+  const saveEvaluation = async (e: Evaluation) => {
+    const { status, body } = await wbFetch<{ evaluation: Evaluation }>(`${base}/evaluation`, { method: "PUT", body: JSON.stringify(e) })
+    if (status !== 200) return false
+    setD((p) => p && { ...p, evaluations: [...(p.evaluations ?? []).filter((x) => x.section_id !== e.section_id), body.evaluation] })
+    return true
+  }
+
   const toggleMark = async (s: Section) => {
     const reviewed = !marked.has(s.id)
     const { status } = await wbFetch(`${base}/sections/${encodeURIComponent(s.id)}/mark`, { method: "PUT", body: JSON.stringify({ reviewed }) })
@@ -223,11 +247,11 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
         <span style={{ fontSize: TYPE.body, opacity: 0.8 }}>{[c.title, c.interview?.company, c.interview?.role].filter(Boolean).join(", ")}</span>
       </div>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        {(["review", "as_client", "summary"] as const).map((m) => (
+        {(["review", "as_client", "summary", ...(hasPracticeResults(c) ? ["results" as const] : [])] as const).map((m) => (
           <button key={m} type="button" className="wb-btn" aria-pressed={mode === m}
             style={{ borderColor: "#fff", color: mode === m ? "var(--navy)" : "#fff", background: mode === m ? "#fff" : "transparent" }}
             onClick={() => setMode(m)}>
-            {m === "review" ? "Review" : m === "as_client" ? `See it as ${first}` : "1-hour summary"}
+            {m === "review" ? "Review" : m === "as_client" ? `See it as ${first}` : m === "results" ? "Results" : c.summary.link_label ?? "1-hour summary"}
           </button>
         ))}
       </div>
@@ -249,6 +273,11 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
         {sending ? "Sending" : d.workbook.status === "draft" ? `Send to ${first}` : `Send back to ${first}`}
       </button>
       {sendMsg && <span className="wb-saved" role="status">{sendMsg}</span>}
+      {d.workbook.status !== "draft" && (
+        <div style={{ borderTop: "1px solid var(--border)", paddingTop: 12 }}>
+          <PerformancePackage clientId={clientId} workbookId={workbookId} compact />
+        </div>
+      )}
     </div>
   )
 
@@ -257,6 +286,15 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
       <WorkbookFrame page={false}>
         {header}
         <div style={{ padding: "24px 0" }}><Summary content={c} answers={values} interview={d.interview} /></div>
+      </WorkbookFrame>
+    )
+  }
+
+  if (mode === "results") {
+    return (
+      <WorkbookFrame page={false}>
+        {header}
+        <PracticeResults content={c} answers={values} evaluations={d.evaluations ?? []} />
       </WorkbookFrame>
     )
   }
@@ -273,7 +311,7 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
             <p className="wb-callout paleblue" style={{ margin: 0, padding: "14px 18px", fontSize: TYPE.body }}>
               What {first} sees, read-only. Coach-only notes are hidden. Your unsent notes are not shown.
             </p>
-            <SectionHeader section={s} total={clientView.sections.length} />
+            <SectionHeader section={s} total={clientView.sections.length} word={c.section_word} />
             <SectionBlocks api={previewApi} section={s} />
           </main>
         </div>
@@ -295,7 +333,7 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
             <>
               <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 20, borderBottom: "2px solid var(--orange)", paddingBottom: 18, flexWrap: "wrap" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <span className="wb-eyebrow">Section {String(section.number).padStart(2, "0")}</span>
+                  <span className="wb-eyebrow">{section.day ? `${section.day}, ` : ""}{c.section_word ?? "Section"} {String(section.number).padStart(2, "0")}</span>
                   <h1 className="wb-serif" style={{ margin: 0, fontSize: 40, fontWeight: 600, lineHeight: 1.08 }}>{section.title}</h1>
                 </div>
                 <button type="button" className={`wb-btn${marked.has(section.id) ? " wb-btn-teal" : ""}`} aria-pressed={marked.has(section.id)} onClick={() => toggleMark(section)}>
@@ -303,16 +341,14 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
                 </button>
               </div>
 
-              {section.blocks.filter((b) => b.type === "coach_only").map((b, i) => (
-                <div key={i} className="wb-coachonly">
-                  <span className="wb-eyebrow-ink">Coach only. {first} never sees this.</span>
-                  <span>{(b as Extract<Block, { type: "coach_only" }>).body}</span>
-                </div>
-              ))}
+              <CoachCommandCenter key={section.id} section={section} first={first}
+                evaluation={evaluationFor(section.id)} onSaveEvaluation={saveEvaluation} />
 
               {reviewItems(section).map((it, i, all) => {
                 const selected = anchor?.fieldKey === it.key
-                const text = answerText(values[it.key])
+                const raw = answerText(values[it.key])
+                const text = it.block?.type === "video" ? (raw === "1" ? "Watched" : "") : raw
+                const grade = it.block ? gradeAnswer(it.block, values[it.key]) : null
                 const count = countFor(section.id, it.key)
                 return (
                   <React.Fragment key={it.key}>
@@ -324,9 +360,14 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
                       {text
                         ? <p className="wb-serif" style={{ margin: 0, fontSize: 20, lineHeight: 1.45, whiteSpace: "pre-wrap" }}>{text}</p>
                         : <p className="wb-muted" style={{ margin: 0, fontStyle: "italic" }}>No answer yet</p>}
+                      {grade && (
+                        <span className={`wb-tag ${grade === "correct" ? "ok" : "review"}`} style={{ alignSelf: "flex-start" }}>
+                          {grade === "correct" ? "Right on the first try" : `Missed. Expected: ${it.block?.type === "quiz" ? it.block.correct.join(", ") : it.block?.type === "numeric" ? it.block.answer.toLocaleString("en-US") : ""}`}
+                        </span>
+                      )}
                       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                         <button type="button" className="wb-btn" onClick={() => setAnchor({ sectionId: section.id, fieldKey: it.key, label: it.label, kind: "coach_comment" })}>Comment</button>
-                        {!isPickKey(c, it.key) && (
+                        {!isPickKey(c, it.key) && !it.block && (
                           <button type="button" className="wb-btn" onClick={() => setAnchor({ sectionId: section.id, fieldKey: it.key, label: it.label, kind: "coach_suggestion" })}>Suggest an edit</button>
                         )}
                         {count && <span style={{ fontSize: TYPE.body, color: "var(--teal-ink)", fontWeight: 600 }}>{count}</span>}

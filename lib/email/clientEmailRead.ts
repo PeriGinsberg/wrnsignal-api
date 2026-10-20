@@ -7,7 +7,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 
 export const CLIENT_EMAIL_LIST_SELECT =
-  "id, email_type, sent_at, from_email, to_email, cc_email, bcc_emails, delivered_to, redirected, subject, triggered_by, postmark_message_id, backfilled"
+  "id, email_type, sent_at, from_email, to_email, cc_email, bcc_emails, delivered_to, redirected, subject, triggered_by, postmark_message_id, backfilled, channel, direction, status, status_detail, status_at, reply_to_email"
 
 /** Adds sent_by_name: the coach who clicked, or null when SIGNAL sent it on its own. */
 export async function withSenderNames<T extends { triggered_by: string | null }>(

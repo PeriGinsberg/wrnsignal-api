@@ -1180,6 +1180,7 @@ export default function ProspectDetailPage() {
   const [prospect, setProspect] = useState<Prospect | null>(null)
   // Bumped when the header's Add Task saves, so the Tasks section re-reads.
   const [tasksKey, setTasksKey] = useState(0)
+  const [emailsKey, setEmailsKey] = useState(0)
   const [pipeline, setPipeline] = useState<PipelineStage[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [accessDenied, setAccessDenied] = useState(false)
@@ -1236,6 +1237,7 @@ export default function ProspectDetailPage() {
     recordLabel: "Prospect",
     onNoteSaved: () => { load({ silent: true }) },
     onTaskSaved: () => setTasksKey((k) => k + 1),
+    onMessageSent: () => setEmailsKey((k) => k + 1),
   })
 
   // Load the coach's pipeline once (coach-level, stable across this prospect).
@@ -1771,7 +1773,7 @@ export default function ProspectDetailPage() {
           passed straight through; no resolver needed. */}
       {/* Communications: every email SIGNAL sent this prospect, as sent. */}
       <Section title="Communications">
-        <CommunicationsTab coachClientId={prospect.id} />
+        <CommunicationsTab coachClientId={prospect.id} refreshKey={emailsKey} />
       </Section>
 
       <Section title="History">

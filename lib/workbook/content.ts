@@ -11,7 +11,12 @@ export type Tone = "peach" | "paleblue"
 export type SelectOption = string | { group: string; items: string[] }
 
 export type Block =
-  | { type: "text"; body: string; label?: string; size?: "lead" }
+  /**
+   * `case_prompt` marks the case the client reads. The coach's Command Center
+   * shows THIS block, with a Copy button, at the top of the section, so the
+   * coach's prompt can never drift from the client's. The client ignores it.
+   */
+  | { type: "text"; body: string; label?: string; size?: "lead"; case_prompt?: boolean }
   | { type: "heading"; text: string }
   | { type: "list"; style: "bullets" | "numbers" | "quotes"; items: string[]; title?: string }
   | { type: "callout"; tone: Tone; body: string; title?: string }
@@ -114,7 +119,12 @@ export type Block =
     }
   | { type: "star"; key: string; title: string; question: string; number?: number; skill?: string }
   | { type: "scenario"; key: string; prompt: string; number?: number }
-  | { type: "coach_only"; body: string; title?: string }
+  /**
+   * Coach eyes only. Removed whole before content reaches a client, in SQL
+   * (wb_strip_coach_only) and in stripCoachOnly, whatever it carries. `body`
+   * is free text; `guide` is the structured Coach Command Center. Either or both.
+   */
+  | { type: "coach_only"; body?: string; title?: string; guide?: CoachGuide }
   /**
    * A read-only table. Without `columns` it is a list of terms: no header row,
    * and the first cell of each row reads as the word being defined.
@@ -129,11 +139,157 @@ export type Block =
    * outweigh every other question in the workbook.
    */
   | { type: "grid"; key: string; title?: string; columns: { key: string; label: string }[]; rows: number; guide?: string[] }
+  /**
+   * A video the client must watch. Embedded when the host allows it, always with
+   * a plain link out. The key stores "1" once they tick that they watched it.
+   */
+  | { type: "video"; key: string; title: string; url: string; length?: string; source?: string; body?: string }
+  /** An outside resource, read-only. `kind` says what clicking it opens. */
+  /** `practice` is a SIGNAL practice round the workbook leads to: a /dashboard/ path, opened in place. */
+  | { type: "link"; title: string; url: string; kind: "video" | "article" | "tool" | "practice"; body?: string; optional?: boolean }
+  /**
+   * A knowledge check. The client chooses, presses Check, and the answer is
+   * saved and locked, so what the coach sees is their first attempt. Wrong
+   * answers are explained, never repeated: they move on either way.
+   */
+  | {
+      type: "quiz"; key: string; question: string; options: string[]; correct: string[]
+      multi?: boolean; explanation: string; skill?: string; number?: number
+    }
+  /** A math question with one right number. Saved and locked on Check, as quiz. */
+  | {
+      type: "numeric"; key: string; question: string; answer: number; explanation: string
+      /** Plus or minus. Default: 1% of the answer. */
+      tolerance?: number
+      /** Accept the answer with either sign ("fell 25%" typed as -25). */
+      either_sign?: boolean
+      prefix?: string; suffix?: string; hint?: string; skill?: string; number?: number
+    }
+  /**
+   * Sort each item into a category. One answer per item, keyed `<key>.<n>`
+   * from 1, plus `<key>.checked` once they press Check. The sample sorting is
+   * a suggestion, not a verdict: several groupings can be reasonable.
+   */
+  | {
+      type: "sort"; key: string; title?: string; prompt?: string; categories: string[]
+      items: { text: string; category: string }[]; explanation?: string; skill?: string
+    }
+  /** An example answer, locked until every key in `after` has an answer. */
+  | { type: "reveal"; title: string; body: string; after: string[]; button?: string }
+  /**
+   * A timed speaking drill: think time, then say the answer out loud against a
+   * clock, then write it down. Submitting locks what they wrote (the coach sees
+   * the first attempt, not a version edited after reading the model), shows
+   * the model answer, and asks the self-check.
+   *
+   * Keys: `<key>` the written answer, `<key>.secs` seconds spoken (recorded by
+   * the timer, optional), and `<key>.check` the self-check choice when there is
+   * one.
+   */
+  | {
+      type: "drill"; key: string; question: string
+      prep_seconds: number; speak_seconds: number
+      /** What to write: "Your one-sentence headline". */
+      write_label: string
+      input?: "short" | "long"
+      model: string
+      model_title?: string
+      check?: { question: string; options: string[] }
+      title?: string; number?: number; skill?: string
+    }
+
+/**
+ * The structured coach guide for a live case: how to open, answers to likely
+ * clarifying questions, the Teams messages (what to send, kept apart from the
+ * private working beneath it), a hint ladder, what to watch for, and an
+ * evaluation rubric the coach's ratings are saved against. All optional.
+ */
+export type CoachGuide = {
+  agenda?: string[]
+  opening?: string[]
+  clarify?: { ask?: string; answer: string }[]
+  /** `send` is the only text the Copy button copies; `private` is never copied. */
+  messages?: { label: string; title?: string; send?: string; private?: string }[]
+  hints?: string[]
+  hint_note?: string
+  checklist?: string[]
+  checklist_title?: string
+  checklist_note?: string
+  rubric?: CoachRubric
+  notes?: string[]
+  /**
+   * The facilitation script: the primary coach experience when present. Each
+   * step says what to ask, what a strong answer includes, which Teams message
+   * to send and when, the worked calculations (essential first, stretch
+   * optional), follow-ups, hints, and when to advance. A message a step sends
+   * is shown inside that step and not repeated elsewhere.
+   */
+  steps?: CoachStep[]
+}
+
+/** One worked calculation: what it is, the setup, the answer, what it means. */
+export type CoachCalc = { label: string; work: string; answer: string; meaning?: string }
+
+export type CoachStep = {
+  title: string
+  minutes?: string
+  /** The exact questions to ask, in order. */
+  ask: string[]
+  /** What a strong answer includes. */
+  strong?: string[]
+  /** How to answer the student's likely clarifying questions. */
+  answers?: { ask?: string; answer: string }[]
+  /** What to do if the student is off track. */
+  teach?: string
+  /** Must be true before moving on (a checkpoint). */
+  checkpoint?: string
+  /** The Teams message this step sends: its label in `messages`, what triggers it, and a rescue prompt if it never comes. */
+  send?: { message: string; when: string; rescue?: string }
+  essential?: CoachCalc[]
+  stretch?: CoachCalc[]
+  interpretation?: string
+  errors?: string[]
+  follow_ups?: { ask: string; answer?: string }[]
+  hints?: string[]
+  /** Neutral prompts for a stalled student in an independent case. */
+  rescue?: string[]
+  advance?: string
+  /** Rubric item keys (or plain labels) this step evidences. */
+  assess?: string[]
+}
+
+/** Item and scale keys are what is saved, so they must stay stable once used. */
+export type CoachRubric = {
+  items: { key: string; label: string }[]
+  /** Default: Independent / Prompted / Not demonstrated. */
+  scale?: { key: string; label: string }[]
+  note?: string
+}
+
+export const DEFAULT_RUBRIC_SCALE: { key: string; label: string }[] = [
+  { key: "independent", label: "Independent" },
+  { key: "prompted", label: "Prompted" },
+  { key: "not_demonstrated", label: "Not demonstrated" },
+]
+
+/** A saved evaluation: one rating (a scale key) and an optional note per rubric item, plus an overall note. */
+export type Evaluation = {
+  section_id: string
+  ratings: Record<string, { rating: string | null; note?: string }>
+  note: string | null
+  updated_at?: string
+}
 
 /** in_session: worked through with the coach. homework: done alone afterwards. */
 export type SectionMode = "in_session" | "homework"
 
-export type Section = { id: string; number: number; title: string; mode?: SectionMode; blocks: Block[] }
+export type Section = {
+  id: string; number: number; title: string; mode?: SectionMode; blocks: Block[]
+  /** A heading the nav groups sections under, e.g. "Friday". */
+  day?: string
+  /** How long it takes, as the client reads it: "About 20 minutes". */
+  minutes?: string
+}
 
 export type SummaryBlock =
   | { type: "interview_details" }
@@ -184,7 +340,17 @@ export type WorkbookContent = {
   interview: Interview | null
   coach: { first_name: string }
   sections: Section[]
-  summary: { title: string; eyebrow: string; blocks: SummaryBlock[] }
+  /** `link_label` replaces "Read This 1 Hour Before" on the header button. */
+  summary: { title: string; eyebrow: string; blocks: SummaryBlock[]; link_label?: string }
+  /** What a section is called in its header: "Section" unless this says "Module". */
+  section_word?: string
+  /** Shown at the end of the last section once every section is done. */
+  completion?: { title: string; body: string }
+  /**
+   * For the coach's Results view: which of the client's answers are their
+   * confidence rating, what confuses them, and what they want to practice.
+   */
+  results?: { confidence?: string; confusing?: string[]; practice?: string[] }
 }
 
 /** A pick answer. Text fields store a plain string. */
@@ -250,14 +416,31 @@ export function gridKeys(b: Extract<Block, { type: "grid" }>): string[] {
   return out
 }
 
+/** The item keys of a sort, then its checked key. */
+export function sortKeys(b: Extract<Block, { type: "sort" }>): string[] {
+  return [...b.items.map((_, i) => `${b.key}.${i + 1}`), `${b.key}.checked`]
+}
+
+/** A drill's keys: the written answer, the seconds spoken, the self-check. */
+export function drillKeys(b: Extract<Block, { type: "drill" }>): string[] {
+  return [b.key, `${b.key}.secs`, ...(b.check ? [`${b.key}.check`] : [])]
+}
+
 /** The field keys one block owns, in render order. */
 export function blockFieldKeys(b: Block): string[] {
   switch (b.type) {
+    case "drill":
+      return drillKeys(b)
     case "grid":
       return gridKeys(b)
+    case "sort":
+      return sortKeys(b)
     case "field":
     case "pick":
     case "select":
+    case "video":
+    case "quiz":
+    case "numeric":
       return [b.key]
     case "star":
       return STAR_PARTS.map((p) => `${b.key}.${p.part}`)
@@ -285,6 +468,12 @@ export function blockOptionalKeys(b: Block): string[] {
       return b.optional ? [b.key] : []
     case "grid":
       return gridKeys(b)
+    // Pressing Check is not an answer; sorting every item is.
+    case "sort":
+      return [`${b.key}.checked`]
+    // The timer is there to help; skipping it is allowed.
+    case "drill":
+      return [`${b.key}.secs`]
     case "story": {
       const out = STORY_PARTS.filter((p) => p.optional).map((p) => `${b.key}.${p.part}`)
       // Saying it out loud is homework the coach times in session, not a
@@ -312,6 +501,39 @@ export function allFieldKeys(c: Pick<WorkbookContent, "sections">): string[] {
 /** The section a field key lives in, or null for keys the content does not own. */
 export function sectionOfField(c: Pick<WorkbookContent, "sections">, key: string): string | null {
   for (const s of c.sections) if (sectionFieldKeys(s).includes(key)) return s.id
+  return null
+}
+
+/** The client's own case-prompt blocks in a section, for the Coach Command Center. */
+export function casePromptBlocks(s: Pick<Section, "blocks">): Extract<Block, { type: "text" }>[] {
+  return s.blocks.filter((b): b is Extract<Block, { type: "text" }> => b.type === "text" && b.case_prompt === true)
+}
+
+/** The rubric a section's coach guide defines, if any, with its scale filled in. */
+export function sectionRubric(s: Pick<Section, "blocks">): (CoachRubric & { scale: { key: string; label: string }[] }) | null {
+  for (const b of s.blocks) {
+    if (b.type === "coach_only" && b.guide?.rubric) return { ...b.guide.rubric, scale: b.guide.rubric.scale ?? DEFAULT_RUBRIC_SCALE }
+  }
+  return null
+}
+
+/** Checks an evaluation the coach is saving against the rubric in the content. */
+export function evaluationError(c: Pick<WorkbookContent, "sections">, raw: unknown): string | null {
+  const e = raw as any
+  if (!e || typeof e !== "object") return "Evaluation must be an object"
+  const s = c.sections.find((x) => x.id === e.section_id)
+  if (!s) return "Unknown section"
+  const r = sectionRubric(s)
+  if (!r) return "This section has no rubric"
+  if (!e.ratings || typeof e.ratings !== "object" || Array.isArray(e.ratings)) return "ratings must be an object"
+  const items = new Set(r.items.map((i) => i.key)), scale = new Set(r.scale.map((x) => x.key))
+  for (const [k, v] of Object.entries(e.ratings as Record<string, any>)) {
+    if (!items.has(k)) return `Unknown rubric item "${k}"`
+    if (!v || typeof v !== "object") return `Rating for "${k}" must be an object`
+    if (v.rating != null && !scale.has(v.rating)) return `"${v.rating}" is not on the scale`
+    if (v.note != null && (typeof v.note !== "string" || v.note.length > 5000)) return `Note for "${k}" must be text under 5,000 characters`
+  }
+  if (e.note != null && (typeof e.note !== "string" || e.note.length > 20000)) return "note must be text under 20,000 characters"
   return null
 }
 
@@ -548,7 +770,9 @@ export function isWritableKey(c: WorkbookContent, key: string): boolean {
 /** Answer values accepted from a client: a string, or a pick shape for pick fields. */
 export function validateAnswerValue(c: WorkbookContent, key: string, value: unknown): string | null {
   if (key.startsWith(CHECKLIST_PREFIX)) return value === "1" || value === "" ? null : "Checklist value must be \"1\" or \"\""
-  const pick = c.sections.flatMap((s) => s.blocks).find((b) => b.type === "pick" && b.key === key) as
+  const practice = practiceValueError(c, key, value)
+  if (practice !== undefined) return practice
+  const pick =c.sections.flatMap((s) => s.blocks).find((b) => b.type === "pick" && b.key === key) as
     | Extract<Block, { type: "pick" }>
     | undefined
   if (pick) {
@@ -598,6 +822,124 @@ export function validateAnswerValue(c: WorkbookContent, key: string, value: unkn
   return value.length > 20000 ? "Answer is too long" : null
 }
 
+/**
+ * Answer checks for the practice blocks (video, quiz, numeric, sort).
+ * undefined: the key belongs to none of them, so the usual checks apply.
+ */
+function practiceValueError(c: WorkbookContent, key: string, value: unknown): string | null | undefined {
+  for (const b of c.sections.flatMap((s) => s.blocks)) {
+    if (b.type === "video" && b.key === key) return value === "1" || value === "" ? null : "Video value must be \"1\" or \"\""
+    if (b.type === "quiz" && b.key === key) {
+      const chosen = b.multi ? value : typeof value === "string" ? [value] : null
+      if (!Array.isArray(chosen) || !chosen.every((v) => typeof v === "string")) {
+        return b.multi ? "A select-all answer must be a list" : "Answer must be text"
+      }
+      return chosen.every((v) => b.options.includes(v)) ? null : "A choice is not one of the options"
+    }
+    if (b.type === "numeric" && b.key === key) {
+      if (typeof value !== "string") return "Answer must be text"
+      return value.length > 100 ? "Answer is too long" : null
+    }
+    if (b.type === "drill") {
+      if (key === `${b.key}.secs`) return value === "" || (typeof value === "string" && /^\d{1,4}$/.test(value)) ? null : "Seconds must be a whole number"
+      if (b.check && key === `${b.key}.check`) {
+        if (typeof value !== "string") return "Answer must be text"
+        return !value || b.check.options.includes(value) ? null : "Answer is not one of the options"
+      }
+    }
+    if (b.type === "sort") {
+      if (key === `${b.key}.checked`) return value === "1" || value === "" ? null : "Checked value must be \"1\" or \"\""
+      if (sortKeys(b).includes(key)) {
+        if (typeof value !== "string") return "Answer must be text"
+        return !value || b.categories.includes(value) ? null : "Answer is not one of the categories"
+      }
+    }
+  }
+  return undefined
+}
+
+/**
+ * A typed number, read the way people write money and percentages: "$2,000",
+ * "33.3%", "12M", "1.5 million", "250k". null when it is not a number.
+ */
+export function parseNumber(raw: string): number | null {
+  const s = raw.trim().toLowerCase().replace(/[$,\s%]/g, "").replace(/(dollars|percent|years?|yrs?)$/, "")
+  const m = s.match(/^(-?\d*\.?\d+)(k|thousand|m|mm|mil|million|b|bn|billion)?$/)
+  if (!m) return null
+  const scale = { k: 1e3, thousand: 1e3, m: 1e6, mm: 1e6, mil: 1e6, million: 1e6, b: 1e9, bn: 1e9, billion: 1e9 } as Record<string, number>
+  return Number(m[1]) * (m[2] ? scale[m[2]] : 1)
+}
+
+export type Grade = "correct" | "wrong" | null
+
+/** Right or wrong for a quiz or numeric answer; null while unanswered. */
+export function gradeAnswer(b: Block, v: unknown): Grade {
+  if (b.type === "quiz") {
+    const chosen = Array.isArray(v) ? v : typeof v === "string" && v ? [v] : []
+    if (!chosen.length) return null
+    const same = chosen.length === b.correct.length && b.correct.every((x) => chosen.includes(x))
+    return same ? "correct" : "wrong"
+  }
+  if (b.type === "numeric") {
+    if (typeof v !== "string" || !v.trim()) return null
+    const n = parseNumber(v)
+    if (n === null) return "wrong"
+    const tol = b.tolerance ?? Math.abs(b.answer) * 0.01
+    const hit = (x: number) => Math.abs(x - b.answer) <= tol + 1e-9
+    return hit(n) || (!!b.either_sign && hit(-n)) ? "correct" : "wrong"
+  }
+  return null
+}
+
+/** How many items of a sort match the sample, once every item is sorted. */
+export function sortMatches(b: Extract<Block, { type: "sort" }>, answers: Record<string, unknown>): { matched: number; total: number; done: boolean } {
+  const picks = b.items.map((_, i) => answers[`${b.key}.${i + 1}`])
+  return {
+    matched: b.items.filter((it, i) => picks[i] === it.category).length,
+    total: b.items.length,
+    done: picks.every((p) => typeof p === "string" && p.length > 0),
+  }
+}
+
+/** One graded question, for the coach's Results view. */
+export type GradedItem = {
+  sectionId: string; sectionTitle: string; kind: "quiz" | "numeric"
+  question: string; skill: string | null; answer: string; expected: string; grade: Grade
+}
+
+export function gradedItems(c: Pick<WorkbookContent, "sections">, answers: Record<string, unknown>): GradedItem[] {
+  const out: GradedItem[] = []
+  for (const s of c.sections) {
+    for (const b of s.blocks) {
+      if (b.type !== "quiz" && b.type !== "numeric") continue
+      out.push({
+        sectionId: s.id, sectionTitle: s.title, kind: b.type, question: b.question, skill: b.skill ?? null,
+        answer: answerText(answers[b.key]),
+        expected: b.type === "quiz" ? b.correct.join(", ") : `${b.prefix ?? ""}${b.answer.toLocaleString("en-US")}${b.suffix ? ` ${b.suffix}` : ""}`,
+        grade: gradeAnswer(b, answers[b.key]),
+      })
+    }
+  }
+  return out
+}
+
+/** Does this content have anything the Results view reports on? */
+export function hasPracticeResults(c: Pick<WorkbookContent, "sections">): boolean {
+  return c.sections.some((s) => s.blocks.some((b) => ["quiz", "numeric", "sort", "video"].includes(b.type) || (b.type === "coach_only" && !!b.guide?.rubric)))
+}
+
+/** Sections grouped by `day`, in order. Sections with no day group under "". */
+export function sectionDays(c: Pick<WorkbookContent, "sections">): { day: string; sections: Section[] }[] {
+  const out: { day: string; sections: Section[] }[] = []
+  for (const s of c.sections) {
+    const d = s.day ?? ""
+    const last = out[out.length - 1]
+    if (last && last.day === d) last.sections.push(s)
+    else out.push({ day: d, sections: [s] })
+  }
+  return out
+}
+
 /** A comment or question anchor: a real section (or the general box) and, if given, a field in it. */
 export function anchorError(c: Pick<WorkbookContent, "sections">, sectionId: unknown, fieldKey: unknown): string | null {
   if (typeof sectionId !== "string" || !sectionId) return "section_id is required"
@@ -631,11 +973,61 @@ const BLOCK_TYPES = new Set([
   "text", "heading", "list", "callout", "coach_note", "big_quote", "field",
   "word_track", "pick", "star", "scenario", "coach_only",
   "select", "story", "coverage", "table", "grid",
+  "video", "link", "quiz", "numeric", "sort", "reveal", "drill",
 ])
 const SUMMARY_TYPES = new Set([
   "interview_details", "hook", "tmay", "story_map", "quick_answers", "questions", "checklist", "signoff",
   "story_list", "coverage",
 ])
+
+function guideErrors(g: any): string[] {
+  const out: string[] = []
+  const str = (v: unknown) => typeof v === "string" && v.trim().length > 0
+  const strs = (v: unknown) => Array.isArray(v) && v.every(str)
+  if (typeof g !== "object" || Array.isArray(g)) return ["must be an object"]
+  for (const k of ["agenda", "opening", "hints", "checklist", "notes"]) if (g[k] != null && !strs(g[k])) out.push(`${k} must be a list of text`)
+  for (const k of ["hint_note", "checklist_title", "checklist_note"]) if (g[k] != null && !str(g[k])) out.push(`${k} must be text`)
+  if (g.clarify != null && !(Array.isArray(g.clarify) && g.clarify.every((x: any) => x && str(x.answer) && (x.ask == null || str(x.ask))))) out.push("clarify needs an answer on every item")
+  if (g.messages != null) {
+    if (!Array.isArray(g.messages)) out.push("messages must be a list")
+    else g.messages.forEach((m: any, i: number) => {
+      if (!m || !str(m.label)) out.push(`messages[${i}] needs a label`)
+      else if (!str(m.send) && !str(m.private)) out.push(`messages[${i}] needs send or private text`)
+      if (m && m.title != null && !str(m.title)) out.push(`messages[${i}].title must be text`)
+    })
+  }
+  if (g.rubric != null) {
+    const r = g.rubric
+    const keyed = (v: unknown) => Array.isArray(v) && v.length > 0 && v.every((x: any) => x && str(x.label) && typeof x.key === "string" && /^[a-z0-9_]+$/.test(x.key))
+    if (!keyed(r.items)) out.push("rubric items need a key (a-z, 0-9, _) and a label")
+    else if (new Set(r.items.map((x: any) => x.key)).size !== r.items.length) out.push("rubric item keys must be unique")
+    if (r.scale != null && !keyed(r.scale)) out.push("rubric scale needs a key and a label on every point")
+    if (r.note != null && !str(r.note)) out.push("rubric note must be text")
+  }
+  if (g.steps != null) {
+    if (!Array.isArray(g.steps) || !g.steps.length) out.push("steps must be a non-empty list")
+    else {
+      const labels = new Set((Array.isArray(g.messages) ? g.messages : []).map((m: any) => m?.label))
+      const calc = (v: unknown) => Array.isArray(v) && v.every((x: any) => x && str(x.label) && str(x.work) && str(x.answer) && (x.meaning == null || str(x.meaning)))
+      g.steps.forEach((st: any, i: number) => {
+        const at = `steps[${i}]`
+        if (!st || !str(st.title)) { out.push(`${at} needs a title`); return }
+        if (!strs(st.ask) || !st.ask.length) out.push(`${at} needs at least one question to ask`)
+        for (const k of ["strong", "errors", "hints", "rescue", "assess"]) if (st[k] != null && !strs(st[k])) out.push(`${at}.${k} must be a list of text`)
+        for (const k of ["minutes", "teach", "checkpoint", "interpretation", "advance"]) if (st[k] != null && !str(st[k])) out.push(`${at}.${k} must be text`)
+        for (const k of ["essential", "stretch"]) if (st[k] != null && !calc(st[k])) out.push(`${at}.${k} needs a label, work and answer on every calculation`)
+        if (st.answers != null && !(Array.isArray(st.answers) && st.answers.every((x: any) => x && str(x.answer) && (x.ask == null || str(x.ask))))) out.push(`${at}.answers needs an answer on every item`)
+        if (st.follow_ups != null && !(Array.isArray(st.follow_ups) && st.follow_ups.every((x: any) => x && str(x.ask) && (x.answer == null || str(x.answer))))) out.push(`${at}.follow_ups needs a question on every item`)
+        if (st.send != null) {
+          if (!str(st.send.message) || !str(st.send.when)) out.push(`${at}.send needs a message label and when to send it`)
+          else if (!labels.has(st.send.message)) out.push(`${at}.send names message "${st.send.message}", which is not in messages`)
+          if (st.send.rescue != null && !str(st.send.rescue)) out.push(`${at}.send.rescue must be text`)
+        }
+      })
+    }
+  }
+  return out
+}
 
 export function validateContent(raw: unknown): { ok: true; content: WorkbookContent } | { ok: false; errors: string[] } {
   const errors: string[] = []
@@ -719,7 +1111,53 @@ export function validateContent(raw: unknown): { ok: true; content: WorkbookCont
           errors.push(`${bt}: grid guide needs one text cell per column`)
         }
       }
-      if (["field", "pick", "star", "scenario", "select", "story", "grid"].includes(b.type)) {
+      const okUrl = (u: unknown) => typeof u === "string" && /^https:\/\/\S+$/.test(u)
+      if (b.type === "video" && (!str(b.title) || !okUrl(b.url))) errors.push(`${bt}: video needs a title and an https url`)
+      if (b.type === "link") {
+        // An https link out, or a path inside SIGNAL (a practice round the workbook leads to).
+        if (!str(b.title) || !(okUrl(b.url) || /^\/dashboard\/\S+$/.test(b.url))) errors.push(`${bt}: link needs a title and an https url or a /dashboard/ path`)
+        if (!["video", "article", "tool", "practice"].includes(b.kind)) errors.push(`${bt}: link kind must be video, article, tool or practice`)
+      }
+      if (b.type === "quiz") {
+        const opts = Array.isArray(b.options) ? b.options : []
+        if (!str(b.question) || opts.length < 2 || !opts.every(str)) errors.push(`${bt}: quiz needs a question and two or more options`)
+        else if (new Set(opts).size !== opts.length) errors.push(`${bt}: quiz options must be unique`)
+        if (!Array.isArray(b.correct) || !b.correct.length || !b.correct.every((x: unknown) => opts.includes(x))) {
+          errors.push(`${bt}: quiz correct answers must be among its options`)
+        } else if (!b.multi && b.correct.length !== 1) errors.push(`${bt}: a single-answer quiz has exactly one correct answer`)
+        if (!str(b.explanation)) errors.push(`${bt}: quiz needs an explanation`)
+      }
+      if (b.type === "numeric") {
+        if (!str(b.question) || typeof b.answer !== "number" || !Number.isFinite(b.answer)) errors.push(`${bt}: numeric needs a question and a number answer`)
+        if (b.tolerance != null && (typeof b.tolerance !== "number" || b.tolerance < 0)) errors.push(`${bt}: numeric tolerance must be a number of 0 or more`)
+        if (!str(b.explanation)) errors.push(`${bt}: numeric needs an explanation`)
+      }
+      if (b.type === "sort") {
+        const cats = Array.isArray(b.categories) ? b.categories : []
+        if (cats.length < 2 || !cats.every(str)) errors.push(`${bt}: sort needs two or more categories`)
+        if (!Array.isArray(b.items) || !b.items.length || !b.items.every((it: any) => str(it?.text) && cats.includes(it?.category))) {
+          errors.push(`${bt}: every sort item needs text and one of the categories`)
+        }
+      }
+      if (b.type === "drill") {
+        if (!str(b.question) || !str(b.write_label) || !str(b.model)) errors.push(`${bt}: drill needs a question, a write_label and a model answer`)
+        if (!Number.isInteger(b.prep_seconds) || b.prep_seconds < 0 || b.prep_seconds > 600) errors.push(`${bt}: drill prep_seconds must be a whole number from 0 to 600`)
+        if (!Number.isInteger(b.speak_seconds) || b.speak_seconds < 5 || b.speak_seconds > 900) errors.push(`${bt}: drill speak_seconds must be a whole number from 5 to 900`)
+        if (b.input != null && !["short", "long"].includes(b.input)) errors.push(`${bt}: drill input must be short or long`)
+        if (b.check != null && (!str(b.check.question) || !Array.isArray(b.check.options) || b.check.options.length < 2 || !b.check.options.every(str))) {
+          errors.push(`${bt}: drill check needs a question and two or more options`)
+        }
+      }
+      if (b.type === "coach_only") {
+        if (!str(b.body) && (b.guide == null || typeof b.guide !== "object")) errors.push(`${bt}: coach_only needs a body or a guide`)
+        if (b.guide != null) for (const e of guideErrors(b.guide)) errors.push(`${bt}: guide ${e}`)
+      }
+      if (b.type === "text" && b.case_prompt != null && typeof b.case_prompt !== "boolean") errors.push(`${bt}: case_prompt must be true or absent`)
+      if (b.type === "reveal") {
+        if (!str(b.title) || !str(b.body)) errors.push(`${bt}: reveal needs a title and a body`)
+        if (!Array.isArray(b.after) || !b.after.length || !b.after.every(str)) errors.push(`${bt}: reveal needs the keys it waits for`)
+      }
+      if (["field", "pick", "star", "scenario", "select", "story", "grid", "video", "quiz", "numeric", "sort", "drill"].includes(b.type)) {
         if (!str(b.key) || b.key.startsWith(CHECKLIST_PREFIX)) { errors.push(`${bt}: key is required and must not be reserved`); continue }
         for (const k of blockFieldKeys(b)) {
           if (keys.has(k)) errors.push(`${bt}: duplicate field key "${k}"`)
@@ -728,6 +1166,20 @@ export function validateContent(raw: unknown): { ok: true; content: WorkbookCont
       }
     }
   }
+
+  // A reveal waiting on a key that does not exist would never unlock.
+  for (const [i, s] of (Array.isArray(c.sections) ? c.sections : []).entries()) {
+    for (const [j, b] of (Array.isArray(s?.blocks) ? s.blocks : []).entries()) {
+      if (b?.type !== "reveal" || !Array.isArray(b.after)) continue
+      for (const k of b.after) if (!keys.has(k)) errors.push(`sections[${i}].blocks[${j}]: reveal waits for "${k}", which is not in the content`)
+    }
+  }
+  if (c.results != null) {
+    const r = c.results
+    const refs = [...(r.confidence ? [r.confidence] : []), ...(r.confusing ?? []), ...(r.practice ?? [])]
+    for (const k of refs) if (!keys.has(k)) errors.push(`results: field "${k}" is not in the content`)
+  }
+  if (c.completion != null && (!str(c.completion.title) || !str(c.completion.body))) errors.push("completion needs a title and a body")
 
   const sb = c.summary?.blocks
   if (!Array.isArray(sb)) errors.push("summary.blocks must be an array")

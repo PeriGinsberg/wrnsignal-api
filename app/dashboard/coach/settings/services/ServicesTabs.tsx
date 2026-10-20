@@ -14,6 +14,7 @@ import { PackagesTab } from "./PackagesTab"
 import { PhasesTab } from "./PhasesTab"
 import { SowTab } from "./SowTab"
 import { WelcomeTab } from "./WelcomeTab"
+import { ReleaseEmailsTab } from "./ReleaseEmailsTab"
 
 const TABS: SettingsTab[] = [
   { key: "deliverables", label: "Deliverables" },
@@ -21,6 +22,7 @@ const TABS: SettingsTab[] = [
   { key: "phases", label: "Phases" },
   { key: "sow", label: "SOW" },
   { key: "welcome", label: "Welcome emails" },
+  { key: "release", label: "Release emails" },
 ]
 const DEFAULT_TAB = "deliverables"
 
@@ -63,6 +65,11 @@ export function ServicesTabs() {
       {active === "welcome" && (
         <SettingsBlock title="Welcome emails">
           <WelcomeTab />
+        </SettingsBlock>
+      )}
+      {active === "release" && (
+        <SettingsBlock title="Release emails">
+          <ReleaseEmailsTab />
         </SettingsBlock>
       )}
     </div>

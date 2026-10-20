@@ -594,12 +594,14 @@ export default function CoachClientPostConversionPage() {
 
   // The record's two buttons, shared with the prospect page.
   const [tasksKey, setTasksKey] = useState(0)
+  const [emailsKey, setEmailsKey] = useState(0)
   const actions = useRecordNoteTaskActions({
     coachClientId: id,
     name: record?.name || record?.invited_email || "This client",
     recordLabel: "Client",
     onNoteSaved: () => { load({ silent: true }) },
     onTaskSaved: () => setTasksKey((k) => k + 1),
+    onMessageSent: () => setEmailsKey((k) => k + 1),
   })
 
   // Routing guards — redirect away when the record's lifecycle / link
@@ -1020,7 +1022,7 @@ export default function CoachClientPostConversionPage() {
       {/* Communications: every email SIGNAL sent this client, the invite
           included, as sent. */}
       <Section title="Communications">
-        <CommunicationsTab coachClientId={record.id} />
+        <CommunicationsTab coachClientId={record.id} refreshKey={emailsKey} />
       </Section>
     </div>
   )

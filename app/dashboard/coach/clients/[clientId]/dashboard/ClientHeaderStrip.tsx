@@ -41,6 +41,8 @@ type Props = {
   inviteError?: string | null
   onAddNote: () => void
   onAddTask: () => void
+  /** Opens the Message panel. Absent until the coach_clients row is known. */
+  onMessage?: () => void
   onSourceJob: () => void
   onRemoveClient: () => void
   onLifecycleStatusChange: (next: LifecycleStatus) => void
@@ -58,6 +60,7 @@ export function ClientHeaderStrip({
   inviteError,
   onAddNote,
   onAddTask,
+  onMessage,
   onSourceJob,
   onRemoveClient,
   onLifecycleStatusChange,
@@ -154,6 +157,11 @@ export function ClientHeaderStrip({
         <ActionButton onClick={onAddTask} accent="orange">
           + Add Task
         </ActionButton>
+        {onMessage && (
+          <ActionButton onClick={onMessage} accent="orange">
+            Message
+          </ActionButton>
+        )}
         <ActionButton accent="muted" disabled title="Calendly integration coming soon">
           Schedule
         </ActionButton>

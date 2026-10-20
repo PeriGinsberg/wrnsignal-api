@@ -26,6 +26,9 @@ if (!TOKEN) throw new Error("Set POSTMARK_API_KEY")
 const LAYOUT_ALIAS = "signal-client"
 const TEMPLATE_ALIAS = "networking-plan-ready"
 const TEST_TO = "peri@workforcereadynow.com"
+// The optional Review Networking Plan session (workbook R10, 2026-10-16). It has
+// no email of its own; this line in the Share plan email offers it.
+const REVIEW_SESSION_URL = "https://calendly.com/peri-workforcereadynow/review-networking-plan"
 
 // Body palette, as specified. NOT the signature's navy: see lib/email/signature.ts.
 const INK = "#08203F"       // body text
@@ -165,7 +168,9 @@ const templateHtml = `
 
 <p style="margin:0 0 16px 0;">SIGNAL will show you when each follow-up is due, so you never have to track dates yourself.</p>
 
-<p style="margin:0 0 20px 0;">Bring your questions to our next session. I'm looking forward to seeing who you connect with.</p>
+<p style="margin:0 0 16px 0;">If you'd like to work through this plan together, set up a 30-minute session here: <a href="${REVIEW_SESSION_URL}" style="color:${INK};font-weight:700;">${REVIEW_SESSION_URL}</a></p>
+
+<p style="margin:0 0 20px 0;">I'm looking forward to seeing who you connect with.</p>
 
 <p style="margin:0 0 4px 0;">Best,</p>
 `.trim()
@@ -191,7 +196,9 @@ How to start this week:
 
 SIGNAL will show you when each follow-up is due, so you never have to track dates yourself.
 
-Bring your questions to our next session. I'm looking forward to seeing who you connect with.
+If you'd like to work through this plan together, set up a 30-minute session here: ${REVIEW_SESSION_URL}
+
+I'm looking forward to seeing who you connect with.
 
 Best,`
 

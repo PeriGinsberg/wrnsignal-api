@@ -84,6 +84,8 @@ export type PlanTask = {
   details: string | null
   /** Released with the welcome email; releasing it shares the client's Drive workspace. */
   welcome_release?: boolean
+  /** Has a Release email in Settings (lib/release/service.ts): the Plan offers Send email. */
+  has_release_email?: boolean
 }
 
 export type PlanDeliverable = {

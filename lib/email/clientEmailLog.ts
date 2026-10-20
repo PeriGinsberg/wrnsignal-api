@@ -23,6 +23,7 @@ export const CLIENT_EMAIL_TYPES = [
   "practice_round",
   "practice_feedback",
   "networking_plan",
+  "coach_message",
 ] as const
 export type ClientEmailType = (typeof CLIENT_EMAIL_TYPES)[number]
 
@@ -33,6 +34,7 @@ export const CLIENT_EMAIL_TYPE_LABEL: Record<ClientEmailType, string> = {
   practice_round: "Practice round",
   practice_feedback: "Practice feedback",
   networking_plan: "Networking plan",
+  coach_message: "Message",
 }
 
 export const PRIVATE_SOW_LINK = "[private SOW link]"
@@ -112,6 +114,13 @@ export type ClientEmailRow = {
   triggered_by: string | null
   postmark_message_id: string | null
   backfilled?: boolean
+  // The conversation fields (20261018_coach_messages). Left out, the columns'
+  // defaults apply: an outbound email carried by Postmark, status 'sent'.
+  channel?: "email" | "sms"
+  direction?: "outbound" | "inbound"
+  provider?: string
+  provider_message_id?: string | null
+  reply_to_email?: string | null
 }
 
 /** The row as it may be stored: private links out of every readable field. */
@@ -127,7 +136,9 @@ export function redactRow(row: ClientEmailRow): ClientEmailRow {
 /** Save one sent email. Never throws; a failure is a console line. */
 export async function logClientEmail(db: SupabaseClient, row: ClientEmailRow): Promise<void> {
   try {
-    const { error } = await db.from("client_emails").insert(redactRow(row))
+    // provider_message_id is what the delivery webhook looks a message up by.
+    const withId = { ...row, provider_message_id: row.provider_message_id ?? row.postmark_message_id }
+    const { error } = await db.from("client_emails").insert(redactRow(withId))
     if (error) console.warn("[client-emails] insert failed:", error.message)
   } catch (e: any) {
     console.warn("[client-emails] insert threw:", e?.message ?? String(e))

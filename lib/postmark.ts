@@ -53,3 +53,10 @@ export const MESSAGE_STREAM = process.env.POSTMARK_MESSAGE_STREAM!
 // non-secret would be worse than sending it on the stream it belongs on.
 export const CLIENT_STREAM = process.env.POSTMARK_STREAM_CLIENT ?? "signal-client"
 export const INTERNAL_STREAM = process.env.POSTMARK_STREAM_INTERNAL ?? "signal-internal"
+
+/**
+ * Emails a coach writes to a client themselves (the Message button), apart
+ * from SIGNAL's own client mail so neither's bounces affect the other. Created
+ * by tests/messaging/setup-coach-stream.ts.
+ */
+export const COACH_MESSAGE_STREAM = process.env.POSTMARK_STREAM_COACH ?? "signal-coach-messages"

@@ -109,7 +109,7 @@ async function main() {
     const doc = parse(readFileSync("docs/WRN_Welcome_Emails.md", "utf8"))
     ok("four templates, in order", doc.map((d) => d.start).join(",") === "dna,resume_workshop,search,land")
     ok("each has the subject and both placeholders", doc.every((d) => d.subject === "Welcome to Workforce Ready Now" && d.body.includes("[Drive folder link]") && d.body.includes("[Scheduling link]")))
-    ok("the message starts at Hi and ends at Let's get started", doc.every((d) => d.body.startsWith("Hi [First Name],") && d.body.endsWith("Let's get started.")))
+    ok("the message starts at Hi and ends with the sign-off", doc.every((d) => d.body.startsWith("Hi [First Name],") && d.body.endsWith("Let's get started.\n\nBest, Peri")))
     ok("Packages and Scheduling link lines stay out of the message", doc.every((d) => !d.body.includes("Packages:") && !/^Scheduling link:/m.test(d.body)))
   }
 

@@ -3,7 +3,8 @@
 // One client's plan: the deliverables and tasks in their APPROVED packages.
 //
 //   GET   { phases, deliverables, packages, library }: the client's phases (as
-//         the stepper shows them), every deliverable with its tasks in order,
+//         the stepper shows them), every deliverable with its tasks in order
+//         (each flagged has_release_email when Settings has an email for it),
 //         the approved packages a deliverable can be added to, and the coach's
 //         library deliverables to add from.
 //   POST  { action, ... } changes the plan. Task actions: activate, release,
@@ -33,6 +34,7 @@ import {
   setDeliverableNeeded,
   updateTaskDetails,
 } from "@/lib/plan/service"
+import { tasksWithReleaseEmail } from "@/lib/release/service"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
 export const runtime = "nodejs"
@@ -43,7 +45,9 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 async function planBody(db: SupabaseClient, coachClientId: string, coachIds: string[]) {
-  const [phases, deliverables] = await Promise.all([getClientPhases(db, coachClientId), getPlan(db, coachClientId)])
+  const [phases, plan] = await Promise.all([getClientPhases(db, coachClientId), getPlan(db, coachClientId)])
+  const withEmail = await tasksWithReleaseEmail(db, coachClientId, plan.flatMap((d) => d.tasks.map((t) => t.id)))
+  const deliverables = plan.map((d) => ({ ...d, tasks: d.tasks.map((t) => ({ ...t, has_release_email: withEmail.has(t.id) })) }))
   const { data: pkgs } = await db.from("coach_client_engagements").select("id, name")
     .eq("coach_client_id", coachClientId).eq("proposal_status", "approved")
   const { data: lib } = await db.from("coach_milestones").select("id, name, phase_id, active")

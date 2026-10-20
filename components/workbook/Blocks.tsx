@@ -10,8 +10,8 @@
 
 import React, { useEffect, useRef, type ReactNode } from "react"
 import {
-  SCENARIO_PARTS, STAR_PARTS, STORY_PARTS, blockFieldKeys, computeCoverage, displayValue, gridKeys,
-  optionsFromAnswers, quoteText, selectValues,
+  SCENARIO_PARTS, STAR_PARTS, STORY_PARTS, blockFieldKeys, computeCoverage, displayValue, gradeAnswer, gridKeys,
+  isFilled, optionsFromAnswers, parseNumber, quoteText, selectValues, sortMatches,
   type AnswerValue, type Block, type PickValue, type Section, type SelectOption,
 } from "../../lib/workbook/content"
 
@@ -450,6 +450,358 @@ function Grid({ api, b }: { api: FieldApi; b: Extract<Block, { type: "grid" }> }
   )
 }
 
+/** A YouTube watch or youtu.be link as an embed URL; null for anything else. */
+export function youtubeEmbed(url: string): string | null {
+  const m = url.match(/^https:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/)
+  return m ? `https://www.youtube-nocookie.com/embed/${m[1]}?rel=0` : null
+}
+
+const KIND_LABEL = { video: "Video", article: "Article", tool: "Practice tool", practice: "Practice round" } as const
+
+function Video({ api, b }: { api: FieldApi; b: Extract<Block, { type: "video" }> }) {
+  const embed = youtubeEmbed(b.url)
+  const watched = api.get(b.key) === "1"
+  return (
+    <div className="wb-resource">
+      <div className="wb-card-head" style={{ flexWrap: "wrap" }}>
+        <span className="wb-tag sent">Video{b.length ? `, ${b.length}` : ""}</span>
+        {watched && <span className="wb-tag ok">Watched</span>}
+      </div>
+      <span className="wb-serif" style={{ fontSize: 24, fontWeight: 600, lineHeight: 1.25 }}>{b.title}</span>
+      {b.source && <span className="wb-muted" style={{ fontSize: 15 }}>{b.source}</span>}
+      {b.body && paragraphs(b.body)}
+      {embed && (
+        <div className="wb-video">
+          <iframe src={embed} title={b.title} loading="lazy" allowFullScreen
+            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="strict-origin-when-cross-origin" />
+        </div>
+      )}
+      <div className="wb-actions" style={{ alignItems: "center" }}>
+        <a className="wb-btn wb-btn-solid" href={b.url} target="_blank" rel="noopener noreferrer">Watch on YouTube</a>
+        <span className="wb-muted" style={{ fontSize: 14 }}>Opens in a new tab. Your answers here stay saved.</span>
+      </div>
+      <label className={`wb-checkrow${watched ? " on" : ""}`}>
+        <input type="checkbox" checked={watched} disabled={!api.editable}
+          onChange={(e) => api.set(b.key, e.target.checked ? "1" : "")} />
+        <span>I watched this video</span>
+      </label>
+      <div className="wb-field-foot"><SaveLine api={api} k={b.key} />{api.fieldFoot?.(b.key)}</div>
+    </div>
+  )
+}
+
+function LinkCard({ b }: { b: Extract<Block, { type: "link" }> }) {
+  return (
+    <div className="wb-resource">
+      <div className="wb-card-head" style={{ flexWrap: "wrap" }}>
+        <span className="wb-tag sent">{KIND_LABEL[b.kind]}</span>
+        {b.optional && <span className="wb-tag draft">Optional</span>}
+      </div>
+      <span className="wb-serif" style={{ fontSize: 22, fontWeight: 600, lineHeight: 1.25 }}>{b.title}</span>
+      {b.body && paragraphs(b.body)}
+      <div>
+        {b.kind === "practice" ? (
+          <a className="wb-btn wb-btn-solid" href={b.url}>Start the practice case</a>
+        ) : (
+          <a className="wb-btn" href={b.url} target="_blank" rel="noopener noreferrer">
+            {b.kind === "tool" ? "Open the tool" : b.kind === "video" ? "Watch" : "Read it"}
+          </a>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function Verdict({ grade, right, wrong }: { grade: "correct" | "wrong"; right: string; wrong: string }) {
+  return <span className={`wb-verdict ${grade}`} role="status">{grade === "correct" ? right : wrong}</span>
+}
+
+function Quiz({ api, b }: { api: FieldApi; b: Extract<Block, { type: "quiz" }> }) {
+  const saved = api.get(b.key)
+  const locked = saved !== undefined && saved !== "" && !(Array.isArray(saved) && saved.length === 0)
+  const [draft, setDraft] = React.useState<string[]>([])
+  const chosen = locked ? (Array.isArray(saved) ? (saved as string[]) : [String(saved)]) : draft
+  const grade = locked ? gradeAnswer(b, saved) : null
+  const name = `q-${b.key}`
+  const toggle = (o: string) => setDraft((p) => (b.multi ? (p.includes(o) ? p.filter((x) => x !== o) : [...p, o]) : [o]))
+  return (
+    <fieldset className="wb-pick wb-quiz">
+      <legend className="wb-field-head" style={{ marginBottom: 6, gridTemplateColumns: b.number == null ? "minmax(0,1fr)" : undefined }}>
+        {b.number != null && <span className="wb-field-num">{b.number}</span>}
+        <span className="wb-field-label">{b.question}</span>
+      </legend>
+      <span className="wb-muted" style={{ fontSize: 14 }}>{b.multi ? "Choose every answer that fits, then press Check." : "Choose one answer, then press Check."}</span>
+      {b.options.map((o) => {
+        const isOn = chosen.includes(o)
+        const mark = locked ? (b.correct.includes(o) ? " right" : isOn ? " wrong" : "") : ""
+        return (
+          <label key={o} className={`${isOn ? "on" : ""}${mark}`}>
+            <input type={b.multi ? "checkbox" : "radio"} name={name} checked={isOn}
+              disabled={!api.editable || locked} onChange={() => toggle(o)} />
+            <span style={{ flex: 1 }}>{o}</span>
+            {locked && b.correct.includes(o) && <span className="wb-optmark">{b.multi ? "Fits" : "Best answer"}</span>}
+          </label>
+        )
+      })}
+      {!locked && api.editable && (
+        <div className="wb-actions">
+          <button type="button" className="wb-btn wb-btn-solid" disabled={!draft.length}
+            onClick={() => api.set(b.key, b.multi ? draft : draft[0])}>Check my answer</button>
+        </div>
+      )}
+      {locked && grade && (
+        <div className="wb-feedback">
+          <Verdict grade={grade} right="You got it." wrong={b.multi ? "Not quite. Here is the full picture." : "Not quite. Here is why."} />
+          {paragraphs(b.explanation)}
+        </div>
+      )}
+      <div className="wb-field-foot"><SaveLine api={api} k={b.key} />{api.fieldFoot?.(b.key)}</div>
+    </fieldset>
+  )
+}
+
+function Numeric({ api, b }: { api: FieldApi; b: Extract<Block, { type: "numeric" }> }) {
+  const saved = api.get(b.key)
+  const locked = typeof saved === "string" && saved.trim().length > 0
+  const [draft, setDraft] = React.useState("")
+  const value = locked ? (saved as string) : draft
+  const grade = locked ? gradeAnswer(b, saved) : null
+  const unreadable = !locked && draft.trim() !== "" && parseNumber(draft) === null
+  const id = `f-${b.key}`
+  return (
+    <div className="wb-field wb-quiz">
+      <div className="wb-field-head" style={b.number == null ? { gridTemplateColumns: "minmax(0,1fr)" } : undefined}>
+        {b.number != null && <span className="wb-field-num">{b.number}</span>}
+        <label htmlFor={id} className="wb-field-label">{b.question}</label>
+      </div>
+      {b.hint && <p className="wb-p wb-muted" style={{ fontSize: 16 }}>{b.hint}</p>}
+      <div className="wb-numrow">
+        {b.prefix && <span className="wb-numaff">{b.prefix}</span>}
+        <input id={id} type="text" inputMode="decimal" className="wb-input" value={value}
+          readOnly={!api.editable || locked} placeholder={api.editable && !locked ? "Your answer" : ""}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && draft.trim() && !unreadable) api.set(b.key, draft.trim()) }} />
+        {b.suffix && <span className="wb-numaff">{b.suffix}</span>}
+      </div>
+      {unreadable && <span className="wb-muted" style={{ fontSize: 14 }}>Type just the number, for example 2,000 or 12M or 33.3.</span>}
+      {!locked && api.editable && (
+        <div className="wb-actions">
+          <button type="button" className="wb-btn wb-btn-solid" disabled={!draft.trim() || unreadable}
+            onClick={() => api.set(b.key, draft.trim())}>Check my answer</button>
+        </div>
+      )}
+      {locked && grade && (
+        <div className="wb-feedback">
+          <Verdict grade={grade} right="That's right." wrong="Not quite. Here is how it works." />
+          {paragraphs(b.explanation)}
+        </div>
+      )}
+      <div className="wb-field-foot"><SaveLine api={api} k={b.key} />{api.fieldFoot?.(b.key)}</div>
+    </div>
+  )
+}
+
+function Sort({ api, b }: { api: FieldApi; b: Extract<Block, { type: "sort" }> }) {
+  const all = api.all()
+  const { matched, total, done } = sortMatches(b, all)
+  const checked = api.get(`${b.key}.checked`) === "1"
+  return (
+    <div className="wb-col" style={{ gap: 14 }}>
+      {b.title && <span className="wb-label">{b.title}</span>}
+      {b.prompt && <p className="wb-p">{b.prompt}</p>}
+      <div className="wb-sort">
+        {b.items.map((it, i) => {
+          const k = `${b.key}.${i + 1}`
+          const v = typeof all[k] === "string" ? (all[k] as string) : ""
+          return (
+            <div key={k} className="wb-sort-item">
+              <label htmlFor={`f-${k}`} style={{ fontSize: 17, fontWeight: 600 }}>{it.text}</label>
+              <select id={`f-${k}`} className="wb-input" value={v} disabled={!api.editable || checked}
+                onChange={(e) => api.set(k, e.target.value)}>
+                <option value="">Choose a group</option>
+                {b.categories.map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+              </select>
+              {checked && (
+                <span className={`wb-sort-note${v === it.category ? " same" : ""}`}>
+                  {v === it.category ? `Same as our sample: ${it.category}` : `Our sample puts this under ${it.category}`}
+                </span>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      {!checked && api.editable && (
+        <div className="wb-actions" style={{ alignItems: "center" }}>
+          <button type="button" className="wb-btn wb-btn-solid" disabled={!done}
+            onClick={() => api.set(`${b.key}.checked`, "1")}>Compare with the sample</button>
+          {!done && <span className="wb-muted" style={{ fontSize: 14 }}>Choose a group for every item first.</span>}
+        </div>
+      )}
+      {checked && (
+        <div className="wb-feedback">
+          <span className="wb-verdict correct" role="status">You matched our sample on {matched} of {total}.</span>
+          {b.explanation && paragraphs(b.explanation)}
+        </div>
+      )}
+      <div className="wb-field-foot"><SaveLine api={api} k={`${b.key}.checked`} /></div>
+    </div>
+  )
+}
+
+function clock(ms: number): string {
+  const t = Math.max(0, Math.ceil(ms / 1000))
+  return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`
+}
+
+/**
+ * A timed speaking drill. Think, speak against the clock, write it down,
+ * submit, compare. What they write is saved only on Submit and then locked,
+ * the same as a knowledge check, so the coach sees the answer they gave
+ * before they read the model one. The timer can be skipped: writing still
+ * counts, and `<key>.secs` simply stays empty.
+ */
+function Drill({ api, b }: { api: FieldApi; b: Extract<Block, { type: "drill" }> }) {
+  const saved = api.get(b.key)
+  const locked = typeof saved === "string" && saved.trim().length > 0
+  const [draft, setDraft] = React.useState("")
+  const [phase, setPhase] = React.useState<"ready" | "think" | "speak" | "write">("ready")
+  const [left, setLeft] = React.useState(0)
+  const t0 = React.useRef(0)
+  const timer = React.useRef<ReturnType<typeof setInterval> | null>(null)
+  React.useEffect(() => () => { if (timer.current) clearInterval(timer.current) }, [])
+
+  const run = (which: "think" | "speak") => {
+    if (timer.current) clearInterval(timer.current)
+    const limit = (which === "think" ? b.prep_seconds : b.speak_seconds) * 1000
+    t0.current = Date.now()
+    setPhase(which)
+    setLeft(limit)
+    timer.current = setInterval(() => {
+      const l = limit - (Date.now() - t0.current)
+      setLeft(l)
+      if (l <= 0) {
+        if (which === "think") run("speak")
+        else stopSpeaking()
+      }
+    }, 200)
+  }
+  const stopSpeaking = () => {
+    if (timer.current) clearInterval(timer.current)
+    const secs = Math.round((Date.now() - t0.current) / 1000)
+    if (api.editable) api.set(`${b.key}.secs`, String(Math.min(secs, b.speak_seconds)))
+    setPhase("write")
+  }
+  const start = () => (b.prep_seconds > 0 ? run("think") : run("speak"))
+
+  const secs = api.get(`${b.key}.secs`)
+  const check = typeof api.get(`${b.key}.check`) === "string" ? (api.get(`${b.key}.check`) as string) : ""
+  const id = `f-${b.key}`
+  const showWrite = locked || phase === "write" || !api.editable
+  const value = locked ? (saved as string) : draft
+
+  return (
+    <div className="wb-field wb-drill">
+      <div className="wb-field-head" style={b.number == null ? { gridTemplateColumns: "minmax(0,1fr)" } : undefined}>
+        {b.number != null && <span className="wb-field-num">{b.number}</span>}
+        <div className="wb-col" style={{ gap: 4 }}>
+          {b.title && <span className="wb-label">{b.title}</span>}
+          <span className="wb-field-label">{b.question}</span>
+        </div>
+      </div>
+      <span className="wb-muted" style={{ fontSize: 14 }}>
+        {b.prep_seconds > 0 ? `${b.prep_seconds} seconds to think, then ` : ""}{clock(b.speak_seconds * 1000)} to say your answer out loud.
+      </span>
+
+      {!locked && api.editable && phase === "ready" && (
+        <div className="wb-actions" style={{ alignItems: "center" }}>
+          <button type="button" className="wb-btn wb-btn-solid" onClick={start}>Start the timer</button>
+          <button type="button" className="wb-linkbtn" onClick={() => setPhase("write")}>Skip the timer</button>
+        </div>
+      )}
+      {(phase === "think" || phase === "speak") && (
+        <div className={`wb-timer ${phase}`} aria-live="polite">
+          <span className="wb-timer-clock">{clock(left)}</span>
+          <span className="wb-timer-say">{phase === "think" ? "Think. Plan your headline." : "Speak. Say your answer out loud now."}</span>
+          <div className="wb-timer-bar"><div style={{ width: `${Math.max(0, Math.min(100, (left / ((phase === "think" ? b.prep_seconds : b.speak_seconds) * 1000)) * 100))}%` }} /></div>
+          <div className="wb-actions">
+            {phase === "think"
+              ? <button type="button" className="wb-btn wb-btn-solid" onClick={() => run("speak")}>I&rsquo;m ready to speak</button>
+              : <button type="button" className="wb-btn wb-btn-solid" onClick={stopSpeaking}>Done speaking</button>}
+          </div>
+        </div>
+      )}
+
+      {showWrite && (
+        <div className="wb-col" style={{ gap: 8 }}>
+          <label htmlFor={id} className="wb-label">{b.write_label}</label>
+          {b.input === "long"
+            ? <AutoText id={id} value={value} readOnly={!api.editable || locked} onChange={setDraft} placeholder="Write what you said" />
+            : <input id={id} type="text" className="wb-input" value={value} readOnly={!api.editable || locked}
+                placeholder={api.editable && !locked ? "Write what you said" : ""} onChange={(e) => setDraft(e.target.value)} />}
+          {typeof secs === "string" && secs && <span className="wb-muted" style={{ fontSize: 14 }}>You spoke for {secs} seconds.</span>}
+          {!locked && api.editable && (
+            <div className="wb-actions">
+              <button type="button" className="wb-btn wb-btn-solid" disabled={!draft.trim()}
+                onClick={() => api.set(b.key, draft.trim())}>Submit and compare</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {(locked || !api.editable) && (
+        <div className="wb-feedback">
+          <span className="wb-callout-title">{b.model_title ?? "One strong answer"}</span>
+          {paragraphs(b.model)}
+          <span className="wb-muted" style={{ fontSize: 14 }}>Other answers can be just as good. Compare the shape, not the words.</span>
+        </div>
+      )}
+      {(locked || !api.editable) && b.check && (
+        <fieldset className="wb-pick">
+          <legend className="wb-field-label" style={{ marginBottom: 6 }}>{b.check.question}</legend>
+          {b.check.options.map((o) => (
+            <label key={o} className={check === o ? "on" : ""}>
+              <input type="radio" name={`chk-${b.key}`} checked={check === o} disabled={!api.editable}
+                onChange={() => api.set(`${b.key}.check`, o)} />
+              <span style={{ flex: 1 }}>{o}</span>
+            </label>
+          ))}
+        </fieldset>
+      )}
+      <div className="wb-field-foot"><SaveLine api={api} k={b.key} />{api.fieldFoot?.(b.key)}</div>
+    </div>
+  )
+}
+
+function Reveal({ api, b }: { api: FieldApi; b: Extract<Block, { type: "reveal" }> }) {
+  const [open, setOpen] = React.useState(false)
+  const all = api.all()
+  const ready = b.after.every((k) => isFilled(all[k]))
+  // The coach's read-only preview shows it open: there is nothing to earn.
+  const shown = open || !api.editable
+  if (shown) {
+    return (
+      <div className="wb-callout peach">
+        <span className="wb-callout-title">{b.title}</span>
+        {paragraphs(b.body)}
+      </div>
+    )
+  }
+  return (
+    <div className="wb-reveal">
+      <span className="wb-callout-title">{b.title}</span>
+      {ready
+        ? <span className="wb-p" style={{ fontSize: 16 }}>You have written your own answer. Open the example when you are ready to compare.</span>
+        : <span className="wb-p" style={{ fontSize: 16 }}>This unlocks once you have answered the questions above. Try first: comparing is much more useful after you have had a go.</span>}
+      <div>
+        <button type="button" className="wb-btn wb-btn-solid" disabled={!ready} onClick={() => setOpen(true)}>
+          {b.button ?? "Show the example answer"}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export function CoachNote({ body, coachName }: { body: string; coachName: string }) {
   return (
     <aside className="wb-note">
@@ -510,11 +862,25 @@ function Main({ api, b }: { api: FieldApi; b: Block }): ReactNode {
       return <Table b={b} />
     case "grid":
       return <Grid api={api} b={b} />
+    case "video":
+      return <Video api={api} b={b} />
+    case "link":
+      return <LinkCard b={b} />
+    case "quiz":
+      return <Quiz api={api} b={b} />
+    case "numeric":
+      return <Numeric api={api} b={b} />
+    case "sort":
+      return <Sort api={api} b={b} />
+    case "reveal":
+      return <Reveal api={api} b={b} />
+    case "drill":
+      return <Drill api={api} b={b} />
     case "coach_only":
       return api.showCoachOnly ? (
         <div className="wb-coachonly">
           <span className="wb-eyebrow-ink">{b.title || "Coach only"}. The client never sees this.</span>
-          <span style={{ whiteSpace: "pre-wrap" }}>{b.body}</span>
+          <span style={{ whiteSpace: "pre-wrap" }}>{b.body ?? (b.guide ? "Structured coach guide. It opens in the Coach Command Center on the Review screen." : "")}</span>
         </div>
       ) : null
     case "coach_note":
@@ -551,17 +917,18 @@ export function SectionBlocks({ api, section }: { api: FieldApi; section: Sectio
   )
 }
 
-export function SectionHeader({ section, total }: { section: Section; total: number }) {
+export function SectionHeader({ section, total, word = "Section" }: { section: Section; total: number; word?: string }) {
   const n = String(section.number).padStart(2, "0")
   return (
     <div className="wb-row">
       <div className="wb-col" style={{ gap: 20 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 20, flexWrap: "wrap" }}>
           <span className="wb-secnum" aria-hidden="true">{n}</span>
-          <span className="wb-eyebrow">Section {n} of {String(total).padStart(2, "0")}</span>
+          <span className="wb-eyebrow">{section.day ? `${section.day}, ` : ""}{word} {n} of {String(total).padStart(2, "0")}</span>
           <ModeTag mode={section.mode} />
         </div>
         <h1 className="wb-h1">{section.title}</h1>
+        {section.minutes && <span className="wb-muted" style={{ fontSize: 16, fontWeight: 600 }}>{section.minutes}</span>}
       </div>
       <div />
     </div>

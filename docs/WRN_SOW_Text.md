@@ -28,7 +28,7 @@ Thank you for your time and for the opportunity to learn more about your goals. 
 - Side-by-side comparison of all four paths against your own priority conditions
 - Links from each path into the WRN Decoder library
 
-### Your SIGNAL DNA Decode and Career Path Session (Know)
+### Career Planning Decoded (Build)
 - Live 1-on-1 decode session walking through the full report
 
 ### Resume Workshop (Build)

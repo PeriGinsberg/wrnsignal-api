@@ -33,6 +33,12 @@ type EmailSummary = {
   subject: string
   sent_by_name: string | null
   backfilled: boolean
+  channel: "email" | "sms"
+  direction: "outbound" | "inbound"
+  status: "sent" | "delivered" | "bounced" | "complained" | "failed"
+  status_detail: string | null
+  status_at: string | null
+  reply_to_email: string | null
 }
 
 /** Who sent it. A backfilled email with no match in History says so, rather than claiming SIGNAL sent it. */
@@ -58,6 +64,23 @@ function when(iso: string): string {
 }
 
 const typeLabel = (t: string) => CLIENT_EMAIL_TYPE_LABEL[t as ClientEmailType] ?? t
+
+/** Delivery status, from Postmark's webhook (coach messages only). Nothing for a plain "sent". */
+const STATUS_LABEL: Partial<Record<EmailSummary["status"], string>> = {
+  delivered: "Delivered",
+  bounced: "Bounced",
+  complained: "Marked as spam",
+  failed: "Failed",
+}
+const statusBad = (s: EmailSummary["status"]) => s === "bounced" || s === "complained" || s === "failed"
+
+type Filter = "all" | "messages" | "automatic"
+const FILTERS: { key: Filter; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "messages", label: "Messages" },
+  { key: "automatic", label: "From SIGNAL" },
+]
+const isMessage = (e: EmailSummary) => e.email_type === "coach_message"
 
 /**
  * The HTML in a sandboxed frame: no scripts, nothing it can reach on this
@@ -117,8 +140,12 @@ function EmailDetail({ coachClientId, id }: { coachClientId: string; id: string 
         {line("To", email.to_email)}
         {line("CC", email.cc_email)}
         {line("BCC", email.bcc_emails.length ? email.bcc_emails.join(", ") : null)}
+        {line("Reply-To", email.reply_to_email)}
         {line("Subject", email.subject)}
         {line("Sent by", senderLabel(email))}
+        {line("Status", STATUS_LABEL[email.status]
+          ? `${STATUS_LABEL[email.status]}${email.status_at ? `, ${when(email.status_at)}` : ""}${email.status_detail ? ` (${email.status_detail})` : ""}`
+          : null)}
       </div>
       {email.backfilled && (
         <div style={{ fontSize: TYPE.micro, color: T.MUTED }}>
@@ -159,11 +186,15 @@ function EmailDetail({ coachClientId, id }: { coachClientId: string; id: string 
   )
 }
 
-export function CommunicationsTab({ coachClientId }: { coachClientId: string | null }) {
+/**
+ * refreshKey: bump it to re-read the list, e.g. after the Message panel sends.
+ */
+export function CommunicationsTab({ coachClientId, refreshKey = 0 }: { coachClientId: string | null; refreshKey?: number }) {
   const [emails, setEmails] = useState<EmailSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [filter, setFilter] = useState<Filter>("all")
 
   const load = useCallback(async () => {
     if (!coachClientId) { setLoading(false); setEmails([]); return }
@@ -181,7 +212,7 @@ export function CommunicationsTab({ coachClientId }: { coachClientId: string | n
     }
   }, [coachClientId])
 
-  useEffect(() => { void load() }, [load])
+  useEffect(() => { void load() }, [load, refreshKey])
 
   if (loading) return <p style={{ fontSize: TYPE.secondary, color: T.MUTED, margin: 0 }}>Loading emails…</p>
   if (loadError) {
@@ -198,10 +229,34 @@ export function CommunicationsTab({ coachClientId }: { coachClientId: string | n
     return <p style={{ fontSize: TYPE.secondary, color: T.DIM, margin: 0 }}>No emails sent yet.</p>
   }
 
+  const shown = emails.filter((e) => filter === "all" || (filter === "messages") === isMessage(e))
+
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
-      {emails.map((e, i) => {
+      <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+        {FILTERS.map((f) => (
+          <button
+            key={f.key}
+            type="button"
+            onClick={() => setFilter(f.key)}
+            aria-pressed={filter === f.key}
+            style={{
+              ...btnSecondary, minHeight: 0, padding: "5px 12px", fontSize: TYPE.micro,
+              border: filter === f.key ? `1px solid ${T.ORANGE_BORDER}` : `1px solid ${T.BORDER_SOFT}`,
+            }}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+      {shown.length === 0 && (
+        <p style={{ fontSize: TYPE.secondary, color: T.DIM, margin: "8px 0 0" }}>
+          {filter === "messages" ? "No messages sent yet." : "No automatic emails yet."}
+        </p>
+      )}
+      {shown.map((e, i) => {
         const open = openId === e.id
+        const status = STATUS_LABEL[e.status]
         return (
           <div key={e.id} style={{ padding: "10px 0", borderTop: i === 0 ? "none" : `1px solid ${T.BORDER_SOFT}` }}>
             <button
@@ -217,6 +272,7 @@ export function CommunicationsTab({ coachClientId }: { coachClientId: string | n
               <div style={{ fontSize: TYPE.micro, color: T.DIM, marginTop: 2 }}>
                 {typeLabel(e.email_type)} · to {e.to_email}{e.cc_email ? `, cc ${e.cc_email}` : ""} · {senderLabel(e)}
                 {e.redirected ? " · test send" : ""}
+                {status && <> · <span style={{ color: statusBad(e.status) ? T.ERROR : T.DIM, fontWeight: statusBad(e.status) ? 700 : 400 }}>{status}</span></>}
               </div>
             </button>
             {open && <EmailDetail coachClientId={coachClientId} id={e.id} />}

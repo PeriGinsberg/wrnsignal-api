@@ -25,7 +25,11 @@ export class NotFoundError extends Error {
 }
 
 export const ROUND_COLUMNS =
-  "id, coach_client_id, client_profile_id, coach_profile_id, title, status, created_at, sent_at, submitted_at, fb_overall, feedback_sent_at"
+  "id, coach_client_id, client_profile_id, coach_profile_id, title, status, created_at, sent_at, submitted_at, fb_overall, feedback_sent_at, kind, case_id, workbook_id, scenario, self_assessment, self_assessed_at"
+
+/** The take columns, timing and transcript included. Neither side gets a URL from these. */
+export const TAKE_COLUMNS =
+  "id, question_id, storage_path, mime, duration_ms, created_at, audio_path, question_shown_at, response_started_at, response_ended_at, first_speech_ms, transcript, transcript_status, transcript_error"
 
 /**
  * A coach acting on one client, full access only.
@@ -100,14 +104,14 @@ export async function loadRound(
 
   const { data: qs, error: qErr } = await db
     .from("practice_questions")
-    .select("id, position, text, source, fb_works, fb_fix")
+    .select("id, position, text, source, fb_works, fb_fix, qkey, title, exhibit, answer_seconds, prep_seconds")
     .eq("round_id", roundId)
     .order("position", { ascending: true })
   if (qErr) throw new Error(`load questions: ${qErr.message}`)
 
   const { data: ts, error: tErr } = await db
     .from("practice_takes")
-    .select("id, question_id, storage_path, mime, duration_ms, created_at")
+    .select(TAKE_COLUMNS)
     .eq("round_id", roundId)
     .order("created_at", { ascending: true })
   if (tErr) throw new Error(`load takes: ${tErr.message}`)

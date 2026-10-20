@@ -11,7 +11,9 @@ import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
 import { getSupabaseAdmin } from "../../../_lib/coachAuth"
 import { resolveActor, ForbiddenError } from "@/lib/collab/scope"
 import { coachPracticeScope, loadRound, signTakes, NotFoundError } from "@/lib/practice/server"
-import { cleanQuestions, latestTakes } from "@/lib/practice/model"
+import { answerSecondsFor, cleanQuestions, latestTakes } from "@/lib/practice/model"
+import { getCase } from "@/lib/academy/cases"
+import { rubricAverage } from "@/lib/academy/rubric"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -52,9 +54,46 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ roun
     const newest = latestTakes(takes)
     const urls = await signTakes(db, [...newest.values()])
 
+    // ── Case rounds: the coach-only extras ──────────────────────────────
+    // The answer key and guide come from the case library here, on the
+    // server, and nowhere else. The rubric and review are read separately
+    // from the shared loader so no client route can ever pick them up.
+    let academy: Record<string, unknown> | null = null
+    if (round.kind === "case") {
+      const { data: extra } = await db.from("practice_rounds")
+        .select("rubric, coach_review, review_updated_at").eq("id", roundId).maybeSingle()
+      const { data: attempts } = await db.from("practice_rounds")
+        .select("id, title, case_id, status, sent_at, submitted_at, rubric")
+        .eq("client_profile_id", round.client_profile_id).eq("kind", "case").is("deleted_at", null)
+        .order("created_at", { ascending: true })
+      let workbook: { id: string; title: string | null; status: string } | null = null
+      if (round.workbook_id) {
+        const { data: wb } = await db.from("workbooks")
+          .select("id, status, title:content->>title").eq("id", round.workbook_id).maybeSingle()
+        if (wb) workbook = { id: wb.id, title: (wb as any).title ?? null, status: wb.status }
+      }
+      academy = {
+        guide: getCase(round.case_id),
+        rubric: extra?.rubric ?? {},
+        review: extra?.coach_review ?? {},
+        review_updated_at: extra?.review_updated_at ?? null,
+        workbook,
+        attempts: (attempts ?? []).map((a: any) => {
+          const def = getCase(a.case_id)
+          return {
+            id: a.id, title: a.title, case_id: a.case_id, case_title: def?.title ?? null,
+            difficulty: def?.difficulty ?? null, case_type: def?.type ?? null,
+            status: a.status, sent_at: a.sent_at, submitted_at: a.submitted_at,
+            rubric_average: rubricAverage(a.rubric), current: a.id === roundId,
+          }
+        }),
+      }
+    }
+
     return withCorsJson(req, {
       ok: true,
       round,
+      academy,
       answers: round.questions.map((q) => {
         const t = newest.get(q.id)
         return {
@@ -67,6 +106,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ roun
           // on one question is a sign about the question, not the client.
           takes: takes.filter((x) => x.question_id === q.id).length,
           url: t ? urls[t.id] ?? null : null,
+          seconds: answerSecondsFor(q),
+          question_shown_at: t?.question_shown_at ?? null,
+          response_started_at: t?.response_started_at ?? null,
+          response_ended_at: t?.response_ended_at ?? null,
+          first_speech_ms: t?.first_speech_ms ?? null,
+          transcript: t?.transcript ?? null,
+          transcript_status: t?.transcript_status ?? null,
+          transcript_error: t?.transcript_error ?? null,
         }
       }),
     })
@@ -86,6 +133,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ ro
     // to something else.
     if (round.status !== "draft") {
       return withCorsJson(req, { ok: false, error: "This round has already been sent" }, 409)
+    }
+    // A case's questions come from the case library, with timing and exhibits
+    // the builder knows nothing about. Rebuilding them here would strip both.
+    if (round.kind === "case") {
+      return withCorsJson(req, { ok: false, error: "A case round's questions come from the case library and cannot be edited here" }, 409)
     }
 
     const body = await req.json().catch(() => null)
