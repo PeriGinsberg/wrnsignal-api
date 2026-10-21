@@ -9,12 +9,12 @@
 // lives in TaskRowStyles below and the page renders it once. Four other
 // dashboard files already use a <style> tag this way.
 
-import type { CSSProperties } from "react"
+import { useEffect, useRef, useState, type CSSProperties } from "react"
 import { T } from "../../../../lib/dashboard-theme"
 import { SPACE, TYPE } from "../../../../lib/theme/surfaces"
 import { isDueToday, isOverdue, type Task } from "../../../../lib/tasks/model"
 import { formatDue } from "./taskClient"
-import { TaskDetails } from "@/app/components/TaskDetails"
+import { DetailsText, TaskDetails } from "@/app/components/TaskDetails"
 
 export const TASK_GRID_COLUMNS = "28px minmax(0, 1fr) 150px 130px 140px 96px 40px 76px"
 // No status column in the condensed form. The card it serves shows only open
@@ -370,6 +370,64 @@ function ProspectBadge() {
   )
 }
 
+/**
+ * The description: its first line, cut off with an ellipsis, plus a More
+ * toggle that opens the full text whenever anything is hidden (a second line,
+ * or a first line too long for the column). Cut by CSS rather than by
+ * slicing, so a long word cannot break the layout.
+ */
+export function Description({ text, taskName }: { text: string | null | undefined; taskName: string }) {
+  const [open, setOpen] = useState(false)
+  const [overflows, setOverflows] = useState(false)
+  const lineRef = useRef<HTMLDivElement>(null)
+  const full = (text ?? "").trim()
+  const snippet = (full.split(/\r?\n/).find((l) => l.trim()) ?? "").trim()
+
+  useEffect(() => {
+    const el = lineRef.current
+    if (!el || open) return
+    const check = () => setOverflows(el.scrollWidth > el.clientWidth + 1)
+    check()
+    window.addEventListener("resize", check)
+    return () => window.removeEventListener("resize", check)
+  }, [open, snippet])
+
+  if (!snippet) return null
+  const toggle = (
+    <button
+      type="button"
+      onClick={(e) => { e.stopPropagation(); setOpen(!open) }}
+      aria-expanded={open}
+      aria-label={`${open ? "Hide" : "Show"} the full description of "${taskName}"`}
+      style={{
+        flex: "0 0 auto", background: "none", border: "none", padding: 0, cursor: "pointer",
+        fontFamily: "inherit", fontSize: TYPE.secondary, fontWeight: 700, color: T.INK_LINK,
+      }}
+    >
+      {open ? "Less" : "More"}
+    </button>
+  )
+  if (open) {
+    return (
+      <div style={{ marginTop: 3, whiteSpace: "normal" }}>
+        <DetailsText text={full} ink={T.MUTED} />
+        {toggle}
+      </div>
+    )
+  }
+  return (
+    <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 3, minWidth: 0 }}>
+      <div ref={lineRef} className="tsk-line" style={{
+        fontSize: TYPE.secondary, color: T.MUTED, minWidth: 0,
+        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+      }}>
+        {snippet}
+      </div>
+      {(full !== snippet || overflows) && toggle}
+    </div>
+  )
+}
+
 export type TaskRowProps = {
   task: Task
   clientName?: string | null
@@ -400,10 +458,6 @@ export function TaskRow(props: TaskRowProps) {
   const done = task.status === "done"
   const decides = !done && !!props.onDecide && !!props.decisionOptions?.length
 
-  // The first line of the description, as a snippet. Kept to one line by CSS
-  // ellipsis rather than by slicing, so a long word cannot break the layout
-  // and nothing is lost from the stored text.
-  const snippet = (task.description ?? "").split(/\r?\n/).find((l) => l.trim()) ?? ""
 
   return (
     <div
@@ -446,14 +500,7 @@ export function TaskRow(props: TaskRowProps) {
         }}>
           {task.title}
         </div>
-        {snippet && (
-          <div className="tsk-line" style={{
-            fontSize: TYPE.secondary, color: T.MUTED, marginTop: 3,
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-          }}>
-            {snippet}
-          </div>
-        )}
+        <Description text={task.description} taskName={task.title} />
         {/* The plan task's details, read-only: they are edited in the
             client's Plan, so this item's own description stays the coach's. */}
         {task.plan_details && (

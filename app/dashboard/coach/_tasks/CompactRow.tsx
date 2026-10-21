@@ -7,8 +7,12 @@
 // gray text cut off with "..." (full text on hover), the client's initials and
 // name straight after the text, the due state as small colored text, and an
 // arrow that shows on hover. The whole row opens `href`; the checkbox does not.
+// When `fullDetail` holds more than the line shows, a More toggle opens it
+// under the row.
 
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { DetailsText } from "@/app/components/TaskDetails"
 import { T } from "../../../../lib/dashboard-theme"
 import { Avatar } from "./TaskRow"
 
@@ -39,6 +43,10 @@ export function CompactRowStyles() {
       .cr-title { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
       .cr-detail { flex: 0 100 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
       .cr-who { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; }
+      .cr-more { flex: 0 0 auto; background: none; border: none; padding: 0; cursor: pointer;
+        font-family: inherit; font-size: 12px; font-weight: 700; color: ${T.INK_LINK}; }
+      .cr-full { grid-column: 1 / -1; padding: 0 0 6px 28px; cursor: default; white-space: normal; }
+      .cr-row--nocheck .cr-full { padding-left: 0; }
       @media (max-width: 560px) {
         .cr-detail { display: none; }
         .cr-who-name { display: none; }
@@ -50,6 +58,8 @@ export function CompactRowStyles() {
 export function CompactRow(props: {
   title: string
   detail?: string | null
+  /** The whole description, opened by the More toggle. */
+  fullDetail?: string | null
   who?: string | null
   /** Shown after the name, e.g. a Prospect tag. */
   whoExtra?: React.ReactNode
@@ -67,6 +77,25 @@ export function CompactRow(props: {
     else router.push(href)
   }
   const hover = [props.title, props.detail].filter(Boolean).join("\n")
+  const [expanded, setExpanded] = useState(false)
+  const [overflows, setOverflows] = useState(false)
+  const detailRef = useRef<HTMLSpanElement>(null)
+  const full = (props.fullDetail ?? "").trim()
+  const detail = (props.detail ?? "").trim()
+
+  useEffect(() => {
+    const el = detailRef.current
+    if (!el) return
+    // Below 560px the detail line is hidden (scrollWidth 0), so any
+    // description counts as hidden there.
+    const check = () => setOverflows(
+      window.innerWidth <= 560 || el.scrollWidth > el.clientWidth + 1)
+    check()
+    window.addEventListener("resize", check)
+    return () => window.removeEventListener("resize", check)
+  }, [detail])
+
+  const canExpand = !!full && (full !== detail || overflows)
   return (
     <div
       className={`cr-row${props.checkbox ? "" : " cr-row--nocheck"}`}
@@ -85,7 +114,19 @@ export function CompactRow(props: {
       <span className="cr-main">
         <span className="cr-title" style={{ fontSize: 14, fontWeight: 600, color: T.INK_EMPHASIS }}>{props.title}</span>
         {props.detail && (
-          <span className="cr-detail" style={{ fontSize: 12, color: T.DIM }}>{props.detail}</span>
+          <span ref={detailRef} className="cr-detail" style={{ fontSize: 12, color: T.DIM }}>{props.detail}</span>
+        )}
+        {canExpand && (
+          <button
+            type="button"
+            className="cr-more"
+            aria-expanded={expanded}
+            aria-label={`${expanded ? "Hide" : "Show"} the full description of "${props.title}"`}
+            onClick={(e) => { e.stopPropagation(); setExpanded(!expanded) }}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            {expanded ? "Less" : "More"}
+          </button>
         )}
         {props.who && (
           <span className="cr-who">
@@ -105,6 +146,12 @@ export function CompactRow(props: {
           </svg>
         )}
       </span>
+      {expanded && (
+        // Reading the text must not also open the row.
+        <div className="cr-full" onClick={(e) => e.stopPropagation()}>
+          <DetailsText text={full} ink={T.MUTED} />
+        </div>
+      )}
     </div>
   )
 }

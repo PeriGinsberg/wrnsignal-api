@@ -226,6 +226,7 @@ export function TaskCard({ order = "card", dueWindow = "all" }: { order?: "card"
                 testId="task-row"
                 title={t.title}
                 detail={snippet}
+                fullDetail={t.description}
                 who={who}
                 whoExtra={t.record?.kind === "prospect" ? (
                   <span style={{ fontSize: 10, fontWeight: 800, color: "var(--sig-avatar-2-ink, #7C5CFF)" }}>Prospect</span>
