@@ -48,8 +48,9 @@ export function TaskRowStyles() {
       .tsk-grid--condensed .tsk-row, .tsk-row.tsk-grid--condensed { min-height: ${SPACE.rowCondensed}px; }
       .tsk-row + .tsk-row { margin-top: 8px; }
       .tsk-cell-label { display: none; }
-      /* Condensed rows run full page width on Coach Home, so the title and its
-         detail line wrap rather than truncate. Below tablet they truncate. */
+      /* Condensed rows run full page width on Coach Home, so the detail line
+         wraps rather than truncates. Below tablet it truncates. The title
+         always wraps. */
       .tsk-grid--condensed .tsk-line { white-space: normal !important; overflow-wrap: anywhere; }
 
       /* Below tablet the grid becomes a card: each cell on its own line with
@@ -492,11 +493,13 @@ export function TaskRow(props: TaskRowProps) {
       )}
 
       <div className="tsk-cell" style={{ minWidth: 0, display: "block" }}>
-        <div className="tsk-line" style={{
+        {/* The title wraps rather than truncates, at every width: a task
+            cut to "Review networking camp..." is not a task you can act on. */}
+        <div style={{
           fontSize: TYPE.body,
           color: done ? T.MUTED : T.TEXT,
           textDecoration: done ? "line-through" : "none",
-          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          whiteSpace: "normal", overflowWrap: "anywhere",
         }}>
           {task.title}
         </div>

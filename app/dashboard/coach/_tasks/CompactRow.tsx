@@ -40,7 +40,8 @@ export function CompactRowStyles() {
       .cr-arrow { opacity: 0; transition: opacity 120ms ease; color: ${T.MUTED}; display: inline-flex; }
       .cr-row[data-href]:hover .cr-arrow, .cr-row[data-href]:focus-visible .cr-arrow { opacity: 1; }
       .cr-main { display: flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap; }
-      .cr-title { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+      /* The title wraps rather than truncates; the detail line gives way first. */
+      .cr-title { flex: 0 1 auto; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
       .cr-detail { flex: 0 100 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
       .cr-who { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; }
       .cr-more { flex: 0 0 auto; background: none; border: none; padding: 0; cursor: pointer;
