@@ -2057,6 +2057,12 @@ const SECTION_HEADER_RULES: Array<{ pattern: RegExp; kind: SectionKind }> = [
   // HOW TO APPLY
   { pattern: /^(how to apply|application (process|instructions)|to apply|next steps)$/, kind: "how_to_apply" },
 
+  // Internship program perks ("FOX Master Classes", "Networking Opportunities").
+  { pattern: /^program (features|highlights|benefits)$/, kind: "benefits" },
+  { pattern: /^what you('ll| will) (gain|get|receive)$/, kind: "benefits" },
+  // Diversity / EEO statements are boilerplate, not requirements.
+  { pattern: /^(diversity( commitment| statement| (and|&) inclusion)?|our commitment to diversity|equal (employment )?opportunity( employer)?|eeo statement)$/, kind: "company" },
+
   // RESPONSIBILITIES — must come before generic "overview" rules
   { pattern: /^(key )?responsibilities$/, kind: "responsibilities" },
   { pattern: /^essential (duties|job functions|responsibilities)( and responsibilities)?$/, kind: "responsibilities" },
@@ -2082,6 +2088,11 @@ const SECTION_HEADER_RULES: Array<{ pattern: RegExp; kind: SectionKind }> = [
   { pattern: /^(skill in|knowledge of|ability to)$/, kind: "qualifications" },
   { pattern: /^what you('ll| will) bring$/, kind: "qualifications" },
   { pattern: /^what you need$/, kind: "qualifications" },
+  // Internship programs (FOX, prod run 378022a7): the asks sit under
+  // eligibility and "standing out" headers.
+  { pattern: /^eligibility( requirements| criteria)?$/, kind: "qualifications" },
+  { pattern: /^standing out( as a (top|strong) (candidate|applicant))?$/, kind: "qualifications" },
+  { pattern: /^successful (students|candidates|applicants|interns) (have|will have|possess)$/, kind: "qualifications" },
 
   // OVERVIEW — role-level, placed after more specific rules
   { pattern: /^(role|position|job) (overview|summary|description)$/, kind: "overview" },
@@ -2091,6 +2102,7 @@ const SECTION_HEADER_RULES: Array<{ pattern: RegExp; kind: SectionKind }> = [
   { pattern: /^job description summary$/, kind: "overview" },
   { pattern: /^(your (internship|role) experience|internship experience)$/, kind: "overview" },
   { pattern: /^(opportunity|what we do)$/, kind: "overview" },
+  { pattern: /^(areas|area) of (placement|focus)$/, kind: "overview" },
 
   // COMPANY — corporate-marketing headers that don't match the canonical
   // "About Us" / "Our Story" shape. Placed LAST so the specific rules
@@ -2105,6 +2117,26 @@ const SECTION_HEADER_RULES: Array<{ pattern: RegExp; kind: SectionKind }> = [
   // without the generic-rule blast radius.
   { pattern: /^being part of (the )?(team|company|family|crew)$/, kind: "company" },
 ]
+
+/**
+ * A line laid out as a header that no rule names: short, and either ending
+ * in a colon or set in capitals ("STUDENTS SELECTED TO MOVE FORWARD:").
+ * Used only to END a dropped section. Without it, everything after
+ * "TO APPLY:" was skipped, including the FOX posting's skills list
+ * (prod run 378022a7 read zero requirements).
+ */
+function looksLikeHeader(line: string): boolean {
+  const t = String(line || "").trim()
+  if (!t || t.length > 70) return false
+  const words = t.replace(/[:：]\s*$/, "").split(/\s+/)
+  if (words.length > 10) return false
+  if (/[.!?]$/.test(t)) return false
+  // A colon line is a header only when short: "Requires two (2) years of
+  // experience with the following skills:" is a sentence (Morgan Stanley).
+  if (/[:：]$/.test(t) && words.length <= 6 && !/\d|\(/.test(t)) return true
+  const letters = t.replace(/[^A-Za-z]/g, "")
+  return letters.length >= 6 && letters === letters.toUpperCase()
+}
 
 function classifyHeader(line: string): SectionKind | null {
   const clean = String(line || "")
@@ -2137,7 +2169,9 @@ export function segmentJobText(raw: string): JobSection[] {
   }
 
   for (const line of rawLines) {
-    const newKind = classifyHeader(line)
+    let newKind = classifyHeader(line)
+    // An unnamed header ends a dropped section; the text under it is kept.
+    if (!newKind && REQUIREMENT_SKIP_KINDS.has(current.kind) && looksLikeHeader(line)) newKind = "other"
     if (newKind) {
       // close previous section if it has any content
       if (current.lines.length > 0 || current.headerText !== null) {
@@ -3108,6 +3142,12 @@ function expandWrittenNumbers(text: string): string {
   return text.replace(WRITTEN_NUMBER_RE, (m) => WRITTEN_NUMBER_MAP[m.toLowerCase()] || m)
 }
 
+// What follows "N years" when the years are school, not work: "toward your
+// bachelor's", "of college", "of undergraduate study", "in an accredited
+// program", "of coursework".
+const ACADEMIC_YEARS_AFTER =
+  /^\s*(?:completed\b|(?:of\s+)?(?:completed\s+)?(?:towards?|in)\s+(?:a|an|the|your|their)?\s*(?:\w+\s+){0,2}(?:degree|bachelor'?s?|undergraduate|college|university|studies|study|school|major)|of\s+(?:\w+\s+){0,2}(?:college|university|undergraduate|graduate\s+(?:study|school)|study|studies|coursework|course\s*work|school|academic))/i
+
 function extractYearsRequired(jobText: string): number | null {
   const patterns: RegExp[] = Array.isArray((POLICY as any)?.extraction?.years?.patterns)
     ? ((POLICY as any).extraction.years.patterns as RegExp[])
@@ -3121,8 +3161,16 @@ function extractYearsRequired(jobText: string): number | null {
   const matchText = expandWrittenNumbers(jobText)
 
   for (const r of patterns) {
-    const m = matchText.match(r)
-    if (m && m[1]) {
+    // Every match, not just the first: a skipped academic clause must not hide
+    // a real tenure clause later in the posting.
+    const all = new RegExp(r.source, r.flags.includes("g") ? r.flags : r.flags + "g")
+    for (const m of matchText.matchAll(all)) {
+      if (!m[1]) continue
+      // Years of SCHOOL are not years of experience: "completed at least two
+      // years toward your bachelor's degree" read as a 2-year experience floor
+      // on a Dow Jones internship (prod run 9875d6c0).
+      const after = matchText.slice((m.index ?? 0) + m[0].length, (m.index ?? 0) + m[0].length + 60)
+      if (ACADEMIC_YEARS_AFTER.test(after)) continue
       const v = parseInt(String(m[1]), 10)
       // 0 is accepted: "0-2 years" is an explicit entry-level floor, which is
       // a real (and useful) signal, not the absence of one. Every downstream
@@ -4469,6 +4517,10 @@ export function extractJobSignals(
     !/\b(media|ad|ads|advertising|digital|programmatic|space|time) buyers?\b/i.test(titleOnly) &&
     !/\b(talent|candidate|recruit\w*|consultant|consulting)\b/i.test(titleOnly)
 
+  // "Internship Program - Data Analytics" is an analytics role (prod run
+  // 378022a7 classed it Other). Title only, for the same body-slice reason.
+  const jobTitleIsDataAnalytics = /\bdata analytics\b/i.test(titleOnly)
+
   // Seniority detection — Manager/Director/Senior/Lead/VP signals a level above
   // early-career. Test the clean user-provided title (userTitleNorm) AND the
   // JD-body opening. Title-first matters: real titles like "Marketing Manager" /
@@ -4602,7 +4654,7 @@ export function extractJobSignals(
                         ? "Consulting"
                         : jobTitleIsFinance
                           ? "Finance"
-                          : jobTitleIsAnalytics
+                          : jobTitleIsAnalytics || jobTitleIsDataAnalytics
                             ? "Analytics"
                             : jobTitleIsOperations
                               ? "Operations"

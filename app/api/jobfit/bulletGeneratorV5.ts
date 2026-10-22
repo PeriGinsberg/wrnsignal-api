@@ -13,6 +13,7 @@
  */
 
 import type { EvalOutput } from "./signals"
+import { segmentJobText } from "./extract"
 
 // ─── Output types ─────────────────────────────────────────────────────────────
 
@@ -99,6 +100,106 @@ function currentDateLabel(): string {
   return `${months[d.getUTCMonth()]} ${d.getUTCFullYear()} (${d.getUTCFullYear()}-${mm})`
 }
 
+// ─── Risk grounding ──────────────────────────────────────────────────────────
+//
+// The model writes risk bullets ONLY for the engine's risk codes, one each,
+// and each bullet names the code it explains. Told this in the prompt alone,
+// it wrote its own risks from the posting text instead: "no SQL or cloud
+// tools that FOX's BI team likely uses" on a posting that asks for neither
+// (prod run 378022a7; 30 of 645 runs since Sept 1 had more risks than codes).
+// So the ids are checked in code and anything unmatched is dropped.
+
+// Not given to the model. RISK_LIMITED_MATCH_EVIDENCE says the engine found
+// little to match, and its own wording already reaches the user through
+// risk_flags; a model asked to explain it fills the gap with requirements
+// the posting never states.
+const WRITER_SKIPPED_RISK_CODES = new Set(["RISK_LIMITED_MATCH_EVIDENCE"])
+
+// A gap is a fact about the posting or the profile, never a guess.
+const SPECULATIVE_GAP = /\b(likely|probably|typically|presumably|may use|might use|tends? to)\b/i
+
+export function writerRisks(out: EvalOutput): Array<Record<string, unknown> & { risk_id: string }> {
+  const codes: any[] = out.risk_codes ?? []
+  // The engine raises a missing tool twice: RISK_MISSING_TOOLS ("Posting lists
+  // salesforce as required.") and RISK_MISSING_PROOF ("salesforce tool
+  // usage"). One code per bullet would then say the same gap twice.
+  const missingTools = codes.filter((c) => c?.code === "RISK_MISSING_TOOLS").map((c) => String(c.job_fact ?? "").toLowerCase())
+  const sameToolTwice = (c: any) => {
+    const m = c?.code === "RISK_MISSING_PROOF" && /^(.+) tool usage$/i.exec(String(c.job_fact ?? "").trim())
+    return !!m && missingTools.some((f) => f.includes(m[1].toLowerCase()))
+  }
+  return codes
+    .filter((c: any) => !WRITER_SKIPPED_RISK_CODES.has(c?.code) && !sameToolTwice(c))
+    .map((c: any, i: number) => ({ risk_id: `R${i + 1}`, ...c }))
+}
+
+// The engine does not yet detect every stated requirement ("strong sports
+// betting knowledge", "experience with a CMS"). The writer may add up to this
+// many risks beyond the codes, but only for a requirement it quotes word for
+// word from the posting, and never for one the posting calls optional.
+const MAX_QUOTED_RISKS = 2
+const OPTIONAL_LINE = /\b(a plus|plus\b|preferred|nice[- ]to[- ]have|not required|bonus|ideally|you('ll| will) learn|exposure to|familiarity with .{0,40} helpful)/i
+
+// Requirement sections whose header makes them wishes, not requirements.
+const SOFT_SECTION_HEADER = /preferred|nice|bonus|plus|ideal|standing out|successful|desired|additional/i
+
+const squash = (s: string) => s.toLowerCase().replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, " ").trim()
+
+/**
+ * The posting line holding `quote`, when that line sits in a stated
+ * requirements section. Null otherwise: a duty ("track earned media") is what
+ * an intern will learn, not a requirement they lack, and a "Successful
+ * students have" list is a wish list (prod runs 9875d6c0, 378022a7).
+ */
+function requiredLineQuoted(jobText: string, quote: string): string | null {
+  const q = squash(quote)
+  if (q.length < 12) return null
+  for (const s of segmentJobText(jobText)) {
+    if (s.kind !== "qualifications" || SOFT_SECTION_HEADER.test(s.headerText ?? "")) continue
+    for (const line of s.lines) if (squash(line).includes(q)) return line
+  }
+  return null
+}
+
+/**
+ * Keeps one valid bullet per known risk_id, in the order given, plus up to
+ * MAX_QUOTED_RISKS bullets that quote a required line of the posting. Drops
+ * the rest: no id and no verified quote, an unknown or repeated id, or a
+ * speculative gap.
+ */
+export function groundRiskBullets(raw: unknown[], riskIds: string[], jobText = ""): RiskBullet[] {
+  const allowed = new Set(riskIds)
+  const used = new Set<string>()
+  const kept: RiskBullet[] = []
+  let quoted = 0
+  for (const b of raw) {
+    const id = (b as any)?.risk_id
+    const quote = (b as any)?.jd_quote
+    let reason: string | null = null
+    let viaQuote = false
+    if (!isValidRiskBullet(b)) reason = riskBulletInvalidReason(b)
+    else if (SPECULATIVE_GAP.test(b.gap)) reason = "speculative_gap"
+    else if (typeof id === "string" && allowed.has(id)) {
+      if (used.has(id)) reason = "risk_id_repeated"
+    } else if (typeof quote === "string" && quote.trim()) {
+      const line = requiredLineQuoted(jobText, quote)
+      if (!line) reason = "jd_quote_not_a_stated_requirement"
+      else if (OPTIONAL_LINE.test(line) || OPTIONAL_LINE.test(b.gap)) reason = "jd_quote_is_optional"
+      else if (quoted >= MAX_QUOTED_RISKS) reason = "too_many_quoted_risks"
+      else viaQuote = true
+    } else reason = "risk_id_not_an_engine_risk"
+    if (reason) {
+      console.warn("[V5] dropped risk bullet", { reason, bullet: b })
+      continue
+    }
+    if (viaQuote) quoted++
+    else used.add(id)
+    const { keyword, gap, adjacent_evidence, severity } = b as RiskBullet
+    kept.push({ keyword, gap, adjacent_evidence, severity })
+  }
+  return kept
+}
+
 function buildPrompt(out: EvalOutput): string {
   const profileText =
     String((out as any).profile_text || (out as any).profileText || "").trim() ||
@@ -125,7 +226,7 @@ ${jobText}
 ${JSON.stringify(out.why_codes ?? [], null, 2)}
 
 ## RISK CODES (gaps or concerns)
-${JSON.stringify(out.risk_codes ?? [], null, 2)}
+${JSON.stringify(writerRisks(out), null, 2)}
 
 ## DECISION
 ${out.decision} (score: ${out.score})
@@ -165,7 +266,11 @@ ${degreeStatus}
 - Never put quoted language in the action instruction. Tell them what to convey, not the exact words to use.
 
 ### On risk bullets
-- CRITICAL: Only generate risk bullets for risk_codes that are explicitly provided. If risk_codes is an empty array, return an empty risk_bullets array. Never invent risks that aren't in the risk_codes input.
+- CRITICAL: Risk bullets come from the risk_codes provided, plus the quoted exception below. Never invent risks: no requirement the job description does not state.
+- Write at most ONE risk bullet per risk code, and set its risk_id to that code's risk_id.
+- You may add at most TWO further risk bullets, only for a requirement listed in the job description's requirements or qualifications section (never a duty from the responsibilities, never a preferred or "successful candidates have" list) that your profile clearly lacks and no risk code covers. The gap must say what that line says, no stronger: "knowledge of X" is not "experience in X". For these, omit risk_id and set jd_quote to the requirement copied word for word from the job description. A bullet with neither a matching risk_id nor an exact jd_quote is discarded, as is one quoting a line that says "a plus", "preferred", "nice to have", or "not required".
+- The gap restates that code's job_fact in plain words. Never add a requirement, tool, industry, or years figure the job description does not state. Never guess what the employer uses or typically seeks: no "likely", "probably", "typically", "may use".
+- If the job description calls something "a plus", "preferred", "nice to have", "not required", or something you will learn on the job, never describe it as required.
 - The gap is the point. Name the gap clearly in one sentence. State it as a direct concern, not as setup for a bridge. Do not soften with hedge words ("a bit," "somewhat," "may be challenging"). Do not bury it inside a long sentence describing evidence.
 - After naming the gap, give adjacent evidence as secondary support. One or two sentences. This is context the student can use when deciding whether to apply and how to address the gap. It is not a rebuttal of the gap.
 - CRITICAL: adjacent_evidence must cite only evidence that actually appears in the profile text. Never say "you likely did X" or "you probably Y". Only reference what is explicitly stated. Never interpret biographical facts as proof of disposition (e.g. do not interpret a study abroad semester as "geographic flexibility").
@@ -229,7 +334,7 @@ BAD, gap buried (do not do this):
 ## OUTPUT FORMAT
 Respond ONLY with valid JSON. No preamble, no markdown fences, no commentary.
 
-CRITICAL: Only generate risk_bullets for risk_codes that are explicitly provided above. If risk_codes is an empty array, you MUST return "risk_bullets": []. Never invent risks.
+CRITICAL: Each risk bullet carries either the risk_id of a risk code above, or a jd_quote copied word for word from a required line of the job description (at most two of those). If risk_codes is empty and nothing stated as required is missing, return "risk_bullets": []. Never invent risks.
 
 CRITICAL: If the DECISION is "Pass", you MUST return null for ALL THREE: cover_letter_strategy, positioning_strategy, and networking_strategy (literal JSON null, not empty objects). The user shouldn't apply.
 
@@ -244,6 +349,8 @@ CRITICAL: If the DECISION is "Pass", you MUST return null for ALL THREE: cover_l
   ],
   "risk_bullets": [
     {
+      "risk_id": "The risk_id of the one risk code this bullet explains, e.g. R1",
+      "jd_quote": "Only on a bullet with no risk_id: the stated requirement, copied word for word from the job description",
       "keyword": "3-5 WORD ALL-CAPS LABEL",
       "gap": "One sentence naming the gap directly. The gap is the point of this bullet.",
       "adjacent_evidence": "Zero to two sentences of secondary support from the profile. Empty string if no adjacent evidence exists.",
@@ -364,8 +471,8 @@ function riskBulletInvalidReason(b: any): string {
 export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
   const t0 = Date.now()
 
-  // Hard guard: if no risk_codes, skip Claude for risks entirely
-  const hasRisks = Array.isArray(out.risk_codes) && out.risk_codes.length > 0
+  // The ids a risk bullet may cite; see groundRiskBullets for the rest.
+  const riskIds = writerRisks(out).map((r) => r.risk_id)
 
   // For PASS decisions, cap WHY bullets at 2 — enough to show transferable strengths
   // without making an apply case for a role the student shouldn't pursue
@@ -454,20 +561,8 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
   }
   const whyBullets = isPass ? validWhyBullets.slice(0, 2) : validWhyBullets
 
-  const rawRiskBullets = hasRisks ? (parsed.risk_bullets ?? []) : []
-  const riskBullets: RiskBullet[] = []
-  for (const b of rawRiskBullets) {
-    if (isValidRiskBullet(b)) {
-      riskBullets.push(b)
-    } else {
-      console.warn("[V5] dropped malformed risk bullet", {
-        reason: riskBulletInvalidReason(b),
-        decision: out.decision,
-        score: out.score,
-        bullet: b,
-      })
-    }
-  }
+  const jobText = String((out as any).job_text || (out as any).jobText || "")
+  const riskBullets = groundRiskBullets(parsed.risk_bullets ?? [], riskIds, jobText)
 
   // Strategy field guards. Belt-and-suspenders against model ignoring the
   // Pass-skip rule: force null for all three on Pass regardless of model

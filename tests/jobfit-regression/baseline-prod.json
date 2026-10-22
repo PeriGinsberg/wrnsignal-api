@@ -9,19 +9,19 @@
     "traceMissing": false,
     "requirement_units": [
       {
-        "id": "7f44327c1a27b6a1",
-        "key": "strategy_problem_solving",
-        "kind": "function",
-        "strength": 6,
-        "label": "strategy, synthesis, and problem-solving work",
-        "requiredness": "supporting"
-      },
-      {
         "id": "906c01ce8e3823f4",
         "key": "analysis_reporting",
         "kind": "execution",
         "strength": 10,
         "label": "analysis, reporting, and measurement work",
+        "requiredness": "supporting"
+      },
+      {
+        "id": "b7c219bfe86e463c",
+        "key": "strategy_problem_solving",
+        "kind": "function",
+        "strength": 6,
+        "label": "strategy, synthesis, and problem-solving work",
         "requiredness": "supporting"
       },
       {
@@ -9589,7 +9589,7 @@
     "id": "prod-05c18385-29a2-431b-b3e6-561fa767713d",
     "label": "prod 05c18385 — EIC Intern @ Cushman & Wakefield (2026-05-03)",
     "decision": "Pass",
-    "score": 44,
+    "score": 51,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -10015,11 +10015,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      },
-      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -10081,7 +10076,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": null,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -10151,12 +10146,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -9,
-          "note": "8.6"
+          "points": -2,
+          "note": "1.6"
         }
       ],
-      "raw_score": 44,
-      "clamped_score": 44
+      "raw_score": 51,
+      "clamped_score": 51
     }
   },
   "prod-0755adcd-3e1e-4f69-a68c-f41d1c0ff00c": {
@@ -51139,26 +51134,10 @@
     "id": "prod-25b1d2bd-4fa9-4c47-bd95-60a4b4ce88c8",
     "label": "prod 25b1d2bd — Product & Strategy Intern @ Nemetschek Group (2026-04-15)",
     "decision": "Review",
-    "score": 74,
+    "score": 65,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
-      {
-        "id": "12926445541e39fb",
-        "key": "amplitude",
-        "kind": "tool",
-        "strength": 7,
-        "label": "amplitude tool usage",
-        "requiredness": "supporting"
-      },
-      {
-        "id": "13c9c5e25f9482e3",
-        "key": "r",
-        "kind": "tool",
-        "strength": 7,
-        "label": "r tool usage",
-        "requiredness": "supporting"
-      },
       {
         "id": "3a725c39b3b00c85",
         "key": "brand_messaging",
@@ -51168,43 +51147,19 @@
         "requiredness": "core"
       },
       {
-        "id": "4bd0fe78d64c96c4",
+        "id": "674544c6ea6aa0fc",
+        "key": "analysis_reporting",
+        "kind": "execution",
+        "strength": 4,
+        "label": "analysis, reporting, and measurement work",
+        "requiredness": "core"
+      },
+      {
+        "id": "89ba188f2ecc06e1",
         "key": "sql",
         "kind": "tool",
         "strength": 5,
         "label": "sql tool usage",
-        "requiredness": "supporting"
-      },
-      {
-        "id": "69c9bae7c3f5ab69",
-        "key": "looker",
-        "kind": "tool",
-        "strength": 5,
-        "label": "looker tool usage",
-        "requiredness": "supporting"
-      },
-      {
-        "id": "8398eff92369c207",
-        "key": "power bi",
-        "kind": "tool",
-        "strength": 5,
-        "label": "power bi tool usage",
-        "requiredness": "supporting"
-      },
-      {
-        "id": "913350a450f610fe",
-        "key": "python",
-        "kind": "tool",
-        "strength": 7,
-        "label": "python tool usage",
-        "requiredness": "supporting"
-      },
-      {
-        "id": "d6d1f95a853f8b57",
-        "key": "software_engineering",
-        "kind": "function",
-        "strength": 5,
-        "label": "Software Engineering",
         "requiredness": "supporting"
       },
       {
@@ -51214,38 +51169,6 @@
         "strength": 9,
         "label": "bluebeam tool usage",
         "requiredness": "core"
-      },
-      {
-        "id": "eb4771e8a7affe11",
-        "key": "mixpanel",
-        "kind": "tool",
-        "strength": 7,
-        "label": "mixpanel tool usage",
-        "requiredness": "supporting"
-      },
-      {
-        "id": "ecedd8d13eb2c0f0",
-        "key": "analysis_reporting",
-        "kind": "execution",
-        "strength": 4,
-        "label": "analysis, reporting, and measurement work",
-        "requiredness": "supporting"
-      },
-      {
-        "id": "f1c6fa65d2e57cdc",
-        "key": "tableau",
-        "kind": "tool",
-        "strength": 5,
-        "label": "tableau tool usage",
-        "requiredness": "supporting"
-      },
-      {
-        "id": "f8686807e33ef85b",
-        "key": "excel",
-        "kind": "tool",
-        "strength": 5,
-        "label": "excel tool usage",
-        "requiredness": "supporting"
       }
     ],
     "profile_evidence_units": [
@@ -51393,8 +51316,8 @@
     "matches": [
       {
         "match_strength": "direct",
-        "weight": 96,
-        "coverageScore": 79,
+        "weight": 102,
+        "coverageScore": 83,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
@@ -51402,8 +51325,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 57,
+        "weight": 84,
+        "coverageScore": 61,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
@@ -51411,8 +51334,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 76,
-        "coverageScore": 55,
+        "weight": 82,
+        "coverageScore": 59,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
@@ -51420,8 +51343,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 93,
-        "coverageScore": 76,
+        "weight": 99,
+        "coverageScore": 80,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
@@ -51429,8 +51352,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 57,
+        "weight": 84,
+        "coverageScore": 61,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
@@ -51438,8 +51361,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 81,
+        "weight": 104,
+        "coverageScore": 85,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
@@ -51447,8 +51370,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 81,
+        "weight": 104,
+        "coverageScore": 85,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
@@ -51456,8 +51379,8 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 77,
-        "coverageScore": 56,
+        "weight": 83,
+        "coverageScore": 60,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
@@ -51465,48 +51388,12 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 57,
+        "weight": 84,
+        "coverageScore": 61,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
         "profile_unit_id": "ab37535ffe4dea39"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 94,
-        "coverageScore": 81,
-        "match_kind": "tool",
-        "match_key": "excel",
-        "job_unit_key": "excel",
-        "profile_unit_id": "e97e15f876fb6d46"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 92,
-        "coverageScore": 78,
-        "match_kind": "tool",
-        "match_key": "excel",
-        "job_unit_key": "excel",
-        "profile_unit_id": "ee8ee4d2024686b5"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 93,
-        "coverageScore": 78,
-        "match_kind": "tool",
-        "match_key": "r",
-        "job_unit_key": "r",
-        "profile_unit_id": "5b447fd6e5740f00"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 93,
-        "coverageScore": 78,
-        "match_kind": "tool",
-        "match_key": "r",
-        "job_unit_key": "r",
-        "profile_unit_id": "93150d7aee5b6e59"
       },
       {
         "match_strength": "direct",
@@ -51521,24 +51408,17 @@
     "why_codes": [
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 98,
+        "weight": 104,
         "match_strength": "direct",
         "match_key": "analysis_reporting"
-      },
-      {
-        "code": "WHY_TOOL_PROOF",
-        "weight": 94,
-        "match_strength": "direct",
-        "match_key": "excel"
-      },
-      {
-        "code": "WHY_TOOL_PROOF",
-        "weight": 93,
-        "match_strength": "direct",
-        "match_key": "r"
       }
     ],
     "risk_codes": [
+      {
+        "code": "RISK_LIMITED_MATCH_EVIDENCE",
+        "severity": "medium",
+        "weight": 0
+      },
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
@@ -51580,8 +51460,7 @@
         ],
         "function_tags": [
           "brand_marketing",
-          "data_analytics_bi",
-          "software_it"
+          "data_analytics_bi"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -51683,12 +51562,12 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "decision_final",
@@ -51701,8 +51580,8 @@
           "note": "8"
         }
       ],
-      "raw_score": 85,
-      "clamped_score": 74
+      "raw_score": 65,
+      "clamped_score": 65
     }
   },
   "prod-25da799d-0796-4e9b-8b9d-914c3d704a38": {
@@ -186559,8 +186438,8 @@
     "schema_version": 2,
     "id": "prod-86e9bb6d-d01c-448d-93c5-baf6c1bad9a2",
     "label": "prod 86e9bb6d — Staffing Consultant - Agency Recruiter @ Beacon Hill (2026-05-21)",
-    "decision": "Apply",
-    "score": 84,
+    "decision": "Review",
+    "score": 73,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -186587,14 +186466,6 @@
         "strength": 4,
         "label": "prospecting, outreach, and pipeline management",
         "requiredness": "core"
-      },
-      {
-        "id": "d0d787110fae2cdb",
-        "key": "excel",
-        "kind": "tool",
-        "strength": 5,
-        "label": "excel tool usage",
-        "requiredness": "supporting"
       }
     ],
     "profile_evidence_units": [
@@ -186903,42 +186774,6 @@
       },
       {
         "match_strength": "direct",
-        "weight": 93,
-        "coverageScore": 79,
-        "match_kind": "tool",
-        "match_key": "excel",
-        "job_unit_key": "excel",
-        "profile_unit_id": "3ed1e23940d0197a"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 93,
-        "coverageScore": 79,
-        "match_kind": "tool",
-        "match_key": "excel",
-        "job_unit_key": "excel",
-        "profile_unit_id": "a3a371fc6eca0e53"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 94,
-        "coverageScore": 81,
-        "match_kind": "tool",
-        "match_key": "excel",
-        "job_unit_key": "excel",
-        "profile_unit_id": "ee5844077f45561a"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 94,
-        "coverageScore": 81,
-        "match_kind": "tool",
-        "match_key": "excel",
-        "job_unit_key": "excel",
-        "profile_unit_id": "f90041a06b489972"
-      },
-      {
-        "match_strength": "direct",
         "weight": 104,
         "coverageScore": 85,
         "match_kind": "execution",
@@ -187004,12 +186839,6 @@
         "weight": 78,
         "match_strength": "adjacent",
         "match_key": "account_management"
-      },
-      {
-        "code": "WHY_TOOL_PROOF",
-        "weight": 94,
-        "match_strength": "direct",
-        "match_key": "excel"
       }
     ],
     "risk_codes": [
@@ -187142,17 +186971,17 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -187160,8 +186989,8 @@
           "note": "0"
         }
       ],
-      "raw_score": 84,
-      "clamped_score": 84
+      "raw_score": 73,
+      "clamped_score": 73
     }
   },
   "prod-86f8c8c2-cdee-45ac-a667-7a6f6c008c36": {
@@ -241666,7 +241495,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": null,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -270360,7 +270189,7 @@
     "id": "prod-c4e3e432-9d56-4f8f-b226-de4e6847a1c1",
     "label": "prod c4e3e432 — EIC Intern @ Cushman & Wakefield (2026-05-03)",
     "decision": "Review",
-    "score": 66,
+    "score": 73,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -270694,11 +270523,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -7
-      },
-      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -270755,7 +270579,7 @@
         "requiresSoftCredential": false,
         "salesSubFamily": null,
         "softCredentialDetail": null,
-        "yearsRequired": 2,
+        "yearsRequired": null,
         "bachelorRequired": false,
         "mbaRequired": false
       },
@@ -270835,12 +270659,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -9,
-          "note": "8.6"
+          "points": -2,
+          "note": "1.6"
         }
       ],
-      "raw_score": 66,
-      "clamped_score": 66
+      "raw_score": 73,
+      "clamped_score": 73
     }
   },
   "prod-c4f0850b-fbd9-4304-8fe6-4ee2e26e5e98": {
@@ -274417,14 +274241,6 @@
     "traceMissing": false,
     "requirement_units": [
       {
-        "id": "4b1282897da48d53",
-        "key": "performance_optimization",
-        "kind": "execution",
-        "strength": 4,
-        "label": "growth, performance, and optimization work",
-        "requiredness": "supporting"
-      },
-      {
         "id": "55a4b2de557f4a5e",
         "key": "communications_writing",
         "kind": "function",
@@ -274688,33 +274504,6 @@
         "match_key": "communications_writing",
         "job_unit_key": "communications_writing",
         "profile_unit_id": "d5540c64b1adb29a"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 76,
-        "coverageScore": 55,
-        "match_kind": "execution",
-        "match_key": "performance_optimization",
-        "job_unit_key": "performance_optimization",
-        "profile_unit_id": "312d431734f8451f"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 78,
-        "coverageScore": 57,
-        "match_kind": "execution",
-        "match_key": "performance_optimization",
-        "job_unit_key": "performance_optimization",
-        "profile_unit_id": "5f2b4c14bd7e8367"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 77,
-        "coverageScore": 56,
-        "match_kind": "execution",
-        "match_key": "performance_optimization",
-        "job_unit_key": "performance_optimization",
-        "profile_unit_id": "dc59ca1db487c207"
       }
     ],
     "why_codes": [
@@ -274729,12 +274518,6 @@
         "weight": 99,
         "match_strength": "direct",
         "match_key": "communications_writing"
-      },
-      {
-        "code": "WHY_EXECUTION_PROOF",
-        "weight": 78,
-        "match_strength": "adjacent",
-        "match_key": "performance_optimization"
       }
     ],
     "risk_codes": [
@@ -274764,7 +274547,6 @@
         "function_tags": [
           "brand_marketing",
           "communications_pr",
-          "growth_performance",
           "operations_general",
           "sales_bd"
         ],
@@ -280146,6 +279928,14 @@
         "requiredness": "core"
       },
       {
+        "id": "305c67c9e0648a44",
+        "key": "drafting_documentation",
+        "kind": "deliverable",
+        "strength": 4,
+        "label": "drafting, documentation, and written deliverables",
+        "requiredness": "supporting"
+      },
+      {
         "id": "d174e81885401bd8",
         "key": "software_engineering",
         "kind": "function",
@@ -280326,6 +280116,7 @@
         "financeSubFamily": null,
         "flaggableTools": [],
         "function_tags": [
+          "communications_pr",
           "sales_bd",
           "software_it"
         ],
@@ -319356,8 +319147,8 @@
     "schema_version": 2,
     "id": "prod-e2df6130-16ac-40e8-8516-246d0f0642aa",
     "label": "prod e2df6130 — AI Internship @ Xerox (2026-05-04)",
-    "decision": "Review",
-    "score": 74,
+    "decision": "Apply",
+    "score": 82,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -319370,10 +319161,26 @@
         "requiredness": "supporting"
       },
       {
-        "id": "4f5b61b796c295fd",
-        "key": "analysis_reporting",
+        "id": "384a16015b4ffa84",
+        "key": "drafting_documentation",
+        "kind": "deliverable",
+        "strength": 8,
+        "label": "drafting, documentation, and written deliverables",
+        "requiredness": "core"
+      },
+      {
+        "id": "6d6d676a1474462b",
+        "key": "operations_execution",
         "kind": "execution",
         "strength": 8,
+        "label": "operations, process, and workflow execution",
+        "requiredness": "supporting"
+      },
+      {
+        "id": "7d8080f2f22fef66",
+        "key": "analysis_reporting",
+        "kind": "execution",
+        "strength": 6,
         "label": "analysis, reporting, and measurement work",
         "requiredness": "supporting"
       },
@@ -319539,7 +319346,7 @@
     "matches": [
       {
         "match_strength": "direct",
-        "weight": 98,
+        "weight": 97,
         "coverageScore": 79,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
@@ -319548,7 +319355,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 80,
+        "weight": 79,
         "coverageScore": 57,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
@@ -319557,7 +319364,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 78,
+        "weight": 77,
         "coverageScore": 55,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
@@ -319566,7 +319373,7 @@
       },
       {
         "match_strength": "direct",
-        "weight": 95,
+        "weight": 94,
         "coverageScore": 76,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
@@ -319575,7 +319382,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 80,
+        "weight": 79,
         "coverageScore": 57,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
@@ -319584,7 +319391,7 @@
       },
       {
         "match_strength": "direct",
-        "weight": 100,
+        "weight": 99,
         "coverageScore": 81,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
@@ -319593,7 +319400,7 @@
       },
       {
         "match_strength": "direct",
-        "weight": 100,
+        "weight": 99,
         "coverageScore": 81,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
@@ -319602,7 +319409,7 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 79,
+        "weight": 78,
         "coverageScore": 56,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
@@ -319611,12 +319418,21 @@
       },
       {
         "match_strength": "adjacent",
-        "weight": 80,
+        "weight": 79,
         "coverageScore": 57,
         "match_kind": "execution",
         "match_key": "analysis_reporting",
         "job_unit_key": "analysis_reporting",
         "profile_unit_id": "ab37535ffe4dea39"
+      },
+      {
+        "match_strength": "direct",
+        "weight": 105,
+        "coverageScore": 85,
+        "match_kind": "deliverable",
+        "match_key": "drafting_documentation",
+        "job_unit_key": "drafting_documentation",
+        "profile_unit_id": "9224a4366fb8d8c9"
       },
       {
         "match_strength": "direct",
@@ -319637,6 +319453,51 @@
         "profile_unit_id": "ee8ee4d2024686b5"
       },
       {
+        "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 55,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "020eb4e4e45bff96"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 75,
+        "coverageScore": 52,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "6554659df2fde04c"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 80,
+        "coverageScore": 57,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "7e818b416769beb0"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 80,
+        "coverageScore": 57,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "82ebc4bcf393041e"
+      },
+      {
+        "match_strength": "adjacent",
+        "weight": 80,
+        "coverageScore": 57,
+        "match_kind": "execution",
+        "match_key": "operations_execution",
+        "job_unit_key": "operations_execution",
+        "profile_unit_id": "9224a4366fb8d8c9"
+      },
+      {
         "match_strength": "direct",
         "weight": 92,
         "coverageScore": 78,
@@ -319649,9 +319510,21 @@
     "why_codes": [
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 100,
+        "weight": 99,
         "match_strength": "direct",
         "match_key": "analysis_reporting"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 105,
+        "match_strength": "direct",
+        "match_key": "drafting_documentation"
+      },
+      {
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 80,
+        "match_strength": "adjacent",
+        "match_key": "operations_execution"
       },
       {
         "code": "WHY_TOOL_PROOF",
@@ -319688,7 +319561,9 @@
           "excel"
         ],
         "function_tags": [
-          "data_analytics_bi"
+          "communications_pr",
+          "data_analytics_bi",
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -319782,17 +319657,17 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -319800,8 +319675,8 @@
           "note": "0"
         }
       ],
-      "raw_score": 74,
-      "clamped_score": 74
+      "raw_score": 82,
+      "clamped_score": 82
     }
   },
   "prod-e30ddd8f-14d8-4e22-bfb0-353025720560": {
