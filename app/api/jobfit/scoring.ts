@@ -981,21 +981,17 @@ export function scoreJobFit(
   const hasExplicitTools =
     (job.requiredTools?.length || 0) + (job.preferredTools?.length || 0) > 0
 
+  // Location and work setup are a heads-up, never a penalty (Peri,
+  // 2026-10-22): low severity and weight 0, so it neither costs points nor
+  // blocks Priority Apply.
   if (profile.constraints.hardNoFullyRemote && job.location?.mode === "remote") {
-    const k: PenaltyKey = "location_mismatch_constrained"
-    const amt = computePenaltyAmount(k)
-    penalties.push({
-      key: k,
-      amount: amt,
-      note: "Hard no-remote vs remote role",
-      risk: {
-        code: "RISK_LOCATION",
-        job_fact: "Posting indicates remote work setup.",
-        profile_fact: "You have a no-remote constraint.",
-        risk: "Work setup conflicts with your stated constraint.",
-        severity: "high",
-        weight: -amt,
-      },
+    riskOnlyCodes.push({
+      code: "RISK_LOCATION",
+      job_fact: "Posting indicates remote work setup.",
+      profile_fact: "You said you do not want a fully remote role.",
+      risk: "This role is remote, which differs from the setup you said you want.",
+      severity: "low",
+      weight: 0,
     })
   }
 

@@ -66,6 +66,24 @@ Requirements:
   ok("a duty or a 'successful students have' line is not quotable", kept.length === 0, JSON.stringify(kept))
 }
 
+console.log("\nlocation and citizenship are heads-ups")
+{
+  const jd = `This internship is based in Mountain View, CA.
+Requirements:
+- Must be a U.S. citizen
+- Experience with Excel`
+  const q = (quote: string, gap: string, severity = "high") => ({ jd_quote: quote, keyword: "A GAP", gap, adjacent_evidence: "", severity })
+  const kept = groundRiskBullets([
+    q("Mountain View, CA", "This internship is in Mountain View, CA, and you target Miami, so plan for relocation."),
+    q("Must be a U.S. citizen", "The posting requires U.S. citizenship; confirm you meet it."),
+  ], [], jd)
+  ok("a location heads-up quoting the posting is kept", kept.length >= 1 && /Mountain View/.test(kept[0].gap), JSON.stringify(kept))
+  ok("it is always low severity", kept[0]?.severity === "low")
+  ok("one location / citizenship heads-up per run", kept.length === 1, String(kept.length))
+  const sales = groundRiskBullets([{ risk_id: "R1", keyword: "A GAP", gap: "Your background is B2B sponsorship sales, not consumer research.", adjacent_evidence: "", severity: "medium" }], ["R1"], jd)
+  ok("'sponsorship sales' is not a work-authorization point", sales[0]?.severity === "medium", JSON.stringify(sales))
+}
+
 console.log("\nwriterRisks")
 {
   const out: any = {

@@ -161,41 +161,66 @@ function requiredLineQuoted(jobText: string, quote: string): string | null {
   return null
 }
 
+// Location, work setup and work authorization are heads-ups, never penalties
+// (Peri, 2026-10-22). A bullet about them is always low severity; it may quote
+// any line of the posting (where the job is, "must be a U.S. citizen", "no
+// sponsorship"), since those rarely sit under a requirements header; and one
+// per run is enough.
+const LOGISTICS_GAP = /\b(relocat\w*|locat(ed|ion)|on-?site|in[- ]office|in person|commut\w*|hybrid|remote|based in|citizen\w*|(visa|immigration) sponsorship|(not|cannot|unable to|no|without) (offer |provide )?sponsor\w*|work authori[sz]ation|authori[sz]ed to work|visa|permanent resident|green card)\b/i
+const MAX_LOGISTICS_RISKS = 1
+
+/** The posting line holding `quote`, anywhere in the posting. */
+function anyLineQuoted(jobText: string, quote: string): string | null {
+  const q = squash(quote)
+  if (q.length < 6) return null
+  for (const line of jobText.split(/\r?\n/)) if (squash(line).includes(q)) return line
+  return null
+}
+
 /**
  * Keeps one valid bullet per known risk_id, in the order given, plus up to
- * MAX_QUOTED_RISKS bullets that quote a required line of the posting. Drops
- * the rest: no id and no verified quote, an unknown or repeated id, or a
- * speculative gap.
+ * MAX_QUOTED_RISKS bullets that quote a required line of the posting and one
+ * quoted location / work-authorization heads-up. Drops the rest: no id and no
+ * verified quote, an unknown or repeated id, or a speculative gap.
  */
 export function groundRiskBullets(raw: unknown[], riskIds: string[], jobText = ""): RiskBullet[] {
   const allowed = new Set(riskIds)
   const used = new Set<string>()
   const kept: RiskBullet[] = []
   let quoted = 0
+  let logistics = 0
   for (const b of raw) {
     const id = (b as any)?.risk_id
     const quote = (b as any)?.jd_quote
+    const isLogistics = isValidRiskBullet(b) && LOGISTICS_GAP.test(b.gap)
     let reason: string | null = null
-    let viaQuote = false
+    let via: "code" | "quote" | "logistics" = "code"
     if (!isValidRiskBullet(b)) reason = riskBulletInvalidReason(b)
     else if (SPECULATIVE_GAP.test(b.gap)) reason = "speculative_gap"
+    else if (isLogistics && logistics >= MAX_LOGISTICS_RISKS) reason = "too_many_logistics_risks"
     else if (typeof id === "string" && allowed.has(id)) {
       if (used.has(id)) reason = "risk_id_repeated"
     } else if (typeof quote === "string" && quote.trim()) {
-      const line = requiredLineQuoted(jobText, quote)
-      if (!line) reason = "jd_quote_not_a_stated_requirement"
-      else if (OPTIONAL_LINE.test(line) || OPTIONAL_LINE.test(b.gap)) reason = "jd_quote_is_optional"
-      else if (quoted >= MAX_QUOTED_RISKS) reason = "too_many_quoted_risks"
-      else viaQuote = true
+      if (isLogistics) {
+        if (!anyLineQuoted(jobText, quote)) reason = "jd_quote_not_in_posting"
+        else via = "logistics"
+      } else {
+        const line = requiredLineQuoted(jobText, quote)
+        if (!line) reason = "jd_quote_not_a_stated_requirement"
+        else if (OPTIONAL_LINE.test(line) || OPTIONAL_LINE.test(b.gap)) reason = "jd_quote_is_optional"
+        else if (quoted >= MAX_QUOTED_RISKS) reason = "too_many_quoted_risks"
+        else via = "quote"
+      }
     } else reason = "risk_id_not_an_engine_risk"
     if (reason) {
       console.warn("[V5] dropped risk bullet", { reason, bullet: b })
       continue
     }
-    if (viaQuote) quoted++
-    else used.add(id)
+    if (via === "quote") quoted++
+    else if (via === "code") used.add(id)
+    if (isLogistics) logistics++
     const { keyword, gap, adjacent_evidence, severity } = b as RiskBullet
-    kept.push({ keyword, gap, adjacent_evidence, severity })
+    kept.push({ keyword, gap, adjacent_evidence, severity: isLogistics ? "low" : severity })
   }
   return kept
 }
@@ -270,6 +295,7 @@ ${degreeStatus}
 - Write at most ONE risk bullet per risk code, and set its risk_id to that code's risk_id.
 - You may add at most TWO further risk bullets, only for a requirement listed in the job description's requirements or qualifications section (never a duty from the responsibilities, never a preferred or "successful candidates have" list) that your profile clearly lacks and no risk code covers. The gap must say what that line says, no stronger: "knowledge of X" is not "experience in X". For these, omit risk_id and set jd_quote to the requirement copied word for word from the job description. A bullet with neither a matching risk_id nor an exact jd_quote is discarded, as is one quoting a line that says "a plus", "preferred", "nice to have", or "not required".
 - The gap restates that code's job_fact in plain words. Never add a requirement, tool, industry, or years figure the job description does not state. Never guess what the employer uses or typically seeks: no "likely", "probably", "typically", "may use".
+- Location, relocation, on-site / hybrid / remote setup, and U.S. citizenship, visa sponsorship or work authorization are heads-ups, never reasons against applying. At most one such bullet, severity "low", worded as something to confirm or plan for, not as a gap in the candidate. For one with no risk_id, set jd_quote to the posting's own words (for example the city, or "must be a U.S. citizen").
 - If the job description calls something "a plus", "preferred", "nice to have", "not required", or something you will learn on the job, never describe it as required.
 - The gap is the point. Name the gap clearly in one sentence. State it as a direct concern, not as setup for a bridge. Do not soften with hedge words ("a bit," "somewhat," "may be challenging"). Do not bury it inside a long sentence describing evidence.
 - After naming the gap, give adjacent evidence as secondary support. One or two sentences. This is context the student can use when deciding whether to apply and how to address the gap. It is not a rebuttal of the gap.

@@ -29,7 +29,7 @@ const NAMES: Record<string, string> = {
 // §5 target statuses + the verdict a starting "Apply" is capped to.
 const EXPECT: Record<string, { verdict: string; gates: Record<string, string> }> = {
   "01": { verdict: "Pass", gates: { b2b_saas_3yr: "UNMET", dbt_handson: "UNMET", crm_pipeline: "UNMET" } },
-  "02": { verdict: "Pass", gates: { ts_sci_clearance: "UNMET", degree_or_waiver: "UNMET", us_citizenship: "UNKNOWN" } },
+  "02": { verdict: "Pass", gates: { ts_sci_clearance: "UNMET", degree_or_waiver: "UNMET" } },
   "03": { verdict: "Pass", gates: { yoe_10: "UNMET", manager_of_managers_5yr: "UNMET" } },
   "04": { verdict: "Pass", gates: { recent_angular_v14_3yr: "UNMET" } },
   "05": { verdict: "Pass", gates: { snowflake_handson: "UNMET", dbt_handson: "UNMET", airflow_handson: "UNMET", spark_handson: "UNMET" } },
