@@ -106,6 +106,7 @@ export const WORKBOOK_CSS = `
 .wb-input{width:100%;border:0;border-bottom:1.5px solid var(--line);background:transparent;padding:8px 0;font:inherit;font-size:18px;line-height:1.6;color:var(--navy);min-height:44px}
 .wb-input:focus{outline:none;border-bottom-color:var(--blue)}
 textarea.wb-input{resize:vertical;overflow:hidden}
+.wb-ro{white-space:pre-wrap;overflow-wrap:anywhere}
 .wb-table-wrap{overflow-x:auto}
 .wb-table{width:100%;border-collapse:collapse;font-size:16px;line-height:1.45}
 .wb-table th{text-align:left;background:var(--navy);color:#fff;font-weight:600;font-size:14px;padding:10px 12px;vertical-align:bottom}

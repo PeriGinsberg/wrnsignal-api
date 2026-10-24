@@ -75,7 +75,24 @@ describe("SectionBlocks", () => {
 
   it("is read-only when not editable", () => {
     render(<SectionBlocks api={api({ "hook.q1": "triplet" }, { editable: false })} section={section("hook")} />)
-    expect((screen.getByLabelText(/surprises people/) as HTMLTextAreaElement).readOnly).toBe(true)
+    const box = screen.getByLabelText(/surprises people/)
+    expect(box.getAttribute("aria-readonly")).toBe("true")
+    expect(box.textContent).toBe("triplet")
+    expect(document.querySelector("textarea, input[type=text]")).toBeNull()
+  })
+
+  // Tori's Night 1 workbook: short boxes and grid cells cut a long answer off
+  // at the box edge once read-only, with no way to scroll or expand it.
+  it("shows a long read-only answer in full, in short fields and grid cells", () => {
+    const long = "Researched every attendee so my teammate walked in knowing who to talk to first, and why"
+    const s = { id: "t", number: 1, title: "T", blocks: [
+      { type: "field" as const, key: "t.short", input: "short" as const, label: "Short one" },
+      { type: "grid" as const, key: "t.grid", columns: [{ key: "a", label: "Idea" }], rows: 1 },
+    ] }
+    render(<SectionBlocks api={api({ "t.short": long, "t.grid.1.a": long }, { editable: false })} section={s} />)
+    expect(screen.getByLabelText("Short one").textContent).toBe(long)
+    expect(screen.getByLabelText("Idea 1").textContent).toBe(long)
+    expect(document.querySelector("input")).toBeNull()
   })
 })
 

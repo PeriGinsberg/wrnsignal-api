@@ -62,9 +62,20 @@ function AutoText(props: {
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    el.style.height = "auto"
-    el.style.height = `${el.scrollHeight}px`
+    const fit = () => {
+      el.style.height = "auto"
+      el.style.height = `${el.scrollHeight}px`
+    }
+    fit()
+    // The height is only right for the width it was measured at. A layout that
+    // settles after mount (a sidebar, a late font) leaves the text clipped.
+    if (typeof ResizeObserver === "undefined") return
+    let w = el.clientWidth
+    const ro = new ResizeObserver(() => { if (el.clientWidth !== w) { w = el.clientWidth; fit() } })
+    ro.observe(el)
+    return () => ro.disconnect()
   }, [props.value])
+  if (props.readOnly) return <ReadOnlyText id={props.id} value={props.value} label={props.label} />
   return (
     <textarea
       ref={ref}
@@ -77,6 +88,16 @@ function AutoText(props: {
       aria-label={props.label}
       onChange={(e) => props.onChange(e.target.value)}
     />
+  )
+}
+
+/** A read-only answer as wrapped text. An input or textarea cuts it off at the box. */
+function ReadOnlyText(props: { id?: string; value: string; label?: string; cell?: boolean }) {
+  return (
+    <div id={props.id} className={`wb-input wb-ro${props.cell ? " wb-cell" : ""}`} role="textbox" aria-readonly="true" aria-label={props.label}
+      aria-labelledby={!props.label && props.id ? `${props.id}-label` : undefined}>
+      {props.value}
+    </div>
   )
 }
 
@@ -120,11 +141,13 @@ function TextField(props: {
     <div className="wb-field">
       <div className="wb-field-head" style={props.number == null ? { gridTemplateColumns: "minmax(0,1fr)" } : undefined}>
         {props.number != null && <span className="wb-field-num">{props.number}</span>}
-        <label htmlFor={id} className="wb-field-label">{props.label}</label>
+        <label htmlFor={id} id={`${id}-label`} className="wb-field-label">{props.label}</label>
       </div>
       {props.long ? (
         <AutoText id={id} value={value} readOnly={!api.editable} placeholder={props.placeholder}
           onChange={(t) => api.set(k, t)} />
+      ) : !api.editable ? (
+        <ReadOnlyText id={id} value={value} />
       ) : (
         <input id={id} type="text" className="wb-input" value={value} readOnly={!api.editable}
           placeholder={api.editable ? props.placeholder ?? "Start typing" : ""}
@@ -148,11 +171,13 @@ function HookField({ api, b }: { api: FieldApi; b: Extract<Block, { type: "field
   const shown = value.trim() ? value.trim().replace(/[.]+$/, "") : "______"
   return (
     <div className="wb-hook">
-      <label htmlFor={id} className="wb-eyebrow">{b.label}</label>
+      <label htmlFor={id} id={`${id}-label`} className="wb-eyebrow">{b.label}</label>
       <p className="wb-hook-line" aria-live="polite">&ldquo;{b.prefix ?? ""} {shown}.&rdquo;</p>
-      <input id={id} type="text" className="wb-input" value={value} readOnly={!api.editable}
-        placeholder={api.editable ? b.placeholder ?? "Finish the sentence" : ""}
-        onChange={(e) => api.set(b.key, e.target.value)} />
+      {api.editable
+        ? <input id={id} type="text" className="wb-input" value={value}
+            placeholder={b.placeholder ?? "Finish the sentence"}
+            onChange={(e) => api.set(b.key, e.target.value)} />
+        : <ReadOnlyText id={id} value={value} />}
       <ConflictBox api={api} k={b.key} />
       <div className="wb-field-foot"><SaveLine api={api} k={b.key} />{api.fieldFoot?.(b.key)}</div>
     </div>
@@ -181,10 +206,11 @@ function PickField({ api, b }: { api: FieldApi; b: Extract<Block, { type: "pick"
               onChange={() => choose("__other__")} />
             <span>Something else</span>
           </label>
-          {v.choice === "__other__" && (
-            <input type="text" className="wb-input" aria-label={`${b.label} in my own words`} value={v.other}
-              readOnly={!api.editable} placeholder={api.editable ? "In my own words" : ""}
-              onChange={(e) => api.set(b.key, { ...v, other: e.target.value })} />
+          {v.choice === "__other__" && (api.editable
+            ? <input type="text" className="wb-input" aria-label={`${b.label} in my own words`} value={v.other}
+                placeholder="In my own words"
+                onChange={(e) => api.set(b.key, { ...v, other: e.target.value })} />
+            : <ReadOnlyText value={v.other} label={`${b.label} in my own words`} />
           )}
         </>
       )}
@@ -433,9 +459,11 @@ function Grid({ api, b }: { api: FieldApi; b: Extract<Block, { type: "grid" }> }
                   const v = api.get(k)
                   return (
                     <td key={c.key}>
-                      <input type="text" className="wb-input wb-cell" aria-label={`${c.label} ${r}`}
-                        value={typeof v === "string" ? v : ""} readOnly={!api.editable}
-                        onChange={(e) => api.set(k, e.target.value)} />
+                      {api.editable
+                        ? <input type="text" className="wb-input wb-cell" aria-label={`${c.label} ${r}`}
+                            value={typeof v === "string" ? v : ""}
+                            onChange={(e) => api.set(k, e.target.value)} />
+                        : <ReadOnlyText cell value={typeof v === "string" ? v : ""} label={`${c.label} ${r}`} />}
                     </td>
                   )
                 })}
@@ -734,11 +762,13 @@ function Drill({ api, b }: { api: FieldApi; b: Extract<Block, { type: "drill" }>
 
       {showWrite && (
         <div className="wb-col" style={{ gap: 8 }}>
-          <label htmlFor={id} className="wb-label">{b.write_label}</label>
+          <label htmlFor={id} id={`${id}-label`} className="wb-label">{b.write_label}</label>
           {b.input === "long"
             ? <AutoText id={id} value={value} readOnly={!api.editable || locked} onChange={setDraft} placeholder="Write what you said" />
-            : <input id={id} type="text" className="wb-input" value={value} readOnly={!api.editable || locked}
-                placeholder={api.editable && !locked ? "Write what you said" : ""} onChange={(e) => setDraft(e.target.value)} />}
+            : !api.editable || locked
+              ? <ReadOnlyText id={id} value={value} />
+              : <input id={id} type="text" className="wb-input" value={value}
+                  placeholder="Write what you said" onChange={(e) => setDraft(e.target.value)} />}
           {typeof secs === "string" && secs && <span className="wb-muted" style={{ fontSize: 14 }}>You spoke for {secs} seconds.</span>}
           {!locked && api.editable && (
             <div className="wb-actions">
