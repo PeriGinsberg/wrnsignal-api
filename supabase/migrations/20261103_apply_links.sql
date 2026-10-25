@@ -14,8 +14,10 @@
 --                          the backfill. A write that changes it is a re-read of
 --                          stored data, not a sighting: the trigger leaves
 --                          last_seen_at alone, as it does for enrichment writes.
---   queue: apply_link_kind and republished_only (true when the best link Google
---          gave is a republisher, i.e. nothing better existed).
+--   queue: apply_link_kind, and republished_only: true when Google gave no
+--          employer or board link (the best it gave was a republisher, an
+--          unknown site or its own share link). At equal score a republished-only
+--          posting ranks below one with an employer or board link.
 --
 -- Requires 20261102_start_timing.sql. Same file for dev and prod. One transaction.
 
@@ -108,8 +110,13 @@ WITH (security_invoker = true) AS
       ELSE 'start not stated'
     END AS start_label,
     p.apply_link_kind,
-    (p.apply_link_kind = 'republisher') AS republished_only,
-    row_number() OVER (PARTITION BY m.client_profile_id ORDER BY m.score DESC NULLS LAST, m.first_queued_at DESC) AS rank
+    coalesce(p.apply_link_kind IN ('republisher', 'other', 'google'), false) AS republished_only,
+    row_number() OVER (
+      PARTITION BY m.client_profile_id
+      ORDER BY m.score DESC NULLS LAST,
+               coalesce(p.apply_link_kind IN ('republisher', 'other', 'google'), false),
+               m.first_queued_at DESC
+    ) AS rank
   FROM public.posting_matches m
   JOIN public.client_match_criteria c ON c.client_profile_id = m.client_profile_id AND c.active
   JOIN public.postings_canonical p ON p.id = m.posting_id
@@ -118,7 +125,7 @@ WITH (security_invoker = true) AS
     AND p.last_seen_at > now() - interval '14 days';
 REVOKE ALL ON public.client_match_queue FROM anon, authenticated;
 COMMENT ON VIEW public.client_match_queue IS
-  'Ranked review queue: unactioned postings that pass the client''s hard rules and were seen in the last 14 days, best score first, unjudged last. is_new = first queued after the client''s last review. start_label reads "start not stated" when the posting does not say. republished_only = the only links Google gave are republished copies.';
+  'Ranked review queue: unactioned postings that pass the client''s hard rules and were seen in the last 14 days, best score first, unjudged last. is_new = first queued after the client''s last review. start_label reads "start not stated" when the posting does not say. republished_only = Google gave no employer or board link; at equal score those rank lower.';
 
 NOTIFY pgrst, 'reload schema';
 
