@@ -37,11 +37,21 @@
 import { createHash } from "crypto"
 
 /**
- * lower -> non-alphanumerics to spaces -> collapse -> trim.
+ * Zero-width and other invisible format characters: soft hyphen, combining
+ * grapheme joiner, Arabic letter mark, Mongolian vowel separator, zero-width
+ * space/joiners and direction marks, bidi embeddings, word joiner and invisible
+ * operators, variation selectors, BOM. Deleted, not spaced: "Point​72"
+ * must normalize like "Point72". Mirrors 20261026_ingest_norm_text_invisibles.sql.
+ */
+const INVISIBLE = /[­͏؜᠎​-‏‪-‮⁠-⁯︀-️﻿]/g
+
+/**
+ * strip invisibles -> lower -> non-alphanumerics to spaces -> collapse -> trim.
  * "Macy's, Inc." -> "macy s inc"
  */
 export function normText(v: string | null | undefined): string {
   return String(v ?? "")
+    .replace(INVISIBLE, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
     .replace(/\s+/g, " ")
