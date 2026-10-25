@@ -137,24 +137,78 @@ export async function sendIngestAlert(a: IngestAlert): Promise<void> {
 // a sweep's structure. There are no totals and no board lines: the whole point
 // is that no sweep happened.
 
+/**
+ * An enrichment or matching run still 'running' long after it started: it hung,
+ * or its process died. Either way its row is never closed, so nothing else
+ * reports it.
+ */
+export type StuckRun = {
+  table: "enrichment_runs" | "match_runs"
+  id: string
+  startedAt: string
+  hoursRunning: number
+  triggeredBy: string
+  /** Rows the run wrote before it stopped (postings or posting_matches pointing at it). */
+  written: number | null
+}
+
 export type StalenessAlert = {
   environment: string
+  /** true when ingest_runs is silent past the threshold (the original check). */
+  stale: boolean
   /** null when ingest_runs is empty: never run. */
   lastRunAt: string | null
   hoursSince: number | null
   thresholdHours: number
   /** The last few rows, so "stopped after failing" reads differently from "stopped clean". */
   recent: { source: string; org: string; pair: string; status: string; at: string }[]
+  /** Enrichment / matching runs still running past stuckAfterHours. */
+  stuckRuns: StuckRun[]
+  stuckAfterHours: number
+  /** A run table that could not be read: reported, never treated as "none stuck". */
+  checkErrors: string[]
 }
 
 export function stalenessSubject(a: StalenessAlert): string {
   const env = a.environment === "production" ? "" : " " + a.environment
-  if (a.lastRunAt === null) return `[SIGNAL${env}] ingest has NEVER run`
-  return `[SIGNAL${env}] ingest silent for ${Math.floor(a.hoursSince ?? 0)}h`
+  const stuck = a.stuckRuns.length ? `${a.stuckRuns.length} enrichment/matching run${a.stuckRuns.length === 1 ? "" : "s"} stuck` : ""
+  const errs = a.checkErrors.length ? "run check failed" : ""
+  const extra = [stuck, errs].filter(Boolean).join(", ")
+  if (!a.stale) return `[SIGNAL${env}] ${extra}`
+  const base = a.lastRunAt === null ? `[SIGNAL${env}] ingest has NEVER run` : `[SIGNAL${env}] ingest silent for ${Math.floor(a.hoursSince ?? 0)}h`
+  return extra ? `${base}; ${extra}` : base
+}
+
+function stuckSection(a: StalenessAlert): string[] {
+  const out: string[] = []
+  if (a.stuckRuns.length) {
+    out.push(
+      `STUCK RUNS: still 'running' more than ${a.stuckAfterHours}h after they started. A run that`,
+      "hangs, or whose process died (machine asleep, terminal closed), never closes its row,",
+      "so this is the only place it shows up. Rows it wrote are kept; restart it to finish.",
+      "",
+    )
+    for (const r of a.stuckRuns) {
+      out.push(`  ${r.table} ${r.id}  started ${r.startedAt} (${r.hoursRunning.toFixed(1)}h ago)  by ${r.triggeredBy}  wrote ${r.written ?? "?"} row(s)`)
+    }
+    out.push("")
+  }
+  if (a.checkErrors.length) {
+    out.push("COULD NOT CHECK for stuck runs (an unreadable table is not proof that nothing is stuck):")
+    for (const e of a.checkErrors) out.push(`  ${e}`)
+    out.push("")
+  }
+  return out
 }
 
 export function stalenessBody(a: StalenessAlert): string {
   const out: string[] = []
+
+  if (!a.stale) {
+    out.push(...stuckSection(a))
+    out.push(`Ingest itself is fine: last ingest_runs row ${a.lastRunAt}.`)
+    return out.join("\n")
+  }
 
   if (a.lastRunAt === null) {
     out.push(
@@ -185,6 +239,8 @@ export function stalenessBody(a: StalenessAlert): string {
       out.push("If those are all errors, the run was failing before it stopped.")
     }
   }
+
+  out.push("", ...stuckSection(a))
 
   out.push(
     "",

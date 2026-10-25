@@ -65,6 +65,8 @@ export async function GET(req: NextRequest) {
     lastRunAt: res.lastRunAt,
     hoursSince: res.hoursSince === null ? null : Number(res.hoursSince.toFixed(2)),
     thresholdHours: res.thresholdHours,
+    stuckRuns: res.stuckRuns.length,
+    checkErrors: res.checkErrors,
     alerted: !!res.alert,
   })
 }

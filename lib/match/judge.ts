@@ -23,6 +23,7 @@ import { z } from "zod"
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod"
 import type { MatchCriteria } from "./criteria"
 import type { MatchPosting } from "./rules"
+import { CALL_TIMEOUT_MS } from "../ingest/enrich"
 
 export const JudgeSchema = z.object({
   score: z.number().int().min(0).max(100),
@@ -151,7 +152,7 @@ export async function judge(
   opts: { effort: "low" | "medium"; examples?: PastDecision[]; today?: Date },
 ): Promise<{ judgment: Judgment; usage: JudgeUsage }> {
   const examples = opts.examples?.length ? `COACH'S RECENT DECISIONS FOR THIS CLIENT\n${opts.examples.map(decisionLine).join("\n")}\n\n` : ""
-  client ??= new Anthropic()
+  client ??= new Anthropic({ timeout: CALL_TIMEOUT_MS })
   let lastError: unknown
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {

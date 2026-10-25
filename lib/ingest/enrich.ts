@@ -249,9 +249,17 @@ export const ENRICH_PROMPT_SHA256 = createHash("sha256").update(SYSTEM).digest("
 /** The production model (decided 2026-10-25). */
 export const DEFAULT_ENRICH_MODEL: EnrichModel = ENRICH_MODELS.haiku
 
+/**
+ * Per call: 2 minutes, not the SDK default of 10. With the SDK's 2 retries a
+ * hung connection held a worker for up to 30 minutes before the posting was
+ * recorded as failed; a backfill batch stalled for about an hour on 2026-10-25.
+ * A normal call takes under 15 seconds.
+ */
+export const CALL_TIMEOUT_MS = 120_000
+
 let client: Anthropic | null = null
 function getClient(): Anthropic {
-  if (!client) client = new Anthropic()
+  if (!client) client = new Anthropic({ timeout: CALL_TIMEOUT_MS })
   return client
 }
 
