@@ -25,6 +25,7 @@
 
 import type { ControlResult, FetchResult, FetchedPosting, IngestPair, SourceAdapter } from "./types"
 import { httpJson } from "./http"
+import { normText } from "./fingerprint"
 
 const API = "https://serpapi.com/search.json"
 
@@ -84,10 +85,35 @@ function applyUrl(j: any): string | null {
   return own?.link ?? opts[0]?.link ?? j.share_link ?? null
 }
 
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+const BOARDS = /^(handshake|linkedin|indeed|glassdoor|ziprecruiter)$/i
+
+/**
+ * Google Jobs titles carry suffixes the employer never wrote:
+ *   "Sector Analyst, MI-Data at Point72 New York, NY"
+ *   "2027 Summer Internship - Data Scientist | Point72 | Handshake"
+ * They break both the fingerprint and cross-source linking, so they are cut.
+ * Only an " at <this company>" tail and " | " segments naming this company or
+ * a job board are removed; anything else is left alone. Idempotent.
+ */
+export function cleanTitle(title: string, company: string): string {
+  let t = String(title ?? "").trim()
+  const co = String(company ?? "").trim()
+  if (co) t = t.replace(new RegExp(`\\s+at\\s+${escapeRe(co)}\\b.*$`, "i"), "")
+  const parts = t.split(/\s+\|\s+/)
+  if (parts.length > 1) {
+    const coN = normText(co)
+    const cut = parts.findIndex((x, i) => i > 0 && (normText(x) === coN || BOARDS.test(x.trim())))
+    if (cut > 0) t = parts.slice(0, cut).join(" | ")
+  }
+  return t.trim()
+}
+
 function mapPosting(j: any, now: Date): FetchedPosting {
   return {
     source_job_id: j.job_id ? String(j.job_id) : null,
-    title: String(j.title ?? "").trim(),
+    // Cleaned. Google's original title stays in raw.title.
+    title: cleanTitle(j.title, j.company_name),
     company: String(j.company_name ?? "").trim(),
     location: j.location ? String(j.location) : null,
     apply_url: applyUrl(j),

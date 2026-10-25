@@ -6,9 +6,10 @@
  *
  * 1. Cross-source collision: a title Point72 has on its Greenhouse board, run
  *    through SerpApi in New York. Any SerpApi result whose fingerprint equals a
- *    Greenhouse row must leave that row's source, board, apply link, job id and
- *    raw untouched, and only advance last_seen_at
- *    (postings_touch_last_seen, 20261025_ingest_serpapi_phase1.sql).
+ *    Greenhouse row must leave that row's source, board, apply link, job id,
+ *    raw and last_seen_at untouched, record the sighting in
+ *    last_seen_elsewhere_at, and be counted as refound by the runner
+ *    (postings_touch_last_seen, 20261027_posting_links.sql).
  *    If the plain title returns no Point72 result, it reruns with "Point72"
  *    in the query so the collision path is actually exercised.
  * 2. Campus pair: management consulting analyst, Boston, MA, campus = true.
@@ -37,7 +38,7 @@ const ref = new URL(URL_).hostname.split(".")[0]
 if (ref === PROD_REF) { console.error("Refusing to run against prod."); process.exit(1) }
 const sb = createClient(URL_, KEY, { auth: { persistSession: false } })
 
-const COLS = "id,fingerprint,source,org_slug,source_job_id,title,company,location,apply_url,raw,first_seen_at,last_seen_at"
+const COLS = "id,fingerprint,source,org_slug,source_job_id,title,company,location,apply_url,raw,first_seen_at,last_seen_at,last_seen_elsewhere_at"
 type Row = Record<string, any>
 
 // Snapshot the rows a fetch is about to collide with, BEFORE the runner upserts.
@@ -95,16 +96,21 @@ async function crossSource(title: string) {
     const checks = {
       source: same("source"), org_slug: same("org_slug"), source_job_id: same("source_job_id"),
       apply_url: same("apply_url"), raw: same("raw"), first_seen_at: same("first_seen_at"),
-      last_seen_advanced: Date.parse(a.last_seen_at) > Date.parse(b.last_seen_at),
+      // A Google sighting is not the employer's board: last_seen_at must not move.
+      last_seen_unchanged: same("last_seen_at"),
+      elsewhere_recorded: !!a.last_seen_elsewhere_at && (!b.last_seen_elsewhere_at || Date.parse(a.last_seen_elsewhere_at) > Date.parse(b.last_seen_elsewhere_at)),
     }
     const ok = Object.values(checks).every(Boolean)
     intact &&= ok
     console.log(`  collided row: ${b.title} | ${b.location}`)
     console.log(`    source ${b.source} -> ${a.source};  apply_url ${b.apply_url} -> ${a.apply_url}`)
-    console.log(`    last_seen ${b.last_seen_at} -> ${a.last_seen_at}`)
+    console.log(`    last_seen ${b.last_seen_at} -> ${a.last_seen_at};  last_seen_elsewhere ${b.last_seen_elsewhere_at} -> ${a.last_seen_elsewhere_at}`)
     console.log(`    checks: ${JSON.stringify(checks)}  => ${ok ? "INTACT" : "OVERWRITTEN"}`)
   }
-  return { collided: before.length, intact }
+  // The runner must count these as re-found, not added.
+  const counted = o.refoundCount >= before.length
+  console.log(`  runner: refound ${o.refoundCount} >= ${before.length} collided: ${counted}`)
+  return { collided: before.length, intact: intact && counted }
 }
 
 ;(async () => {

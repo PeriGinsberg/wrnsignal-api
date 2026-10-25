@@ -15,7 +15,8 @@
  * Creds: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SERPAPI_KEY from the shell,
  * else from .env.phase0 at the repo root.
  *
- * WRITES: postings and ingest_runs. Costs one SerpApi search per page fetched
+ * WRITES: postings, ingest_runs, and a posting_link_runs row (posting_links
+ * only when INGEST_LINK_MODE=write). Costs one SerpApi search per page fetched
  * plus one control search per distinct location.
  */
 
@@ -24,6 +25,7 @@ import { join } from "path"
 import { createClient } from "@supabase/supabase-js"
 import { serpApiAdapter, queryFor, GOOGLE_JOBS } from "../../lib/ingest/serpapi"
 import { runSweep } from "../../lib/ingest/runner"
+import { runLinker } from "../../lib/ingest/link"
 import type { IngestPair } from "../../lib/ingest/types"
 
 const PROD_REF = "ejhnokcnahauvrcbcmic"
@@ -101,4 +103,8 @@ const maxPages = Number(arg("max-pages") ?? 3)
     }
   }
   console.log(`\nTotals: found ${tot.found}, added ${tot.added}, refound ${tot.refound}, intra-run duplicates ${tot.dup}, searches ${tot.req}, errors ${tot.errors}`)
+
+  // Same as the nightly: link after ingest, report mode unless INGEST_LINK_MODE=write.
+  const link = await runLinker(sb, { triggeredBy: "manual:run-serpapi" })
+  console.log(`Linker (${link.mode}): ${link.proposal.links.length} proposed, ${link.proposal.ambiguous.length} ambiguous, ${link.proposal.nearMisses.length} near misses; run ${link.runId}`)
 })().catch((e) => { console.error(e); process.exit(1) })

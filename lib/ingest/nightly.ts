@@ -26,6 +26,7 @@
 import { type SupabaseClient } from "@supabase/supabase-js"
 import { loadSources } from "./boards"
 import { runSweep, type BoardOutcome } from "./runner"
+import { runLinker } from "./link"
 import type { IngestPair } from "./types"
 import { sendIngestAlert, alertSubject, alertBody, type AlertReason, type IngestAlert } from "../email/sendIngestAlert"
 
@@ -95,6 +96,18 @@ export async function runNightly(
       for (const outcome of outcomes) {
         runs.push({ source: adapter.source, org: outcome.org, pair: pair.title, outcome })
       }
+    }
+  }
+
+  // Cross-source linking, after every sweep. Report mode unless
+  // INGEST_LINK_MODE=write: it logs its proposal to posting_link_runs and
+  // changes nothing else. A linker failure is logged there by runLinker and
+  // must not cost the ingest results or the alert below.
+  if (!opts.dryRun) {
+    try {
+      await runLinker(sb, { triggeredBy: `nightly:${opts.source ?? "all"}` })
+    } catch (err: any) {
+      console.error(`linker failed: ${err?.message || err}`)
     }
   }
 

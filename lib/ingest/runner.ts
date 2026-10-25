@@ -73,11 +73,12 @@ type Counts = { added: number; refound: number; dup: number }
  *
  * THE DATABASE IS STILL THE AUTHORITY ON IDENTITY. The mirror decides only
  * which rows may share a statement. added vs refound is still read off the row
- * Postgres returns: on insert first_seen_at and last_seen_at take the same
- * statement timestamp, and on update postings_touch_last_seen advances
- * last_seen_at while pinning first_seen_at, so they differ. Equal means
- * inserted. A mirror that was somehow wrong would cost a rejected batch, never
- * a wrong count or a merged posting.
+ * Postgres returns: on insert created_at and updated_at take the same
+ * statement timestamp, and every update moves updated_at, so they differ.
+ * Equal means inserted. (first_seen_at = last_seen_at was the old test; it
+ * stopped working when a SerpApi re-find of a direct-source row stopped moving
+ * last_seen_at, 20261027_posting_links.sql.) A mirror that was somehow wrong
+ * would cost a rejected batch, never a wrong count or a merged posting.
  */
 async function upsertBatch(
   sb: SupabaseClient,
@@ -118,7 +119,7 @@ async function upsertBatch(
         })),
         { onConflict: "fingerprint", ignoreDuplicates: false }
       )
-      .select("fingerprint, first_seen_at, last_seen_at")
+      .select("fingerprint, created_at, updated_at")
 
     if (error) {
       throw new Error(
@@ -139,7 +140,7 @@ async function upsertBatch(
       // seen: identity is the database's to define.
       if (seen.has(row.fingerprint)) { counts.dup++; continue }
       seen.add(row.fingerprint)
-      if (Date.parse(row.first_seen_at) === Date.parse(row.last_seen_at)) counts.added++
+      if (Date.parse(row.created_at) === Date.parse(row.updated_at)) counts.added++
       else counts.refound++
     }
   }
