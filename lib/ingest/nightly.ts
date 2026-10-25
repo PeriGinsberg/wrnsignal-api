@@ -10,6 +10,7 @@
  *   1. zero total found across every pair and board
  *   2. any control_passed = false
  *   3. any status = error
+ *   4. the cross-source linker failed after the sweep
  *
  * Each is unambiguous and each is a fault rather than a slow night. Threshold
  * alerting ("found dropped 40%") was considered and left out for the reason
@@ -101,14 +102,16 @@ export async function runNightly(
 
   // Cross-source linking, after every sweep. Report mode unless
   // INGEST_LINK_MODE=write: it logs its proposal to posting_link_runs and
-  // changes nothing else. A linker failure is logged there by runLinker and
-  // must not cost the ingest results or the alert below.
-  if (!opts.dryRun) {
-    try {
-      await runLinker(sb, { triggeredBy: `nightly:${opts.source ?? "all"}` })
-    } catch (err: any) {
-      console.error(`linker failed: ${err?.message || err}`)
-    }
+  // changes nothing else. A failure must not cost the ingest results, and must
+  // reach a person: it becomes a reason on the same alert as ingest failures.
+  // Runs on a dry run too: dryRun only withholds the email, the sweep above
+  // still writes.
+  let linkerError: string | null = null
+  try {
+    await runLinker(sb, { triggeredBy: `nightly:${opts.source ?? "all"}` })
+  } catch (err: any) {
+    linkerError = String(err?.message || err).slice(0, 500)
+    console.error(`linker failed: ${linkerError}`)
   }
 
   const totals = {
@@ -152,6 +155,8 @@ export async function runNightly(
       })),
     })
   }
+
+  if (linkerError) reasons.push({ kind: "linker_failed", error: linkerError })
 
   const lines = runs.map(
     (r) =>

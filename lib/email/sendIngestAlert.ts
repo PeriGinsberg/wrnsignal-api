@@ -24,11 +24,14 @@ const ALERT_FROM_EMAIL =
   process.env.POSTMARK_FEEDBACK_FROM_EMAIL ?? "support@stopapplyingblind.com"
 const ALERT_TO_EMAIL = process.env.INGEST_ALERT_TO_EMAIL ?? ALERT_FROM_EMAIL
 
-/** The three conditions, in the order a reader should care about them. */
+/** The conditions, in the order a reader should care about them. */
 export type AlertReason =
   | { kind: "zero_found"; totalFound: number }
   | { kind: "control_failed"; rows: { source: string; org: string; pair: string; detail: string }[] }
   | { kind: "run_error"; rows: { source: string; org: string; pair: string; error: string }[] }
+  // The cross-source linker (lib/ingest/link.ts) runs after the sweep and
+  // failed. The sweep's own results stand; the links did not get computed.
+  | { kind: "linker_failed"; error: string }
 
 export type IngestAlert = {
   environment: string
@@ -51,6 +54,7 @@ export function alertSubject(a: IngestAlert): string {
   for (const r of a.reasons) {
     if (r.kind === "control_failed") parts.push(`${r.rows.length} control failure${r.rows.length === 1 ? "" : "s"}`)
     if (r.kind === "run_error") parts.push(`${r.rows.length} error${r.rows.length === 1 ? "" : "s"}`)
+    if (r.kind === "linker_failed") parts.push("linker failed")
   }
   return `[SIGNAL${env}] ingest: ${parts.join(", ")}`
 }
@@ -76,6 +80,15 @@ export function alertBody(a: IngestAlert): string {
       out.push(`ERRORS on ${r.rows.length} board-run(s):`)
       for (const x of r.rows) out.push(`  ${x.source}/${x.org}  "${x.pair}"  ${x.error}`)
       out.push("")
+    }
+    if (r.kind === "linker_failed") {
+      out.push(
+        `CROSS-SOURCE LINKER FAILED after the sweep. The sweep's postings and counts`,
+        `below are unaffected; links were not computed this run. Error:`,
+        `  ${r.error}`,
+        `posting_link_runs has an error row for it unless writing that row is what failed.`,
+        ""
+      )
     }
   }
 
