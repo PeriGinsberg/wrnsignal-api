@@ -25,13 +25,15 @@ const none: EnrichFields = {
   function: "not_stated", function_evidence: "",
   industry: "not_stated", industry_evidence: "",
   application_deadline: null, deadline_evidence: "",
+  employment_types: "not_stated", employment_evidence: "",
+  start_type: "not_stated", start_date: null, start_season: null, start_year: null, start_evidence: "",
 }
 const p = (f: Partial<EnrichFields>) => toPatch({ ...none, ...f }, "Financial Analyst - Chicago, IL").patch
 const ns = (x: Record<string, unknown>) => (x.enrichment_not_stated as string[]).join(",")
 
 // ── nothing stated: every group named, every value NULL
 const empty = p({})
-ok("nothing stated names every group", ns(empty) === "years,salary,salary_currency,graduation,application_deadline,requirements_summary,tools,level,function,industry")
+ok("nothing stated names every group", ns(empty) === "years,salary,salary_currency,graduation,application_deadline,requirements_summary,tools,level,employment_type,start,function,industry")
 ok("nothing stated: values NULL, cleaned title kept", empty.years_min === null && empty.salary_low === null && empty.deadline_text === null && empty.cleaned_title === "Financial Analyst")
 ok("success clears a previous failure", empty.enrichment_failed_at === null && empty.enrichment_error === null)
 
@@ -87,6 +89,20 @@ ok("database rejection demotes that field only", !!rej && rej.patch.function ===
 ok("rejection recorded on the row", (rej!.patch.enrichment_evidence as any).demoted?.[0]?.value === "Trading")
 ok("any other database error is not demoted", demoteRejected(trading.patch, "write failed: 23514 violates check constraint postings_years_shape") === null)
 ok("enum with a quote kept", r.patch.industry === "Banking" && r.patch.industry_evidence === "a leading regional bank")
+
+// ── employment type and start timing (added 2026-10-25)
+const intern = p({ employment_types: ["internship", "full_time", "internship"], employment_evidence: "Summer internship, full-time hours" })
+ok("employment types stored, deduped", JSON.stringify(intern.employment_types) === '["internship","full_time"]' && !ns(intern).split(",").includes("employment_type"))
+const sDate = p({ start_type: "date", start_date: "2027-06-08", start_evidence: "June 8 - August 14, 2027" })
+ok("dated start", sDate.start_type === "date" && sDate.start_date === "2027-06-08" && sDate.start_season === null && sDate.start_text === "June 8 - August 14, 2027" && !ns(sDate).split(",").includes("start"))
+const sSeason = p({ start_type: "season", start_season: "summer", start_year: 2027, start_evidence: "Summer 2027 Analyst" })
+ok("season start", sSeason.start_type === "season" && sSeason.start_season === "summer" && sSeason.start_year === 2027 && sSeason.start_date === null)
+const sNow = p({ start_type: "immediate", start_evidence: "Immediate start" })
+ok("immediate start", sNow.start_type === "immediate" && sNow.start_date === null && sNow.start_year === null)
+ok("no start: all NULL and 'start' named", empty.start_type === null && empty.start_text === null && ns(empty).split(",").includes("start"))
+ok("start with no quote is a violation", throws(() => p({ start_type: "immediate", start_evidence: "" })))
+ok("impossible start date is a violation", throws(() => p({ start_type: "date", start_date: "2027-02-30", start_evidence: "Feb 30" })))
+ok("season without a year is a violation", throws(() => p({ start_type: "season", start_season: "summer", start_year: null, start_evidence: "Summer" })))
 
 // ── tools, title fallback
 ok("tools kept", JSON.stringify(p({ tools: ["Excel", "SQL"], tools_evidence: "Excel, SQL" }).tools) === '["Excel","SQL"]')

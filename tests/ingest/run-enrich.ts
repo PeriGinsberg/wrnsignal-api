@@ -11,6 +11,8 @@
  *   --limit N             postings this run takes (default 500)
  *   --sources a,b         only these sources
  *   --ids file.json       only these posting ids (still only if due)
+ *   --reenrich-before ts  also re-enrich postings enriched before ts, plus any
+ *                         never enriched (one-off pass after new fields)
  *   --retry-failed        take postings whose last attempt failed (description
  *                         unchanged) instead of the due worklist
  *   --dry                 extract but write nothing (still costs API calls)
@@ -63,6 +65,7 @@ const sb = createClient(URL_, KEY, { auth: { persistSession: false } })
     ids,
     dryRun: flag("dry"),
     retryFailed: flag("retry-failed"),
+    reenrichBefore: arg("reenrich-before"),
     triggeredBy: flag("retry-failed") ? "manual:run-enrich:retry-failed" : "manual:run-enrich",
   })
   console.log(

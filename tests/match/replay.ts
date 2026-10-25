@@ -86,6 +86,7 @@ export function fromLaneResult(r: any): MatchPosting {
     graduationFrom: null,
     graduationTo: null,
     level: [r.seniority, r.role_type === "People Manager" ? "people manager" : null].filter(Boolean).join(", ") || null,
+    startType: null, startDate: null, startSeason: null, startYear: null,
     text: r.requirements_summary ?? "",
   }
 }

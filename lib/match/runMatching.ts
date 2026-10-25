@@ -47,6 +47,7 @@ export function criteriaFromRow(row: any, profile: any): MatchCriteria {
     gradDate: profile.grad_date ?? null,
     educationStatus: profile.education_status ?? null,
     timeline: profile.timeline ?? null,
+    availableFrom: row.available_from ?? null,
     salaryFloor: row.salary_floor !== null && row.salary_floor !== undefined ? { amount: Number(row.salary_floor), period: row.salary_floor_period } : null,
     excludedTitleKeywords: row.excluded_title_keywords ?? [],
     excludedEmployers: row.excluded_employers ?? [],
@@ -72,13 +73,17 @@ export function fromPosting(p: any, text = ""): MatchPosting {
     yearsMin: p.years_min ?? null,
     yearsMax: p.years_max ?? null,
     yearsBasis: p.years_basis ?? null,
-    employmentTypes: null,
+    employmentTypes: p.employment_types ?? null,
     salaryLow: p.salary_low !== null && p.salary_low !== undefined ? Number(p.salary_low) : null,
     salaryHigh: p.salary_high !== null && p.salary_high !== undefined ? Number(p.salary_high) : null,
     salaryPeriod: p.salary_period ?? null,
     graduationFrom: p.graduation_from ?? null,
     graduationTo: p.graduation_to ?? null,
     level: p.level ?? null,
+    startType: p.start_type ?? null,
+    startDate: p.start_date ?? null,
+    startSeason: p.start_season ?? null,
+    startYear: p.start_year ?? null,
     text: text || p.requirements_summary || "",
   }
 }
@@ -128,7 +133,7 @@ export async function runMatching(
 
   const since = new Date(Date.now() - LIVE_DAYS * 86400e3).toISOString()
   const postings = await pageAll<any>((a, b) => sb.from("postings_canonical")
-    .select("id, source, title, cleaned_title, company, location, years_min, years_max, years_basis, salary_low, salary_high, salary_period, graduation_from, graduation_to, level, requirements_summary, description_md5, enriched_at")
+    .select("id, source, title, cleaned_title, company, location, years_min, years_max, years_basis, salary_low, salary_high, salary_period, graduation_from, graduation_to, level, requirements_summary, description_md5, enriched_at, employment_types, start_type, start_date, start_season, start_year")
     .gte("last_seen_at", since).order("id").range(a, b))
   const existing = new Map((await pageAll<any>((a, b) => sb.from("posting_matches")
     .select("posting_id, criteria_hash, description_md5, action").eq("client_profile_id", opts.clientProfileId).order("posting_id").range(a, b)))

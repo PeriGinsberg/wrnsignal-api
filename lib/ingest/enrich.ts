@@ -70,6 +70,17 @@ export const EnrichSchema = z.object({
 
   application_deadline: z.string().nullable(),
   deadline_evidence: z.string(),
+
+  // Added 2026-10-25 after the coach review of Alex's queue: start timing was
+  // the deciding gap.
+  employment_types: z.union([z.array(z.enum(["full_time", "part_time", "internship", "contract", "temporary", "seasonal"])).min(1), NOT_STATED]),
+  employment_evidence: z.string(),
+
+  start_type: z.enum(["date", "season", "immediate", "not_stated"]),
+  start_date: z.string().nullable(),
+  start_season: z.enum(["spring", "summer", "fall", "winter"]).nullable(),
+  start_year: z.number().int().nullable(),
+  start_evidence: z.string(),
 })
 
 export type EnrichFields = z.infer<typeof EnrichSchema>
@@ -196,7 +207,41 @@ ${INDUSTRY_RULES}
   applications until 7/7/2026 at a minimum", "open until at least March 1").
   That is the earliest it might close, not the last day to apply: null, and
   empty evidence.
-- null and empty evidence when none is stated.`
+- null and empty evidence when none is stated.
+
+--- employment_types
+- Every employment type the posting states, from: full_time, part_time,
+  internship, contract, temporary, seasonal.
+- Stated means the words are there: "Full-time", "Part-time", "Intern",
+  "Internship", "Summer Analyst program" described as an internship, "Contract",
+  "Temp", "Seasonal". A posting can state more than one ("summer internship,
+  40 hours a week, full-time" is internship and full_time).
+- Do not infer an internship from a student audience, or full-time from a
+  salary. The company's name never states a type ("Walleye Capital Full Time"
+  is a name). "not_stated" when no type is named.
+- A "Listed job type:" line is the job board's label for the posting and counts
+  as stated. When the description says otherwise (a summer internship listed as
+  "Full-time"), the description wins.
+- employment_evidence: the words you took it from, verbatim.
+
+--- start_type / start_date / start_season / start_year
+- When the job starts, as the posting states it. One of:
+    "date"      a specific date or month: start_date "YYYY-MM-DD". A month alone
+                is its 1st ("starting July 2027" -> 2027-07-01). A date range
+                ("June 8 - August 14, 2027") starts on its first day.
+    "season"    a season or term and a year, no date: start_season (spring,
+                summer, fall, winter) and start_year ("Summer 2027 internship",
+                "Fall 2026 start", "spring semester 2027"). Treat autumn as fall.
+    "immediate" "immediately", "ASAP", "immediate start", "start right away",
+                "urgently hiring to start now".
+    "not_stated" anything else, including no start mentioned at all.
+- Only the job's start. NOT a start: the application deadline, the posting
+  date, the graduation date asked of candidates, an interview date, or when
+  applications open.
+- "Summer 2027 Analyst" in a title states season summer 2027. "2027 Analyst
+  Program" alone does not state a season or date: a year is not a start.
+- Unused parts are null: a season has no start_date, a date has no season.
+- start_evidence: the words you took it from, verbatim. Empty when not_stated.`
 
 /** Recorded on every enrichment_runs row, so a prompt change shows in the data. */
 export const ENRICH_PROMPT_SHA256 = createHash("sha256").update(SYSTEM).digest("hex")

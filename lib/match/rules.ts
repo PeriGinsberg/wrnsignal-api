@@ -24,8 +24,9 @@ import { citiesOf } from "../ingest/link"
  *   2026-10-25.1  first prod run (Alex)
  *   2026-10-25.2  trailing country names read; "remote" abroad is not remote
  *   2026-10-25.3  SmartRecruiters' "Kentucky (KY)" state form read
+ *   2026-10-25.4  start timing against available_from; employment types read
  */
-export const RULES_VERSION = "2026-10-25.3"
+export const RULES_VERSION = "2026-10-25.4"
 
 /** Country names a location can end with. US spellings are handled separately. */
 const COUNTRIES = new Set([
@@ -82,15 +83,41 @@ export type MatchPosting = {
   graduationFrom: string | null
   graduationTo: string | null
   level: string | null
+  /** When the job starts, as stated. startType null = not stated. */
+  startType: "date" | "season" | "immediate" | null
+  startDate: string | null
+  startSeason: string | null
+  startYear: number | null
   /** What the judge reads: description, or a requirements summary when that is all there is. */
   text: string
 }
 
-export type RuleFailure = "location" | "years" | "graduation" | "excluded_title" | "excluded_employer" | "salary" | "job_type"
+export type RuleFailure = "location" | "years" | "graduation" | "excluded_title" | "excluded_employer" | "salary" | "job_type" | "start"
+
+/** "Clearly before" allows a month: a June 1 start for a client free June 15 is not a mismatch. */
+const START_GRACE_DAYS = 31
+const SEASON_END: Record<string, (y: number) => string> = {
+  spring: (y) => `${y}-05-31`, summer: (y) => `${y}-08-31`, fall: (y) => `${y}-11-30`, winter: (y) => `${y}-03-31`,
+}
+const addDays = (d: string, n: number) => new Date(Date.parse(d + "T00:00:00Z") + n * 86400e3).toISOString().slice(0, 10)
+
+/**
+ * Does the posting start clearly before the client can? Only a stated start
+ * can fail; "start not stated" always passes.
+ *   immediate -> fails when the client is not free within a month of today
+ *   date      -> fails when it is more than a month before available_from
+ *   season    -> fails when the whole season is over before available_from
+ */
+export function startsTooEarly(availableFrom: string, p: Pick<MatchPosting, "startType" | "startDate" | "startSeason" | "startYear">, today: string): boolean {
+  if (p.startType === "immediate") return availableFrom > addDays(today, START_GRACE_DAYS)
+  if (p.startType === "date" && p.startDate) return addDays(p.startDate, START_GRACE_DAYS) < availableFrom
+  if (p.startType === "season" && p.startSeason && p.startYear) return SEASON_END[p.startSeason](p.startYear) < availableFrom
+  return false
+}
 
 const ym = (d: string) => d.slice(0, 7)
 
-export function applyRules(c: MatchCriteria, p: MatchPosting): RuleFailure[] {
+export function applyRules(c: MatchCriteria, p: MatchPosting, today = new Date().toISOString().slice(0, 10)): RuleFailure[] {
   const out: RuleFailure[] = []
 
   // location. "Remote" passes only when it is not remote from abroad.
@@ -135,6 +162,9 @@ export function applyRules(c: MatchCriteria, p: MatchPosting): RuleFailure[] {
     const types = new Set(p.employmentTypes)
     if (types.has("internship") && !types.has("full_time")) out.push("job_type")
   }
+
+  // start timing: only a stated start, only when the client named a date
+  if (c.availableFrom && startsTooEarly(c.availableFrom, p, today)) out.push("start")
 
   return out
 }

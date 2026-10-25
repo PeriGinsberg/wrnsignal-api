@@ -64,7 +64,14 @@ export function descriptionOf(raw: any): string {
  */
 export function postingText(source: string, raw: any): string {
   const d = typeof raw?.description === "string" ? raw.description.trim() : ""
-  return d || descriptionOf(raw)
+  const text = d || descriptionOf(raw)
+  // Google keeps the schedule ("Full-time", "Internship") in the listing, not the
+  // description: 299 of 301 SearchApi rows on 2026-10-25. Given to the extractor
+  // as its own line so employment_types can read it; the description still wins.
+  const schedule = raw?.detected_extensions?.schedule ?? raw?.detected_extensions?.schedule_type
+  return text && typeof schedule === "string" && schedule.trim() ? `${text}
+
+Listed job type: ${schedule.trim()}` : text
 }
 
 /** Google's original title for Google Jobs rows; the stored title otherwise. */
@@ -165,11 +172,34 @@ export function toPatch(f: EnrichFields, title: string): { patch: Record<string,
     if (why) { notStated.push(field); demoted.push({ field, value: v, why }); return [null, null] }
     return [v, evidence]
   }
+  // employment type
+  const employment = f.employment_types === "not_stated" ? null : [...new Set(f.employment_types)]
+  if (!employment) notStated.push("employment_type")
+
+  // start timing: the quote is required with any stated start
+  const startText = f.start_evidence.trim() || null
+  let start: { start_type: string | null; start_date: string | null; start_season: string | null; start_year: number | null; start_text: string | null } =
+    { start_type: null, start_date: null, start_season: null, start_year: null, start_text: null }
+  if (f.start_type === "not_stated") notStated.push("start")
+  else {
+    if (!startText) throw new EnrichViolation(`start_type ${f.start_type} returned with no quote`)
+    if (f.start_type === "date") {
+      const sd = f.start_date
+      if (!sd || !YMD.test(sd) || new Date(sd + "T00:00:00Z").toISOString().slice(0, 10) !== sd) throw new EnrichViolation(`start_date "${sd}" is not a real YYYY-MM-DD date`)
+      start = { start_type: "date", start_date: sd, start_season: null, start_year: null, start_text: startText }
+    } else if (f.start_type === "season") {
+      if (!f.start_season || !f.start_year || f.start_year < 2000 || f.start_year > 2100) throw new EnrichViolation(`season start without a season and year (${f.start_season} ${f.start_year})`)
+      start = { start_type: "season", start_date: null, start_season: f.start_season, start_year: f.start_year, start_text: startText }
+    } else {
+      start = { start_type: "immediate", start_date: null, start_season: null, start_year: null, start_text: startText }
+    }
+  }
+
   const [fn, fnEv] = enumField(f.function, f.function_evidence, "function", FUNCTION_VALUES)
   const [ind, indEv] = enumField(f.industry, f.industry_evidence, "industry", INDUSTRY_VALUES)
 
   const evidence: Record<string, unknown> = {}
-  for (const [k, v] of [["years", f.years_evidence], ["salary", f.salary_evidence], ["tools", f.tools_evidence], ["level", f.level_evidence]] as const) {
+  for (const [k, v] of [["years", f.years_evidence], ["salary", f.salary_evidence], ["tools", f.tools_evidence], ["level", f.level_evidence], ["employment", f.employment_evidence]] as const) {
     if (v.trim()) evidence[k] = v.trim()
   }
   if (demoted.length) evidence.demoted = demoted
@@ -187,6 +217,8 @@ export function toPatch(f: EnrichFields, title: string): { patch: Record<string,
       level: f.level,
       function: fn, function_evidence: fnEv,
       industry: ind, industry_evidence: indEv,
+      employment_types: employment,
+      ...start,
       enrichment_evidence: evidence,
       enrichment_not_stated: notStated,
       enrichment_failed_at: null,
@@ -292,6 +324,12 @@ export async function runEnrichment(
     /** Only these posting ids (still only if due, unless retryFailed). */
     ids?: string[]
     /**
+     * Also re-enrich postings last enriched before this time, description
+     * unchanged: a one-off pass after the extractor gains fields (2026-10-25:
+     * start timing and employment type).
+     */
+    reenrichBefore?: string
+    /**
      * Take postings whose last attempt FAILED on the description still stored,
      * instead of the due worklist. Retrying a failure is a deliberate act (a
      * fixed prompt, constraint or outage), never something every run repeats.
@@ -310,7 +348,13 @@ export async function runEnrichment(
   const candidates: Candidate[] = []
   const PAGE = 200
   for (let from = 0; candidates.length < limit; from += PAGE) {
-    let q = opts.retryFailed
+    let q = opts.reenrichBefore
+      ? sb.from("postings")
+          .select("id, source, title, company, location, raw, description_md5")
+          .not("description_md5", "is", null)
+          .or(`enriched_at.is.null,enriched_at.lt.${opts.reenrichBefore}`)
+          .is("enrichment_failed_at", null)
+      : opts.retryFailed
       ? sb.from("postings")
           .select("id, source, title, company, location, raw, description_md5")
           .not("enrichment_failed_at", "is", null)

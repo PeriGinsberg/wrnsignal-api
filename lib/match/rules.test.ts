@@ -3,7 +3,7 @@
 // Hard rules (lib/match/rules.ts) and criteria seeding (lib/match/criteria.ts),
 // offline. The rule that matters most: NOT STATED NEVER FAILS.
 
-import { seedCriteria } from "./criteria"
+import { parseTimeline, seedCriteria } from "./criteria"
 import { applyRules, parseLocations, type MatchPosting } from "./rules"
 
 let failures = 0
@@ -23,9 +23,11 @@ ok("seed: no warnings, four markets, max years 2, full-time", !warnings.length &
 const blank: MatchPosting = {
   title: "Financial Analyst", company: "Acme", locations: null, remote: null,
   yearsMin: null, yearsMax: null, yearsBasis: null, employmentTypes: null,
-  salaryLow: null, salaryHigh: null, salaryPeriod: null, graduationFrom: null, graduationTo: null, level: null, text: "",
+  salaryLow: null, salaryHigh: null, salaryPeriod: null, graduationFrom: null, graduationTo: null, level: null,
+  startType: null, startDate: null, startSeason: null, startYear: null, text: "",
 }
-const r = (p: Partial<MatchPosting>, c = alex) => applyRules(c, { ...blank, ...p })
+const TODAY = "2026-10-25"
+const r = (p: Partial<MatchPosting>, c = alex) => applyRules(c, { ...blank, ...p }, TODAY)
 const at = (city: string, state: string) => ({ city, state, country: "US" })
 
 ok("nothing stated: passes everything", r({}).length === 0)
@@ -89,6 +91,26 @@ ok("remote in India fails Alex", r({ locations: pl("Remote, , India"), remote: t
 ok("remote with no country passes", r({ locations: pl("Remote"), remote: true }).length === 0)
 ok("New York or London fails Alex (neither in his states)", r({ locations: pl("New York, NY; London, , United Kingdom") }).join() === "location")
 ok("Chicago or London passes Alex", r({ locations: pl("Chicago, IL; London, , United Kingdom") }).length === 0)
+
+// timeline -> available_from
+ok("Alex's timeline seeds available_from 2027-06-01", alex.availableFrom === "2027-06-01")
+ok("'Summer 2027' -> 2027-06-01", parseTimeline("Summer 2027") === "2027-06-01")
+ok("'Fall 2026' -> 2026-09-01", parseTimeline("Fall 2026") === "2026-09-01")
+ok("relative timelines give no date", parseTimeline("Now") === null && parseTimeline("6-12 months") === null && parseTimeline("Actively looking") === null && parseTimeline(null) === null)
+
+// start timing (Alex free from 2027-06-01; today 2026-10-25)
+ok("start not stated passes", r({}).length === 0)
+ok("immediate start fails Alex", r({ startType: "immediate" }).join() === "start")
+ok("Jan 11 2027 internship start fails Alex", r({ startType: "date", startDate: "2027-01-11" }).join() === "start")
+ok("June 15 2027 start passes", r({ startType: "date", startDate: "2027-06-15" }).length === 0)
+ok("May 15 2027 start passes (within a month of June 1)", r({ startType: "date", startDate: "2027-05-15" }).length === 0)
+ok("Summer 2027 passes", r({ startType: "season", startSeason: "summer", startYear: 2027 }).length === 0)
+ok("Spring 2027 fails (over by May 31)", r({ startType: "season", startSeason: "spring", startYear: 2027 }).join() === "start")
+ok("Fall 2026 fails", r({ startType: "season", startSeason: "fall", startYear: 2026 }).join() === "start")
+const now = { ...alex, availableFrom: null }
+ok("client with no available_from: no start rule", r({ startType: "immediate" }, now).length === 0)
+const soon = { ...alex, availableFrom: "2026-11-10" }
+ok("immediate passes a client free within a month", r({ startType: "immediate" }, soon).length === 0)
 
 console.log(failures ? `\n${failures} failure(s)` : "\nall passed")
 if (failures) process.exit(1)

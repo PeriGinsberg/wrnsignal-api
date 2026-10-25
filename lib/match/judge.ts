@@ -103,6 +103,7 @@ export function clientBrief(c: MatchCriteria, today = new Date()): string {
   const lines = [
     `Target roles: ${c.targetRoles.join("; ") || "not given"}`,
     `Stage: ${[c.educationStatus && `education ${c.educationStatus.replace(/_/g, " ")}`, graduationPhrase(c, today), c.timeline && `timeline "${c.timeline}"`].filter(Boolean).join(", ") || "not given"}`,
+    c.availableFrom && `Available to start: from ${c.availableFrom}`,
     `Coach's usual ceiling on years a posting asks: ${c.maxYearsRequired ?? "none given"} (a guide, not a limit: see STRETCH ROLES)`,
     `Job type wanted: ${c.jobTypes.join(", ") || "not given"}`,
     `Where: ${c.markets.length ? c.markets.map((m) => m.name).join(", ") + (c.radiusMiles ? ` (within ${c.radiusMiles} miles)` : "") : "anywhere"}${c.remoteOk ? "; remote is fine" : ""}`,
@@ -133,6 +134,7 @@ export function postingBrief(p: MatchPosting): string {
     `Level: ${p.level ?? "not stated"}`,
     `Years of experience asked: ${years}`,
     `Employment type: ${p.employmentTypes?.join(", ") ?? "not stated"}`,
+    `Start: ${p.startType === "date" ? p.startDate : p.startType === "season" ? `${p.startSeason} ${p.startYear}` : p.startType === "immediate" ? "immediately" : "not stated"}`,
     `Pay: ${pay}`,
     (p.graduationFrom || p.graduationTo) && `Graduation window: ${p.graduationFrom ?? "?"} to ${p.graduationTo ?? "?"}`,
     `\nPosting text:\n${p.text.slice(0, 3000)}`,

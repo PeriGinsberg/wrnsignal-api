@@ -39,6 +39,8 @@ export type MatchCriteria = {
   gradDate: string | null
   educationStatus: string | null
   timeline: string | null
+  /** Earliest start the client can take (YYYY-MM-DD). null = available now: no start rule. */
+  availableFrom: string | null
   salaryFloor: { amount: number; period: "year" | "hour" } | null
   excludedTitleKeywords: string[]
   excludedEmployers: string[]
@@ -119,6 +121,7 @@ export function seedCriteria(
     gradDate: profile.grad_date ?? null,
     educationStatus: profile.education_status ?? null,
     timeline: profile.timeline ?? null,
+    availableFrom: parseTimeline(profile.timeline ?? null),
     salaryFloor: null,
     excludedTitleKeywords: splitList(lane.exclusions?.title_keywords),
     excludedEmployers: [],
@@ -131,6 +134,26 @@ export function seedCriteria(
   }
   delete (criteria as any).addPresets
   return { criteria, warnings }
+}
+
+const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]
+const SEASON_MONTH: Record<string, number> = { spring: 3, summer: 6, fall: 9, autumn: 9, winter: 1 }
+
+/**
+ * A profile timeline -> the earliest start date it names, or null.
+ * "June 2027" -> 2027-06-01; "Summer 2027" -> 2027-06-01; "Fall 2026" -> 2026-09-01.
+ * Anything relative or open ("Now", "Actively looking", "6-12 months",
+ * "Exploring options") is null: no start rule, which is the safe direction.
+ */
+export function parseTimeline(t: string | null): string | null {
+  const s = String(t ?? "").toLowerCase()
+  const year = s.match(/\b(20\d\d)\b/)?.[1]
+  if (!year) return null
+  const month = MONTHS.findIndex((m) => new RegExp(`\\b${m.slice(0, 3)}[a-z]*\\b`).test(s))
+  if (month >= 0) return `${year}-${String(month + 1).padStart(2, "0")}-01`
+  const season = Object.keys(SEASON_MONTH).find((k) => new RegExp(`\\b${k}\\b`).test(s))
+  if (season) return `${year}-${String(SEASON_MONTH[season]).padStart(2, "0")}-01`
+  return null
 }
 
 /** "Illinois, US" / "IL" / "illinois" -> "il"; null when unknown. */

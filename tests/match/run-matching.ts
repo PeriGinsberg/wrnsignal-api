@@ -47,30 +47,32 @@ const sb = createClient(URL_, KEY, { auth: { persistSession: false } })
     const overrides: any = {}
     if (arg("max-years")) overrides.maxYearsRequired = Number(arg("max-years"))
     if (arg("add-preset")) overrides.addPresets = arg("add-preset")!.split(",")
-    const { criteria: c, warnings } = seedCriteria(l, p!, overrides)
+    const { data: tl } = await sb.from("client_profiles").select("timeline").eq("id", client).single()
+    const { criteria: c, warnings } = seedCriteria(l, { ...p!, timeline: tl?.timeline ?? null }, overrides)
+    if (tl?.timeline && !c.availableFrom) warnings.push(`timeline "${tl.timeline}" names no month or season: no start rule`)
     for (const w of warnings) console.log("warning:", w)
     const { error: iErr } = await sb.from("client_match_criteria").upsert({
       client_profile_id: client, markets: c.markets, radius_miles: c.radiusMiles, remote_ok: c.remoteOk,
       max_years_required: c.maxYearsRequired, job_types: c.jobTypes, excluded_title_keywords: c.excludedTitleKeywords,
       excluded_employers: c.excludedEmployers, target_roles: c.targetRoles, target_industries: c.targetIndustries,
-      excluded_industries: c.excludedIndustries, seeded_from_lane_id: l.id,
+      excluded_industries: c.excludedIndustries, available_from: c.availableFrom, seeded_from_lane_id: l.id,
     }, { onConflict: "client_profile_id" })
     if (iErr) throw new Error("criteria upsert failed: " + iErr.message)
-    console.log("criteria:", JSON.stringify({ markets: c.markets.map((m) => m.name), radius: c.radiusMiles, maxYears: c.maxYearsRequired, jobTypes: c.jobTypes, excludedTitles: c.excludedTitleKeywords, targetRoles: c.targetRoles }))
+    console.log("criteria:", JSON.stringify({ markets: c.markets.map((m) => m.name), radius: c.radiusMiles, maxYears: c.maxYearsRequired, availableFrom: c.availableFrom, jobTypes: c.jobTypes, excludedTitles: c.excludedTitleKeywords, targetRoles: c.targetRoles }))
     return
   }
 
   if (flag("queue")) {
     const n = Number(arg("queue") ?? 30)
     const { data, error } = await sb.from("client_match_queue")
-      .select("rank, score, is_new, source, title, company, location, years_min, years_max, years_basis, salary_low, salary_high, salary_period, judge_reason")
+      .select("rank, score, is_new, source, title, company, location, years_min, years_max, years_basis, salary_low, salary_high, salary_period, start_label, employment_types, judge_reason")
       .eq("client_profile_id", client).order("rank").limit(n)
     if (error) throw error
     const years = (r: any) => r.years_basis === null ? "not stated"
       : `${r.years_min ?? "?"}${r.years_max === null ? "+" : r.years_max === r.years_min ? "" : "-" + r.years_max}${r.years_basis === "preferred" ? " pref" : ""}`
     const money = (v: any) => (v === null ? "?" : Number(v) >= 1000 ? `$${Math.round(Number(v) / 1000)}k` : `$${Number(v)}`)
     const pay = (r: any) => r.salary_low === null && r.salary_high === null ? "not stated" : `${money(r.salary_low)}-${money(r.salary_high)}${r.salary_period ? "/" + r.salary_period : ""}`
-    for (const r of data ?? []) console.log(`${r.rank}\t${r.score ?? "--"}\t${r.title}\t${r.company}\t${r.location ?? "-"}\t${years(r)}\t${pay(r)}\t${r.judge_reason ?? "(not judged: no description)"}`)
+    for (const r of data ?? []) console.log(`${r.rank}\t${r.score ?? "--"}\t${r.title}\t${r.company}\t${r.location ?? "-"}\t${years(r)}\t${pay(r)}\t${r.start_label}\t${r.employment_types?.join("/") ?? "type not stated"}\t${r.judge_reason ?? "(not judged: no description)"}`)
     return
   }
 
