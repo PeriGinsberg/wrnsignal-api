@@ -202,6 +202,104 @@ const PRICE_OUT = 25.0
 const FUNCTION_LIST = FUNCTIONS.join("\n")
 const INDUSTRY_LIST = INDUSTRIES.join("\n")
 
+// The per-field rules, exported so lib/ingest/enrich.ts states them in the
+// same words rather than a copy that drifts. SYSTEM below is composed from them
+// and is byte-identical to the text it replaced.
+export const SUMMARY_RULES = `- ONE line, at most 200 characters, in the posting's own terms: what a candidate
+  must have. Compress, do not editorialise and do not add anything not stated.
+- null when the posting states no requirements at all.`
+
+export const TOOLS_RULES = `- Named software, platforms, languages and systems the posting asks for:
+  "Python", "Salesforce", "Figma", "SQL", "AWS".
+- Only what is named. Do not expand "modern data stack" into products, and do
+  not add tools that a role like this usually uses.
+- "not_stated" when none are named.`
+
+export const LEVEL_RULES = `- The seniority the posting states, as ONE of: "Intern", "Entry Level",
+  "Junior", "Associate", "Mid", "Senior", "Staff", "Lead", "Principal",
+  "Manager", "Director", "VP", "Head", "C-level".
+
+- A LEVEL REQUIRES AN EXPLICIT SENIORITY MARKER. These are the markers:
+  Intern, Entry Level / Entry-Level, Junior / Jr., Associate, Mid / Mid-Level,
+  Senior / Sr., Staff, Lead, Principal, Head of, Chief, VP / Vice President,
+  SVP, EVP, C-level titles (CEO, CFO, CTO).
+
+- A FUNCTIONAL TITLE IS NOT A SENIORITY MARKER. Manager, Director, Analyst,
+  Engineer, Architect, Coordinator, Specialist, Consultant, Representative,
+  Associate when it names the work rather than a rank - these say what the job
+  DOES, not how senior it is. On their own they state no level, so:
+    "Project Manager"              -> null, no marker
+    "Community Manager"            -> null, no marker
+    "Compliance Analyst"           -> null, no marker
+    "Business Systems Architect"   -> null, no marker
+    "Senior Project Manager"       -> "Senior"    (marker present)
+    "Staff Program Manager"        -> "Staff"     (marker present)
+    "Economic Consulting Senior Associate" -> "Senior"  (marker present)
+    "VP of Engineering"            -> "VP"        (marker present)
+  Why: "Manager" spans a first-line supervisor and a division head, and
+  "Analyst" spans a new graduate and a fifteen-year veteran. Reading either as
+  a level assigns a seniority the employer never stated, which is the one thing
+  this extractor must never do. A functional title is a FUNCTION signal, and
+  function already has its own field.
+
+- When a marker is present, return the MARKER, not the functional word.
+  "Senior Project Manager" is "Senior", never "Manager".
+
+- Explicit body wording counts as much as the title: "this is a director-level
+  position" states Director. But reporting lines do NOT: "reports to the VP of
+  Sales" states the manager's level, not this role's.
+
+- null when no marker appears in the title or the body. Do NOT derive a level
+  from years required, from salary, from headcount managed, or from how
+  demanding the responsibilities sound.`
+
+export const FUNCTION_RULES = `${FUNCTION_LIST}
+
+- The job family the work belongs to. Take it from the title, a stated
+  department, or explicit body wording.
+- Return the closest member of the set. If the posting's work genuinely fits
+  none of them, return "not_stated" - do not force a near-miss. There is no
+  "Other" on purpose.
+- The Healthcare Services entries are deliberately separate. Use the specific
+  one the posting states (a nursing role is Nursing, not Allied Health) and
+  "not_stated" if it names healthcare work without saying which.
+- Trading vs Finance and Accounting vs Data and Analytics. Trading is taking or
+  managing market positions: trading, market making, portfolio management,
+  execution, commodities desks. Finance and Accounting is the firm's own money:
+  accounting, FP&A, controllership, corporate finance, investment diligence.
+  Data and Analytics is building the analysis: pipelines, models, reporting,
+  business intelligence. A quantitative researcher who builds models FOR a
+  trading desk without taking positions is Data and Analytics; a trader who uses
+  models is Trading. When the posting says the role trades, prices or takes
+  positions, it is Trading regardless of how analytical the work sounds.
+- Sales vs Account Management vs Customer Service. Sales is winning NEW
+  business: prospecting, new logos, a quota on new revenue. Account Management
+  is owning EXISTING accounts: renewals, retention, growth within a book of
+  clients. Customer Service is SUPPORTING users: answering inbound questions,
+  troubleshooting, a support queue. A role that both carries a new-business
+  quota and owns existing accounts is Sales, because the quota is the harder
+  requirement. Use the posting's own words; do not infer from the title alone
+  when the body describes the work.`
+
+export const INDUSTRY_RULES = `${INDUSTRY_LIST}
+
+- The EMPLOYER's industry, only when the posting states it.
+- This is the field most often guessed. A bank hiring a software engineer has
+  not stated an industry unless the text says so. Company-description text
+  ("we are a leading healthcare technology company") counts as stated; the
+  company's NAME does not, and your own knowledge of the employer does not.
+- Banking is retail, commercial and corporate banking. Investment Banking &
+  Capital Markets is advisory, underwriting, trading and markets work.
+- Consumer Goods is food, beverage, household and general CPG. Beauty & Fashion
+  is cosmetics, personal care, apparel and luxury.
+- Transportation & Logistics covers freight and trucking, shipping and maritime,
+  rail, airlines and aviation services, public transit, transportation
+  infrastructure, and third-party logistics and supply-chain services. An
+  employer that moves goods or people is this, even when it describes itself as
+  a technology company that does so.
+- Return the closest member. If the employer's stated industry fits none of
+  them, return "not_stated" rather than the nearest approximation.`
+
 const SYSTEM = `You extract structured fields from a job posting. One posting in, one JSON object out.
 
 THE GOVERNING RULE: never infer a value the posting does not state. For every
@@ -239,104 +337,19 @@ ${YEARS_RULES}
 - salary_currency is the stated currency code ("USD", "GBP"), or null.
 
 --- requirements_summary
-- ONE line, at most 200 characters, in the posting's own terms: what a candidate
-  must have. Compress, do not editorialise and do not add anything not stated.
-- null when the posting states no requirements at all.
+${SUMMARY_RULES}
 
 --- tools
-- Named software, platforms, languages and systems the posting asks for:
-  "Python", "Salesforce", "Figma", "SQL", "AWS".
-- Only what is named. Do not expand "modern data stack" into products, and do
-  not add tools that a role like this usually uses.
-- "not_stated" when none are named.
+${TOOLS_RULES}
 
 --- level
-- The seniority the posting states, as ONE of: "Intern", "Entry Level",
-  "Junior", "Associate", "Mid", "Senior", "Staff", "Lead", "Principal",
-  "Manager", "Director", "VP", "Head", "C-level".
-
-- A LEVEL REQUIRES AN EXPLICIT SENIORITY MARKER. These are the markers:
-  Intern, Entry Level / Entry-Level, Junior / Jr., Associate, Mid / Mid-Level,
-  Senior / Sr., Staff, Lead, Principal, Head of, Chief, VP / Vice President,
-  SVP, EVP, C-level titles (CEO, CFO, CTO).
-
-- A FUNCTIONAL TITLE IS NOT A SENIORITY MARKER. Manager, Director, Analyst,
-  Engineer, Architect, Coordinator, Specialist, Consultant, Representative,
-  Associate when it names the work rather than a rank - these say what the job
-  DOES, not how senior it is. On their own they state no level, so:
-    "Project Manager"              -> null, no marker
-    "Community Manager"            -> null, no marker
-    "Compliance Analyst"           -> null, no marker
-    "Business Systems Architect"   -> null, no marker
-    "Senior Project Manager"       -> "Senior"    (marker present)
-    "Staff Program Manager"        -> "Staff"     (marker present)
-    "Economic Consulting Senior Associate" -> "Senior"  (marker present)
-    "VP of Engineering"            -> "VP"        (marker present)
-  Why: "Manager" spans a first-line supervisor and a division head, and
-  "Analyst" spans a new graduate and a fifteen-year veteran. Reading either as
-  a level assigns a seniority the employer never stated, which is the one thing
-  this extractor must never do. A functional title is a FUNCTION signal, and
-  function already has its own field.
-
-- When a marker is present, return the MARKER, not the functional word.
-  "Senior Project Manager" is "Senior", never "Manager".
-
-- Explicit body wording counts as much as the title: "this is a director-level
-  position" states Director. But reporting lines do NOT: "reports to the VP of
-  Sales" states the manager's level, not this role's.
-
-- null when no marker appears in the title or the body. Do NOT derive a level
-  from years required, from salary, from headcount managed, or from how
-  demanding the responsibilities sound.
+${LEVEL_RULES}
 
 --- function  (CLOSED SET - return one of these exactly, or "not_stated")
-${FUNCTION_LIST}
-
-- The job family the work belongs to. Take it from the title, a stated
-  department, or explicit body wording.
-- Return the closest member of the set. If the posting's work genuinely fits
-  none of them, return "not_stated" - do not force a near-miss. There is no
-  "Other" on purpose.
-- The Healthcare Services entries are deliberately separate. Use the specific
-  one the posting states (a nursing role is Nursing, not Allied Health) and
-  "not_stated" if it names healthcare work without saying which.
-- Trading vs Finance and Accounting vs Data and Analytics. Trading is taking or
-  managing market positions: trading, market making, portfolio management,
-  execution, commodities desks. Finance and Accounting is the firm's own money:
-  accounting, FP&A, controllership, corporate finance, investment diligence.
-  Data and Analytics is building the analysis: pipelines, models, reporting,
-  business intelligence. A quantitative researcher who builds models FOR a
-  trading desk without taking positions is Data and Analytics; a trader who uses
-  models is Trading. When the posting says the role trades, prices or takes
-  positions, it is Trading regardless of how analytical the work sounds.
-- Sales vs Account Management vs Customer Service. Sales is winning NEW
-  business: prospecting, new logos, a quota on new revenue. Account Management
-  is owning EXISTING accounts: renewals, retention, growth within a book of
-  clients. Customer Service is SUPPORTING users: answering inbound questions,
-  troubleshooting, a support queue. A role that both carries a new-business
-  quota and owns existing accounts is Sales, because the quota is the harder
-  requirement. Use the posting's own words; do not infer from the title alone
-  when the body describes the work.
+${FUNCTION_RULES}
 
 --- industry  (CLOSED SET - return one of these exactly, or "not_stated")
-${INDUSTRY_LIST}
-
-- The EMPLOYER's industry, only when the posting states it.
-- This is the field most often guessed. A bank hiring a software engineer has
-  not stated an industry unless the text says so. Company-description text
-  ("we are a leading healthcare technology company") counts as stated; the
-  company's NAME does not, and your own knowledge of the employer does not.
-- Banking is retail, commercial and corporate banking. Investment Banking &
-  Capital Markets is advisory, underwriting, trading and markets work.
-- Consumer Goods is food, beverage, household and general CPG. Beauty & Fashion
-  is cosmetics, personal care, apparel and luxury.
-- Transportation & Logistics covers freight and trucking, shipping and maritime,
-  rail, airlines and aviation services, public transit, transportation
-  infrastructure, and third-party logistics and supply-chain services. An
-  employer that moves goods or people is this, even when it describes itself as
-  a technology company that does so.
-- Return the closest member. If the employer's stated industry fits none of
-  them, return "not_stated" rather than the nearest approximation.`
+${INDUSTRY_RULES}`
 
 let client: Anthropic | null = null
 function getClient(): Anthropic {
