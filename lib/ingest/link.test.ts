@@ -90,5 +90,12 @@ const s1 = row("serpapi", "Acme", "Analyst", "Boston, MA", "2026-10-25")
 const s2 = row("serpapi", "Acme", "Analyst", "Boston", "2026-10-26")
 ok("two SerpApi rows never link to each other", proposeLinks([s1, s2], none).links.length === 0)
 
+const sa = row("searchapi", "Point72", "NLP Engineer", "New York, NY", "2026-10-26")
+const p7 = proposeLinks([gh, sa], none)
+ok("searchapi links to a direct row, never primary", p7.links.length === 1 && p7.links[0].primary_id === gh.id && p7.links[0].secondary_id === sa.id)
+const sp = row("serpapi", "Point72", "Data Engineer", "New York, NY", "2026-10-25")
+const sa2 = row("searchapi", "Point72", "Data Engineer", "New York", "2026-10-26")
+ok("serpapi and searchapi rows never link to each other", proposeLinks([sp, sa2], none).links.length === 0)
+
 console.log(failures ? `\n${failures} failure(s)` : "\nall passed")
 if (failures) process.exit(1)

@@ -27,6 +27,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { normText, stateCode } from "./fingerprint"
 import { cleanTitle } from "./serpapi"
+import { GOOGLE_JOBS_SOURCES } from "./googleJobs"
 
 export const LINK_RULE_VERSION = "2026-10-25.1"
 
@@ -37,7 +38,9 @@ export function linkMode(): LinkMode {
 }
 
 /** Aggregator sources. A row from one of these is never primary over a direct row. */
-const AGGREGATORS = new Set(["serpapi"])
+// Google Jobs, through either provider. Matches the list in
+// postings_touch_last_seen (20261028_google_jobs_aggregators.sql).
+const AGGREGATORS = new Set<string>(GOOGLE_JOBS_SOURCES)
 export const isDirect = (source: string) => !AGGREGATORS.has(source)
 
 // ---------------------------------------------------------------------------

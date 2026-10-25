@@ -31,6 +31,7 @@
 import { type SupabaseClient } from "@supabase/supabase-js"
 import type { ControlResult, FetchedPosting, IngestPair, SourceAdapter } from "./types"
 import { foldByFingerprint } from "./fingerprint"
+import { SearchCapReached, type SearchBudget } from "./searchCap"
 
 export type BoardOutcome = {
   runId: string | null
@@ -167,8 +168,19 @@ export type BoardCache = Map<string, unknown>
  *
  * Sweep-scoped for the same reason BoardCache is: a verdict is evidence about
  * how a board behaved a few minutes ago, not a standing fact.
+ *
+ * A CONTROL THAT THREW IS CACHED TOO. Its scope says the same request would be
+ * sent for every other pair, so retrying it per pair only repeats the failure,
+ * and on a paid source pays for it each time: 2026-10-25, an unrecognised
+ * empty-result message errored SearchApi's control for 20 pairs across 3
+ * cities and spent 20 searches where 3 would have told the same story. The
+ * other pairs in that scope get the same error row at no cost. The one failure
+ * not cached is the search cap: it is about this run's budget, not the board.
  */
-export type ControlCache = Map<string, ControlResult>
+export type ControlCache = Map<string, ControlResult | { thrown: string }>
+
+/** Board and scope, NUL-separated so neither can forge the other. */
+const controlKey = (org: string, scope: string) => org + "\u0000" + scope
 
 /**
  * Run several pairs against the same boards, downloading each board once.
@@ -183,15 +195,32 @@ export async function runSweep(
   adapter: SourceAdapter,
   pairs: IngestPair[],
   orgs: string[],
-  sb: SupabaseClient
+  sb: SupabaseClient,
+  opts: { budget?: SearchBudget } = {}
 ): Promise<{ pair: IngestPair; outcomes: BoardOutcome[] }[]> {
   const cache: BoardCache | null = adapter.filtering === "local" ? new Map() : null
   // Independent of `cache`: a server-filtering source has no board to reuse but
   // may still have a control verdict that does not vary by pair.
   const controls: ControlCache = new Map()
   const results: { pair: IngestPair; outcomes: BoardOutcome[] }[] = []
+  const { budget } = opts
   for (const pair of pairs) {
+    // THE CAP STOPS THE RUN. A pair is started only if the budget covers its
+    // uncached controls plus one fetch per board, so a control is never paid
+    // for without the search that uses it. Pairs not started get no
+    // ingest_runs row: nothing was spent on them. The caller reads
+    // budget.stopped and alerts.
+    if (budget) {
+      const scope = adapter.controlScope ? adapter.controlScope(pair) : null
+      const uncached = orgs.filter((o) => scope === null || !controls.has(controlKey(o, scope))).length
+      if (budget.remaining < uncached + orgs.length) {
+        budget.refuse(uncached + orgs.length)
+        break
+      }
+    }
     results.push({ pair, outcomes: await runPair(adapter, pair, orgs, sb, cache, controls) })
+    // A pair cut short mid-pagination already used the last search.
+    if (budget?.stopped) break
   }
   return results
 }
@@ -274,10 +303,28 @@ export async function runPair(
   for (const org of orgs) {
     let spent = 0
     try {
-      const cacheKey = scope === null ? null : org + " " + scope
+      const cacheKey = scope === null ? null : controlKey(org, scope)
       const reused = cacheKey !== null ? controlCache?.get(cacheKey) : undefined
+      if (reused && "thrown" in reused) {
+        controls.set(org, {
+          passed: null,
+          requests: 0,
+          attempts: 0,
+          detail: { filtering: adapter.filtering, control_reused: true, control_scope: scope },
+          error: reused.thrown,
+        })
+        continue
+      }
 
-      const c = reused ?? (await adapter.control(pair, org, cache?.get(org)))
+      let c: ControlResult
+      try {
+        c = reused ?? (await adapter.control(pair, org, cache?.get(org)))
+      } catch (err: any) {
+        if (cacheKey !== null && !(err instanceof SearchCapReached)) {
+          controlCache?.set(cacheKey, { thrown: err?.message || String(err) })
+        }
+        throw err
+      }
       if (cacheKey !== null && !reused) controlCache?.set(cacheKey, c)
 
       // A reused verdict cost nothing on this pair. Reporting its original
@@ -307,11 +354,12 @@ export async function runPair(
         carry: c.carry,
       })
     } catch (err: any) {
-      // A control that could not run is NOT a control that passed.
-      spent = 1
+      // A control that could not run is NOT a control that passed. The cap
+      // refused it before any request was sent.
+      spent = err instanceof SearchCapReached ? 0 : 1
       controls.set(org, {
         passed: null,
-        requests: 1,
+        requests: spent,
         // HttpFailed carries how many calls it actually burned before giving up.
         attempts: (err as any)?.attempts ?? 1,
         detail: { filtering: adapter.filtering },

@@ -25,6 +25,7 @@
 
 import type { ControlResult, FetchResult, FetchedPosting, IngestPair, SourceAdapter } from "./types"
 import { httpJson } from "./http"
+import type { SearchBudget } from "./searchCap"
 import { normText } from "./fingerprint"
 
 const API = "https://serpapi.com/search.json"
@@ -33,10 +34,10 @@ const API = "https://serpapi.com/search.json"
 export const GOOGLE_JOBS = "google_jobs"
 
 /** Must match nothing. Same idea as the SmartRecruiters control term. */
-const NONSENSE = "zzqqxwvnonsenseterm"
+export const NONSENSE = "zzqqxwvnonsenseterm"
 
 /** Pages per pair. 3 covered every page that had jobs in Phase 0 bar one. */
-const DEFAULT_MAX_PAGES = 3
+export const DEFAULT_MAX_PAGES = 3
 
 /**
  * The class a campus pair is recruiting. Campus hiring runs a year ahead:
@@ -60,7 +61,7 @@ export function queryFor(pair: IngestPair, now = new Date()): string {
  * days convert well enough to store; "1 month ago" is too coarse to pretend
  * otherwise, so it stays NULL. The original string is kept in raw.
  */
-function postedAt(extensions: unknown, now: Date): string | null {
+export function postedAt(extensions: unknown, now: Date): string | null {
   if (!Array.isArray(extensions)) return null
   for (const e of extensions) {
     const m = String(e).match(/^(\d+)\+?\s+(hour|day)s?\s+ago$/i)
@@ -125,7 +126,7 @@ function mapPosting(j: any, now: Date): FetchedPosting {
 /** "Google hasn't returned any results for this query." is an empty page, not a failure. */
 const NO_RESULTS = /hasn't returned any results/i
 
-export function serpApiAdapter(opts: { apiKey?: string; maxPages?: number } = {}): SourceAdapter {
+export function serpApiAdapter(opts: { apiKey?: string; maxPages?: number; budget?: SearchBudget } = {}): SourceAdapter {
   const maxPages = opts.maxPages ?? DEFAULT_MAX_PAGES
 
   async function search(q: string, nextToken: string | null) {
@@ -141,6 +142,8 @@ export function serpApiAdapter(opts: { apiKey?: string; maxPages?: number } = {}
     // from there in ingest_runs.error.
     const label = `serpapi q="${q}"${nextToken ? " (next page)" : ""}`
     u.searchParams.set("api_key", apiKey)
+    // Counted before sending: the cap is a ceiling, never an overshoot.
+    opts.budget?.take()
     const { json, attempts } = await httpJson(u.toString(), { headers: { accept: "application/json" } }, { label })
     if (json?.error && !NO_RESULTS.test(json.error)) throw new Error(`SerpApi error for ${label}: ${json.error}`)
     const jobs: any[] = Array.isArray(json?.jobs_results) ? json.jobs_results : []
@@ -180,8 +183,12 @@ export function serpApiAdapter(opts: { apiKey?: string; maxPages?: number } = {}
       let next: string | null = null
       let requests = 0
       let attempts = 0
+      let capReached = false
 
       for (let page = 1; page <= maxPages; page++) {
+        // Out of searches with more pages on offer: keep what is in hand rather
+        // than fail the pair, and record that the cap cut it short.
+        if (page > 1 && opts.budget && opts.budget.remaining === 0) { opts.budget.refuse(); capReached = true; break }
         const r = await search(q, page === 1 ? null : next)
         requests++
         attempts += r.attempts
@@ -205,6 +212,7 @@ export function serpApiAdapter(opts: { apiKey?: string; maxPages?: number } = {}
           // Pages ran out before the source did: a truncated pair, not an
           // exhausted one.
           truncated: Boolean(next) && perPage.length === maxPages && perPage[perPage.length - 1] > 0,
+          cap_reached: capReached,
           dropped_blank: postings.filter((p) => !p.title || !p.company).length,
         },
       }

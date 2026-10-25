@@ -32,6 +32,9 @@ export type AlertReason =
   // The cross-source linker (lib/ingest/link.ts) runs after the sweep and
   // failed. The sweep's own results stand; the links did not get computed.
   | { kind: "linker_failed"; error: string }
+  // A paid source (Google Jobs) wanted more searches than the run's cap
+  // allowed, so the run stopped with work undone (lib/ingest/searchCap.ts).
+  | { kind: "search_cap"; source: string; cap: number; spent: number; pairsRun: number; pairsTotal: number }
 
 export type IngestAlert = {
   environment: string
@@ -55,6 +58,7 @@ export function alertSubject(a: IngestAlert): string {
     if (r.kind === "control_failed") parts.push(`${r.rows.length} control failure${r.rows.length === 1 ? "" : "s"}`)
     if (r.kind === "run_error") parts.push(`${r.rows.length} error${r.rows.length === 1 ? "" : "s"}`)
     if (r.kind === "linker_failed") parts.push("linker failed")
+    if (r.kind === "search_cap") parts.push(`${r.source} stopped at its ${r.cap}-search cap`)
   }
   return `[SIGNAL${env}] ingest: ${parts.join(", ")}`
 }
@@ -87,6 +91,15 @@ export function alertBody(a: IngestAlert): string {
         `below are unaffected; links were not computed this run. Error:`,
         `  ${r.error}`,
         `posting_link_runs has an error row for it unless writing that row is what failed.`,
+        ""
+      )
+    }
+    if (r.kind === "search_cap") {
+      out.push(
+        `SEARCH CAP REACHED for ${r.source}: ${r.spent} of ${r.cap} searches spent, and the run`,
+        `stopped. ${r.pairsRun} of ${r.pairsTotal} pairs ran (the last may be missing later pages);`,
+        `the rest were not searched. Raise GOOGLE_JOBS_SEARCH_CAP only if the pair list`,
+        `really needs it; otherwise find what spent the searches in ingest_runs.`,
         ""
       )
     }

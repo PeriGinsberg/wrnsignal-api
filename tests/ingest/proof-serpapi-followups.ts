@@ -4,26 +4,32 @@
  *
  *   NODE_OPTIONS=--use-system-ca npx tsx tests/ingest/proof-serpapi-followups.ts
  *
+ * Provider: GOOGLE_JOBS_PROVIDER (default searchapi, lib/ingest/googleJobs.ts).
+ *
  * 1. Cross-source collision: a title Point72 has on its Greenhouse board, run
- *    through SerpApi in New York. Any SerpApi result whose fingerprint equals a
+ *    through Google Jobs in New York. Any SerpApi result whose fingerprint equals a
  *    Greenhouse row must leave that row's source, board, apply link, job id,
  *    raw and last_seen_at untouched, record the sighting in
  *    last_seen_elsewhere_at, and be counted as refound by the runner
- *    (postings_touch_last_seen, 20261027_posting_links.sql).
+ *    (postings_touch_last_seen, 20261027_posting_links.sql; searchapi from
+ *    20261028_google_jobs_aggregators.sql).
  *    If the plain title returns no Point72 result, it reruns with "Point72"
  *    in the query so the collision path is actually exercised.
  * 2. Campus pair: management consulting analyst, Boston, MA, campus = true.
  *
  * Flags: --title "..." (default "Business Analyst, Equities Technology"),
- *        --only-cross / --only-campus.
+ *        --only-cross / --only-campus, --cap N (default 12).
  *
- * WRITES postings and ingest_runs on dev. Refuses prod. ~8-12 SerpApi searches.
+ * WRITES postings and ingest_runs on dev. Refuses prod. ~8-12 searches, never
+ * more than the cap.
  */
 
 import { existsSync, readFileSync } from "fs"
 import { join } from "path"
 import { createClient } from "@supabase/supabase-js"
-import { serpApiAdapter, queryFor, GOOGLE_JOBS } from "../../lib/ingest/serpapi"
+import { queryFor, GOOGLE_JOBS } from "../../lib/ingest/serpapi"
+import { GOOGLE_JOBS_SOURCES, googleJobsAdapter, providerKeyName, type GoogleJobsProvider } from "../../lib/ingest/googleJobs"
+import { SearchBudget } from "../../lib/ingest/searchCap"
 import { runSweep } from "../../lib/ingest/runner"
 import { fingerprintOf, normText, normLocation } from "../../lib/ingest/fingerprint"
 import type { FetchedPosting, IngestPair, SourceAdapter } from "../../lib/ingest/types"
@@ -44,7 +50,10 @@ type Row = Record<string, any>
 // Snapshot the rows a fetch is about to collide with, BEFORE the runner upserts.
 const snapshots: Row[][] = []
 const captured: FetchedPosting[][] = []
-const base = serpApiAdapter({ apiKey: get("SERPAPI_KEY"), maxPages: 3 })
+const PROVIDER: GoogleJobsProvider = get("GOOGLE_JOBS_PROVIDER") === "serpapi" ? "serpapi" : "searchapi"
+const ci = process.argv.indexOf("--cap")
+const budget = new SearchBudget(ci >= 0 ? Number(process.argv[ci + 1]) : 12)
+const base = googleJobsAdapter({ provider: PROVIDER, apiKey: get(providerKeyName(PROVIDER)), maxPages: 3, budget })
 const adapter: SourceAdapter = {
   ...base,
   controlScope: base.controlScope,
@@ -53,7 +62,7 @@ const adapter: SourceAdapter = {
     const r = await base.fetch(pair, org, carry)
     captured.push(r.postings)
     const fps = [...new Set(r.postings.map((p) => fingerprintOf(p)))]
-    const { data, error } = await sb.from("postings").select(COLS).in("fingerprint", fps).neq("source", "serpapi")
+    const { data, error } = await sb.from("postings").select(COLS).in("fingerprint", fps).not("source", "in", `(${GOOGLE_JOBS_SOURCES.join(",")})`)
     if (error) throw error
     snapshots.push(data || [])
     return r
@@ -66,9 +75,10 @@ const outcomeLine = (o: any) =>
 async function crossSource(title: string) {
   const pair: IngestPair = { id: null, title, location: "New York, NY" }
   console.log(`  q="${queryFor(pair)}"`)
-  const o = (await runSweep(adapter, [pair], [GOOGLE_JOBS], sb))[0].outcomes[0]
+  const o = (await runSweep(adapter, [pair], [GOOGLE_JOBS], sb, { budget }))[0]?.outcomes[0]
+  if (!o) throw new Error(`search cap ${budget.cap} reached before this pair (${budget.spent} spent)`)
   console.log(`  ${outcomeLine(o)}`)
-  const results = captured[captured.length - 1]
+  const results = captured[captured.length - 1] ?? []
   const before = snapshots[snapshots.length - 1]
 
   const p72 = results.filter((p) => /point\s*72/i.test(p.company))
@@ -114,7 +124,7 @@ async function crossSource(title: string) {
 }
 
 ;(async () => {
-  console.log(`Project: ${ref} (dev)\n`)
+  console.log(`Project: ${ref} (dev)  provider: ${PROVIDER}  search cap: ${budget.cap}\n`)
 
   // ---------------- 1. cross-source collision with Point72's Greenhouse board
   if (!process.argv.includes("--only-campus")) {
@@ -126,6 +136,7 @@ async function crossSource(title: string) {
       console.log(`\n  Plain title returned no Point72 result; rerunning with the employer in the query.`)
       r = await crossSource(`Point72 ${TITLE}`)
     }
+    console.log(`  Searches spent: ${budget.spent} of ${budget.cap}`)
     console.log(`  RESULT: ${r.collided ? (r.intact ? `PASS: ${r.collided} collision(s), Greenhouse row(s) intact` : "FAIL: Greenhouse row overwritten") : "NO COLLISION occurred, so the trigger path was not exercised"}\n`)
   }
   if (process.argv.includes("--only-cross")) return
@@ -134,7 +145,8 @@ async function crossSource(title: string) {
   const campus: IngestPair = { id: null, title: "management consulting analyst", location: "Boston, MA", campus: true }
   console.log(`2. CAMPUS PAIR: ${campus.title} | ${campus.location} | campus=true`)
   console.log(`  q="${queryFor(campus)}"`)
-  const oc = (await runSweep(adapter, [campus], [GOOGLE_JOBS], sb))[0].outcomes[0]
+  const oc = (await runSweep(adapter, [campus], [GOOGLE_JOBS], sb, { budget }))[0]?.outcomes[0]
+  if (!oc) throw new Error(`search cap ${budget.cap} reached before the campus pair`)
   console.log(`  ${outcomeLine(oc)}`)
   const { data: run } = await sb.from("ingest_runs").select("pair_title,pair_location,fetch_detail").eq("id", oc.runId).single()
   console.log(`  ingest_runs row: pair_title="${run?.pair_title}" pair_location="${run?.pair_location}" fetch_detail=${JSON.stringify(run?.fetch_detail)}`)
