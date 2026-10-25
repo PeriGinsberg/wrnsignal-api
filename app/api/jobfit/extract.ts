@@ -4287,9 +4287,56 @@ function normalizeJobDescription(jobText: string): string {
   return t
 }
 
+// Big-four team names in full, so a nickname alone ("Jazz Pharmaceuticals",
+// "Titan Capital") never reads as a team.
+const PRO_TEAMS = [
+  // NBA
+  "atlanta hawks", "boston celtics", "brooklyn nets", "charlotte hornets", "chicago bulls", "cleveland cavaliers",
+  "dallas mavericks", "denver nuggets", "detroit pistons", "golden state warriors", "houston rockets", "indiana pacers",
+  "los angeles clippers", "los angeles lakers", "memphis grizzlies", "miami heat", "milwaukee bucks",
+  "minnesota timberwolves", "new orleans pelicans", "new york knicks", "oklahoma city thunder", "orlando magic",
+  "philadelphia 76ers", "phoenix suns", "portland trail blazers", "sacramento kings", "san antonio spurs",
+  "toronto raptors", "utah jazz", "washington wizards",
+  // NFL
+  "arizona cardinals", "atlanta falcons", "baltimore ravens", "buffalo bills", "carolina panthers", "chicago bears",
+  "cincinnati bengals", "cleveland browns", "dallas cowboys", "denver broncos", "detroit lions", "green bay packers",
+  "houston texans", "indianapolis colts", "jacksonville jaguars", "kansas city chiefs", "las vegas raiders",
+  "los angeles chargers", "los angeles rams", "miami dolphins", "minnesota vikings", "new england patriots",
+  "new orleans saints", "new york giants", "new york jets", "philadelphia eagles", "pittsburgh steelers",
+  "san francisco 49ers", "seattle seahawks", "tampa bay buccaneers", "tennessee titans", "washington commanders",
+  // MLB
+  "arizona diamondbacks", "atlanta braves", "baltimore orioles", "boston red sox", "chicago cubs", "chicago white sox",
+  "cincinnati reds", "cleveland guardians", "colorado rockies", "detroit tigers", "houston astros", "kansas city royals",
+  "los angeles angels", "los angeles dodgers", "miami marlins", "milwaukee brewers", "minnesota twins", "new york mets",
+  "new york yankees", "philadelphia phillies", "pittsburgh pirates", "san diego padres", "san francisco giants",
+  "seattle mariners", "st. louis cardinals", "tampa bay rays", "texas rangers", "toronto blue jays", "washington nationals",
+  // NHL
+  "anaheim ducks", "boston bruins", "buffalo sabres", "calgary flames", "carolina hurricanes", "chicago blackhawks",
+  "colorado avalanche", "columbus blue jackets", "dallas stars", "detroit red wings", "edmonton oilers",
+  "florida panthers", "los angeles kings", "minnesota wild", "montreal canadiens", "nashville predators",
+  "new jersey devils", "new york islanders", "new york rangers", "ottawa senators", "philadelphia flyers",
+  "pittsburgh penguins", "san jose sharks", "seattle kraken", "st. louis blues", "tampa bay lightning",
+  "toronto maple leafs", "utah hockey club", "utah mammoth", "vancouver canucks", "vegas golden knights",
+  "washington capitals", "winnipeg jets",
+]
+
+/**
+ * The industry the employer's own name settles, or null when the name says
+ * nothing and the posting text has to decide. Sports is checked first, so
+ * "Brooklyn Sports & Entertainment" is sports.
+ */
+export function industryFromEmployerName(name: string | undefined): string | null {
+  const n = (name || "").toLowerCase().replace(/\s+/g, " ").trim()
+  if (!n) return null
+  if (/\b(sports|athletics|stadium|ballpark|nba|nfl|mlb|nhl|mls|wnba|ncaa|fanatics)\b/.test(n)) return "sports"
+  if (PRO_TEAMS.some((t) => n.includes(t))) return "sports"
+  if (/\b(netflix|roku|iheartmedia|iheart)\b/.test(n)) return "entertainment"
+  return null
+}
+
 export function extractJobSignals(
   jobTextRaw: string,
-  opts?: { userJobTitle?: string }
+  opts?: { userJobTitle?: string; userCompanyName?: string }
 ): StructuredJobSignals {
   // Pre-normalize before any extraction reads jobTextRaw. All downstream
   // line-anchored detectors see properly-broken JD text.
@@ -5164,6 +5211,9 @@ export function extractJobSignals(
     "i"
   )
   const jobIndustry: string | null = (() => {
+    // The employer's own identity decides first; the posting text only when it says nothing.
+    const fromName = industryFromEmployerName(opts?.userCompanyName)
+    if (fromName) return fromName
     if (/\b(nba|nfl|mlb|nhl|mls|sports league|athletic|espn|sports marketing|sports industry|professional sports|team sports)\b/i.test(jobTextLower)) return "sports"
     if (/\b(music industry|media entertainment)\b/i.test(jobTextLower) || employerIs("entertainment|film|streaming|gaming").test(jobTextLower)) return "entertainment"
     if (/\b(fashion|beauty|lifestyle brand|footwear)\b/i.test(jobTextLower) || employerIs("luxury|apparel").test(jobTextLower)) return "luxury/fashion"

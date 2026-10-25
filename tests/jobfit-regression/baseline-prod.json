@@ -21249,6 +21249,12 @@
         "weight": 103,
         "match_strength": "direct",
         "match_key": "customer_service_guest_experience"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -21288,7 +21294,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Guest Experience Staff",
         "location": {
           "city": "Miami",
@@ -43508,6 +43514,12 @@
         "weight": 78,
         "match_strength": "adjacent",
         "match_key": "performance_optimization"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -43560,7 +43572,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Manager, Digital Marketing",
         "location": {
           "city": null,
@@ -44427,6 +44439,12 @@
         "weight": 105,
         "match_strength": "direct",
         "match_key": "prospecting_pipeline_management"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -44470,7 +44488,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Referee Talent & Operations Support Project Employee",
         "location": {
           "city": null,
@@ -63671,7 +63689,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Director of Partnership Strategy",
         "location": {
           "city": null,
@@ -78083,6 +78101,12 @@
         "weight": 107,
         "match_strength": "direct",
         "match_key": "event_coordination"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -78117,7 +78141,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "American Family Field Event Staff",
         "location": {
           "city": null,
@@ -93194,7 +93218,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Senior Financial Analyst",
         "location": {
           "city": null,
@@ -108463,7 +108487,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "entertainment",
         "jobTitle": "Publicity Coordinator",
         "location": {
           "city": null,
@@ -146762,6 +146786,12 @@
         "match_key": "content_execution"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 94,
         "match_strength": "direct",
@@ -146800,7 +146830,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "execution",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "entertainment",
         "jobTitle": "Social Media Content Intern",
         "location": {
           "city": null,
@@ -155608,6 +155638,12 @@
         "weight": 80,
         "match_strength": "adjacent",
         "match_key": "brand_messaging"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -155654,7 +155690,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Manager, Brand Marketing",
         "location": {
           "city": "Miami",
@@ -179008,6 +179044,12 @@
         "match_key": "content_execution"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 60,
         "match_strength": "direct",
@@ -179061,7 +179103,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "execution",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Social Media Coordinator",
         "location": {
           "city": "Boston",
@@ -180702,6 +180744,12 @@
         "weight": 103,
         "match_strength": "direct",
         "match_key": "customer_service_guest_experience"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -180741,7 +180789,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Event Setup and Breakdown Assistant",
         "location": {
           "city": null,
@@ -187681,7 +187729,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Director, Group Sales & Service",
         "location": {
           "city": null,
@@ -216621,6 +216669,12 @@
         "weight": 98,
         "match_strength": "direct",
         "match_key": "operations_execution"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -216658,7 +216712,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Coordinator, Event Services",
         "location": {
           "city": "Atlanta",
@@ -228749,6 +228803,12 @@
         "weight": 107,
         "match_strength": "direct",
         "match_key": "operations_execution"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -228784,7 +228844,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Membership Coordinator",
         "location": {
           "city": null,
@@ -229894,6 +229954,12 @@
         "weight": 107,
         "match_strength": "direct",
         "match_key": "operations_execution"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -229929,7 +229995,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Membership Coordinator",
         "location": {
           "city": "New York City",
@@ -329945,7 +330011,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "IT_Software",
-        "jobIndustry": null,
+        "jobIndustry": "entertainment",
         "jobTitle": "Senior Engineer, Customer Service Platform",
         "location": {
           "city": null,
@@ -337809,6 +337875,12 @@
         "match_key": "brand_messaging"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 94,
         "match_strength": "direct",
@@ -337865,7 +337937,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Graphic Designer",
         "location": {
           "city": null,

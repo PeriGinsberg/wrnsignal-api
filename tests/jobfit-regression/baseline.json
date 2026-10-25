@@ -13212,6 +13212,12 @@
         "match_key": "analysis_reporting"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 60,
         "match_strength": "direct",
@@ -13265,7 +13271,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Senior Manager, Strategy and Business Operations",
         "location": {
           "city": "Miami",

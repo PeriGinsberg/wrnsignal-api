@@ -224,11 +224,11 @@ export async function runJobFit(args: {
       })
     } else {
       console.warn("[jobfitEvaluator] LLM extraction unavailable — fail-open to regex")
-      jobSignals = extractJobSignals(args.jobText || "", { userJobTitle: args.userJobTitle })
+      jobSignals = extractJobSignals(args.jobText || "", { userJobTitle: args.userJobTitle, userCompanyName: args.userCompanyName })
     }
   } else {
     // Default (flag off): regex extraction — current behavior, byte-identical.
-    jobSignals = extractJobSignals(args.jobText || "", { userJobTitle: args.userJobTitle })
+    jobSignals = extractJobSignals(args.jobText || "", { userJobTitle: args.userJobTitle, userCompanyName: args.userCompanyName })
   }
 
   // Overwrite the surface jobTitle / companyName fields for display.

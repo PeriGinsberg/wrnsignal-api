@@ -8,7 +8,7 @@
 
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
-import { extractJobSignals } from "./extract"
+import { extractJobSignals, industryFromEmployerName } from "./extract"
 import { runJobFit } from "../_lib/jobfitEvaluator"
 
 let pass = 0
@@ -124,6 +124,37 @@ console.log("\nno control characters in the extractor source")
   const bad = src.split("\n").flatMap((line, i) =>
     /[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/.test(line) ? [i + 1] : [])
   ok("extract.ts has no control characters", bad.length === 0, `lines ${bad.join(", ")}`)
+}
+
+console.log("\nthe employer's own name decides first")
+const byName: [string, string | null][] = [
+  ["Charlotte Hornets", "sports"],
+  ["Fanatics", "sports"],
+  ["Brooklyn Sports & Entertainment", "sports"],
+  ["Hard Rock Stadium", "sports"],
+  ["Miami Marlins / loanDepot park", "sports"],
+  ["NBA", "sports"],
+  ["Netflix", "entertainment"],
+  ["Roku", "entertainment"],
+  ["iHeartMedia", "entertainment"],
+  // A team nickname alone, a word inside another word, a brand that shares a name.
+  ["Jazz Pharmaceuticals", null],
+  ["Titan Capital", null],
+  ["Athletic Brewing Company", null],
+  ["Hard Rock Cafe", null],
+  ["", null],
+]
+for (const [name, want] of byName) {
+  const got = industryFromEmployerName(name)
+  ok(`"${name}" -> ${want}`, got === want, `got ${got}`)
+}
+{
+  // The posting mentions entertainment only in a wish list; the name settles it.
+  const text = `Experience in sports, lifestyle, entertainment, or consumer brands.${NEUTRAL}`
+  ok("the name beats a text that says nothing", extractJobSignals(text, { userJobTitle: "Graphic Designer", userCompanyName: "Charlotte Hornets" }).jobIndustry === "sports")
+  ok("without a name the same text is null", industry(text) === null, String(industry(text)))
+  ok("a name that says nothing leaves the text to decide",
+    extractJobSignals(SAMPLES[5][1], { userJobTitle: "Coordinator", userCompanyName: "Sterling Partners" }).jobIndustry === "finance")
 }
 
 async function interestMatch() {
