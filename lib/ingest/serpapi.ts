@@ -27,6 +27,7 @@ import type { ControlResult, FetchResult, FetchedPosting, IngestPair, SourceAdap
 import { httpJson } from "./http"
 import type { SearchBudget } from "./searchCap"
 import { normText } from "./fingerprint"
+import { chooseApplyLink, linksFromRaw } from "./applyLinks"
 
 const API = "https://serpapi.com/search.json"
 
@@ -79,11 +80,9 @@ export function postedAt(extensions: unknown, now: Date): string | null {
  * Brands", "BCG Careers - Boston Consulting Group"). Phase 0 found the first
  * listed link was usually an aggregator even when the employer's was present.
  */
-function applyUrl(j: any): string | null {
-  const opts: { title?: string; link?: string }[] = Array.isArray(j.apply_options) ? j.apply_options : []
-  const word = String(j.company_name || "").toLowerCase().replace(/^the\s+/, "").split(/[^a-z0-9]+/)[0] || ""
-  const own = word.length > 2 ? opts.find((o) => String(o.title || "").toLowerCase().includes(word)) : undefined
-  return own?.link ?? opts[0]?.link ?? j.share_link ?? null
+/** The best apply link by lib/ingest/applyLinks.ts: employer or ATS, then boards, republishers last. */
+function applyLink(j: any) {
+  return chooseApplyLink(String(j.company_name ?? ""), linksFromRaw(j), j.share_link ?? null)
 }
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
@@ -111,13 +110,15 @@ export function cleanTitle(title: string, company: string): string {
 }
 
 function mapPosting(j: any, now: Date): FetchedPosting {
+  const link = applyLink(j)
   return {
     source_job_id: j.job_id ? String(j.job_id) : null,
     // Cleaned. Google's original title stays in raw.title.
     title: cleanTitle(j.title, j.company_name),
     company: String(j.company_name ?? "").trim(),
     location: j.location ? String(j.location) : null,
-    apply_url: applyUrl(j),
+    apply_url: link?.url ?? null,
+    ...(link ? { apply_link_kind: link.kind } : {}),
     posted_at: postedAt(j.extensions, now),
     raw: j,
   }

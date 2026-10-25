@@ -36,6 +36,11 @@ export type FetchedPosting = {
   company: string
   location: string | null
   apply_url: string | null
+  /**
+   * What kind of link apply_url is (lib/ingest/applyLinks.ts). Set by the Google
+   * Jobs adapters only; a direct source's link is its own board, left NULL.
+   */
+  apply_link_kind?: "employer" | "board" | "other" | "republisher" | "google"
   posted_at: string | null
   /** The source's own object, unmodified. */
   raw: Record<string, unknown>

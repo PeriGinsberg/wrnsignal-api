@@ -114,6 +114,8 @@ async function upsertBatch(
           company: p.company,
           location: p.location,
           apply_url: p.apply_url,
+          // Only the Google Jobs adapters set it; others leave the column alone.
+          ...(p.apply_link_kind ? { apply_link_kind: p.apply_link_kind } : {}),
           posted_at: p.posted_at,
           raw: p.raw,
           // first_seen_at and last_seen_at are deliberately absent. See types.ts.

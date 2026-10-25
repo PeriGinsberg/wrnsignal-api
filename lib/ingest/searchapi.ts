@@ -34,6 +34,7 @@ import type { ControlResult, FetchResult, FetchedPosting, IngestPair, SourceAdap
 import { httpJson } from "./http"
 import type { SearchBudget } from "./searchCap"
 import { DEFAULT_MAX_PAGES, NONSENSE, cleanTitle, postedAt, queryFor } from "./serpapi"
+import { chooseApplyLink, linksFromRaw } from "./applyLinks"
 
 const API = "https://www.searchapi.io/api/v1/search"
 
@@ -61,21 +62,13 @@ export function htmlToText(html: string): string {
     .trim()
 }
 
-/**
- * Prefer the employer's own link, as serpapi.ts does: a link whose source label
- * or host names the company. Otherwise Google's main apply_link, then the first
- * listed link, then the Google share link.
- */
-function applyUrl(j: any): string | null {
-  const list: { source?: string; link?: string }[] = Array.isArray(j.apply_links) ? j.apply_links : []
-  const all = [...(j.apply_link ? [{ source: "", link: String(j.apply_link) }] : []), ...list].filter((o) => o.link)
-  const word = String(j.company_name || "").toLowerCase().replace(/^the\s+/, "").split(/[^a-z0-9]+/)[0] || ""
-  const host = (u: string) => { try { return new URL(u).hostname.toLowerCase() } catch { return "" } }
-  const own = word.length > 2 ? all.find((o) => String(o.source || "").toLowerCase().includes(word) || host(o.link!).includes(word)) : undefined
-  return own?.link ?? j.apply_link ?? list[0]?.link ?? j.sharing_link ?? null
+/** The best apply link by lib/ingest/applyLinks.ts: employer or ATS, then boards, republishers last. */
+function applyLink(j: any) {
+  return chooseApplyLink(String(j.company_name ?? ""), linksFromRaw(j).map((l) => ({ url: l.url, source: l.source })), j.sharing_link ?? null)
 }
 
 export function mapSearchApiJob(j: any, now: Date): FetchedPosting {
+  const link = applyLink(j)
   const html = typeof j.description === "string" ? j.description : ""
   const isHtml = /<[a-z][^>]*>/i.test(html)
   const ext = Array.isArray(j.extensions) ? j.extensions : []
@@ -87,7 +80,8 @@ export function mapSearchApiJob(j: any, now: Date): FetchedPosting {
     title: cleanTitle(j.title ?? "", j.company_name ?? ""),
     company: String(j.company_name ?? "").trim(),
     location: j.location ? String(j.location) : null,
-    apply_url: applyUrl(j),
+    apply_url: link?.url ?? null,
+    ...(link ? { apply_link_kind: link.kind } : {}),
     posted_at: postedAt(posted ? [posted, ...ext] : ext, now),
     raw: {
       ...j,
