@@ -82,3 +82,6 @@ docs/workbooks-v1.zip
 # from. Not used by the app and not a source asset; the real images live in
 # public/logo/ and are served from there.
 logo/sample signature.png
+
+# SerpApi Phase 0 sourcing test credentials (tests/job-sourcing/serpapi-phase0.ts)
+.env.phase0

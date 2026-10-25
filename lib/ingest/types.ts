@@ -15,6 +15,11 @@ export type IngestPair = {
   title: string
   /** NULL means no geographic filter, which is distinct from "anywhere". */
   location: string | null
+  /**
+   * Campus / early-career pair. A source that can express it does (SerpApi
+   * appends the class year); one that cannot ignores it. Absent = false.
+   */
+  campus?: boolean
 }
 
 /**

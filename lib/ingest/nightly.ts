@@ -37,16 +37,33 @@ export type NightlyResult = {
   durationMs: number
 }
 
-/** Active pairs, from the table. No fallback: an empty table is a real state. */
-async function loadPairs(sb: SupabaseClient): Promise<IngestPair[]> {
+type ScopedPair = IngestPair & { sources: string[] | null }
+
+/**
+ * Active pairs, from the table. No fallback: an empty table is a real state.
+ *
+ * `sources` scopes a pair to the sources that should run it (NULL = all). It
+ * keeps SerpApi pairs out of the ATS sweeps, and requires
+ * 20261025_ingest_serpapi_phase1.sql: without that column this select fails.
+ */
+async function loadPairs(sb: SupabaseClient): Promise<ScopedPair[]> {
   const { data, error } = await sb
     .from("ingest_pairs")
-    .select("id, title, location")
+    .select("id, title, location, campus, sources")
     .eq("active", true)
     .order("title")
   if (error) throw new Error(`could not load ingest_pairs: ${error.message}`)
-  return (data || []).map((p: any) => ({ id: p.id, title: p.title, location: p.location }))
+  return (data || []).map((p: any) => ({
+    id: p.id,
+    title: p.title,
+    location: p.location,
+    campus: Boolean(p.campus),
+    sources: Array.isArray(p.sources) ? p.sources : null,
+  }))
 }
+
+const pairsFor = (pairs: ScopedPair[], source: string) =>
+  pairs.filter((p) => p.sources === null || p.sources.includes(source))
 
 export async function runNightly(
   sb: SupabaseClient,
@@ -73,7 +90,7 @@ export async function runNightly(
   for (const { adapter, boards } of sources) {
     // runSweep caches boards for local-filtering sources and does not for
     // server-filtering ones, so this one call is correct for both.
-    const swept = await runSweep(adapter, pairs, boards, sb)
+    const swept = await runSweep(adapter, pairsFor(pairs, adapter.source), boards, sb)
     for (const { pair, outcomes } of swept) {
       for (const outcome of outcomes) {
         runs.push({ source: adapter.source, org: outcome.org, pair: pair.title, outcome })
@@ -82,7 +99,7 @@ export async function runNightly(
   }
 
   const totals = {
-    pairs: pairs.length,
+    pairs: pairs.filter((p) => sources.some((s) => pairsFor([p], s.adapter.source).length)).length,
     boards: sources.reduce((n, s) => n + s.boards.length, 0),
     runs: runs.length,
     found: runs.reduce((n, r) => n + r.outcome.foundCount, 0),
