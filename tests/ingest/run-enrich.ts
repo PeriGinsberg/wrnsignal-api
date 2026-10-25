@@ -1,6 +1,7 @@
 /**
  * Enrichment v2 writer from the command line (lib/ingest/enrichPostings.ts).
- * No cron yet. Dev only until the v2 schema is on prod.
+ * No cron yet. Prod has the schema since 20261031_postings_enrichment_prod.sql
+ * (applied 2026-10-25); writing there needs --prod.
  *
  *   NODE_OPTIONS=--use-system-ca npx tsx tests/ingest/run-enrich.ts --count
  *   ANTHROPIC_API_KEY=... NODE_OPTIONS=--use-system-ca npx tsx tests/ingest/run-enrich.ts --limit 50
@@ -13,6 +14,7 @@
  *   --retry-failed        take postings whose last attempt failed (description
  *                         unchanged) instead of the due worklist
  *   --dry                 extract but write nothing (still costs API calls)
+ *   --prod                required to write to the prod project
  *
  * Creds: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY from the shell, else
  * .env.phase0; ANTHROPIC_API_KEY from the shell.
@@ -45,11 +47,11 @@ const flag = (name: string) => process.argv.includes("--" + name)
 const URL_ = env("SUPABASE_URL"), KEY = env("SUPABASE_SERVICE_ROLE_KEY")
 if (!URL_ || !KEY) { console.error(`SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY required (shell or ${ENV_FILE})`); process.exit(1) }
 const ref = new URL(URL_).hostname.split(".")[0]
-if (ref === PROD_REF) { console.error("Refusing prod: the v2 enrichment schema is dev only."); process.exit(1) }
+if (ref === PROD_REF && !flag("prod") && !flag("count")) { console.error(`Refusing to write to prod (${ref}) without --prod.`); process.exit(1) }
 const sb = createClient(URL_, KEY, { auth: { persistSession: false } })
 
 ;(async () => {
-  console.log(`Supabase project: ${ref}`)
+  console.log(`Supabase project: ${ref}${ref === PROD_REF ? " (PROD)" : ""}`)
   console.log("Worklist:", JSON.stringify(await countWorklist(sb)))
   if (flag("count")) return
   if (!process.env.ANTHROPIC_API_KEY) { console.error("ANTHROPIC_API_KEY must be set"); process.exit(1) }
