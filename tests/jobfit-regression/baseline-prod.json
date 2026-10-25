@@ -378,7 +378,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Strategy Consulting Intern",
         "location": {
           "city": null,
@@ -2546,7 +2546,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Public Relations and Media Associate",
         "location": {
           "city": "New York City",
@@ -3218,7 +3218,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Client Success Coordinator",
         "location": {
           "city": null,
@@ -9472,7 +9472,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "Manager, Operations Accounting & Analytics",
         "location": {
           "city": null,
@@ -10055,7 +10055,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "EIC Intern",
         "location": {
           "city": null,
@@ -11021,6 +11021,12 @@
         "match_key": "financial_analysis"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 92,
         "match_strength": "direct",
@@ -11063,7 +11069,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Analyst, Credit Facility Management",
         "location": {
           "city": null,
@@ -19982,7 +19988,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Legal",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Global Real Estate Operations Intern",
         "location": {
           "city": "New York City",
@@ -20414,7 +20420,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "consumer goods",
         "jobTitle": "Specialist, Event Planning",
         "location": {
           "city": "Miami",
@@ -20664,7 +20670,14 @@
         "profile_unit_id": "706f98e71045790f"
       }
     ],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
@@ -20704,7 +20717,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Associate Scientist, Formulation",
         "location": {
           "city": null,
@@ -23066,7 +23079,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "Associate Project Manager - Implementation",
         "location": {
           "city": null,
@@ -24064,7 +24077,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "BALENCIAGA Summer 2026 E-Commerce Intern",
         "location": {
           "city": "New York City",
@@ -24670,7 +24683,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Summer Analyst",
         "location": {
           "city": "New York City",
@@ -27941,7 +27954,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Public Relations Assistant",
         "location": {
           "city": "New York City",
@@ -30955,7 +30968,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "IT_Software",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Summer Analyst, Product, Business Strategy & Operations",
         "location": {
           "city": null,
@@ -32472,7 +32485,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "execution",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "12-Month Corporate Brand Intern",
         "location": {
           "city": null,
@@ -36335,7 +36348,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Supply Chain Analyst",
         "location": {
           "city": null,
@@ -36976,7 +36989,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Analytics",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "Leasing Intern / Summer Associate",
         "location": {
           "city": "New York City",
@@ -37593,6 +37606,12 @@
         "weight": 80,
         "match_strength": "adjacent",
         "match_key": "financial_analysis"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -37632,7 +37651,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Biotech Analyst",
         "location": {
           "city": "Boston",
@@ -47001,7 +47020,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Legal",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "Facilities and Field Services (FFS) Real Estate Analyst",
         "location": {
           "city": null,
@@ -48331,7 +48350,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Sr. Manager, Talent for Engineering, Product, and Design",
         "location": {
           "city": null,
@@ -50263,6 +50282,12 @@
         "weight": 106,
         "match_strength": "direct",
         "match_key": "event_coordination"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [],
@@ -50295,7 +50320,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Communications Intern",
         "location": {
           "city": null,
@@ -50955,6 +50980,12 @@
         "weight": 103,
         "match_strength": "direct",
         "match_key": "strategy_problem_solving"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -50994,7 +51025,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Life Sciences Industry Expert - Supply Chain and Manufacturing Consultant",
         "location": {
           "city": null,
@@ -51472,7 +51503,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Analytics",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Product & Strategy Intern",
         "location": {
           "city": null,
@@ -51729,7 +51760,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Associate Scientist - DNA Core",
         "location": {
           "city": null,
@@ -53370,6 +53401,12 @@
         "weight": 98,
         "match_strength": "direct",
         "match_key": "prospecting_pipeline_management"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [],
@@ -53399,7 +53436,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Account Executive-Sports",
         "location": {
           "city": "Miami",
@@ -55990,6 +56027,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 94,
         "match_strength": "direct",
@@ -56053,7 +56096,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Scientist, TS/MS - Device Assembly",
         "location": {
           "city": null,
@@ -56860,6 +56903,12 @@
         "weight": 103,
         "match_strength": "direct",
         "match_key": "strategy_problem_solving"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -56899,7 +56948,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Life Sciences Industry Expert - Supply Chain and Manufacturing Consultant",
         "location": {
           "city": null,
@@ -57401,7 +57450,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Intern, Asset Management",
         "location": {
           "city": null,
@@ -57982,6 +58031,12 @@
         "weight": 98,
         "match_strength": "direct",
         "match_key": "prospecting_pipeline_management"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -58017,7 +58072,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Associate Solutions Consultant",
         "location": {
           "city": null,
@@ -59367,7 +59422,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Public Relations Coordinator",
         "location": {
           "city": null,
@@ -64986,7 +65041,14 @@
       }
     ],
     "matches": [],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_FAMILY_MISMATCH",
@@ -65029,7 +65091,7 @@
         "isTrainingProgram": true,
         "jobArchetype": "unclear",
         "jobFamily": "Legal",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Training Camp Football Operations Assistant",
         "location": {
           "city": null,
@@ -67741,7 +67803,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Cookie Delivery Driver",
         "location": {
           "city": "Philadelphia",
@@ -73485,7 +73547,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Sales & Education Executive",
         "location": {
           "city": null,
@@ -75778,6 +75840,12 @@
         "match_key": "prospecting_pipeline_management"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 95,
         "match_strength": "direct",
@@ -75827,7 +75895,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Web Strategy, Associate - Digital Marketing",
         "location": {
           "city": null,
@@ -81732,6 +81800,12 @@
         "match_key": "content_execution"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 95,
         "match_strength": "direct",
@@ -81771,7 +81845,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "execution",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Social Media Marketing Internship",
         "location": {
           "city": null,
@@ -82454,7 +82528,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Temporary Senior Marketing Operations Manager",
         "location": {
           "city": null,
@@ -83410,6 +83484,12 @@
         "weight": 96,
         "match_strength": "direct",
         "match_key": "prospecting_pipeline_management"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -83453,7 +83533,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Growth Marketer",
         "location": {
           "city": null,
@@ -84328,7 +84408,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "Operations Coordinator",
         "location": {
           "city": null,
@@ -84648,7 +84728,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "Property Manager | Commercial Office | Owner/Operator",
         "location": {
           "city": null,
@@ -85322,7 +85402,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Corporate Development Intern",
         "location": {
           "city": null,
@@ -86132,7 +86212,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "IT_Software",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Machine Learning Engineer (or Intern)",
         "location": {
           "city": null,
@@ -89891,6 +89971,12 @@
         "match_key": "strategy_problem_solving"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 60,
         "match_strength": "direct",
@@ -89943,7 +90029,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Associate Search Strategist",
         "location": {
           "city": null,
@@ -90227,6 +90313,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 94,
         "match_strength": "direct",
@@ -90269,7 +90361,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Associate Scientist- Cell culture",
         "location": {
           "city": null,
@@ -91355,7 +91447,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Legal",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Business Development Intern",
         "location": {
           "city": "New York City",
@@ -94075,6 +94167,12 @@
         "match_key": "drafting_documentation"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 94,
         "match_strength": "direct",
@@ -94126,7 +94224,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Assistant Director, Athletic Communications",
         "location": {
           "city": null,
@@ -99886,7 +99984,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Strategic Operations Associate",
         "location": {
           "city": null,
@@ -101456,6 +101554,12 @@
         "match_key": "operations_execution"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 60,
         "match_strength": "direct",
@@ -101509,7 +101613,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "entertainment",
         "jobTitle": "Customer Marketing Associate - Early Life",
         "location": {
           "city": null,
@@ -103355,7 +103459,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "consumer goods",
         "jobTitle": "Specialist, Event Planning",
         "location": {
           "city": "Miami",
@@ -107062,7 +107166,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "Traveling Leasing Specialist",
         "location": {
           "city": null,
@@ -109832,7 +109936,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Leasing Intern / Summer Associate",
         "location": {
           "city": "New York City",
@@ -110297,6 +110401,12 @@
         "weight": 98,
         "match_strength": "direct",
         "match_key": "communications_writing"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [],
@@ -110326,7 +110436,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Strategic Communications Coordinator",
         "location": {
           "city": null,
@@ -110593,6 +110703,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 95,
         "match_strength": "direct",
@@ -110644,7 +110760,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Analytics",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Associate I, Manufacturing",
         "location": {
           "city": null,
@@ -110971,6 +111087,12 @@
         "weight": 77,
         "match_strength": "adjacent",
         "match_key": "client_commercial_work"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -111026,7 +111148,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Life Sciences MedTech Supply Chain, Management Consultant",
         "location": {
           "city": null,
@@ -112680,7 +112802,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Other",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Assistant, Public Relations",
         "location": {
           "city": null,
@@ -113063,7 +113185,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Marketing Coordinator",
         "location": {
           "city": null,
@@ -115707,6 +115829,12 @@
         "match_key": "analysis_reporting"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 103,
         "match_strength": "direct",
@@ -115761,7 +115889,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "R&D Consultant/Consulting Associate",
         "location": {
           "city": null,
@@ -116470,7 +116598,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Account Executive",
         "location": {
           "city": null,
@@ -122672,7 +122800,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "Leasing Professional - The Sagamore",
         "location": {
           "city": "New York City",
@@ -122986,6 +123114,12 @@
         "weight": 103,
         "match_strength": "direct",
         "match_key": "strategy_problem_solving"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -123025,7 +123159,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Life Sciences Industry Expert - Supply Chain and Manufacturing Consultant",
         "location": {
           "city": null,
@@ -128348,6 +128482,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 93,
         "match_strength": "direct",
@@ -128394,7 +128534,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Other",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Seasonal Game Statistics Support",
         "location": {
           "city": "New York City",
@@ -131292,6 +131432,12 @@
         "weight": 99,
         "match_strength": "direct",
         "match_key": "content_execution"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -131328,7 +131474,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Social Media Intern",
         "location": {
           "city": "New York City",
@@ -132053,6 +132199,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 94,
         "match_strength": "direct",
@@ -132098,7 +132250,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Consultant - R&D Advisory - US",
         "location": {
           "city": null,
@@ -135954,6 +136106,12 @@
         "weight": 76,
         "match_strength": "adjacent",
         "match_key": "account_management"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -135995,7 +136153,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Account Manager",
         "location": {
           "city": null,
@@ -138956,6 +139114,12 @@
         "weight": 98,
         "match_strength": "direct",
         "match_key": "communications_writing"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -138990,7 +139154,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Other",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Sports Information Assistant",
         "location": {
           "city": null,
@@ -139330,6 +139494,12 @@
         "weight": 103,
         "match_strength": "direct",
         "match_key": "strategy_problem_solving"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -139379,7 +139549,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Life Sciences Industry Expert - Supply Chain and Manufacturing Data and AI Consultant",
         "location": {
           "city": null,
@@ -139694,7 +139864,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "HR",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Talent Acquisition Manager",
         "location": {
           "city": null,
@@ -141757,7 +141927,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Analytics",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "3rd Party Audit & Lease Compliance Manager",
         "location": {
           "city": null,
@@ -142599,7 +142769,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Legal",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Utility Data and Modeling Analyst",
         "location": {
           "city": null,
@@ -143291,6 +143461,12 @@
         "weight": 96,
         "match_strength": "direct",
         "match_key": "drafting_documentation"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -143326,7 +143502,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Assoc. Director, Athletics Communications (A)",
         "location": {
           "city": "Miami",
@@ -144234,6 +144410,12 @@
         "weight": 78,
         "match_strength": "adjacent",
         "match_key": "operations_execution"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -144272,7 +144454,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Legal",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Consultant - Product Quality & Safety - Life Sciences & Healthcare",
         "location": {
           "city": null,
@@ -149743,6 +149925,12 @@
         "weight": 100,
         "match_strength": "direct",
         "match_key": "financial_analysis"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -149786,7 +149974,7 @@
         "isTrainingProgram": true,
         "jobArchetype": "mixed",
         "jobFamily": "Legal",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "2026 Financial Advisory Full-Time Analyst – Shareholder Advisory & Activism Defense",
         "location": {
           "city": null,
@@ -151015,6 +151203,12 @@
         "weight": 83,
         "match_strength": "adjacent",
         "match_key": "stakeholder_coordination"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -151064,7 +151258,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "ProductManagement",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Sr. Product Manager",
         "location": {
           "city": null,
@@ -156247,6 +156441,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 95,
         "match_strength": "direct",
@@ -156309,7 +156509,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Life Sciences Consulting Analyst",
         "location": {
           "city": null,
@@ -158456,6 +158656,12 @@
         "weight": 100,
         "match_strength": "direct",
         "match_key": "financial_analysis"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -158499,7 +158705,7 @@
         "isTrainingProgram": true,
         "jobArchetype": "mixed",
         "jobFamily": "Legal",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "2026 Financial Advisory Full-Time Analyst – New York Shareholder Advisory & Activism Defense",
         "location": {
           "city": null,
@@ -163615,7 +163821,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Analytics",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Adjustments Analyst",
         "location": {
           "city": null,
@@ -166318,6 +166524,12 @@
         "weight": 99,
         "match_strength": "direct",
         "match_key": "partnerships_sponsorships"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -166358,7 +166570,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Marketing Intern",
         "location": {
           "city": null,
@@ -171909,7 +172121,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "execution",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "12-Month Corporate Brand Intern",
         "location": {
           "city": null,
@@ -172232,6 +172444,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 94,
         "match_strength": "direct",
@@ -172276,7 +172494,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Other",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Analyst/Associate - Advisory & Commercial Strategy (Life Sciences practice)",
         "location": {
           "city": null,
@@ -178048,7 +178266,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Summer Intern Program",
         "location": {
           "city": "Chicago",
@@ -181975,6 +182193,12 @@
         "weight": 107,
         "match_strength": "direct",
         "match_key": "financial_analysis"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -182009,7 +182233,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Investment Analyst Position",
         "location": {
           "city": "Boston",
@@ -183575,7 +183799,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Corporate Strategy Summer Intern",
         "location": {
           "city": "New York City",
@@ -185668,6 +185892,12 @@
         "match_key": "content_execution"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 94,
         "match_strength": "direct",
@@ -185718,7 +185948,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Athletics Communications Officer",
         "location": {
           "city": null,
@@ -188615,6 +188845,12 @@
         "weight": 106,
         "match_strength": "direct",
         "match_key": "content_execution"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -188657,7 +188893,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "consumer goods",
         "jobTitle": "Associate Brand Manager",
         "location": {
           "city": null,
@@ -189860,7 +190096,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "2026 Summer Analyst Intern",
         "location": {
           "city": null,
@@ -190304,6 +190540,12 @@
         "weight": 99,
         "match_strength": "direct",
         "match_key": "software_engineering"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -190339,7 +190581,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "IT_Software",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Junior Software Developer — AI-Enabled Product Engineering",
         "location": {
           "city": null,
@@ -194468,7 +194710,7 @@
         "isTrainingProgram": true,
         "jobArchetype": "unclear",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Investment Banking Consultant",
         "location": {
           "city": null,
@@ -194792,6 +195034,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 95,
         "match_strength": "direct",
@@ -194848,7 +195096,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Technical Sales Specialist, Life Science and Research",
         "location": {
           "city": null,
@@ -198013,7 +198261,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Real Estate Asset Management Intern",
         "location": {
           "city": "New York City",
@@ -199509,6 +199757,12 @@
         "weight": 87,
         "match_strength": "adjacent",
         "match_key": "territory_execution"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -199554,7 +199808,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Clinical Specialist, Endovascular",
         "location": {
           "city": null,
@@ -200478,6 +200732,12 @@
         "weight": 76,
         "match_strength": "adjacent",
         "match_key": "account_management"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -200519,7 +200779,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Account Manager",
         "location": {
           "city": null,
@@ -209647,6 +209907,12 @@
         "match_key": "analysis_reporting"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 99,
         "match_strength": "direct",
@@ -209699,7 +209965,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Analyst - Investment Portfolio Management",
         "location": {
           "city": null,
@@ -210926,7 +211192,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Editorial Intern, Crypto",
         "location": {
           "city": null,
@@ -214778,6 +215044,12 @@
         "weight": 100,
         "match_strength": "direct",
         "match_key": "content_execution"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -214815,7 +215087,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Assistant Director, Athletic Communications",
         "location": {
           "city": null,
@@ -215356,6 +215628,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 99,
         "match_strength": "direct",
@@ -215428,7 +215706,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Full-Stack Engineer, Growth and Monetization Engineering",
         "location": {
           "city": null,
@@ -216751,7 +217029,7 @@
         "isTrainingProgram": true,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Merchandise Marketing Coordinator",
         "location": {
           "city": null,
@@ -217512,6 +217790,12 @@
         "match_key": "consumer_research"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 99,
         "match_strength": "direct",
@@ -217566,7 +217850,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Analytics",
-        "jobIndustry": null,
+        "jobIndustry": "consumer goods",
         "jobTitle": "Consumer Research Specialist (Food & Beverage)",
         "location": {
           "city": null,
@@ -219768,6 +220052,12 @@
         "match_key": "software_engineering"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 94,
         "match_strength": "direct",
@@ -219832,7 +220122,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "IT_Software",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Software Engineer",
         "location": {
           "city": null,
@@ -222432,7 +222722,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "Commercial Real Estate Underwriting Intern",
         "location": {
           "city": null,
@@ -223715,6 +224005,12 @@
         "weight": 79,
         "match_strength": "adjacent",
         "match_key": "operations_execution"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -223754,7 +224050,7 @@
         "isTrainingProgram": true,
         "jobArchetype": "unclear",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Associate Consultant - Entry-Level Technology Consulting (Life Sciences)",
         "location": {
           "city": null,
@@ -228776,7 +229072,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "Property Manager",
         "location": {
           "city": null,
@@ -231342,7 +231638,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Operations & Strategy Associate",
         "location": {
           "city": null,
@@ -232205,7 +232501,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "execution",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Social Media Coordinator",
         "location": {
           "city": null,
@@ -233078,7 +233374,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Impact Investing Intern",
         "location": {
           "city": "Boston",
@@ -235881,7 +236177,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "strategic",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Marketing Manager",
         "location": {
           "city": null,
@@ -237800,6 +238096,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 100,
         "match_strength": "direct",
@@ -237846,7 +238148,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Analyst, Market Access Consulting",
         "location": {
           "city": null,
@@ -238796,6 +239098,12 @@
         "match_key": "content_execution"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 98,
         "match_strength": "direct",
@@ -238846,7 +239154,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "execution",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Coordinator, Social Media",
         "location": {
           "city": null,
@@ -240004,7 +240312,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Intern, Financial Planning & Analysis",
         "location": {
           "city": "New York City",
@@ -240991,7 +241299,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Accounting",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "Leasing Administrator",
         "location": {
           "city": null,
@@ -242515,6 +242823,12 @@
         "weight": 99,
         "match_strength": "direct",
         "match_key": "software_engineering"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -242550,7 +242864,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "IT_Software",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "New Grad Engineer",
         "location": {
           "city": "New York City",
@@ -243765,7 +244079,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Analyst & Sr. Analyst",
         "location": {
           "city": "Los Angeles",
@@ -245332,7 +245646,14 @@
       }
     ],
     "matches": [],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
@@ -245367,7 +245688,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Legal",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "High Throughput Screening/ Bioanalytical Associate Scientist",
         "location": {
           "city": null,
@@ -246129,7 +246450,14 @@
       }
     ],
     "matches": [],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_EXPERIENCE",
@@ -246183,7 +246511,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Scientist, Pharmaceutical Analytical Sciences",
         "location": {
           "city": null,
@@ -251173,7 +251501,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "execution",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Pro Marketing Specialist",
         "location": {
           "city": null,
@@ -254066,6 +254394,12 @@
         "match_key": "content_execution"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 60,
         "match_strength": "direct",
@@ -254118,7 +254452,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Assistant Director, Athletic Communications",
         "location": {
           "city": null,
@@ -259554,6 +259888,12 @@
         "weight": 104,
         "match_strength": "direct",
         "match_key": "prospecting_pipeline_management"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -259589,7 +259929,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Account Executive-Sports",
         "location": {
           "city": null,
@@ -260139,7 +260479,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Legal",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Global Real Estate Operations Intern",
         "location": {
           "city": "New York City",
@@ -260981,7 +261321,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "IT_Software",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "RAM Analysis Specialist",
         "location": {
           "city": null,
@@ -263442,7 +263782,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "HR",
-        "jobIndustry": null,
+        "jobIndustry": "entertainment",
         "jobTitle": "Talent Acquisition Manager",
         "location": {
           "city": "New York City",
@@ -264674,7 +265014,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Digital Content Manager",
         "location": {
           "city": null,
@@ -265593,6 +265933,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 100,
         "match_strength": "direct",
@@ -265633,7 +265979,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Associate Scientist-Vaccines",
         "location": {
           "city": null,
@@ -266671,7 +267017,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Director of Account Management",
         "location": {
           "city": null,
@@ -269998,6 +270344,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 94,
         "match_strength": "direct",
@@ -270045,7 +270397,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Consultant, Market Access",
         "location": {
           "city": null,
@@ -270558,7 +270910,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "EIC Intern",
         "location": {
           "city": null,
@@ -272629,7 +272981,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Other",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Account Coordinator",
         "location": {
           "city": "New York City",
@@ -275534,7 +275886,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Intern, Strategy & Corporate Development",
         "location": {
           "city": null,
@@ -277258,7 +277610,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "Operations Coordinator",
         "location": {
           "city": null,
@@ -278355,6 +278707,12 @@
         "match_key": "operations_execution"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 95,
         "match_strength": "direct",
@@ -278408,7 +278766,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Life Sciences Consulting Analyst",
         "location": {
           "city": null,
@@ -278992,7 +279350,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "entertainment",
         "jobTitle": "Coordinator, Artist & Label Relations",
         "location": {
           "city": "New York City",
@@ -279349,7 +279707,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "Associate Project Manager - Implementation",
         "location": {
           "city": null,
@@ -284204,7 +284562,14 @@
       }
     ],
     "matches": [],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_FAMILY_MISMATCH",
@@ -284242,7 +284607,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Other",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Biotechnologist I",
         "location": {
           "city": null,
@@ -287067,7 +287432,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Business Analyst",
         "location": {
           "city": null,
@@ -288836,7 +289201,14 @@
       }
     ],
     "matches": [],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_EXPERIENCE",
@@ -288891,7 +289263,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Associate Manufacturing - Day Shift",
         "location": {
           "city": null,
@@ -290235,6 +290607,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 95,
         "match_strength": "direct",
@@ -290280,7 +290658,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Associate Scientist, Analytical Operation",
         "location": {
           "city": null,
@@ -294014,7 +294392,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "consumer goods",
         "jobTitle": "Operations Analyst",
         "location": {
           "city": null,
@@ -296369,7 +296747,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Customer Success Associate",
         "location": {
           "city": null,
@@ -297013,7 +297391,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Analytics",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Portfolio and Strategy Summer Intern",
         "location": {
           "city": null,
@@ -298548,7 +298926,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Marketing Intern",
         "location": {
           "city": null,
@@ -299447,7 +299825,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Jr. Account Executive",
         "location": {
           "city": null,
@@ -300053,7 +300431,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Summer Internship",
         "location": {
           "city": null,
@@ -300557,7 +300935,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "Summer 2026 Internship - Agency Loan Origination",
         "location": {
           "city": "New York City",
@@ -300953,7 +301331,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Marketing & Communications Intern",
         "location": {
           "city": null,
@@ -302275,7 +302653,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Summer Associate: Business, Marketing, Advertising, Law, Sales, Entrepreneurship",
         "location": {
           "city": null,
@@ -302691,6 +303069,12 @@
         "match_key": "analysis_reporting"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 94,
         "match_strength": "direct",
@@ -302732,7 +303116,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Associate Consultant",
         "location": {
           "city": null,
@@ -304775,7 +305159,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Accounting",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Real Estate Intern",
         "location": {
           "city": null,
@@ -307632,7 +308016,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Marketing Operations & Analytics Associate",
         "location": {
           "city": null,
@@ -307874,7 +308258,14 @@
       }
     ],
     "matches": [],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
@@ -307924,7 +308315,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Clinical Research Associate (CRA 2)",
         "location": {
           "city": null,
@@ -308231,6 +308622,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 95,
         "match_strength": "direct",
@@ -308305,7 +308702,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Clinical Applications Specialist",
         "location": {
           "city": null,
@@ -312392,7 +312789,14 @@
       }
     ],
     "matches": [],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_EXPERIENCE",
@@ -312447,7 +312851,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Engineer I (Lab Testing & Operations)",
         "location": {
           "city": null,
@@ -313466,7 +313870,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Other",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "Commercial Lease Administrator",
         "location": {
           "city": null,
@@ -314191,7 +314595,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Mergers & Acquisitions Intern",
         "location": {
           "city": null,
@@ -316801,7 +317205,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "LMF - Intern",
         "location": {
           "city": null,
@@ -318452,7 +318856,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Business Development Intern",
         "location": {
           "city": null,
@@ -319575,7 +319979,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "HR",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "AI Internship",
         "location": {
           "city": null,
@@ -320114,6 +320518,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 100,
         "match_strength": "direct",
@@ -320160,7 +320570,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Analyst, Market Access Consulting",
         "location": {
           "city": null,
@@ -322606,7 +323016,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Product Marketing Manager",
         "location": {
           "city": null,
@@ -323098,7 +323508,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Corporate Strategy Intern",
         "location": {
           "city": "New York City",
@@ -325087,7 +325497,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Junior Associate",
         "location": {
           "city": null,
@@ -325330,7 +325740,14 @@
         "profile_unit_id": "706f98e71045790f"
       }
     ],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_EXPERIENCE",
@@ -325386,7 +325803,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Affera Mapping Specialist",
         "location": {
           "city": null,
@@ -326285,7 +326702,14 @@
       }
     ],
     "matches": [],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_EXPERIENCE",
@@ -326344,7 +326768,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Clinical Specialist, Endovascular",
         "location": {
           "city": null,
@@ -327523,7 +327947,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "HR",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Consultant, Advisory Services",
         "location": {
           "city": "Boston",
@@ -331248,7 +331672,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Real Estate Asset Management Intern",
         "location": {
           "city": "New York City",
@@ -332155,7 +332579,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "consumer goods",
         "jobTitle": "Brand Marketing Intern",
         "location": {
           "city": null,
@@ -334913,7 +335337,7 @@
         "isTrainingProgram": true,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Manager, Events",
         "location": {
           "city": null,
@@ -336096,6 +336520,12 @@
         "match_key": "drafting_documentation"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 94,
         "match_strength": "direct",
@@ -336145,7 +336575,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Assistant Director, Communications",
         "location": {
           "city": null,
@@ -344378,7 +344808,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "strategic",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Account Director, Healthcare & Life Sciences",
         "location": {
           "city": null,
@@ -345898,7 +346328,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Analytics",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Analyst I Quality Assurance",
         "location": {
           "city": null,
@@ -347983,6 +348413,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 92,
         "match_strength": "direct",
@@ -348034,7 +348470,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Solutions Engineer, Life Sciences",
         "location": {
           "city": null,
@@ -349626,7 +350062,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "real estate",
         "jobTitle": "Summer 2026 Internship - Agency Loan Origination",
         "location": {
           "city": "New York City",
@@ -352606,7 +353042,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Analytics",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Hockey Analytics Summer Intern",
         "location": {
           "city": "Philadelphia",
@@ -356291,6 +356727,12 @@
         "weight": 87,
         "match_strength": "adjacent",
         "match_key": "analysis_reporting"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -356338,7 +356780,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Operations",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Coordinator- Ticket Operations",
         "location": {
           "city": null,

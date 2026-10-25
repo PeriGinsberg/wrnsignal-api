@@ -34,6 +34,10 @@ export type ScoreResult = {
   penalties: Penalty[]
   penaltySum: number
   whyCodes: WhyCode[]
+  // Positive signals that are not evidence of fit (stated industry interest).
+  // Shown with the WHYs but kept out of whyCodes, which the decision
+  // guardrails and the high-confidence boost count as evidence.
+  interestWhyCodes: WhyCode[]
   riskCodes: RiskCode[]
   // Stage 0 regression-harness trace (additive). The full match set the
   // scorer built (post semantic-suppression) and the per-requirement
@@ -1319,6 +1323,7 @@ export function scoreJobFit(
 
   // ── Industry interest alignment ─────────────────────────────────────────────
   // When a job's industry matches stated target industries, surface a positive signal.
+  const interestWhyCodes: WhyCode[] = []
   const targetIndustries = ((profile as any)?.statedInterests?.targetIndustries || []) as string[]
   const jobIndustry = (job as any)?.jobIndustry as string | null
   if (jobIndustry && targetIndustries.length > 0) {
@@ -1327,12 +1332,12 @@ export function scoreJobFit(
       i.toLowerCase().includes(jobIndustry.toLowerCase())
     )
     if (industryMatch) {
-      riskOnlyCodes.push({
+      interestWhyCodes.push({
         code: "WHY_INDUSTRY_MATCH",
         job_fact: `This role is in the ${jobIndustry} industry.`,
         profile_fact: `You stated interest in ${jobIndustry} roles.`,
-        risk: `This role is in the ${jobIndustry} space — an area you have specifically said you want to work in. That alignment matters beyond keyword matching.`,
-        severity: "low",
+        note: `This role is in the ${jobIndustry} space, an area you have specifically said you want to work in. That alignment matters beyond keyword matching.`,
+        weight: 0,
       })
       console.log("[scoring] Industry interest match:", jobIndustry)
     }
@@ -1766,6 +1771,7 @@ export function scoreJobFit(
     penalties: capped,
     penaltySum,
     whyCodes,
+    interestWhyCodes,
     riskCodes,
     allMatches,
     coverage,

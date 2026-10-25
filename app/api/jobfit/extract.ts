@@ -5153,16 +5153,26 @@ export function extractJobSignals(
   })()
 
   // ── Job industry detection ──────────────────────────────────────────────────
-  // Detects the industry vertical of the role for interest alignment scoring
+  // Detects the industry vertical of the role for interest alignment scoring.
+  // Industry is the EMPLOYER's industry, not the role's function. Broad words
+  // (film, gaming, luxury, fintech...) turn up in candidate wish lists, client
+  // lists, office perks, product descriptions and job titles, so they count
+  // only when they name what the employer is: "a gaming company", "a streaming
+  // service", "a growing fintech organization".
+  const employerIs = (terms: string) => new RegExp(
+    `\\b(?:${terms})\\s+(?:[a-z]+\\s+)?(?:company|brand|studio|studios|network|label|platform|publisher|developer|franchise|leader|retailer|service|giant|organization|firm|house|group)\\b`,
+    "i"
+  )
   const jobIndustry: string | null = (() => {
-    if (/(nba|nfl|mlb|nhl|mls|sports league|athletic|espn|sports marketing|sports industry|professional sports|team sports)/i.test(jobTextLower)) return "sports"
-    if (/(entertainment|music industry|film|streaming|gaming|media entertainment)/i.test(jobTextLower)) return "entertainment"
-    if (/(fashion|luxury|beauty|lifestyle brand|apparel|footwear)/i.test(jobTextLower)) return "luxury/fashion"
-    if (/(consumer goods|cpg|fmcg|packaged goods|food and beverage|beverage brand)/i.test(jobTextLower)) return "consumer goods"
-    if (/(saas|software company|tech company|technology company|startup|fintech)/i.test(jobTextLower)) return "technology"
-    if (/(private equity|investment bank|asset management|hedge fund|venture capital)/i.test(jobTextLower)) return "finance"
-    if (/(healthcare company|hospital|health system|pharmaceutical|biotech)/i.test(jobTextLower)) return "healthcare"
-    if (/(real estate firm|property management|commercial real estate|reit)/i.test(jobTextLower)) return "real estate"
+    if (/\b(nba|nfl|mlb|nhl|mls|sports league|athletic|espn|sports marketing|sports industry|professional sports|team sports)\b/i.test(jobTextLower)) return "sports"
+    if (/\b(music industry|media entertainment)\b/i.test(jobTextLower) || employerIs("entertainment|film|streaming|gaming").test(jobTextLower)) return "entertainment"
+    if (/\b(fashion|beauty|lifestyle brand|footwear)\b/i.test(jobTextLower) || employerIs("luxury|apparel").test(jobTextLower)) return "luxury/fashion"
+    if (/\b(consumer goods|cpg|fmcg|packaged goods|food and beverage|beverage brand)\b/i.test(jobTextLower)) return "consumer goods"
+    if (/\b(saas|software company|tech company|technology company|startup)\b/i.test(jobTextLower) || employerIs("fintech").test(jobTextLower)) return "technology"
+    // "asset management software" is infrastructure; "hospital indemnity" is a benefits line.
+    if (/\b(private equity|investment bank|asset management(?!\s+(?:software|systems?|tools?))|hedge fund|venture capital)\b/i.test(jobTextLower)) return "finance"
+    if (/\b(healthcare company|hospital(?!\s+indemnity)|health system|pharmaceutical|biotech)\b/i.test(jobTextLower)) return "healthcare"
+    if (/\b(real estate firm|property management|commercial real estate|reit)\b/i.test(jobTextLower)) return "real estate"
     return null
   })()
 
