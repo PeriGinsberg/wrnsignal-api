@@ -68,6 +68,23 @@ export const PRESET_STATES: Record<string, string[]> = {
   columbus: ["oh"],
   indianapolis: ["in"],
   cincinnati: ["oh", "ky", "in"],
+  atlanta: ["ga"],
+  nashville: ["tn"],
+  washington_dc: ["dc", "md", "va"],
+  south_florida: ["fl"],
+}
+
+/**
+ * A lane names a location preset PRESET_STATES does not know. Seeding stops:
+ * the old behaviour (2026-10-26, Sami Zivitz: "atlanta", "nashville") dropped
+ * the whole location rule, so one unknown city widened the search to every
+ * market. Add the preset or fix the lane.
+ */
+export class UnknownPresetError extends Error {
+  constructor(public presets: string[]) {
+    super(`unknown location preset${presets.length > 1 ? "s" : ""} ${presets.map((p) => `"${p}"`).join(", ")}: add to PRESET_STATES in lib/match/criteria.ts or fix the lane; nothing seeded`)
+    this.name = "UnknownPresetError"
+  }
 }
 
 const JOB_TYPES: Record<string, string> = {
@@ -99,21 +116,16 @@ export function seedCriteria(
 ): { criteria: MatchCriteria; warnings: string[] } {
   const warnings: string[] = []
   const presets = [...new Set([...(lane.location?.presets ?? []), ...(overrides.addPresets ?? [])].map((p: string) => p.toLowerCase()))]
-  const markets: Market[] = []
-  for (const p of presets) {
-    const states = PRESET_STATES[p]
-    if (states) markets.push({ name: p, states })
-    else warnings.push(`unknown location preset "${p}": no location rule for it`)
-  }
-  // A preset we cannot place means the location rule cannot be trusted at all.
-  const unknownPreset = warnings.length > 0
+  const unknown = presets.filter((p) => !PRESET_STATES[p])
+  if (unknown.length) throw new UnknownPresetError(unknown)
+  const markets: Market[] = presets.map((p) => ({ name: p, states: PRESET_STATES[p] }))
 
   const notes = [profile.coach_notes_avoid && `Avoid: ${profile.coach_notes_avoid}`, profile.coach_notes_concerns && `Concerns: ${profile.coach_notes_concerns}`]
     .filter(Boolean).join("\n") || null
 
   const criteria: MatchCriteria = {
     clientProfileId: profile.id,
-    markets: unknownPreset ? [] : markets,
+    markets,
     radiusMiles: lane.location?.radius_miles ?? null,
     remoteOk: true,
     maxYearsRequired: lane.years_max ?? null,

@@ -38,7 +38,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs"
 import { join } from "path"
 import { createClient } from "@supabase/supabase-js"
-import { seedCriteria, toStateCode, type MatchCriteria } from "../../lib/match/criteria"
+import { seedCriteria, toStateCode, UnknownPresetError, type MatchCriteria } from "../../lib/match/criteria"
 import { applyRules, type MatchPosting, type RuleFailure } from "../../lib/match/rules"
 import { judge, JUDGE_PROMPT_SHA256, type Judgment, type JudgeUsage, type PastDecision } from "../../lib/match/judge"
 
@@ -112,9 +112,14 @@ async function pool<T>(items: T[], n: number, fn: (t: T) => Promise<void>) {
   const laneById = new Map(lanes!.map((l) => [l.id, l]))
   const crit = new Map<string, MatchCriteria>()
   for (const l of lanes!) {
-    const { criteria, warnings } = seedCriteria(l, profs!.find((p) => p.id === l.client_profile_id)!)
-    crit.set(l.id, criteria)
-    for (const w of warnings) console.log(`  ${l.name}: ${w}`)
+    try {
+      const { criteria, warnings } = seedCriteria(l, profs!.find((p) => p.id === l.client_profile_id)!)
+      crit.set(l.id, criteria)
+      for (const w of warnings) console.log(`  ${l.name}: ${w}`)
+    } catch (e) {
+      if (!(e instanceof UnknownPresetError)) throw e
+      console.log(`  ${l.name}: SKIPPED, ${e.message}`)
+    }
   }
 
   // The coach's decisions for a lane, newest first, strictly before `before`.
@@ -124,7 +129,7 @@ async function pool<T>(items: T[], n: number, fn: (t: T) => Promise<void>) {
       .slice(0, EXAMPLES)
       .map((x) => ({ title: x.title, company: x.company, action: x.action, reason: x.reason, note: x.note }))
 
-  const scored = rows.filter((r) => r.action === "push" || !["already_applied", "other"].includes(r.reason))
+  const scored = rows.filter((r) => crit.has(r.lane_id) && (r.action === "push" || !["already_applied", "other"].includes(r.reason)))
   const evals = scored.map((r) => {
     const c = crit.get(r.lane_id)!, p = fromLaneResult(r)
     return { r, c, p, fails: applyRules(c, p) as RuleFailure[] }

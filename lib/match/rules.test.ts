@@ -3,7 +3,7 @@
 // Hard rules (lib/match/rules.ts) and criteria seeding (lib/match/criteria.ts),
 // offline. The rule that matters most: NOT STATED NEVER FAILS.
 
-import { availableFromProfile, parseTimeline, seedCriteria } from "./criteria"
+import { availableFromProfile, parseTimeline, PRESET_STATES, seedCriteria, UnknownPresetError } from "./criteria"
 import { applyRules, parseLocations, type MatchPosting } from "./rules"
 
 let failures = 0
@@ -43,8 +43,22 @@ ok("London only fails", r({ locations: [{ city: "london", state: null, country: 
 ok("one unplaceable location passes", r({ locations: [at("houston", "tx"), { city: "somewhere", state: null, country: null }] }).length === 0)
 const anywhere = seedCriteria({ location: { presets: [] } }, { id: "x" }).criteria
 ok("anywhere client: no location rule", r({ locations: [at("houston", "tx")] }, anywhere).length === 0)
-const odd = seedCriteria({ location: { presets: ["atlantis"] } }, { id: "x" })
-ok("unknown preset: warned, and no location rule rather than a wrong one", odd.warnings.length === 1 && odd.criteria.markets.length === 0)
+// An unknown city can never widen a search: seeding stops with an error naming
+// it, alone or beside known cities, in any case or spacing (2026-10-26).
+const seedThrows = (presets: string[]) => { try { seedCriteria({ location: { presets } }, { id: "x" }); return null } catch (e) { return e } }
+for (const presets of [["atlantis"], ["chicago", "atlantis"], ["Atlantis", "nyc"], ["chicago", "atlantis", "el dorado"]]) {
+  const e = seedThrows(presets)
+  ok(`unknown preset stops seeding: ${JSON.stringify(presets)}`, e instanceof UnknownPresetError && /atlantis/i.test((e as Error).message))
+}
+ok("every unknown preset is named", (seedThrows(["chicago", "atlantis", "el dorado"]) as UnknownPresetError).presets.join() === "atlantis,el dorado")
+// The four added 2026-10-26 seed a location rule, and it still rejects elsewhere.
+const added = seedCriteria({ location: { presets: ["atlanta", "nashville", "washington_dc", "south_florida"] } }, { id: "x" }).criteria
+ok("atlanta, nashville, washington_dc, south_florida seed four markets", added.markets.map((m) => m.name).join() === "atlanta,nashville,washington_dc,south_florida")
+ok("added presets: Houston still fails location", r({ locations: [at("houston", "tx")] }, added).join() === "location")
+ok("added presets: Atlanta, Nashville, Arlington VA, Miami pass", ["ga", "tn", "va", "fl"].every((st) => r({ locations: [at("x", st)] }, added).length === 0))
+// Every known preset seeds a non-empty market: a known name never becomes "anywhere".
+ok("every preset in PRESET_STATES has states", Object.entries(PRESET_STATES).every(([, s]) => s.length > 0))
+ok("only an empty preset list means anywhere", seedCriteria({ location: { presets: [] } }, { id: "x" }).criteria.markets.length === 0)
 
 // years
 ok("3+ required fails at max 2", r({ yearsMin: 3, yearsBasis: "required" }).join() === "years")
