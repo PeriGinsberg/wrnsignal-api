@@ -289,6 +289,11 @@ ${INDUSTRY_RULES}
 - false otherwise. Do not infer it from a junior title, low years, a low salary,
   or an internship by itself: an internship is campus only when the posting
   also states one of the above.
+- false when the posting is for experienced hires, even if it calls itself a
+  program: "for experienced professionals", "career changers", "lateral",
+  "mid-career", or work experience asked as the audience. Graduating from the
+  program itself ("upon graduating from the Academy") is not a graduation date,
+  and the program's own year ("Academy 2026-2027") is not a start.
 - campus_evidence: the words you took it from, verbatim. Empty when false.`
 
 /** Recorded on every enrichment_runs row, so a prompt change shows in the data. */
