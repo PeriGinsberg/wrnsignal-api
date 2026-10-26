@@ -81,6 +81,18 @@ type Counts = { added: number; refound: number; dup: number }
  * last_seen_at, 20261027_posting_links.sql.) A mirror that was somehow wrong
  * would cost a rejected batch, never a wrong count or a merged posting.
  */
+/**
+ * Postgres text and jsonb cannot hold U+0000: one NUL in a description rejects
+ * the whole batch (22P05, 2026-10-26: 27 postings for consulting analyst,
+ * Philadelphia). Removed from every string before the write.
+ */
+export function dropNul<T>(v: T): T {
+  if (typeof v === "string") return v.replaceAll("\u0000", "") as T
+  if (Array.isArray(v)) return v.map(dropNul) as T
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, dropNul(x)])) as T
+  return v
+}
+
 async function upsertBatch(
   sb: SupabaseClient,
   source: string,
@@ -106,7 +118,7 @@ async function upsertBatch(
     const { data, error } = await sb
       .from("postings")
       .upsert(
-        chunk.map(({ row: p }) => ({
+        chunk.map(({ row: p }) => dropNul({
           source,
           org_slug: org,
           source_job_id: p.source_job_id,

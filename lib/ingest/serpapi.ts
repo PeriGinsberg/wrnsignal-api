@@ -185,12 +185,25 @@ export function serpApiAdapter(opts: { apiKey?: string; maxPages?: number; budge
       let requests = 0
       let attempts = 0
       let capReached = false
+      let pageError: string | null = null
 
       for (let page = 1; page <= maxPages; page++) {
         // Out of searches with more pages on offer: keep what is in hand rather
         // than fail the pair, and record that the cap cut it short.
         if (page > 1 && opts.budget && opts.budget.remaining === 0) { opts.budget.refuse(); capReached = true; break }
-        const r = await search(q, page === 1 ? null : next)
+        let r: Awaited<ReturnType<typeof search>>
+        try {
+          r = await search(q, page === 1 ? null : next)
+        } catch (e: any) {
+          // A later page failing keeps the pages in hand: Google rejected the
+          // next_page_token on 10 of 127 pairs on 2026-10-26, and the pair kept
+          // nothing. The first page failing is still the pair's failure.
+          if (page === 1) throw e
+          requests++
+          attempts++
+          pageError = String(e?.message ?? e)
+          break
+        }
         requests++
         attempts += r.attempts
         perPage.push(r.jobs.length)
@@ -214,6 +227,7 @@ export function serpApiAdapter(opts: { apiKey?: string; maxPages?: number; budge
           // exhausted one.
           truncated: Boolean(next) && perPage.length === maxPages && perPage[perPage.length - 1] > 0,
           cap_reached: capReached,
+          ...(pageError ? { next_page_error: pageError } : {}),
           dropped_blank: postings.filter((p) => !p.title || !p.company).length,
         },
       }

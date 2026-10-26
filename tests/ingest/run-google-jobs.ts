@@ -13,6 +13,7 @@
  *   --location "..."    only pairs with this location
  *   --campus            only campus pairs
  *   --notes "..."       only pairs whose notes contain this text
+ *   --ids a,b,...       only these pair ids (a retry of the pairs that failed)
  *   --max-pages N       pages per pair (default 3)
  *   --cap N             most searches this run may spend (default
  *                       GOOGLE_JOBS_SEARCH_CAP, else 60). Reaching it stops the
@@ -91,7 +92,7 @@ const cap = searchCapFromEnv(arg("cap") ?? env("GOOGLE_JOBS_SEARCH_CAP"))
   const t = arg("title")?.toLowerCase()
   const l = arg("location")?.toLowerCase()
   const pairs: IngestPair[] = (data || [])
-    .filter((p: any) => (!t || p.title.toLowerCase() === t) && (!l || String(p.location ?? "").toLowerCase() === l) && (!flag("campus") || p.campus) && (!arg("notes") || String(p.notes ?? "").includes(arg("notes")!)))
+    .filter((p: any) => (!t || p.title.toLowerCase() === t) && (!l || String(p.location ?? "").toLowerCase() === l) && (!flag("campus") || p.campus) && (!arg("notes") || String(p.notes ?? "").includes(arg("notes")!)) && (!arg("ids") || arg("ids")!.split(",").includes(p.id)))
     .map((p: any) => ({ id: p.id, title: p.title, location: p.location, campus: Boolean(p.campus) }))
 
   if (!pairs.length) { console.error("no active Google Jobs pairs match"); process.exit(1) }
