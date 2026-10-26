@@ -320,6 +320,9 @@ type MyWorkbook = {
   sends_to_client: number
   last_to_client_at: string | null
   last_to_client_opened_at: string | null
+  /** "networking" for a workbook the client made from the Networking page. */
+  kind: string | null
+  title: string | null
 }
 
 async function loadMyWorkbooks(token: string): Promise<MyWorkbook[]> {
@@ -339,8 +342,12 @@ const workbooksFromCoach: ActionProvider = {
         return {
           id: w.id,
           kind: "workbook",
-          label: w.sends_to_client > 1 ? `${coach} sent your workbook back` : `${coach} shared an interview workbook`,
-          title: w.company || "Interview workbook",
+          // The client made a networking workbook, so the coach's first send is
+          // already a return, never a share.
+          label: w.sends_to_client > 1 || w.kind === "networking"
+            ? `${coach} sent your workbook back`
+            : `${coach} shared an interview workbook`,
+          title: w.company || w.title || "Interview workbook",
           subtitle: w.role || null,
           note: null,
           decision: null,
@@ -377,14 +384,14 @@ function WorkbooksEntry() {
   return (
     <section style={{ ...surfaceCard(S), padding: 24 }}>
       <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", color: S.text.muted, marginBottom: 16 }}>
-        Interview workbooks
+        Workbooks
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {workbooks.map((w) => (
           <a key={w.id} href={`/dashboard/workbooks/${w.id}`}
             style={{ display: "block", textDecoration: "none", padding: "14px 16px", borderRadius: 12, border: `1px solid ${S.borderSoft}` }}>
             <span style={{ display: "block", fontSize: 15.5, color: S.text.primary, fontWeight: 700 }}>
-              {w.company || "Interview workbook"}
+              {w.company || w.title || "Interview workbook"}
               {w.role && <span style={{ color: S.text.secondary, fontWeight: 500 }}> · {w.role}</span>}
             </span>
             <span style={{ display: "block", fontSize: 13, color: S.text.muted, marginTop: 4 }}>Open your workbook →</span>

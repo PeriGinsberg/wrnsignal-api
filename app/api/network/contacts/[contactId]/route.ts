@@ -43,11 +43,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ cont
 
     const { data: contact, error } = await supabase
       .from("network_contacts")
-      .select("*, network_companies(id, name, tier, status)")
+      .select("*, network_companies(id, name, tier, status), workbooks(id)")
       .eq("id", contactId)
       .maybeSingle()
     if (error) throw new Error(`Contact lookup failed: ${error.message}`)
     if (!contact) return withCorsJson(req, { ok: false, error: "Contact not found" }, 404)
+    // The contact's Networking workbook, at most one (unique index), flattened.
+    const { workbooks, ...rest } = contact as any
+    const withWorkbook = { ...rest, workbook_id: (Array.isArray(workbooks) ? workbooks[0]?.id : workbooks?.id) ?? null }
 
     // Row-derived subject: the contact says whose board it is, the ladder says
     // whether this actor may reach it. Same "view" level as before.
@@ -66,7 +69,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ cont
       .order("action_date", { ascending: false }),
       "read this contact's history")
 
-    return withCorsJson(req, { ok: true, contact, actions: actions ?? [] }, 200)
+    return withCorsJson(req, { ok: true, contact: withWorkbook, actions: actions ?? [] }, 200)
   } catch (err: any) {
     return routeError(req, err)
   }

@@ -13,6 +13,7 @@
 import { allFieldKeys, validateContent, type WorkbookContent } from "./content"
 import sessionOneFoundations from "./templates/session-1-foundations.json"
 import sessionTwoStories from "./templates/session-2-telling-your-stories.json"
+import networkingCall from "./templates/networking-call.json"
 
 /** One line under the title in the picker. Copy about the template, not content. */
 type Registration = { description: string; raw: unknown }
@@ -25,6 +26,10 @@ const REGISTRY: Registration[] = [
   {
     description: "STAR + E, two stories built live, then eight stories of their own matched to twenty interview questions.",
     raw: sessionTwoStories,
+  },
+  {
+    description: "Prep for one networking call: know the contact, set a goal, plan the questions and the close, then capture what came out of it.",
+    raw: networkingCall,
   },
 ]
 
@@ -71,11 +76,23 @@ function all(): Template[] {
   return out
 }
 
-/** Every template a coach may start from. Not per coach: there is one library. */
+/**
+ * Every template a coach may start from. Not per coach: there is one library.
+ * A networking template is left out: it needs a contact, which only the client
+ * picks, from the Networking page.
+ */
 export function listTemplates(): TemplateSummary[] {
-  return all().map(({ content: _content, ...summary }) => summary)
+  return all().filter((t) => t.content.kind !== "networking").map(({ content: _content, ...summary }) => summary)
 }
 
+/** The template behind "Create Networking Workbook". */
+export function getNetworkingTemplate(): Template {
+  const t = all().find((x) => x.content.kind === "networking")
+  if (!t) throw new Error("No networking workbook template is registered")
+  return t
+}
+
+/** A template a coach may start from, by id. Never the networking one, as above. */
 export function getTemplate(templateId: string): Template | null {
-  return all().find((t) => t.template_id === templateId) ?? null
+  return all().find((t) => t.template_id === templateId && t.content.kind !== "networking") ?? null
 }

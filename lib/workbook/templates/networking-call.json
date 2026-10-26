@@ -1,0 +1,330 @@
+{
+  "schema_version": 1,
+  "template": true,
+  "template_id": "networking-call",
+  "kind": "networking",
+  "slug": "networking-call",
+  "title": "Networking Call: {contact_full_name}",
+  "client": {
+    "first_name": "{first_name}",
+    "full_name": "{full_name}"
+  },
+  "interview": null,
+  "coach": {
+    "first_name": "{coach_first_name}"
+  },
+  "summary": {
+    "title": "{first_name}, here's your call sheet for {contact_first_name}.",
+    "eyebrow": "NETWORKING CALL",
+    "blocks": [
+      {
+        "type": "quick_answers",
+        "items": [
+          {
+            "label": "WHAT WE HAVE IN COMMON",
+            "field": "contact.common"
+          },
+          {
+            "label": "MY GOAL",
+            "field": "goal.walk_away"
+          },
+          {
+            "label": "THANK-YOU LINE",
+            "field": "opener.thanks"
+          },
+          {
+            "label": "WHY I REACHED OUT",
+            "field": "opener.why"
+          },
+          {
+            "label": "MY 30-SECOND INTRO",
+            "field": "opener.intro"
+          },
+          {
+            "label": "THEIR PATH",
+            "field": "questions.path"
+          },
+          {
+            "label": "THEIR ROLE",
+            "field": "questions.role"
+          },
+          {
+            "label": "THEIR TEAM / COMPANY",
+            "field": "questions.team"
+          },
+          {
+            "label": "THE INDUSTRY",
+            "field": "questions.industry"
+          },
+          {
+            "label": "ADVICE",
+            "field": "questions.advice"
+          },
+          {
+            "label": "WHAT I'M LOOKING FOR",
+            "field": "looking.answer"
+          },
+          {
+            "label": "IF A ROLE COMES UP",
+            "field": "role.response"
+          },
+          {
+            "label": "MY ASK",
+            "field": "close.ask"
+          },
+          {
+            "label": "MY THANK-YOU",
+            "field": "close.thanks"
+          }
+        ]
+      }
+    ]
+  },
+  "sections": [
+    {
+      "id": "know-contact",
+      "number": 1,
+      "title": "Know Your Contact",
+      "blocks": [
+        {
+          "type": "callout",
+          "tone": "paleblue",
+          "body": "Look at their LinkedIn path, schools, past roles, and recent posts. Note anything you share with them."
+        },
+        {
+          "type": "field",
+          "key": "contact.name",
+          "input": "short",
+          "label": "Name",
+          "starter": "{contact_full_name}",
+          "optional": true
+        },
+        {
+          "type": "field",
+          "key": "contact.title",
+          "input": "short",
+          "label": "Title",
+          "starter": "{contact_title}",
+          "optional": true
+        },
+        {
+          "type": "field",
+          "key": "contact.company",
+          "input": "short",
+          "label": "Company",
+          "starter": "{contact_company}",
+          "optional": true
+        },
+        {
+          "type": "field",
+          "key": "contact.connection",
+          "input": "long",
+          "label": "How you're connected"
+        },
+        {
+          "type": "field",
+          "key": "contact.yes_to",
+          "input": "long",
+          "label": "What they said yes to"
+        },
+        {
+          "type": "field",
+          "key": "contact.common",
+          "input": "long",
+          "label": "What you have in common"
+        }
+      ]
+    },
+    {
+      "id": "goal",
+      "number": 2,
+      "title": "Your Goal for This Call",
+      "blocks": [
+        {
+          "type": "callout",
+          "tone": "paleblue",
+          "body": "Assume there is no open job. Aim to learn, build the relationship, and leave with one next name."
+        },
+        {
+          "type": "field",
+          "key": "goal.walk_away",
+          "input": "long",
+          "label": "What do you want to walk away with?"
+        }
+      ]
+    },
+    {
+      "id": "opener",
+      "number": 3,
+      "title": "Your Opener + Tell Me About Yourself",
+      "blocks": [
+        {
+          "type": "callout",
+          "tone": "paleblue",
+          "body": "Customize your intro to this person. Connect your Past to something in their path. Keep your Future broad."
+        },
+        {
+          "type": "field",
+          "key": "opener.thanks",
+          "input": "short",
+          "label": "Thank-you line"
+        },
+        {
+          "type": "field",
+          "key": "opener.why",
+          "input": "long",
+          "label": "Why you reached out"
+        },
+        {
+          "type": "field",
+          "key": "opener.intro",
+          "input": "long",
+          "label": "Your 30-second intro"
+        }
+      ]
+    },
+    {
+      "id": "questions",
+      "number": 4,
+      "title": "Questions to Carry the Call",
+      "blocks": [
+        {
+          "type": "callout",
+          "tone": "paleblue",
+          "body": "You lead this conversation. Write enough questions to fill the full time. Make at least two specific to something you found in Section 1."
+        },
+        {
+          "type": "text",
+          "body": "Aim for 8 to 10 questions across these five groups. One question per line."
+        },
+        {
+          "type": "field",
+          "key": "questions.path",
+          "input": "long",
+          "label": "Their Path"
+        },
+        {
+          "type": "field",
+          "key": "questions.role",
+          "input": "long",
+          "label": "Their Role"
+        },
+        {
+          "type": "field",
+          "key": "questions.team",
+          "input": "long",
+          "label": "Their Team / Company"
+        },
+        {
+          "type": "field",
+          "key": "questions.industry",
+          "input": "long",
+          "label": "The Industry"
+        },
+        {
+          "type": "field",
+          "key": "questions.advice",
+          "input": "long",
+          "label": "Advice"
+        }
+      ]
+    },
+    {
+      "id": "looking-for",
+      "number": 5,
+      "title": "\"What Are You Looking For?\"",
+      "blocks": [
+        {
+          "type": "callout",
+          "tone": "paleblue",
+          "body": "Name the type of role and what draws you to it. Don't ask for a job."
+        },
+        {
+          "type": "field",
+          "key": "looking.answer",
+          "input": "long",
+          "label": "Your 2-sentence answer"
+        }
+      ]
+    },
+    {
+      "id": "role-comes-up",
+      "number": 6,
+      "title": "If a Role Comes Up",
+      "blocks": [
+        {
+          "type": "callout",
+          "tone": "paleblue",
+          "body": "Show interest and ask how to be considered. Don't turn the call into an interview."
+        },
+        {
+          "type": "field",
+          "key": "role.response",
+          "input": "long",
+          "label": "How you'll respond"
+        }
+      ]
+    },
+    {
+      "id": "close",
+      "number": 7,
+      "title": "Your Close",
+      "blocks": [
+        {
+          "type": "callout",
+          "tone": "paleblue",
+          "body": "Ask who else they'd suggest you talk to, and if you can stay in touch."
+        },
+        {
+          "type": "field",
+          "key": "close.ask",
+          "input": "long",
+          "label": "Your ask"
+        },
+        {
+          "type": "field",
+          "key": "close.thanks",
+          "input": "short",
+          "label": "Your thank-you"
+        }
+      ]
+    },
+    {
+      "id": "after-call",
+      "number": 8,
+      "title": "After the Call",
+      "blocks": [
+        {
+          "type": "field",
+          "key": "after.takeaways",
+          "input": "long",
+          "label": "Key takeaways"
+        },
+        {
+          "type": "field",
+          "key": "after.names",
+          "input": "long",
+          "label": "Names they gave you"
+        },
+        {
+          "type": "field",
+          "key": "after.followups",
+          "input": "long",
+          "label": "Follow-ups promised"
+        },
+        {
+          "type": "field",
+          "key": "after.thank_you",
+          "input": "long",
+          "label": "Thank-you note draft"
+        },
+        {
+          "type": "field",
+          "key": "after.checkin",
+          "input": "short",
+          "label": "Next check-in date"
+        }
+      ]
+    }
+  ]
+}

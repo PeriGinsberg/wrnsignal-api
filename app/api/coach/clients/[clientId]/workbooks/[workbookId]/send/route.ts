@@ -24,7 +24,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cli
     const { supabase, scope } = await coachWorkbookScope(req, clientId)
 
     const wb = must(
-      await supabase.from("workbooks").select("id, slug, title:content->>title")
+      await supabase.from("workbooks").select("id, slug, title:content->>title, kind:content->>kind")
         .eq("id", workbookId).eq("client_profile_id", scope.subjectId).maybeSingle(),
       "read workbook",
     )
@@ -38,7 +38,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ cli
         .eq("workbook_id", workbookId).eq("direction", "to_client"),
       "count previous sends",
     ) ?? []
-    const firstShare = priorSends.length === 0
+    // A networking workbook was written by the client, never shared by a
+    // coach, so even its first send to the client is a return.
+    const firstShare = priorSends.length === 0 && wb.kind !== "networking"
 
     const { data, error } = await supabase.rpc("workbook_send_to_client", { p_workbook: workbookId })
     if (error) throw rpcError("send workbook", error)

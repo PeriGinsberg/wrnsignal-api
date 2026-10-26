@@ -32,7 +32,7 @@ import {
 import { STAGE_LABELS, STAGE_PHASE, REASON_LABELS } from "../vocab"
 import { timeAgo } from "../../../../lib/relativeTime"
 import { dueOf, type Contact } from "./ContactRow"
-import { subjectId, withSubject } from "../authFetch"
+import { networkingWorkbookHref, subjectId, withSubject } from "../authFetch"
 
 /**
  * "Added by your coach", and its two variants.
@@ -320,6 +320,18 @@ export function ContactCard({
           <span style={{ fontSize: 12.5, color: S.text.dim, whiteSpace: "nowrap" }}>
             {lastActivity}
           </span>
+        ) : null}
+        {/* The Networking workbook, as quiet text rather than a button: the
+            action slot stays the card's only tappable-looking thing. Outside
+            the card's anchor for the same reason as the company chip. */}
+        {c.workbook_id ? (
+          <a
+            href={networkingWorkbookHref(c.workbook_id)}
+            data-testid="contact-workbook-link"
+            style={{ fontSize: 12.5, fontWeight: 700, color: S.action.quietInk, whiteSpace: "nowrap", textDecoration: "none" }}
+          >
+            Workbook →
+          </a>
         ) : null}
       </span>
 

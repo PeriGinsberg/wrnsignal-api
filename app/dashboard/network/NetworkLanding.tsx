@@ -25,6 +25,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { LIGHT as S, action as actionStyle } from "../../../lib/theme/surfaces"
 import { authFetch } from "./authFetch"
 import { AddContactForm } from "./AddContactForm"
+import { CreateWorkbookModal } from "./CreateWorkbookModal"
 import { safeReturn, safeReturnLabel } from "../../../lib/network-tracker/safeReturn"
 import { STAGE_LABELS, VIEW_LABELS } from "./vocab"
 import { dueOf, type Contact } from "./contacts/ContactRow"
@@ -65,6 +66,7 @@ function ContactsInner() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
+  const [workbookOpen, setWorkbookOpen] = useState(false)
   // The FULL company list, which the roster alone cannot give: a company
   // with no contacts appears in no contact row, and those are exactly the
   // ones the strip is about.
@@ -433,8 +435,21 @@ function ContactsInner() {
           <h1 style={h1Style}>{VIEW_LABELS.contacts.heading}</h1>
           <p style={{ color: S.text.muted, fontSize: 14.5, marginTop: 6 }}>{countLine}</p>
         </div>
-        <div style={{ display: "flex", gap: 10, flex: "0 0 auto", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 10, flex: "0 1 auto", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
           <a href={withSubject("/dashboard/network/import")} style={{ ...secondaryBtn, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 9 }}><ImportIcon size={19} />Import</a>
+          {/* The client's own board only: a workbook is the client's to write.
+              Disabled rather than hidden on an empty board, because adding a
+              contact is exactly what earns it. */}
+          {!viewingClientBoard && (
+            <button
+              onClick={() => setWorkbookOpen(true)}
+              disabled={loading || contacts.length === 0}
+              title={!loading && contacts.length === 0 ? "Add a contact first" : undefined}
+              style={{ ...secondaryBtn, opacity: loading || contacts.length === 0 ? 0.5 : 1, cursor: loading || contacts.length === 0 ? "default" : "pointer" }}
+            >
+              Create Networking Workbook
+            </button>
+          )}
           <button onClick={() => setAddOpen(true)} style={{ ...actionStyle(S, "primary"), ...primarySize }}>
             + Add contact
           </button>
@@ -473,6 +488,8 @@ function ContactsInner() {
           }}
         />
       )}
+
+      {workbookOpen && <CreateWorkbookModal contacts={contacts} onClose={() => setWorkbookOpen(false)} />}
 
       {banner && (
         <div style={noticeStyle}>

@@ -1,6 +1,7 @@
 "use client"
 
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
+import { workbookLink } from "../../../lib/tasks/links"
 
 // Token resolution used across the network tracker pages: the live Supabase
 // session, falling back to the handoff token set when a user arrives from Framer.
@@ -80,4 +81,14 @@ export async function authFetch(url: string, opts: RequestInit = {}): Promise<Re
     ...opts,
     headers: { ...(opts.headers || {}), Authorization: `Bearer ${token}` },
   })
+}
+
+/**
+ * Where a contact's Networking workbook opens. The client opens their own
+ * workbook; a coach on a client's board opens it in that client's Workbooks
+ * tab, the only place a coach reads workbooks.
+ */
+export function networkingWorkbookHref(workbookId: string): string {
+  const id = subjectId()
+  return id ? workbookLink(id, workbookId) : `/dashboard/workbooks/${encodeURIComponent(workbookId)}`
 }
