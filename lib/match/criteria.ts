@@ -48,8 +48,33 @@ export type MatchCriteria = {
   targetIndustries: string[]
   excludedIndustries: string[]
   notes: string | null
+  /** Judgment only: the client's degree fields as the coach states them ("B.A. Psychology; minor Political Science"). */
+  majors: string | null
   /** Judgment only: the client's background, from their resume (read from the profile at match time). */
   background: string | null
+}
+
+/**
+ * Lane presets -> the city names a link or a slug can use for that market
+ * ("new-york-ny", "us-pa-philadelphia"). Used only to prefer one of a
+ * posting's apply links over another, never to pass or fail a posting.
+ */
+export const PRESET_CITIES: Record<string, string[]> = {
+  nyc: ["new york", "nyc", "manhattan", "brooklyn", "jersey city", "hoboken", "newark", "stamford", "white plains"],
+  boston: ["boston", "cambridge", "somerville", "waltham"],
+  chicago: ["chicago", "evanston"],
+  philadelphia: ["philadelphia", "king of prussia", "conshohocken"],
+  miami: ["miami", "coral gables", "doral"],
+  fort_lauderdale: ["fort lauderdale", "ft lauderdale"],
+  west_palm_beach: ["west palm beach"],
+  boca_raton: ["boca raton"],
+  columbus: ["columbus"],
+  indianapolis: ["indianapolis"],
+  cincinnati: ["cincinnati"],
+  atlanta: ["atlanta"],
+  nashville: ["nashville"],
+  washington_dc: ["washington dc", "washington d c", "district of columbia", "arlington", "mclean", "tysons", "reston", "bethesda", "alexandria"],
+  south_florida: ["miami", "coral gables", "doral", "fort lauderdale", "ft lauderdale", "boca raton", "west palm beach"],
 }
 
 /**
@@ -141,6 +166,7 @@ export function seedCriteria(
     targetIndustries: splitList(profile.target_industries),
     excludedIndustries: splitList(profile.excluded_industries),
     notes,
+    majors: null,
     background: [profile.resume_text, profile.profile_text].map((t) => (t ?? "").trim()).find((t) => t.length > 200) ?? null,
     ...overrides,
   }

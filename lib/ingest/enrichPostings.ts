@@ -121,7 +121,7 @@ export class EnrichViolation extends Error {
  * requirements_summary, tools, level, function, industry.
  */
 export type Demotion = {
-  field: "function" | "industry" | "start" | "campus"
+  field: "function" | "industry" | "start" | "campus" | "majors"
   value: string
   why: "no_quote" | "not_in_list" | "rejected_by_database" | "start_unusable"
 }
@@ -246,8 +246,19 @@ export function toPatch(f: EnrichFields, title: string): { patch: Record<string,
   const [fn, fnEv] = enumField(f.function, f.function_evidence, "function", FUNCTION_VALUES)
   const [ind, indEv] = enumField(f.industry, f.industry_evidence, "industry", INDUSTRY_VALUES)
 
+  // required majors: the fields need their quote and a basis, like every stated
+  // value; otherwise stored as not stated and recorded
+  const majorsText = f.majors_evidence.trim() || null
+  let majors = f.required_majors === "not_stated" ? null : [...new Set(f.required_majors.map((m) => m.trim()).filter(Boolean))]
+  if (majors && !majors.length) majors = null
+  if (majors && (!majorsText || f.majors_basis === "not_stated")) {
+    demoted.push({ field: "majors", value: JSON.stringify(majors), why: "no_quote" })
+    majors = null
+  }
+  if (!majors) notStated.push("majors")
+
   const evidence: Record<string, unknown> = {}
-  for (const [k, v] of [["years", f.years_evidence], ["salary", f.salary_evidence], ["tools", f.tools_evidence], ["level", f.level_evidence], ["employment", f.employment_evidence], ["campus", campus ? f.campus_evidence : ""]] as const) {
+  for (const [k, v] of [["years", f.years_evidence], ["salary", f.salary_evidence], ["tools", f.tools_evidence], ["level", f.level_evidence], ["employment", f.employment_evidence], ["campus", campus ? f.campus_evidence : ""], ["majors", majors ? f.majors_evidence : ""]] as const) {
     if (v.trim()) evidence[k] = v.trim()
   }
   if (employmentAdjusted) evidence.employment_adjusted = titleIntern ? "title states an internship; internship is never full_time" : "internship is never full_time"
@@ -268,6 +279,8 @@ export function toPatch(f: EnrichFields, title: string): { patch: Record<string,
       industry: ind, industry_evidence: indEv,
       employment_types: employment,
       campus_signal: campus,
+      required_majors: majors,
+      majors_basis: majors ? f.majors_basis : null,
       ...start,
       enrichment_evidence: evidence,
       enrichment_not_stated: notStated,

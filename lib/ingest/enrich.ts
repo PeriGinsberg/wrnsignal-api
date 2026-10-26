@@ -86,6 +86,12 @@ export const EnrichSchema = z.object({
   // start rule alone cannot tell a campus role from an experienced hire.
   campus_signal: z.boolean(),
   campus_evidence: z.string(),
+
+  // Added 2026-10-26 after the coach review of Sami's queue: the judge needs the
+  // degree fields a posting asks for, quoted, to compare with the client's.
+  required_majors: z.union([z.array(z.string()).min(1), NOT_STATED]),
+  majors_basis: z.enum(["required", "preferred", "not_stated"]),
+  majors_evidence: z.string(),
 })
 
 export type EnrichFields = z.infer<typeof EnrichSchema>
@@ -294,7 +300,23 @@ ${INDUSTRY_RULES}
   "mid-career", or work experience asked as the audience. Graduating from the
   program itself ("upon graduating from the Academy") is not a graduation date,
   and the program's own year ("Academy 2026-2027") is not a start.
-- campus_evidence: the words you took it from, verbatim. Empty when false.`
+- campus_evidence: the words you took it from, verbatim. Empty when false.
+
+--- required_majors / majors_basis / majors_evidence
+- The fields of study the posting asks the candidate's degree to be in, as
+  written, one per item: "Bachelor's in Finance, Economics or Accounting" is
+  ["Finance", "Economics", "Accounting"].
+- Keep a stated catch-all as its own item: "or a related field", "or a
+  quantitative field", "STEM" ("degree in Finance or a related field" is
+  ["Finance", "related field"]).
+- "not_stated" when the posting names no field: a degree level alone
+  ("Bachelor's degree required"), or any field welcome ("all majors", "any
+  discipline", "all academic backgrounds are welcome").
+- majors_basis: "required" when the field is a requirement, "preferred" when it
+  is only preferred / a plus / desired, "not_stated" when no field is named.
+- Only the candidate's degree. Not the team's specialties, the employer's
+  industry, or courses the job teaches.
+- majors_evidence: the sentence the fields came from, verbatim. Empty when not stated.`
 
 /** Recorded on every enrichment_runs row, so a prompt change shows in the data. */
 export const ENRICH_PROMPT_SHA256 = createHash("sha256").update(SYSTEM).digest("hex")

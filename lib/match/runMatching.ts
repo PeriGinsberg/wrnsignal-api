@@ -18,21 +18,29 @@
  * shows every posting that passes the rules, best score first. A posting with
  * no description passes unjudged and sorts last (SmartRecruiters today).
  *
+ * A CLOSED POSTING IS SKIPPED: the link check (lib/match/linkCheck.ts) found
+ * its apply page saying it is closed, so it is out of every queue.
+ *
+ * THE APPLY LINK PER CLIENT. A posting judged for this client gets, on its
+ * match row, the best of Google's links that names one of the client's market
+ * cities, when that differs from the posting's own link (multi-office postings).
+ *
  * Writes posting_matches and one match_runs row. Never touches postings.
  */
 
 import { createHash } from "crypto"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { postingText } from "../ingest/enrichPostings"
-import type { MatchCriteria, Market } from "./criteria"
-import { applyRules, parseLocations, RULES_VERSION, type MatchPosting } from "./rules"
+import { chooseMarketLink, linksFromRaw } from "../ingest/applyLinks"
+import { PRESET_CITIES, type MatchCriteria, type Market } from "./criteria"
+import { applyRules, parseLocations, RULES_VERSION, titleAbroad, type MatchPosting } from "./rules"
 import { judge, JUDGE_PROMPT_SHA256, type JudgeUsage, type PastDecision } from "./judge"
 
 /** Postings not seen on their source for longer than this are out of the queue, and not evaluated. */
 export const LIVE_DAYS = 14
 const EXAMPLES = 10
 
-const PROFILE_COLS = "id, grad_date, education_status, timeline, resume_text, profile_text, coach_notes_avoid, coach_notes_concerns"
+const PROFILE_COLS = "id, grad_date, education_status, timeline, resume_text, profile_text, profile_structured, coach_notes_avoid, coach_notes_concerns"
 
 /** client_match_criteria row + client_profiles row -> what rules and judge read. */
 export function criteriaFromRow(row: any, profile: any): MatchCriteria {
@@ -56,6 +64,8 @@ export function criteriaFromRow(row: any, profile: any): MatchCriteria {
     targetIndustries: row.target_industries ?? [],
     excludedIndustries: row.excluded_industries ?? [],
     notes,
+    // The coach's entry, else what the client gave on the intake form.
+    majors: row.majors ?? profile.profile_structured?.intakeMeta?.major ?? null,
     background: [profile.resume_text, profile.profile_text].map((t: string | null) => (t ?? "").trim()).find((t: string) => t.length > 200) ?? null,
   }
 }
@@ -66,10 +76,12 @@ export const criteriaHash = (c: MatchCriteria) =>
 /** A postings row (enriched or not) in the matcher's shape. `text` is filled in later for the ones judged. */
 export function fromPosting(p: any, text = ""): MatchPosting {
   const loc = String(p.location ?? "")
+  // A place abroad in Google's original title outranks Google's location field.
+  const abroad = titleAbroad(p.title)
   return {
     title: p.cleaned_title ?? p.title,
     company: p.company,
-    locations: parseLocations(loc),
+    locations: abroad ? [abroad] : parseLocations(loc),
     remote: /\bremote\b/i.test(loc) ? true : null,
     yearsMin: p.years_min ?? null,
     yearsMax: p.years_max ?? null,
@@ -86,6 +98,9 @@ export function fromPosting(p: any, text = ""): MatchPosting {
     startSeason: p.start_season ?? null,
     startYear: p.start_year ?? null,
     campus: p.campus_signal ?? null,
+    requiredMajors: p.required_majors ?? null,
+    majorsBasis: p.majors_basis ?? null,
+    majorsEvidence: p.enrichment_evidence?.majors ?? null,
     text: text || p.requirements_summary || "",
   }
 }
@@ -135,8 +150,8 @@ export async function runMatching(
 
   const since = new Date(Date.now() - LIVE_DAYS * 86400e3).toISOString()
   const postings = await pageAll<any>((a, b) => sb.from("postings_canonical")
-    .select("id, source, title, cleaned_title, company, location, years_min, years_max, years_basis, salary_low, salary_high, salary_period, graduation_from, graduation_to, level, requirements_summary, description_md5, enriched_at, employment_types, start_type, start_date, start_season, start_year, campus_signal")
-    .gte("last_seen_at", since).order("id").range(a, b))
+    .select("id, source, title, cleaned_title, company, location, apply_url, years_min, years_max, years_basis, salary_low, salary_high, salary_period, graduation_from, graduation_to, level, requirements_summary, description_md5, enriched_at, employment_types, start_type, start_date, start_season, start_year, campus_signal, required_majors, majors_basis, enrichment_evidence")
+    .gte("last_seen_at", since).is("closed_at", null).order("id").range(a, b))
   const existing = new Map((await pageAll<any>((a, b) => sb.from("posting_matches")
     .select("posting_id, criteria_hash, description_md5, action, updated_at").eq("client_profile_id", opts.clientProfileId).order("posting_id").range(a, b)))
     .map((m) => [m.posting_id, m]))
@@ -175,8 +190,14 @@ export async function runMatching(
 
   const base = (p: any) => ({
     client_profile_id: opts.clientProfileId, posting_id: p.id, criteria_hash: hash, description_md5: p.description_md5,
-    match_run_id: runId, prompt_sha256: JUDGE_PROMPT_SHA256,
+    match_run_id: runId, prompt_sha256: JUDGE_PROMPT_SHA256, apply_url: null as string | null, apply_link_kind: null as string | null,
   })
+  const cities = [...new Set(criteria.markets.flatMap((m) => PRESET_CITIES[m.name] ?? []))]
+  /** The market link for this client, only when it differs from the posting's own. */
+  const marketLink = (p: any, raw: any) => {
+    const l = raw ? chooseMarketLink(p.company, linksFromRaw(raw), cities) : null
+    return l && l.url !== p.apply_url ? { apply_url: l.url, apply_link_kind: l.kind } : {}
+  }
   const upsert = async (rows: any[]) => {
     if (opts.dryRun || !rows.length) return
     for (let i = 0; i < rows.length; i += 500) {
@@ -212,11 +233,11 @@ export async function runMatching(
       try {
         const { judgment, usage: u } = await judge(criteria, fromPosting(e.p, postingText(r?.source ?? e.p.source, r?.raw)), { effort, examples })
         usage.push(u)
-        judgedRows.push({ ...base(e.p), rule_failures: [], score: judgment.score, judge_reason: judgment.reason, judge_evidence: judgment.evidence || null, judge_error: null, judged_at: new Date().toISOString() })
+        judgedRows.push({ ...base(e.p), ...marketLink(e.p, r?.raw), rule_failures: [], score: judgment.score, judge_reason: judgment.reason, judge_evidence: judgment.evidence || null, judge_error: null, judged_at: new Date().toISOString() })
       } catch (err: any) {
         judgeErrors++
         // Shown unjudged rather than hidden: a failed judgment must not drop a posting.
-        judgedRows.push({ ...base(e.p), ...cleared, rule_failures: [], judge_error: String(err?.message ?? err).slice(0, 500) })
+        judgedRows.push({ ...base(e.p), ...marketLink(e.p, r?.raw), ...cleared, rule_failures: [], judge_error: String(err?.message ?? err).slice(0, 500) })
       }
       if (judgedRows.length >= 100) await upsert(judgedRows.splice(0))
     })

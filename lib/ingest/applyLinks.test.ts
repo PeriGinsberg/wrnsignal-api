@@ -3,7 +3,8 @@
 // Apply link choice (lib/ingest/applyLinks.ts). Cases are Alex's top 25 links
 // as checked in a browser on 2026-10-25.
 
-import { chooseApplyLink, classifyLink, linksFromRaw } from "./applyLinks"
+import { chooseApplyLink, chooseMarketLink, classifyLink, linkNamesCity, linksFromRaw } from "./applyLinks"
+import { PRESET_CITIES } from "../match/criteria"
 
 let failures = 0
 function ok(label: string, cond: boolean) {
@@ -57,6 +58,21 @@ ok("SearchApi shape: apply_link then apply_links, with sources", sa.length === 2
 const sp = linksFromRaw({ apply_options: [{ title: "LinkedIn", link: "https://linkedin.com/1" }] })
 ok("SerpApi shape: apply_options", sp.length === 1 && sp[0].source === "LinkedIn")
 ok("source label naming the employer counts", chooseApplyLink("Molson Coors", [{ url: "https://jobs.example.net/1", source: "Careers At MolsonCoors" }, { url: "https://www.indeed.com/viewjob?jk=1", source: "Indeed" }])?.kind === "employer")
+
+// the link naming the client's market (Sami's #5, 2026-10-26: the Atlanta requisition was linked when New York was hiring)
+const nyc = PRESET_CITIES.nyc
+ok("slug names New York", linkNamesCity("https://www.monster.com/job-openings/analyst-new-york-ny--7a6d0da1", nyc))
+ok("slug names Philadelphia", linkNamesCity("https://www.jobilize.com/job/us-pa-philadelphia-early-careers-analyst-q5eooja", PRESET_CITIES.philadelphia))
+ok("a city inside another word does not count", !linkNamesCity("https://example.com/job/newyorker-analyst", nyc))
+const multi = [
+  { url: "https://www.linkedin.com/jobs/view/compensation-analyst-atlanta-ga-at-wtw-1", source: "LinkedIn" },
+  { url: "https://www.monster.com/job-openings/compensation-analyst-new-york-ny--2", source: "Monster" },
+  { url: "https://bebee.com/us/jobs/compensation-analyst-new-york-3", source: "BeBee" },
+]
+ok("multi-office: the New York link for a NYC client, best kind among them", chooseMarketLink("Willis Towers Watson", multi, nyc)?.url === multi[1].url)
+ok("multi-office: no market link for a client elsewhere", chooseMarketLink("Willis Towers Watson", multi, PRESET_CITIES.boston) === null)
+ok("no markets: none", chooseMarketLink("Willis Towers Watson", multi, []) === null)
+ok("the default choice is unchanged (LinkedIn)", chooseApplyLink("Willis Towers Watson", multi)?.url === multi[0].url)
 
 console.log(failures ? `\n${failures} failure(s)` : "\nall passed")
 if (failures) process.exit(1)

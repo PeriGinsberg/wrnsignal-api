@@ -30,7 +30,7 @@ const realFetch = globalThis.fetch
   mockFetch([{ jobs: [job(1), job(2)], pagination: { next_page_token: "t2" } }, { error: PAGE_ERROR }])
   const a = await searchApiAdapter({ apiKey: "x", maxPages: 3 }).fetch(pair, "google_jobs")
   ok("searchapi: page 2 fails, page 1 kept", a.postings.length === 2 && a.requests === 2)
-ok("searchapi: attempts never below requests (ingest_runs_attempts_at_least_requests)", a.attempts >= a.requests)
+  ok("searchapi: attempts never below requests (ingest_runs_attempts_at_least_requests)", (a.attempts ?? 0) >= a.requests)
   ok("searchapi: the page error is recorded", (a.detail as any).next_page_error?.includes("400"))
 
   mockFetch([{ error: PAGE_ERROR }])
@@ -46,7 +46,7 @@ ok("searchapi: attempts never below requests (ingest_runs_attempts_at_least_requ
   mockFetch([{ jobs_results: [job(1), job(2), job(3)], serpapi_pagination: { next_page_token: "t2" } }, { error: PAGE_ERROR }])
   const s = await serpApiAdapter({ apiKey: "x", maxPages: 3 }).fetch(pair, "google_jobs")
   ok("serpapi: page 2 fails, page 1 kept", s.postings.length === 3 && (s.detail as any).next_page_error?.includes("400"))
-ok("serpapi: attempts never below requests", s.attempts >= s.requests)
+  ok("serpapi: attempts never below requests", (s.attempts ?? 0) >= s.requests)
 
   globalThis.fetch = realFetch
   console.log(failures ? `\n${failures} failure(s)` : "\nall passed")

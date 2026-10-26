@@ -73,6 +73,20 @@ posting: a credential they are not on track for, a degree in a field they do
 not have, experience far beyond theirs, a clearance or citizenship they lack.
 Judge the client's experience from their background, not from their title.
 
+MAJORS. When the posting states "Majors asked", compare them with the client's
+"Majors" (or, when that is not given, the degree in their background):
+  - the client's field is one asked, or plainly within one ("Psychology" for
+    "Social Sciences", "Economics" for "Business, Economics or related"): no
+    mismatch
+  - a catch-all is asked ("or related field", "or equivalent experience") and
+    the client's field is a reasonable neighbour: no mismatch, mention it
+  - basis "preferred": never a hard requirement, at most a small minus
+  - basis "required", only specific fields the client's degree is clearly not
+    in or near ("Accounting or Finance required" for a Psychology major): this
+    is "doesn't meet requirements"; score it in 20-49 unless the coach's
+    decisions show they push such roles
+Name the comparison in the reason when it decides the score.
+
 CAMPUS POSTINGS. When the client is still studying or cannot start until a
 future date (see "Available to start"), a posting marked "Campus or early
 career: yes" fits their stage better than an experienced-hire posting doing
@@ -115,6 +129,7 @@ export function clientBrief(c: MatchCriteria, today = new Date()): string {
     `Coach's usual ceiling on years a posting asks: ${c.maxYearsRequired ?? "none given"} (a guide, not a limit: see STRETCH ROLES)`,
     `Job type wanted: ${c.jobTypes.join(", ") || "not given"}`,
     `Where: ${c.markets.length ? c.markets.map((m) => m.name).join(", ") + (c.radiusMiles ? ` (within ${c.radiusMiles} miles)` : "") : "anywhere"}${c.remoteOk ? "; remote is fine" : ""}`,
+    c.majors && `Majors: ${c.majors}`,
     c.salaryFloor && `Salary floor: ${c.salaryFloor.amount} per ${c.salaryFloor.period}`,
     c.targetIndustries.length && `Target industries: ${c.targetIndustries.join(", ")}`,
     c.excludedIndustries.length && `Industries ruled out: ${c.excludedIndustries.join(", ")}`,
@@ -146,6 +161,7 @@ export function postingBrief(p: MatchPosting): string {
     `Start: ${p.startType === "date" ? p.startDate : p.startType === "season" ? `${p.startSeason} ${p.startYear}` : p.startType === "immediate" ? "immediately" : "not stated"}`,
     `Pay: ${pay}`,
     (p.graduationFrom || p.graduationTo) && `Graduation window: ${p.graduationFrom ?? "?"} to ${p.graduationTo ?? "?"}`,
+    `Majors asked: ${p.requiredMajors?.length ? `${p.requiredMajors.join("; ")} (${p.majorsBasis ?? "basis not stated"}; quote: "${p.majorsEvidence ?? ""}")` : "not stated"}`,
     `\nPosting text:\n${p.text.slice(0, 3000)}`,
   ].filter(Boolean).join("\n")
 }

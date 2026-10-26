@@ -118,6 +118,29 @@ export function chooseApplyLink(company: string, links: { url?: string | null; s
   return shareLink ? { url: shareLink, kind: "google" } : null
 }
 
+/** Does the link's address name one of these cities? "…/new-york-ny--7a6d…" names "new york". */
+export function linkNamesCity(url: string, cities: string[]): boolean {
+  let s = url
+  try { const u = new URL(url); s = decodeURIComponent(u.hostname + " " + u.pathname) } catch { /* keep the raw string */ }
+  const words = ` ${s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()} `
+  return cities.some((c) => words.includes(` ${c} `))
+}
+
+/**
+ * The best link that names one of the client's market cities, or null when
+ * none does (the posting's own link stands). For postings that list several
+ * offices: a coach check of Sami's queue (2026-10-26) found a link to the
+ * Atlanta requisition of a role also hiring in New York. Same order as
+ * chooseApplyLink among the links that name the market; Google's share link
+ * never counts.
+ */
+export function chooseMarketLink(company: string, links: { url?: string | null; source?: string | null }[], cities: string[]): ApplyLink | null {
+  if (!cities.length) return null
+  const named = links.filter((l) => !!l.url && linkNamesCity(l.url, cities))
+  const best = chooseApplyLink(company, named)
+  return best && best.kind !== "google" ? best : null
+}
+
 /** Google's links from a stored raw row, either provider's shape. */
 export function linksFromRaw(raw: any): { url: string; source: string }[] {
   const out: { url: string; source: string }[] = []

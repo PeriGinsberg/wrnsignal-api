@@ -25,8 +25,10 @@ import { citiesOf } from "../ingest/link"
  *   2026-10-25.2  trailing country names read; "remote" abroad is not remote
  *   2026-10-25.3  SmartRecruiters' "Kentucky (KY)" state form read
  *   2026-10-25.4  start timing against available_from; employment types read
+ *   2026-10-26.1  an internship-only client fails a stated non-internship type
+ *   2026-10-26.2  a place abroad that the title states is the posting's location
  */
-export const RULES_VERSION = "2026-10-26.1"
+export const RULES_VERSION = "2026-10-26.2"
 
 /** Country names a location can end with. US spellings are handled separately. */
 const COUNTRIES = new Set([
@@ -40,6 +42,55 @@ const COUNTRIES = new Set([
   "new zealand", "canada", "mexico", "brazil", "argentina", "chile", "colombia", "peru", "uruguay", "costa rica",
 ])
 const US = /^(united states( of america)?|usa|us|u\.s\.a?\.?)$/i
+
+/** Cities abroad, with their country, for reading a title. Countries come from COUNTRIES. */
+const FOREIGN_CITIES: Record<string, string> = {
+  dubai: "United Arab Emirates", "abu dhabi": "United Arab Emirates", riyadh: "Saudi Arabia", doha: "Qatar",
+  london: "United Kingdom", manchester: "United Kingdom", edinburgh: "United Kingdom", dublin: "Ireland",
+  paris: "France", berlin: "Germany", munich: "Germany", frankfurt: "Germany", hamburg: "Germany",
+  amsterdam: "Netherlands", brussels: "Belgium", zurich: "Switzerland", geneva: "Switzerland", milan: "Italy",
+  rome: "Italy", madrid: "Spain", barcelona: "Spain", lisbon: "Portugal", stockholm: "Sweden", copenhagen: "Denmark",
+  oslo: "Norway", helsinki: "Finland", warsaw: "Poland", prague: "Czech Republic", vienna: "Austria",
+  "tel aviv": "Israel", singapore: "Singapore", "hong kong": "Hong Kong", tokyo: "Japan", seoul: "South Korea",
+  shanghai: "China", beijing: "China", shenzhen: "China", taipei: "Taiwan", sydney: "Australia", melbourne: "Australia",
+  mumbai: "India", bangalore: "India", bengaluru: "India", "new delhi": "India", gurgaon: "India", hyderabad: "India",
+  manila: "Philippines", "kuala lumpur": "Malaysia", jakarta: "Indonesia", bangkok: "Thailand",
+  toronto: "Canada", montreal: "Canada", vancouver: "Canada", calgary: "Canada", "mexico city": "Mexico",
+  "sao paulo": "Brazil", "buenos aires": "Argentina", bogota: "Colombia",
+}
+
+/**
+ * A place abroad that the TITLE states, or null.
+ *
+ * Google's location for a listing can be wrong: "Dubai-Based Assistant Brand
+ * Manager" (Ferrero, 2026-10-26) carried "New York, NY" from a board that read
+ * the employer's "Italy" as Italy, NY, and the cleaned title had dropped
+ * "Dubai-Based". Read narrowly: a "<place>-based" phrase, or a title segment
+ * (between " - ", " | ", parentheses, brackets or commas) that is exactly a
+ * city or country abroad. A US place in a title is never read: multi-location
+ * postings name one office in the title and the others in the text.
+ */
+export function titleAbroad(title: string | null | undefined): PostingLocation | null {
+  const t = String(title ?? "").toLowerCase()
+  const place = (x: string): PostingLocation | null => {
+    const k = x.trim().replace(/\s+/g, " ")
+    if (FOREIGN_CITIES[k]) return { city: k, state: null, country: FOREIGN_CITIES[k] }
+    if (COUNTRIES.has(k)) return { city: null, state: null, country: k }
+    return null
+  }
+  const based = t.match(/([a-z ]+?)[\s-]+based\b/)
+  if (based) {
+    // "Abu Dhabi-Based", "Dubai-Based": the last two words, then the last one.
+    const words = based[1].trim().split(" ")
+    const hit = place(words.slice(-2).join(" ")) ?? place(words.slice(-1).join(" "))
+    if (hit) return hit
+  }
+  for (const seg of t.split(/\s[-–—|]\s|[()[\],]/)) {
+    const hit = place(seg)
+    if (hit) return hit
+  }
+  return null
+}
 
 /**
  * A postings.location string -> locations with their country.
@@ -90,6 +141,10 @@ export type MatchPosting = {
   startYear: number | null
   /** The posting states it hires students or recent graduates. null = not looked at yet. */
   campus: boolean | null
+  /** Degree fields the posting asks for, as written, with the quote. Judgment only. null = not stated. */
+  requiredMajors: string[] | null
+  majorsBasis: "required" | "preferred" | null
+  majorsEvidence: string | null
   /** What the judge reads: description, or a requirements summary when that is all there is. */
   text: string
 }

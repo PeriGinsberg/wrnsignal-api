@@ -28,13 +28,14 @@ const none: EnrichFields = {
   employment_types: "not_stated", employment_evidence: "",
   start_type: "not_stated", start_date: null, start_season: null, start_year: null, start_evidence: "",
   campus_signal: false, campus_evidence: "",
+  required_majors: "not_stated", majors_basis: "not_stated", majors_evidence: "",
 }
 const p = (f: Partial<EnrichFields>) => toPatch({ ...none, ...f }, "Financial Analyst - Chicago, IL").patch
 const ns = (x: Record<string, unknown>) => (x.enrichment_not_stated as string[]).join(",")
 
 // ── nothing stated: every group named, every value NULL
 const empty = p({})
-ok("nothing stated names every group", ns(empty) === "years,salary,salary_currency,graduation,application_deadline,requirements_summary,tools,level,employment_type,start,function,industry")
+ok("nothing stated names every group", ns(empty) === "years,salary,salary_currency,graduation,application_deadline,requirements_summary,tools,level,employment_type,start,function,industry,majors")
 ok("nothing stated: values NULL, cleaned title kept", empty.years_min === null && empty.salary_low === null && empty.deadline_text === null && empty.cleaned_title === "Financial Analyst")
 ok("success clears a previous failure", empty.enrichment_failed_at === null && empty.enrichment_error === null)
 
@@ -145,6 +146,16 @@ ok("blank cleaned title falls back to the stored title", p({ cleaned_title: "  "
 // ── postingText
 ok("Google Jobs text from raw.description", postingText("searchapi", { description: "plain text" }) === "plain text")
 ok("Greenhouse text from raw.content HTML", postingText("grnhse", { content: "&lt;p&gt;Hello&lt;/p&gt;" }) === "Hello")
+
+// ── required majors (2026-10-26): stored with the quote; no quote or no basis -> not stated
+const maj = p({ required_majors: ["Finance", "Economics", "related field"], majors_basis: "required", majors_evidence: "Bachelor's degree in Finance, Economics or a related field" })
+ok("majors stored as written, with basis and quote", (maj.required_majors as string[]).join("|") === "Finance|Economics|related field" && maj.majors_basis === "required"
+  && (maj.enrichment_evidence as any).majors === "Bachelor's degree in Finance, Economics or a related field")
+ok("majors not stated: NULL, named not stated", empty.required_majors === null && empty.majors_basis === null && ns(empty).includes("majors"))
+const majNoQuote = toPatch({ ...none, required_majors: ["Accounting"], majors_basis: "required", majors_evidence: "" }, "t")
+ok("majors with no quote: stored not stated and recorded", majNoQuote.patch.required_majors === null && majNoQuote.demoted.some((d) => d.field === "majors" && d.why === "no_quote"))
+const majNoBasis = toPatch({ ...none, required_majors: ["Accounting"], majors_basis: "not_stated", majors_evidence: "Accounting degree" }, "t")
+ok("majors with no basis: stored not stated", majNoBasis.patch.required_majors === null && majNoBasis.patch.majors_basis === null)
 
 console.log(failures ? `\n${failures} failure(s)` : "\nall passed")
 if (failures) process.exit(1)

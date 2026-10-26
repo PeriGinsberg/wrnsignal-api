@@ -4,7 +4,8 @@
 // offline. The rule that matters most: NOT STATED NEVER FAILS.
 
 import { availableFromProfile, parseTimeline, PRESET_STATES, seedCriteria, UnknownPresetError } from "./criteria"
-import { applyRules, parseLocations, type MatchPosting } from "./rules"
+import { applyRules, parseLocations, titleAbroad, type MatchPosting } from "./rules"
+import { criteriaFromRow, fromPosting } from "./runMatching"
 
 let failures = 0
 function ok(label: string, cond: boolean) {
@@ -24,7 +25,8 @@ const blank: MatchPosting = {
   title: "Financial Analyst", company: "Acme", locations: null, remote: null,
   yearsMin: null, yearsMax: null, yearsBasis: null, employmentTypes: null,
   salaryLow: null, salaryHigh: null, salaryPeriod: null, graduationFrom: null, graduationTo: null, level: null,
-  startType: null, startDate: null, startSeason: null, startYear: null, campus: null, text: "",
+  startType: null, startDate: null, startSeason: null, startYear: null, campus: null,
+  requiredMajors: null, majorsBasis: null, majorsEvidence: null, text: "",
 }
 const TODAY = "2026-10-25"
 const r = (p: Partial<MatchPosting>, c = alex) => applyRules(c, { ...blank, ...p }, TODAY)
@@ -137,6 +139,26 @@ const now = { ...alex, availableFrom: null }
 ok("client with no available_from: no start rule", r({ startType: "immediate" }, now).length === 0)
 const soon = { ...alex, availableFrom: "2026-11-10" }
 ok("immediate passes a client free within a month", r({ startType: "immediate" }, soon).length === 0)
+
+// a place abroad that the title states (Sami's #3, 2026-10-26: Google said New York)
+ok("title: Dubai-Based is the UAE", titleAbroad("Dubai-Based Assistant Brand Manager — 2-Year Rotational Program")?.country === "United Arab Emirates")
+ok("title: Abu Dhabi-based", titleAbroad("Abu Dhabi-based Analyst")?.city === "abu dhabi")
+ok("title: '- London' segment", titleAbroad("Graduate Analyst - London")?.country === "United Kingdom")
+ok("title: '(Singapore)' segment", titleAbroad("Summer Analyst (Singapore)")?.country === "Singapore")
+ok("title: a US city is never read", titleAbroad("Early Careers: Compensation Analyst Work and Rewards - Atlanta - 2027") === null)
+ok("title: 'evidence-based' is not a place", titleAbroad("Evidence-Based Practice Analyst") === null)
+ok("title: a place inside a phrase is not read", titleAbroad("Paris Baguette Marketing Analyst") === null && titleAbroad("London Fog Brand Associate") === null)
+const sami = criteriaFromRow({ client_profile_id: "sami", active: true, markets: [{ name: "nyc", states: ["ny", "nj", "ct"] }], remote_ok: true, job_types: ["full_time"], salary_floor: 80000, salary_floor_period: "year" }, { profile_structured: {} })
+const dubai = fromPosting({ title: "Dubai-Based Assistant Brand Manager — 2-Year Rotational Program", cleaned_title: "Assistant Brand Manager — 2-Year Rotational Program", company: "Ferrero", location: "New York, NY" })
+ok("Ferrero: Dubai in the title fails a NYC client although Google says New York", applyRules(sami, dubai, TODAY).join() === "location")
+ok("Ferrero: the cleaned title is still what the coach sees", dubai.title === "Assistant Brand Manager — 2-Year Rotational Program")
+ok("no place in the title: Google's location stands", fromPosting({ title: "Analyst", company: "X", location: "New York, NY" }).locations?.[0]?.state === "ny")
+ok("salary floor 80,000/year: a 65-75k posting fails", applyRules(sami, { ...blank, salaryLow: 65000, salaryHigh: 75000, salaryPeriod: "year" }, TODAY).join() === "salary")
+ok("salary floor: a 78-87k posting passes (its ceiling clears the floor)", applyRules(sami, { ...blank, salaryLow: 78000, salaryHigh: 87000, salaryPeriod: "year" }, TODAY).length === 0)
+ok("salary floor: hourly pay is not converted, so it passes a yearly floor", applyRules(sami, { ...blank, salaryLow: 23, salaryHigh: 23, salaryPeriod: "hour" }, TODAY).length === 0)
+ok("majors: the coach's entry, else the intake form's", sami.majors === null
+  && criteriaFromRow({ markets: [], majors: "B.A. Psychology" }, { profile_structured: { intakeMeta: { major: "Econ" } } }).majors === "B.A. Psychology"
+  && criteriaFromRow({ markets: [] }, { profile_structured: { intakeMeta: { major: "Econ" } } }).majors === "Econ")
 
 console.log(failures ? `\n${failures} failure(s)` : "\nall passed")
 if (failures) process.exit(1)
