@@ -26,6 +26,7 @@ type Loaded = {
     has_coach?: boolean
     /** A networking workbook's live lead coach, which may postdate its content. */
     coach_first_name?: string | null
+    network_contact_id?: string | null
   }
   answers: Record<string, { value: unknown; updated_at: string }>
   comments: Comment[]
@@ -82,6 +83,16 @@ function Loaded({ data }: { data: Loaded }) {
   // coach. Send and Ask both reach a coach, so both are hidden, not disabled:
   // nothing on this page could earn them.
   const canSend = wb.has_coach !== false
+  // THE WAY BACK. This page is full-bleed (no dashboard shell), so without this
+  // the browser's back arrow was the only exit. A networking workbook returns
+  // to its contact, or to the board if the contact was closed out; every other
+  // workbook returns to the Coaching Hub, where the workbook list lives.
+  const back = c.kind === "networking"
+    ? {
+        href: wb.network_contact_id ? `/dashboard/network/contacts/${wb.network_contact_id}` : "/dashboard/network",
+        label: "Back to Networking",
+      }
+    : { href: "/dashboard/coaching-hub", label: "Back to SIGNAL" }
   const auto = useAutosave(wb.id, data.answers)
   const [comments, setComments] = useState<Comment[]>(data.comments)
   const [sends, setSends] = useState<Send[]>(data.sends)
@@ -309,7 +320,10 @@ function Loaded({ data }: { data: Loaded }) {
   return (
     <WorkbookFrame>
       <header className="wb-header">
-        <div className="wb-brand"><i />WORKFORCE READY NOW</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 24, minWidth: 0 }}>
+          <Link href={back.href} className="wb-link" data-testid="workbook-back" style={{ whiteSpace: "nowrap" }}>&larr; {back.label}</Link>
+          <div className="wb-brand wb-hide-phone"><i />WORKFORCE READY NOW</div>
+        </div>
         <div className="wb-header-actions">
           <span className="wb-hide-phone">{saveLabel}</span>
           <Link href={`/dashboard/workbooks/${wb.id}/summary`} className="wb-btn wb-hide-phone">{summaryLabel}</Link>
