@@ -32,7 +32,8 @@ function jd(caseNo: string): string {
 
 console.log("── synthetic (8) ──")
 assertIds("01 Jordan/Threadline", classifyRequirements(jd("01")), ["b2b_saas_3yr", "dbt_handson", "crm_pipeline"])
-assertIds("02 Priya/Meridian", classifyRequirements(jd("02")), ["ts_sci_clearance", "us_citizenship", "degree_or_waiver"])
+// No us_citizenship: citizenship never gates (2026-10-22); the clearance still does.
+assertIds("02 Priya/Meridian", classifyRequirements(jd("02")), ["ts_sci_clearance", "degree_or_waiver"])
 assertIds("03 Marcus/Vantail", classifyRequirements(jd("03")), ["yoe_10", "manager_of_managers_5yr"])
 assertIds("04 Dana/Corvel", classifyRequirements(jd("04")), ["recent_angular_v14_3yr"])
 assertIds("05 Tyler/Highfield", classifyRequirements(jd("05")), ["snowflake_handson", "dbt_handson", "airflow_handson", "spark_handson"])

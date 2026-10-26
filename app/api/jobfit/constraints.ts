@@ -196,11 +196,8 @@ if (job.credentialRequired) {
     return { type: "force_pass", gateCode: "GATE_HARD_GOV", detail: "Hard no government" }
   }
 
-  // Hard no fully remote means: remote roles are a hard stop.
-  // Hybrid/onsite are fine.
-  if (profile.constraints.hardNoFullyRemote && job.location.mode === "remote") {
-    return { type: "force_pass", gateCode: "GATE_REMOTE_MISMATCH", detail: "Hard no remote vs remote job" }
-  }
+  // Location and work setup never gate (Peri, 2026-10-22). A no-remote
+  // candidate on a remote job gets a low-severity heads-up in scoring.ts.
 
   // Hard no part-time — candidate explicitly wants full-time only
   if ((profile.constraints as any).hardNoPartTime && (job as any).isPartTime) {

@@ -34,6 +34,10 @@ export type ScoreResult = {
   penalties: Penalty[]
   penaltySum: number
   whyCodes: WhyCode[]
+  // Positive signals that are not evidence of fit (stated industry interest).
+  // Shown with the WHYs but kept out of whyCodes, which the decision
+  // guardrails and the high-confidence boost count as evidence.
+  interestWhyCodes: WhyCode[]
   riskCodes: RiskCode[]
   // Stage 0 regression-harness trace (additive). The full match set the
   // scorer built (post semantic-suppression) and the per-requirement
@@ -981,21 +985,17 @@ export function scoreJobFit(
   const hasExplicitTools =
     (job.requiredTools?.length || 0) + (job.preferredTools?.length || 0) > 0
 
+  // Location and work setup are a heads-up, never a penalty (Peri,
+  // 2026-10-22): low severity and weight 0, so it neither costs points nor
+  // blocks Priority Apply.
   if (profile.constraints.hardNoFullyRemote && job.location?.mode === "remote") {
-    const k: PenaltyKey = "location_mismatch_constrained"
-    const amt = computePenaltyAmount(k)
-    penalties.push({
-      key: k,
-      amount: amt,
-      note: "Hard no-remote vs remote role",
-      risk: {
-        code: "RISK_LOCATION",
-        job_fact: "Posting indicates remote work setup.",
-        profile_fact: "You have a no-remote constraint.",
-        risk: "Work setup conflicts with your stated constraint.",
-        severity: "high",
-        weight: -amt,
-      },
+    riskOnlyCodes.push({
+      code: "RISK_LOCATION",
+      job_fact: "Posting indicates remote work setup.",
+      profile_fact: "You said you do not want a fully remote role.",
+      risk: "This role is remote, which differs from the setup you said you want.",
+      severity: "low",
+      weight: 0,
     })
   }
 
@@ -1323,6 +1323,7 @@ export function scoreJobFit(
 
   // ── Industry interest alignment ─────────────────────────────────────────────
   // When a job's industry matches stated target industries, surface a positive signal.
+  const interestWhyCodes: WhyCode[] = []
   const targetIndustries = ((profile as any)?.statedInterests?.targetIndustries || []) as string[]
   const jobIndustry = (job as any)?.jobIndustry as string | null
   if (jobIndustry && targetIndustries.length > 0) {
@@ -1331,12 +1332,12 @@ export function scoreJobFit(
       i.toLowerCase().includes(jobIndustry.toLowerCase())
     )
     if (industryMatch) {
-      riskOnlyCodes.push({
+      interestWhyCodes.push({
         code: "WHY_INDUSTRY_MATCH",
         job_fact: `This role is in the ${jobIndustry} industry.`,
         profile_fact: `You stated interest in ${jobIndustry} roles.`,
-        risk: `This role is in the ${jobIndustry} space — an area you have specifically said you want to work in. That alignment matters beyond keyword matching.`,
-        severity: "low",
+        note: `This role is in the ${jobIndustry} space, an area you have specifically said you want to work in. That alignment matters beyond keyword matching.`,
+        weight: 0,
       })
       console.log("[scoring] Industry interest match:", jobIndustry)
     }
@@ -1770,6 +1771,7 @@ export function scoreJobFit(
     penalties: capped,
     penaltySum,
     whyCodes,
+    interestWhyCodes,
     riskCodes,
     allMatches,
     coverage,

@@ -2057,6 +2057,12 @@ const SECTION_HEADER_RULES: Array<{ pattern: RegExp; kind: SectionKind }> = [
   // HOW TO APPLY
   { pattern: /^(how to apply|application (process|instructions)|to apply|next steps)$/, kind: "how_to_apply" },
 
+  // Internship program perks ("FOX Master Classes", "Networking Opportunities").
+  { pattern: /^program (features|highlights|benefits)$/, kind: "benefits" },
+  { pattern: /^what you('ll| will) (gain|get|receive)$/, kind: "benefits" },
+  // Diversity / EEO statements are boilerplate, not requirements.
+  { pattern: /^(diversity( commitment| statement| (and|&) inclusion)?|our commitment to diversity|equal (employment )?opportunity( employer)?|eeo statement)$/, kind: "company" },
+
   // RESPONSIBILITIES — must come before generic "overview" rules
   { pattern: /^(key )?responsibilities$/, kind: "responsibilities" },
   { pattern: /^essential (duties|job functions|responsibilities)( and responsibilities)?$/, kind: "responsibilities" },
@@ -2082,6 +2088,11 @@ const SECTION_HEADER_RULES: Array<{ pattern: RegExp; kind: SectionKind }> = [
   { pattern: /^(skill in|knowledge of|ability to)$/, kind: "qualifications" },
   { pattern: /^what you('ll| will) bring$/, kind: "qualifications" },
   { pattern: /^what you need$/, kind: "qualifications" },
+  // Internship programs (FOX, prod run 378022a7): the asks sit under
+  // eligibility and "standing out" headers.
+  { pattern: /^eligibility( requirements| criteria)?$/, kind: "qualifications" },
+  { pattern: /^standing out( as a (top|strong) (candidate|applicant))?$/, kind: "qualifications" },
+  { pattern: /^successful (students|candidates|applicants|interns) (have|will have|possess)$/, kind: "qualifications" },
 
   // OVERVIEW — role-level, placed after more specific rules
   { pattern: /^(role|position|job) (overview|summary|description)$/, kind: "overview" },
@@ -2091,6 +2102,7 @@ const SECTION_HEADER_RULES: Array<{ pattern: RegExp; kind: SectionKind }> = [
   { pattern: /^job description summary$/, kind: "overview" },
   { pattern: /^(your (internship|role) experience|internship experience)$/, kind: "overview" },
   { pattern: /^(opportunity|what we do)$/, kind: "overview" },
+  { pattern: /^(areas|area) of (placement|focus)$/, kind: "overview" },
 
   // COMPANY — corporate-marketing headers that don't match the canonical
   // "About Us" / "Our Story" shape. Placed LAST so the specific rules
@@ -2105,6 +2117,26 @@ const SECTION_HEADER_RULES: Array<{ pattern: RegExp; kind: SectionKind }> = [
   // without the generic-rule blast radius.
   { pattern: /^being part of (the )?(team|company|family|crew)$/, kind: "company" },
 ]
+
+/**
+ * A line laid out as a header that no rule names: short, and either ending
+ * in a colon or set in capitals ("STUDENTS SELECTED TO MOVE FORWARD:").
+ * Used only to END a dropped section. Without it, everything after
+ * "TO APPLY:" was skipped, including the FOX posting's skills list
+ * (prod run 378022a7 read zero requirements).
+ */
+function looksLikeHeader(line: string): boolean {
+  const t = String(line || "").trim()
+  if (!t || t.length > 70) return false
+  const words = t.replace(/[:：]\s*$/, "").split(/\s+/)
+  if (words.length > 10) return false
+  if (/[.!?]$/.test(t)) return false
+  // A colon line is a header only when short: "Requires two (2) years of
+  // experience with the following skills:" is a sentence (Morgan Stanley).
+  if (/[:：]$/.test(t) && words.length <= 6 && !/\d|\(/.test(t)) return true
+  const letters = t.replace(/[^A-Za-z]/g, "")
+  return letters.length >= 6 && letters === letters.toUpperCase()
+}
 
 function classifyHeader(line: string): SectionKind | null {
   const clean = String(line || "")
@@ -2137,7 +2169,9 @@ export function segmentJobText(raw: string): JobSection[] {
   }
 
   for (const line of rawLines) {
-    const newKind = classifyHeader(line)
+    let newKind = classifyHeader(line)
+    // An unnamed header ends a dropped section; the text under it is kept.
+    if (!newKind && REQUIREMENT_SKIP_KINDS.has(current.kind) && looksLikeHeader(line)) newKind = "other"
     if (newKind) {
       // close previous section if it has any content
       if (current.lines.length > 0 || current.headerText !== null) {
@@ -3108,6 +3142,12 @@ function expandWrittenNumbers(text: string): string {
   return text.replace(WRITTEN_NUMBER_RE, (m) => WRITTEN_NUMBER_MAP[m.toLowerCase()] || m)
 }
 
+// What follows "N years" when the years are school, not work: "toward your
+// bachelor's", "of college", "of undergraduate study", "in an accredited
+// program", "of coursework".
+const ACADEMIC_YEARS_AFTER =
+  /^\s*(?:completed\b|(?:of\s+)?(?:completed\s+)?(?:towards?|in)\s+(?:a|an|the|your|their)?\s*(?:\w+\s+){0,2}(?:degree|bachelor'?s?|undergraduate|college|university|studies|study|school|major)|of\s+(?:\w+\s+){0,2}(?:college|university|undergraduate|graduate\s+(?:study|school)|study|studies|coursework|course\s*work|school|academic))/i
+
 function extractYearsRequired(jobText: string): number | null {
   const patterns: RegExp[] = Array.isArray((POLICY as any)?.extraction?.years?.patterns)
     ? ((POLICY as any).extraction.years.patterns as RegExp[])
@@ -3121,8 +3161,16 @@ function extractYearsRequired(jobText: string): number | null {
   const matchText = expandWrittenNumbers(jobText)
 
   for (const r of patterns) {
-    const m = matchText.match(r)
-    if (m && m[1]) {
+    // Every match, not just the first: a skipped academic clause must not hide
+    // a real tenure clause later in the posting.
+    const all = new RegExp(r.source, r.flags.includes("g") ? r.flags : r.flags + "g")
+    for (const m of matchText.matchAll(all)) {
+      if (!m[1]) continue
+      // Years of SCHOOL are not years of experience: "completed at least two
+      // years toward your bachelor's degree" read as a 2-year experience floor
+      // on a Dow Jones internship (prod run 9875d6c0).
+      const after = matchText.slice((m.index ?? 0) + m[0].length, (m.index ?? 0) + m[0].length + 60)
+      if (ACADEMIC_YEARS_AFTER.test(after)) continue
       const v = parseInt(String(m[1]), 10)
       // 0 is accepted: "0-2 years" is an explicit entry-level floor, which is
       // a real (and useful) signal, not the absence of one. Every downstream
@@ -4239,9 +4287,56 @@ function normalizeJobDescription(jobText: string): string {
   return t
 }
 
+// Big-four team names in full, so a nickname alone ("Jazz Pharmaceuticals",
+// "Titan Capital") never reads as a team.
+const PRO_TEAMS = [
+  // NBA
+  "atlanta hawks", "boston celtics", "brooklyn nets", "charlotte hornets", "chicago bulls", "cleveland cavaliers",
+  "dallas mavericks", "denver nuggets", "detroit pistons", "golden state warriors", "houston rockets", "indiana pacers",
+  "los angeles clippers", "los angeles lakers", "memphis grizzlies", "miami heat", "milwaukee bucks",
+  "minnesota timberwolves", "new orleans pelicans", "new york knicks", "oklahoma city thunder", "orlando magic",
+  "philadelphia 76ers", "phoenix suns", "portland trail blazers", "sacramento kings", "san antonio spurs",
+  "toronto raptors", "utah jazz", "washington wizards",
+  // NFL
+  "arizona cardinals", "atlanta falcons", "baltimore ravens", "buffalo bills", "carolina panthers", "chicago bears",
+  "cincinnati bengals", "cleveland browns", "dallas cowboys", "denver broncos", "detroit lions", "green bay packers",
+  "houston texans", "indianapolis colts", "jacksonville jaguars", "kansas city chiefs", "las vegas raiders",
+  "los angeles chargers", "los angeles rams", "miami dolphins", "minnesota vikings", "new england patriots",
+  "new orleans saints", "new york giants", "new york jets", "philadelphia eagles", "pittsburgh steelers",
+  "san francisco 49ers", "seattle seahawks", "tampa bay buccaneers", "tennessee titans", "washington commanders",
+  // MLB
+  "arizona diamondbacks", "atlanta braves", "baltimore orioles", "boston red sox", "chicago cubs", "chicago white sox",
+  "cincinnati reds", "cleveland guardians", "colorado rockies", "detroit tigers", "houston astros", "kansas city royals",
+  "los angeles angels", "los angeles dodgers", "miami marlins", "milwaukee brewers", "minnesota twins", "new york mets",
+  "new york yankees", "philadelphia phillies", "pittsburgh pirates", "san diego padres", "san francisco giants",
+  "seattle mariners", "st. louis cardinals", "tampa bay rays", "texas rangers", "toronto blue jays", "washington nationals",
+  // NHL
+  "anaheim ducks", "boston bruins", "buffalo sabres", "calgary flames", "carolina hurricanes", "chicago blackhawks",
+  "colorado avalanche", "columbus blue jackets", "dallas stars", "detroit red wings", "edmonton oilers",
+  "florida panthers", "los angeles kings", "minnesota wild", "montreal canadiens", "nashville predators",
+  "new jersey devils", "new york islanders", "new york rangers", "ottawa senators", "philadelphia flyers",
+  "pittsburgh penguins", "san jose sharks", "seattle kraken", "st. louis blues", "tampa bay lightning",
+  "toronto maple leafs", "utah hockey club", "utah mammoth", "vancouver canucks", "vegas golden knights",
+  "washington capitals", "winnipeg jets",
+]
+
+/**
+ * The industry the employer's own name settles, or null when the name says
+ * nothing and the posting text has to decide. Sports is checked first, so
+ * "Brooklyn Sports & Entertainment" is sports.
+ */
+export function industryFromEmployerName(name: string | undefined): string | null {
+  const n = (name || "").toLowerCase().replace(/\s+/g, " ").trim()
+  if (!n) return null
+  if (/\b(sports|athletics|stadium|ballpark|nba|nfl|mlb|nhl|mls|wnba|ncaa|fanatics)\b/.test(n)) return "sports"
+  if (PRO_TEAMS.some((t) => n.includes(t))) return "sports"
+  if (/\b(netflix|roku|iheartmedia|iheart)\b/.test(n)) return "entertainment"
+  return null
+}
+
 export function extractJobSignals(
   jobTextRaw: string,
-  opts?: { userJobTitle?: string }
+  opts?: { userJobTitle?: string; userCompanyName?: string }
 ): StructuredJobSignals {
   // Pre-normalize before any extraction reads jobTextRaw. All downstream
   // line-anchored detectors see properly-broken JD text.
@@ -4469,6 +4564,10 @@ export function extractJobSignals(
     !/\b(media|ad|ads|advertising|digital|programmatic|space|time) buyers?\b/i.test(titleOnly) &&
     !/\b(talent|candidate|recruit\w*|consultant|consulting)\b/i.test(titleOnly)
 
+  // "Internship Program - Data Analytics" is an analytics role (prod run
+  // 378022a7 classed it Other). Title only, for the same body-slice reason.
+  const jobTitleIsDataAnalytics = /\bdata analytics\b/i.test(titleOnly)
+
   // Seniority detection — Manager/Director/Senior/Lead/VP signals a level above
   // early-career. Test the clean user-provided title (userTitleNorm) AND the
   // JD-body opening. Title-first matters: real titles like "Marketing Manager" /
@@ -4602,7 +4701,7 @@ export function extractJobSignals(
                         ? "Consulting"
                         : jobTitleIsFinance
                           ? "Finance"
-                          : jobTitleIsAnalytics
+                          : jobTitleIsAnalytics || jobTitleIsDataAnalytics
                             ? "Analytics"
                             : jobTitleIsOperations
                               ? "Operations"
@@ -5101,16 +5200,29 @@ export function extractJobSignals(
   })()
 
   // ── Job industry detection ──────────────────────────────────────────────────
-  // Detects the industry vertical of the role for interest alignment scoring
+  // Detects the industry vertical of the role for interest alignment scoring.
+  // Industry is the EMPLOYER's industry, not the role's function. Broad words
+  // (film, gaming, luxury, fintech...) turn up in candidate wish lists, client
+  // lists, office perks, product descriptions and job titles, so they count
+  // only when they name what the employer is: "a gaming company", "a streaming
+  // service", "a growing fintech organization".
+  const employerIs = (terms: string) => new RegExp(
+    `\\b(?:${terms})\\s+(?:[a-z]+\\s+)?(?:company|brand|studio|studios|network|label|platform|publisher|developer|franchise|leader|retailer|service|giant|organization|firm|house|group)\\b`,
+    "i"
+  )
   const jobIndustry: string | null = (() => {
-    if (/(nba|nfl|mlb|nhl|mls|sports league|athletic|espn|sports marketing|sports industry|professional sports|team sports)/i.test(jobTextLower)) return "sports"
-    if (/(entertainment|music industry|film|streaming|gaming|media entertainment)/i.test(jobTextLower)) return "entertainment"
-    if (/(fashion|luxury|beauty|lifestyle brand|apparel|footwear)/i.test(jobTextLower)) return "luxury/fashion"
-    if (/(consumer goods|cpg|fmcg|packaged goods|food and beverage|beverage brand)/i.test(jobTextLower)) return "consumer goods"
-    if (/(saas|software company|tech company|technology company|startup|fintech)/i.test(jobTextLower)) return "technology"
-    if (/(private equity|investment bank|asset management|hedge fund|venture capital)/i.test(jobTextLower)) return "finance"
-    if (/(healthcare company|hospital|health system|pharmaceutical|biotech)/i.test(jobTextLower)) return "healthcare"
-    if (/(real estate firm|property management|commercial real estate|reit)/i.test(jobTextLower)) return "real estate"
+    // The employer's own identity decides first; the posting text only when it says nothing.
+    const fromName = industryFromEmployerName(opts?.userCompanyName)
+    if (fromName) return fromName
+    if (/\b(nba|nfl|mlb|nhl|mls|sports league|athletic|espn|sports marketing|sports industry|professional sports|team sports)\b/i.test(jobTextLower)) return "sports"
+    if (/\b(music industry|media entertainment)\b/i.test(jobTextLower) || employerIs("entertainment|film|streaming|gaming").test(jobTextLower)) return "entertainment"
+    if (/\b(fashion|beauty|lifestyle brand|footwear)\b/i.test(jobTextLower) || employerIs("luxury|apparel").test(jobTextLower)) return "luxury/fashion"
+    if (/\b(consumer goods|cpg|fmcg|packaged goods|food and beverage|beverage brand)\b/i.test(jobTextLower)) return "consumer goods"
+    if (/\b(saas|software company|tech company|technology company|startup)\b/i.test(jobTextLower) || employerIs("fintech").test(jobTextLower)) return "technology"
+    // "asset management software" is infrastructure; "hospital indemnity" is a benefits line.
+    if (/\b(private equity|investment bank|asset management(?!\s+(?:software|systems?|tools?))|hedge fund|venture capital)\b/i.test(jobTextLower)) return "finance"
+    if (/\b(healthcare company|hospital(?!\s+indemnity)|health system|pharmaceutical|biotech)\b/i.test(jobTextLower)) return "healthcare"
+    if (/\b(real estate firm|property management|commercial real estate|reit)\b/i.test(jobTextLower)) return "real estate"
     return null
   })()
 

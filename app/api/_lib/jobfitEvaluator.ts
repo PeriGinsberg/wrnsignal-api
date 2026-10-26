@@ -224,11 +224,11 @@ export async function runJobFit(args: {
       })
     } else {
       console.warn("[jobfitEvaluator] LLM extraction unavailable — fail-open to regex")
-      jobSignals = extractJobSignals(args.jobText || "", { userJobTitle: args.userJobTitle })
+      jobSignals = extractJobSignals(args.jobText || "", { userJobTitle: args.userJobTitle, userCompanyName: args.userCompanyName })
     }
   } else {
     // Default (flag off): regex extraction — current behavior, byte-identical.
-    jobSignals = extractJobSignals(args.jobText || "", { userJobTitle: args.userJobTitle })
+    jobSignals = extractJobSignals(args.jobText || "", { userJobTitle: args.userJobTitle, userCompanyName: args.userCompanyName })
   }
 
   // Overwrite the surface jobTitle / companyName fields for display.
@@ -421,7 +421,8 @@ export async function runJobFit(args: {
     risk_flags: [],
     next_step: nextStep,
     location_constraint: locationConstraintFromProfile(args.profileOverrides),
-    why_codes: gate.type === "force_pass" ? [] : scored.whyCodes,
+    // Interest WHYs go last: the V5 renderer anchors on the top why_code's match_key.
+    why_codes: gate.type === "force_pass" ? [] : [...scored.whyCodes, ...scored.interestWhyCodes],
     risk_codes: riskCodes,
     gate_triggered: gate,
     job_signals: jobSignals,

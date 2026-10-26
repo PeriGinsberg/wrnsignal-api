@@ -684,6 +684,12 @@
     ],
     "why_codes": [
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 93,
         "match_strength": "direct",
@@ -727,7 +733,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Scientist I",
         "location": {
           "city": null,
@@ -1406,7 +1412,14 @@
         "profile_unit_id": "1b92cc056a5f18b0"
       }
     ],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
@@ -1442,7 +1455,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Analytical Scientist I",
         "location": {
           "city": "Miami",
@@ -1760,7 +1773,14 @@
         "profile_unit_id": "b32616aa07f1f640"
       }
     ],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
@@ -1794,7 +1814,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "QC Analyst I",
         "location": {
           "city": null,
@@ -2582,7 +2602,7 @@
         "isTrainingProgram": true,
         "jobArchetype": "execution",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "consumer goods",
         "jobTitle": "Social Media Associate",
         "location": {
           "city": null,
@@ -3412,7 +3432,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Social Coordinator",
         "location": {
           "city": "New York City",
@@ -4409,7 +4429,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Public Relations Assistant",
         "location": {
           "city": "New York City",
@@ -7617,6 +7637,12 @@
         "weight": 78,
         "match_strength": "adjacent",
         "match_key": "analysis_reporting"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -7660,7 +7686,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Finance Strategy & Department Lead",
         "location": {
           "city": null,
@@ -8726,6 +8752,12 @@
         "weight": 78,
         "match_strength": "adjacent",
         "match_key": "analysis_reporting"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -8769,7 +8801,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Associate to the Chairman",
         "location": {
           "city": "Miami",
@@ -9460,6 +9492,12 @@
         "match_key": "software_engineering"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 94,
         "match_strength": "direct",
@@ -9518,7 +9556,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "IT_Software",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "Software Engineer",
         "location": {
           "city": null,
@@ -9955,7 +9993,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "IT_Software",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Software Engineer",
         "location": {
           "city": "New York City",
@@ -12165,6 +12203,12 @@
         "match_key": "drafting_documentation"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 60,
         "match_strength": "direct",
@@ -12210,7 +12254,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Client Service Associate",
         "location": {
           "city": null,
@@ -12710,6 +12754,12 @@
         "weight": 94,
         "match_strength": "direct",
         "match_key": "stakeholder_coordination"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [],
@@ -12739,7 +12789,7 @@
         "isTrainingProgram": true,
         "jobArchetype": "unclear",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "Investment Associate",
         "location": {
           "city": null,
@@ -13162,6 +13212,12 @@
         "match_key": "analysis_reporting"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 60,
         "match_strength": "direct",
@@ -13215,7 +13271,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "sports",
         "jobTitle": "Senior Manager, Strategy and Business Operations",
         "location": {
           "city": "Miami",
@@ -13586,6 +13642,12 @@
         "weight": 103,
         "match_strength": "direct",
         "match_key": "policy_regulatory_research"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -13641,7 +13703,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Legal",
-        "jobIndustry": null,
+        "jobIndustry": "luxury/fashion",
         "jobTitle": "Legal Intern",
         "location": {
           "city": null,
@@ -14161,6 +14223,12 @@
         "weight": 85,
         "match_strength": "adjacent",
         "match_key": "territory_execution"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -14205,7 +14273,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "Pharmaceutical Sales Representative",
         "location": {
           "city": null,
@@ -15756,6 +15824,12 @@
         "match_key": "financial_analysis"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 60,
         "match_strength": "direct",
@@ -15798,7 +15872,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
@@ -16177,7 +16251,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "healthcare",
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
@@ -16758,7 +16832,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": null,
         "location": {
           "city": null,
@@ -17136,7 +17210,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
@@ -17657,7 +17731,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "ProductManagement",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": null,
         "location": {
           "city": null,
@@ -18340,6 +18414,12 @@
         "weight": 87,
         "match_strength": "adjacent",
         "match_key": "analysis_reporting"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [],
@@ -18373,7 +18453,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
@@ -19195,7 +19275,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "IT_Software",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
@@ -20099,6 +20179,12 @@
         "weight": 79,
         "match_strength": "adjacent",
         "match_key": "operations_execution"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [],
@@ -20139,7 +20225,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "consumer goods",
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
@@ -20637,6 +20723,12 @@
         "weight": 99,
         "match_strength": "direct",
         "match_key": "mechanical_engineering"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -20684,7 +20776,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": null,
         "location": {
           "city": null,
@@ -21563,7 +21655,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Healthcare",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
@@ -22469,7 +22561,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "consumer goods",
         "jobTitle": null,
         "location": {
           "city": null,
@@ -23013,7 +23105,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "HR",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
@@ -23516,7 +23608,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "entertainment",
         "jobTitle": null,
         "location": {
           "city": null,
@@ -24588,6 +24680,12 @@
         "match_key": "financial_analysis"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 95,
         "match_strength": "direct",
@@ -24639,7 +24737,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
@@ -25204,7 +25302,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": null,
         "location": {
           "city": null,
@@ -27007,7 +27105,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "consumer goods",
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
@@ -27609,7 +27707,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": null,
         "location": {
           "city": null,
@@ -28354,7 +28452,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Healthcare",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "The Opportunity",
         "location": {
           "city": "Miami",
@@ -29337,6 +29435,12 @@
         "match_key": "strategy_problem_solving"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 94,
         "match_strength": "direct",
@@ -29377,7 +29481,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": null,
         "location": {
           "city": null,
@@ -29827,7 +29931,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "HR",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
@@ -30403,7 +30507,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "entertainment",
         "jobTitle": null,
         "location": {
           "city": null,
@@ -30701,7 +30805,14 @@
         "profile_unit_id": "13a015b3069f9d48"
       }
     ],
-    "why_codes": [],
+    "why_codes": [
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_FAMILY_MISMATCH",
@@ -30758,7 +30869,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
@@ -31160,7 +31271,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "IT_Software",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": null,
         "location": {
           "city": "Austin",
@@ -31858,6 +31969,12 @@
         "match_key": "prospecting_pipeline_management"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 99,
         "match_strength": "direct",
@@ -31900,7 +32017,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
@@ -32809,7 +32926,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": null,
         "location": {
           "city": null,
@@ -33409,6 +33526,12 @@
         "match_key": "analysis_reporting"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 94,
         "match_strength": "direct",
@@ -33457,7 +33580,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
@@ -33958,7 +34081,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": null,
         "location": {
           "city": null,
@@ -34515,7 +34638,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "ProductManagement",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
@@ -35280,6 +35403,12 @@
         "weight": 100,
         "match_strength": "direct",
         "match_key": "financial_analysis"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [],
@@ -35312,7 +35441,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": null,
         "location": {
           "city": null,
@@ -36714,7 +36843,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
-        "jobIndustry": null,
+        "jobIndustry": "consumer goods",
         "jobTitle": null,
         "location": {
           "city": null,
@@ -37065,7 +37194,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": null,
         "location": {
           "city": null,
@@ -37389,7 +37518,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Healthcare",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": null,
         "location": {
           "city": null,
@@ -38260,6 +38389,12 @@
         "match_key": "strategy_problem_solving"
       },
       {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
+      },
+      {
         "code": "WHY_TOOL_PROOF",
         "weight": 94,
         "match_strength": "direct",
@@ -38312,7 +38447,7 @@
         "isTrainingProgram": true,
         "jobArchetype": "analytical",
         "jobFamily": "Consulting",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
@@ -38689,7 +38824,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "HR",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": null,
         "location": {
           "city": null,
@@ -39846,7 +39981,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Engineering",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
@@ -40346,6 +40481,12 @@
         "weight": 76,
         "match_strength": "adjacent",
         "match_key": "analysis_reporting"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -40407,7 +40548,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": null,
         "location": {
           "city": null,
@@ -41059,7 +41200,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "analytical",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "finance",
         "jobTitle": "The Opportunity",
         "location": {
           "city": null,
@@ -41715,6 +41856,12 @@
         "weight": 98,
         "match_strength": "direct",
         "match_key": "prospecting_pipeline_management"
+      },
+      {
+        "code": "WHY_INDUSTRY_MATCH",
+        "weight": 0,
+        "match_strength": "",
+        "match_key": ""
       }
     ],
     "risk_codes": [
@@ -41754,7 +41901,7 @@
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Finance",
-        "jobIndustry": null,
+        "jobIndustry": "technology",
         "jobTitle": null,
         "location": {
           "city": null,

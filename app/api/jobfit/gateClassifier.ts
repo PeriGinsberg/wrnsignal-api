@@ -229,8 +229,6 @@ export function classifyRequirements(jobText: string): GateCandidate[] {
   const hasHeaders = lines.some((l) => RE_REQUIRED.test(l) || RE_PREFERRED.test(l))
 
   const out: GateCandidate[] = []
-  let sawClearance = false
-  const pendingCitizenship: GateCandidate[] = []
 
   let mode: "required" | "preferred" | "other" | null = hasHeaders ? "other" : null
   let handsOnSection = false
@@ -239,13 +237,13 @@ export function classifyRequirements(jobText: string): GateCandidate[] {
     if (RE_EXCLUDED.test(line)) return // C2: exclusion beats marker
 
     const cred = detectClearance(line) || detectDegree(line) || detectLicense(line)
-    if (cred) { if (cred.spec.kind === "credential" && cred.spec.credentialType === "clearance") sawClearance = true; out.push({ ...cred, required }); return }
+    if (cred) { out.push({ ...cred, required }); return }
 
-    // citizenship gates only if a clearance is co-located (§3a) — defer
-    if (/must be (?:a |an )?(?:u\.?s\.?|united states) citizen|(?:u\.?s\.?|united states) citizenship (?:is )?required/i.test(line)) {
-      pendingCitizenship.push(gate("us_citizenship", required, line, { kind: "credential", credentialType: "citizenship" }))
-      return
-    }
+    // Citizenship never gates (Peri, 2026-10-22): it can be mentioned as a
+    // heads-up, never held against the candidate. The line is consumed here
+    // so it cannot be read as some other gate. A clearance on the same
+    // posting still gates on its own.
+    if (/must be (?:a |an )?(?:u\.?s\.?|united states) citizen|(?:u\.?s\.?|united states) citizenship (?:is )?required/i.test(line)) return
     const exp = detectExperience(line) || detectPractice(line)
     if (exp) { out.push({ ...exp, required }); return }
 
@@ -268,8 +266,6 @@ export function classifyRequirements(jobText: string): GateCandidate[] {
     }
   }
 
-  // promote citizenship only when clearance co-located
-  if (sawClearance) for (const c of pendingCitizenship) out.push(c)
 
   // dedupe by gate_id (keep first)
   const seen = new Set<string>()
