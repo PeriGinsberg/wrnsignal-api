@@ -26,7 +26,7 @@ import { citiesOf } from "../ingest/link"
  *   2026-10-25.3  SmartRecruiters' "Kentucky (KY)" state form read
  *   2026-10-25.4  start timing against available_from; employment types read
  */
-export const RULES_VERSION = "2026-10-25.4"
+export const RULES_VERSION = "2026-10-26.1"
 
 /** Country names a location can end with. US spellings are handled separately. */
 const COUNTRIES = new Set([
@@ -159,10 +159,13 @@ export function applyRules(c: MatchCriteria, p: MatchPosting, today = new Date()
     if (p.salaryHigh !== null && p.salaryHigh < c.salaryFloor.amount) out.push("salary")
   }
 
-  // job type: a full-time client against an internship-only posting
-  if (c.jobTypes.length === 1 && c.jobTypes[0] === "full_time" && p.employmentTypes?.length) {
+  // job type: a full-time client against an internship-only posting, and an
+  // internship-only client against a stated type that is not an internship.
+  // A posting that states no type passes either way.
+  if (c.jobTypes.length === 1 && p.employmentTypes?.length) {
     const types = new Set(p.employmentTypes)
-    if (types.has("internship") && !types.has("full_time")) out.push("job_type")
+    if (c.jobTypes[0] === "full_time" && types.has("internship") && !types.has("full_time")) out.push("job_type")
+    if (c.jobTypes[0] === "internship" && !types.has("internship")) out.push("job_type")
   }
 
   // start timing: only a stated start, only when the client named a date

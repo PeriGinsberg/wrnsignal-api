@@ -74,7 +74,9 @@ ok("internship-only fails a full-time client", r({ employmentTypes: ["internship
 ok("internship + full-time passes", r({ employmentTypes: ["internship", "full_time"] }).length === 0)
 ok("part-time passes a full-time client (a full-time client pushed one)", r({ employmentTypes: ["part_time", "seasonal"] }).length === 0)
 const intern = { ...alex, jobTypes: ["internship"] }
-ok("full-time-only passes an internship client", r({ employmentTypes: ["full_time"] }, intern).length === 0)
+ok("full-time-only fails an internship-only client (2026-10-26: Lindsey Keyes)", r({ employmentTypes: ["full_time"] }, intern).join() === "job_type")
+ok("internship + part-time passes an internship client", r({ employmentTypes: ["internship", "part_time"] }, intern).length === 0)
+ok("type not stated passes an internship client", r({ employmentTypes: null }, intern).length === 0)
 
 // parseLocations: postings.location strings, as SmartRecruiters / Greenhouse / SearchApi write them
 const pl = (s: string) => parseLocations(s)
