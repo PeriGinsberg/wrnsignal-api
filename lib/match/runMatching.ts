@@ -5,7 +5,8 @@
  * INCREMENTAL. A posting is evaluated when it has no match row for this client,
  * or its description changed (description_md5), or what the client's matching
  * reads changed (criteria_hash: the criteria row, the profile fields the judge
- * reads, and the judge prompt). A row the coach already acted on is never
+ * reads, and the judge prompt), or it was re-enriched after its match row was
+ * written (enriched_at > updated_at). A row the coach already acted on is never
  * re-evaluated: the decision stands.
  *
  * A POSTING WAITING FOR ENRICHMENT IS SKIPPED, not matched half-read: its years,
@@ -137,14 +138,16 @@ export async function runMatching(
     .select("id, source, title, cleaned_title, company, location, years_min, years_max, years_basis, salary_low, salary_high, salary_period, graduation_from, graduation_to, level, requirements_summary, description_md5, enriched_at, employment_types, start_type, start_date, start_season, start_year, campus_signal")
     .gte("last_seen_at", since).order("id").range(a, b))
   const existing = new Map((await pageAll<any>((a, b) => sb.from("posting_matches")
-    .select("posting_id, criteria_hash, description_md5, action").eq("client_profile_id", opts.clientProfileId).order("posting_id").range(a, b)))
+    .select("posting_id, criteria_hash, description_md5, action, updated_at").eq("client_profile_id", opts.clientProfileId).order("posting_id").range(a, b)))
     .map((m) => [m.posting_id, m]))
 
   const awaitingEnrichment = postings.filter((p) => p.description_md5 && !p.enriched_at).length
+  // Re-enriched since its match row was written: the fields the rules read changed.
+  const reenriched = (p: any, m: any) => !!p.enriched_at && new Date(p.enriched_at) > new Date(m.updated_at)
   let work = postings.filter((p) => {
     if (p.description_md5 && !p.enriched_at) return false
     const m = existing.get(p.id)
-    return !m || (!m.action && (m.criteria_hash !== hash || m.description_md5 !== p.description_md5))
+    return !m || (!m.action && (m.criteria_hash !== hash || m.description_md5 !== p.description_md5 || reenriched(p, m)))
   })
   if (opts.limit) work = work.slice(0, opts.limit)
 

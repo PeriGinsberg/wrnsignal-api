@@ -93,7 +93,17 @@ ok("enum with a quote kept", r.patch.industry === "Banking" && r.patch.industry_
 
 // ── employment type and start timing (added 2026-10-25)
 const intern = p({ employment_types: ["internship", "full_time", "internship"], employment_evidence: "Summer internship, full-time hours" })
-ok("employment types stored, deduped", JSON.stringify(intern.employment_types) === '["internship","full_time"]' && !ns(intern).split(",").includes("employment_type"))
+ok("internship drops full_time, deduped", JSON.stringify(intern.employment_types) === '["internship"]' && !ns(intern).split(",").includes("employment_type"))
+const pt = p({ employment_types: ["internship", "part_time"], employment_evidence: "internship, part-time" })
+ok("internship keeps part_time", JSON.stringify(pt.employment_types) === '["internship","part_time"]' && !(pt.enrichment_evidence as any).employment_adjusted)
+const tp = (title: string, types: EnrichFields["employment_types"]) => toPatch({ ...none, employment_types: types, employment_evidence: "Listed job type: Full-time" }, title).patch
+ok("intern title -> internship, not full_time", JSON.stringify(tp("Finance Intern - Summer 2027", ["full_time"]).employment_types) === '["internship"]')
+ok("summer analyst title -> internship", JSON.stringify(tp("2027 Investment Banking Summer Analyst", ["full_time"]).employment_types) === '["internship"]')
+ok("summer analyst title, not stated -> internship", JSON.stringify(tp("Summer Analyst 2027", "not_stated").employment_types) === '["internship"]')
+ok("adjustment recorded", /title states/.test((tp("FP&A Internship", ["full_time"]).enrichment_evidence as any).employment_adjusted))
+ok("Internal Audit program stays full_time", JSON.stringify(tp("2027 Internal Audit Analyst Program", ["full_time"]).employment_types) === '["full_time"]')
+ok("International title stays full_time", JSON.stringify(tp("International Finance Analyst", ["full_time"]).employment_types) === '["full_time"]')
+ok("rotation program the extractor calls full_time stays full_time", JSON.stringify(tp("2027 Finance Rotation Analyst", ["full_time"]).employment_types) === '["full_time"]')
 const sDate = p({ start_type: "date", start_date: "2027-06-08", start_evidence: "June 8 - August 14, 2027" })
 ok("dated start", sDate.start_type === "date" && sDate.start_date === "2027-06-08" && sDate.start_season === null && sDate.start_text === "June 8 - August 14, 2027" && !ns(sDate).split(",").includes("start"))
 const sSeason = p({ start_type: "season", start_season: "summer", start_year: 2027, start_evidence: "Summer 2027 Analyst" })

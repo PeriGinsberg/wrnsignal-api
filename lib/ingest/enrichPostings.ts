@@ -128,6 +128,9 @@ export type Demotion = {
 
 const SEASONS = ["spring", "summer", "fall", "winter"]
 
+/** A title that states an internship. Word-bounded: "Internal Audit" and "International" are not. */
+export const INTERN_TITLE = /\b(interns?|internships?)\b|\bsummer (analysts?|associates?)\b/i
+
 /**
  * The start answer as stored, or null when it cannot be stored honestly.
  * Unusable answers seen on 2026-10-25/26 (4 of ~2,500): a season with no
@@ -208,8 +211,15 @@ export function toPatch(f: EnrichFields, title: string): { patch: Record<string,
   const campus = f.campus_signal && !!campusText
   if (f.campus_signal && !campusText) demoted.push({ field: "campus", value: "true", why: "no_quote" })
 
-  // employment type
-  const employment = f.employment_types === "not_stated" ? null : [...new Set(f.employment_types)]
+  // employment type. An internship is never also full_time ("a 10-week,
+  // full-time program" is the internship's hours), and a title that says intern
+  // or summer analyst/associate is an internship: 2026-10-26, four full-time
+  // summer internships passed a full-time client's job type rule.
+  const titleIntern = INTERN_TITLE.test(title)
+  let employment = f.employment_types === "not_stated" ? null : [...new Set(f.employment_types)]
+  if (titleIntern && !employment?.includes("internship")) employment = ["internship", ...(employment ?? [])]
+  if (employment?.includes("internship")) employment = employment.filter((t) => t !== "full_time")
+  const employmentAdjusted = JSON.stringify(employment) !== JSON.stringify(f.employment_types === "not_stated" ? null : [...new Set(f.employment_types)])
   if (!employment) notStated.push("employment_type")
 
   // start timing. An answer that cannot be stored honestly (no quote, no usable
@@ -240,6 +250,7 @@ export function toPatch(f: EnrichFields, title: string): { patch: Record<string,
   for (const [k, v] of [["years", f.years_evidence], ["salary", f.salary_evidence], ["tools", f.tools_evidence], ["level", f.level_evidence], ["employment", f.employment_evidence], ["campus", campus ? f.campus_evidence : ""]] as const) {
     if (v.trim()) evidence[k] = v.trim()
   }
+  if (employmentAdjusted) evidence.employment_adjusted = titleIntern ? "title states an internship; internship is never full_time" : "internship is never full_time"
   if (demoted.length) evidence.demoted = demoted
 
   return {

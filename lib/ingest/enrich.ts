@@ -222,15 +222,33 @@ ${INDUSTRY_RULES}
 - Every employment type the posting states, from: full_time, part_time,
   internship, contract, temporary, seasonal.
 - Stated means the words are there: "Full-time", "Part-time", "Intern",
-  "Internship", "Summer Analyst program" described as an internship, "Contract",
-  "Temp", "Seasonal". A posting can state more than one ("summer internship,
-  40 hours a week, full-time" is internship and full_time).
-- Do not infer an internship from a student audience, or full-time from a
+  "Internship", "Contract", "Temp", "Seasonal". A posting can state more than
+  one ("internship, part-time during the school year" is internship and
+  part_time).
+- An internship is internship, never full_time. "Full-time internship", "a
+  10-week, full-time program", "40 hours a week" describe the internship's
+  hours, not a full-time job: internship only. full_time means the job itself is
+  an ongoing full-time position.
+- A summer analyst or summer associate program for current students is
+  internship, whether or not it uses the word.
+- A program for graduates that is the job itself (a two-year rotational
+  program, an analyst development program, a new-grad class starting after
+  graduation) is full_time, not internship, even when listed as "Internship".
+  "Internship or other relevant experience" asked of candidates is a
+  requirement, not a type.
+- Do not infer an internship from a student audience alone, or full-time from a
   salary. The company's name never states a type ("Walleye Capital Full Time"
   is a name). "not_stated" when no type is named.
 - A "Listed job type:" line is the job board's label for the posting and counts
   as stated. When the description says otherwise (a summer internship listed as
-  "Full-time"), the description wins.
+  "Full-time", a two-year analyst program listed as "Internship"), the
+  description wins.
+- The label alone never makes a posting an internship. When neither the title
+  nor the description calls the role itself an internship or a summer program
+  (only the label says "Internship", or "internship" appears only as experience
+  asked of candidates), it is not internship: full_time if the posting states
+  full-time or describes a multi-year program or permanent role, else
+  "not_stated".
 - employment_evidence: the words you took it from, verbatim.
 
 --- start_type / start_date / start_season / start_year

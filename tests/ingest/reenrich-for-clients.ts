@@ -13,6 +13,10 @@
  *   --rules all        pass every rule except start for some client (the
  *                      client's queue as it will be)
  *   --client id        only this client's criteria
+ *   --employment       only postings whose employment type the 2026-10-26
+ *                      internship fix can change: the title states an
+ *                      internship, or the type includes internship. Job type is
+ *                      then not used to choose either: it is the field being fixed.
  *   --count            print the count and estimated cost; write nothing
  *   --prod             required to write to prod
  *
@@ -25,7 +29,7 @@ import { join } from "path"
 import { createClient } from "@supabase/supabase-js"
 import { criteriaFromRow, fromPosting, LIVE_DAYS } from "../../lib/match/runMatching"
 import { applyRules } from "../../lib/match/rules"
-import { runEnrichment } from "../../lib/ingest/enrichPostings"
+import { INTERN_TITLE, runEnrichment } from "../../lib/ingest/enrichPostings"
 
 const PROD_REF = "ejhnokcnahauvrcbcmic"
 const PER_POSTING_USD = 0.0011
@@ -41,6 +45,7 @@ const ref = new URL(URL_).hostname.split(".")[0]
 const CUTOFF = arg("cutoff")
 const RULES = arg("rules") ?? "location"
 const COUNT = flag("count")
+const EMPLOYMENT = flag("employment")
 if (!CUTOFF || !["location", "all"].includes(RULES)) { console.error("--cutoff <ts> required; --rules location|all"); process.exit(1) }
 if (ref === PROD_REF && !COUNT && !flag("prod")) { console.error(`Refusing to write to prod (${ref}) without --prod.`); process.exit(1) }
 if (!COUNT && !process.env.ANTHROPIC_API_KEY) { console.error("ANTHROPIC_API_KEY must be set"); process.exit(1) }
@@ -74,8 +79,9 @@ async function pageAll<T>(q: (a: number, b: number) => PromiseLike<{ data: T[] |
     .or(`enriched_at.is.null,enriched_at.lt.${CUTOFF}`)
     .gte("last_seen_at", since).order("id").range(a, b))
 
-  const passes = (p: any) => clients.some((c) => {
-    const f = applyRules({ ...c, availableFrom: null }, fromPosting(p))
+  const affected = (p: any) => !EMPLOYMENT || INTERN_TITLE.test(p.title) || (p.employment_types ?? []).includes("internship")
+  const passes = (p: any) => affected(p) && clients.some((c) => {
+    const f = applyRules({ ...c, availableFrom: null, ...(EMPLOYMENT ? { jobTypes: [] } : {}) }, fromPosting(p))
     return RULES === "location" ? !f.includes("location") : f.length === 0
   })
   const ids = postings.filter(passes).map((p) => p.id)
@@ -86,7 +92,7 @@ async function pageAll<T>(q: (a: number, b: number) => PromiseLike<{ data: T[] |
 
   let done = 0, failed = 0, cost = 0
   for (let i = 0; i < ids.length; i += 100) {
-    const s = await runEnrichment(sb, { ids: ids.slice(i, i + 100), reenrichBefore: CUTOFF, limit: 100, triggeredBy: `manual:reenrich-for-clients:${RULES}` })
+    const s = await runEnrichment(sb, { ids: ids.slice(i, i + 100), reenrichBefore: CUTOFF, limit: 100, triggeredBy: `manual:reenrich-for-clients:${RULES}${EMPLOYMENT ? ":employment" : ""}` })
     done += s.succeeded; failed += s.failed; cost += s.costUsd
     for (const r of s.rows) for (const d of r.demoted) console.log(`  demoted ${d.field} (${d.why}): ${r.company} | ${r.title}`)
     for (const r of s.rows) if (r.status === "failed") console.log(`  failed ${r.company} | ${r.title}: ${r.error?.slice(0, 160)}`)
