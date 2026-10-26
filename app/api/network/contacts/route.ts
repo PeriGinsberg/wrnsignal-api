@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
       // list (no aggregate route in v1). The milestone stamps are what give reply and
       // chat rates their "or beyond" semantics — stamped once, never recomputed, so a
       // contact now at nurture still counts as having replied.
-      "id, first_name, last_name, title, email, stage, relationship, priority, segment, next_due_at, next_due_reason, last_action_at, company_id, network_companies(name), first_touch_at, first_replied_at, first_chat_at, outcome_type, created_by_role, created_by_id")
+      "id, first_name, last_name, title, email, stage, relationship, priority, segment, next_due_at, next_due_reason, last_action_at, company_id, network_companies(name), first_touch_at, first_replied_at, first_chat_at, outcome_type, created_by_role, created_by_id, workbooks(id)")
       .eq("client_profile_id", scope.subjectId)
 
     // optional filters
@@ -82,10 +82,12 @@ export async function GET(req: NextRequest) {
     // `added_by_you` is the coach's own view: a coach looking at a board they
     // have added people to should see which ones are theirs, and cannot tell
     // from created_by_role alone if another coach has also worked the board.
-    const contacts = (data ?? []).map(({ created_by_id, ...c }) => ({
+    // workbook_id: the contact's Networking workbook, at most one (unique index).
+    const contacts = (data ?? []).map(({ created_by_id, workbooks, ...c }: any) => ({
       ...c,
       added_by_coach: c.created_by_role === "coach",
       added_by_you: c.created_by_role === "coach" && created_by_id === scope.actorId,
+      workbook_id: (Array.isArray(workbooks) ? workbooks[0]?.id : workbooks?.id) ?? null,
     }))
     return withCorsJson(req, { ok: true, contacts }, 200)
   } catch (err: any) {

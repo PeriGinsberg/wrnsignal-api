@@ -41,6 +41,8 @@ export type Contact = {
   // contacts those callers are showing.
   added_by_coach?: boolean
   added_by_you?: boolean
+  /** The contact's Networking workbook, if one has been created. */
+  workbook_id?: string | null
 }
 
 const DAY = 86400000

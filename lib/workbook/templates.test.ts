@@ -6,8 +6,8 @@
 // throws on a bad template; the point of this file is that the throw happens in
 // CI rather than in a coach's face.
 
-import { allFieldKeys, applyTemplate, unresolvedPlaceholders, validateContent, TEMPLATE_KEYS } from "./content"
-import { getTemplate, listTemplates } from "./templates"
+import { allFieldKeys, applyTemplate, unresolvedPlaceholders, validateContent, CONTACT_TEMPLATE_KEYS, TEMPLATE_KEYS } from "./content"
+import { getNetworkingTemplate, getTemplate, listTemplates } from "./templates"
 
 let failures = 0
 function ok(label: string, cond: boolean, detail?: unknown) {
@@ -58,6 +58,33 @@ for (const summary of all) {
     ok("the session number survives", parsed.content.session === t.content.session)
     ok("template_id survives", parsed.content.template_id === summary.template_id)
   }
+}
+
+console.log("\nnetworking-call")
+{
+  const t = getNetworkingTemplate()
+  ok("it is the networking kind", t.content.kind === "networking" && t.content.template === true)
+  ok("a coach cannot list it", !listTemplates().some((x) => x.template_id === t.template_id))
+  ok("a coach cannot fetch it by id", getTemplate(t.template_id) === null)
+  ok("it only uses placeholders we fill",
+    unresolvedPlaceholders(t.content).every((p) =>
+      [...TEMPLATE_KEYS, ...CONTACT_TEMPLATE_KEYS].includes(p.slice(1, -1) as any)),
+    unresolvedPlaceholders(t.content))
+  const filled = applyTemplate(t.content, {
+    ...VALUES, contact_full_name: "Jordan Lee", contact_first_name: "Jordan", contact_title: "", contact_company: "Acme",
+  })
+  ok("every placeholder is filled, blanks included", unresolvedPlaceholders(filled).length === 0, unresolvedPlaceholders(filled))
+  const parsed = validateContent(filled)
+  ok("the filled result is valid without a session number", parsed.ok && parsed.content.session == null, parsed.ok ? "" : parsed.errors)
+  if (parsed.ok) {
+    ok("the contact reached the title", parsed.content.title === "Networking Call: Jordan Lee", parsed.content.title)
+    ok("What you have in common is a field", allFieldKeys(parsed.content).includes("contact.common"))
+    ok("kind survives the fill", parsed.content.kind === "networking")
+  }
+  ok("contact placeholders stay unresolved without contact values",
+    unresolvedPlaceholders(applyTemplate({ s: "{contact_title}" }, VALUES)).includes("{contact_title}"))
+  ok("a stray {constructor} is left alone", applyTemplate({ s: "{constructor}" }, VALUES).s === "{constructor}")
+  ok("a non-networking kind is refused", !validateContent({ ...filled, kind: "other" }).ok)
 }
 
 console.log("\nunknown ids")

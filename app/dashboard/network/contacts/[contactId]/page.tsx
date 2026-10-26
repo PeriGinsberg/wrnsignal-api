@@ -27,7 +27,7 @@
 
 import { use as usePromise, useCallback, useEffect, useState } from "react"
 import { LIGHT as S, PHASE_MEANING, action as actionStyle, tile, tileIdle } from "../../../../../lib/theme/surfaces"
-import { authFetch, subjectId, withSubject } from "../../authFetch"
+import { authFetch, networkingWorkbookHref, subjectId, withSubject } from "../../authFetch"
 import { WhereThingsStand } from "./WhereThingsStand"
 import { Collapsible } from "./Collapsible"
 import { ActionLog } from "./ActionLog"
@@ -61,6 +61,8 @@ type Contact = {
   // `id` is what AppliedHere queries on. The endpoint already returns it
   // (network_companies(id, name, tier, status)); only this type omitted it.
   network_companies?: { id: string; name: string } | null
+  /** The contact's Networking workbook, if one has been created. */
+  workbook_id?: string | null
 }
 type Action = { id: string; type: string; action_date: string; note: string | null; author_role: string }
 
@@ -206,6 +208,14 @@ export default function ContactRecordPage({ params }: { params: Promise<{ contac
               <>
                 <span style={{ color: S.text.dim }}>·</span>
                 <a href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`} style={identityLink}>{contact.phone}</a>
+              </>
+            )}
+            {contact.workbook_id && (
+              <>
+                <span style={{ color: S.text.dim }}>·</span>
+                <a href={networkingWorkbookHref(contact.workbook_id)} style={identityLink} data-testid="contact-workbook-link">
+                  Networking workbook →
+                </a>
               </>
             )}
           </div>

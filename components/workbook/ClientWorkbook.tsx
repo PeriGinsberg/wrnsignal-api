@@ -20,7 +20,13 @@ import { wbFetch, fmtWhen, type Comment, type Send } from "./api"
 import { WorkbookFrame } from "./WorkbookFrame"
 
 type Loaded = {
-  workbook: { id: string; status: string; content: WorkbookContent; interview: any; homework_completed_at: string | null }
+  workbook: {
+    id: string; status: string; content: WorkbookContent; interview: any; homework_completed_at: string | null
+    /** False only for a networking workbook whose client has no coach yet. */
+    has_coach?: boolean
+    /** A networking workbook's live lead coach, which may postdate its content. */
+    coach_first_name?: string | null
+  }
   answers: Record<string, { value: unknown; updated_at: string }>
   comments: Comment[]
   sends: Send[]
@@ -71,7 +77,11 @@ function Composer(props: { label: string; initial?: string; onSave(body: string)
 function Loaded({ data }: { data: Loaded }) {
   const wb = data.workbook
   const c = wb.content
-  const coach = c.coach.first_name
+  const coach = (c.kind === "networking" && wb.coach_first_name) || c.coach.first_name
+  // NO COACH, NO SEND. A networking workbook can belong to a client with no
+  // coach. Send and Ask both reach a coach, so both are hidden, not disabled:
+  // nothing on this page could earn them.
+  const canSend = wb.has_coach !== false
   const auto = useAutosave(wb.id, data.answers)
   const [comments, setComments] = useState<Comment[]>(data.comments)
   const [sends, setSends] = useState<Send[]>(data.sends)
@@ -233,6 +243,7 @@ function Loaded({ data }: { data: Loaded }) {
     showCoachOnly: false,
     margin: (k) => marginFor(section.id, k),
     fieldFoot: (k) => {
+      if (!canSend) return null
       const key = `field:${k}`
       return composing === key ? (
         <div style={{ flexBasis: "100%", display: "flex", flexDirection: "column", gap: 6 }}>
@@ -249,7 +260,7 @@ function Loaded({ data }: { data: Loaded }) {
   const nav = (
     <nav className="wb-nav" aria-label="Workbook sections">
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <span className="wb-eyebrow">Interview workbook</span>
+        <span className="wb-eyebrow">{c.kind === "networking" ? "Networking workbook" : "Interview workbook"}</span>
         <span className="wb-serif" style={{ fontSize: 30, fontWeight: 600, lineHeight: 1.1 }}>{c.client.full_name}</span>
         {c.title && <span style={{ fontSize: 15, fontWeight: 600 }}>{c.title}</span>}
         {c.interview?.role && <span style={{ fontSize: 15, lineHeight: 1.45 }}>{c.interview.role}</span>}
@@ -302,7 +313,7 @@ function Loaded({ data }: { data: Loaded }) {
         <div className="wb-header-actions">
           <span className="wb-hide-phone">{saveLabel}</span>
           <Link href={`/dashboard/workbooks/${wb.id}/summary`} className="wb-btn wb-hide-phone">{summaryLabel}</Link>
-          <button type="button" className="wb-btn wb-btn-solid" onClick={() => setSendOpen(true)}>Send to {coach}</button>
+          {canSend && <button type="button" className="wb-btn wb-btn-solid" onClick={() => setSendOpen(true)}>Send to {coach}</button>}
         </div>
       </header>
       {status === "with_coach" && (
@@ -336,7 +347,7 @@ function Loaded({ data }: { data: Loaded }) {
                     {days.filter((d) => d.day).map((d) => (
                       <span key={d.day} style={{ fontWeight: 600 }}>{d.day}: complete</span>
                     ))}
-                    <div><button type="button" className="wb-btn wb-btn-solid" style={{ minHeight: 52 }} onClick={() => setSendOpen(true)}>Send to {coach}</button></div>
+                    {canSend && <div><button type="button" className="wb-btn wb-btn-solid" style={{ minHeight: 52 }} onClick={() => setSendOpen(true)}>Send to {coach}</button></div>}
                   </div>
                 ) : (
                   <div className="wb-card-soft">
@@ -366,7 +377,7 @@ function Loaded({ data }: { data: Loaded }) {
             </div>
           )}
 
-          <div className="wb-row">
+          {canSend && <div className="wb-row">
             <div className="wb-col" style={{ gap: 12 }}>
               <div className="wb-rule" />
               <span className="wb-h2" style={{ fontSize: 26 }}>Anything about this section?</span>
@@ -378,7 +389,7 @@ function Loaded({ data }: { data: Loaded }) {
               )}
             </div>
             <div className="wb-aside">{marginFor(section.id, null)}</div>
-          </div>
+          </div>}
 
           <div className="wb-row">
             <div className="wb-pager">
@@ -387,7 +398,9 @@ function Loaded({ data }: { data: Loaded }) {
                 : <span />}
               {idx < c.sections.length - 1
                 ? <button type="button" className="wb-btn wb-btn-solid" style={{ minHeight: 52 }} onClick={() => go(idx + 1)}>Next: {c.sections[idx + 1].title} &rarr;</button>
-                : <button type="button" className="wb-btn wb-btn-solid" style={{ minHeight: 52 }} onClick={() => setSendOpen(true)}>Send to {coach}</button>}
+                : canSend
+                  ? <button type="button" className="wb-btn wb-btn-solid" style={{ minHeight: 52 }} onClick={() => setSendOpen(true)}>Send to {coach}</button>
+                  : <span />}
             </div>
             <div />
           </div>
@@ -402,7 +415,7 @@ function Loaded({ data }: { data: Loaded }) {
         {idx > 0 && <button type="button" className="wb-btn" onClick={() => go(idx - 1)} aria-label="Previous section">&larr;</button>}
         {idx < c.sections.length - 1
           ? <button type="button" className="wb-btn wb-btn-solid" onClick={() => go(idx + 1)}>Next &rarr;</button>
-          : <button type="button" className="wb-btn wb-btn-solid" onClick={() => setSendOpen(true)}>Send</button>}
+          : canSend && <button type="button" className="wb-btn wb-btn-solid" onClick={() => setSendOpen(true)}>Send</button>}
       </div>
 
       {sendOpen && (

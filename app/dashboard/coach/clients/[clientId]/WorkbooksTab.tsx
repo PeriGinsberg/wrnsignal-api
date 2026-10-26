@@ -79,7 +79,7 @@ export function WorkbooksTab({ clientId, clientName }: { clientId: string; clien
       <div style={{ padding: "36px 40px 48px", display: "flex", flexDirection: "column", gap: 24 }}>
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <span className="wb-eyebrow">Interview workbooks</span>
+            <span className="wb-eyebrow">Workbooks</span>
             <h2 className="wb-h2">{clientName}</h2>
           </div>
           <button type="button" className="wb-btn wb-btn-solid" onClick={() => setAdding(true)}>Add workbook</button>

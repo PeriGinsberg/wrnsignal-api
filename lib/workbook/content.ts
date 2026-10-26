@@ -334,6 +334,11 @@ export type WorkbookContent = {
    * itself as Session 1. A template says which session it is, in one place.
    */
   session?: number
+  /**
+   * "networking": made by the client from the Networking page, one per contact.
+   * Not a session, so no session number, and sent to the lead coach at send time.
+   */
+  kind?: "networking"
   title?: string
   client: { first_name: string; full_name: string }
   /** null on a session workbook: it is not about one interview. */
@@ -381,6 +386,9 @@ export const CHECKLIST_PREFIX = "summary.check."
 /** Placeholders a template carries, filled from the client and coach records. */
 export const TEMPLATE_KEYS = ["first_name", "full_name", "coach_first_name"] as const
 export type TemplateValues = Record<(typeof TEMPLATE_KEYS)[number], string>
+/** A networking workbook also carries its contact. Empty string when unknown. */
+export const CONTACT_TEMPLATE_KEYS = ["contact_full_name", "contact_first_name", "contact_title", "contact_company"] as const
+export type ContactTemplateValues = Record<(typeof CONTACT_TEMPLATE_KEYS)[number], string>
 export const GENERAL_SECTION_ID = "_general"
 
 /**
@@ -680,9 +688,12 @@ export function lastHomeworkSectionId(c: Pick<WorkbookContent, "sections">): str
  * Fill a template's placeholders from the records. Every string is substituted,
  * so labels, prefixes and the summary title are all covered.
  */
-export function applyTemplate<T>(content: T, values: TemplateValues): T {
+export function applyTemplate<T>(content: T, values: TemplateValues & Partial<ContactTemplateValues>): T {
+  const vals: Record<string, string | undefined> = values
+  // Only keys that were passed are swapped, so a session template filled
+  // without contact values still reports a stray {contact_*} as unresolved.
   const swap = (text: string) =>
-    text.replace(/\{(first_name|full_name|coach_first_name)\}/g, (_, k: keyof TemplateValues) => values[k])
+    text.replace(/\{([a-z_]+)\}/g, (m, k: string) => (Object.hasOwn(vals, k) ? vals[k] ?? m : m))
   const walk = (v: unknown): unknown => {
     if (typeof v === "string") return swap(v)
     if (Array.isArray(v)) return v.map(walk)
@@ -1046,8 +1057,9 @@ export function validateContent(raw: unknown): { ok: true; content: WorkbookCont
   if (c.session != null && (!Number.isInteger(c.session) || c.session < 1)) {
     errors.push("session must be a whole number of 1 or more")
   }
+  if (c.kind != null && c.kind !== "networking") errors.push('kind must be "networking" or absent')
   // A session template drives the homework webhook, so it must say WHICH session.
-  if (c.template && c.session == null) errors.push("a session template needs a session number")
+  if (c.template && c.session == null && c.kind !== "networking") errors.push("a session template needs a session number")
   if (!Array.isArray(c.sections) || c.sections.length === 0) errors.push("sections must be a non-empty array")
 
   const keys = new Set<string>()
