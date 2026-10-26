@@ -7620,8 +7620,8 @@
     "schema_version": 2,
     "id": "prod-04f8796d-318c-40ef-b77e-29e9afbe2253",
     "label": "prod 04f8796d — Operations Specialist @ Crisis24 (2026-05-08)",
-    "decision": "Priority Apply",
-    "score": 97,
+    "decision": "Apply",
+    "score": 95,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -8026,9 +8026,9 @@
         "profile_unit_id": "1c539cbe728ade0d"
       },
       {
-        "match_strength": "direct",
-        "weight": 103,
-        "coverageScore": 85,
+        "match_strength": "adjacent",
+        "weight": 77,
+        "coverageScore": 55,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -8118,16 +8118,16 @@
         "match_key": "analysis_reporting"
       },
       {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 103,
-        "match_strength": "direct",
-        "match_key": "drafting_documentation"
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 83,
+        "match_strength": "adjacent",
+        "match_key": "client_commercial_work"
       },
       {
         "code": "WHY_EXECUTION_PROOF",
         "weight": 83,
         "match_strength": "adjacent",
-        "match_key": "client_commercial_work"
+        "match_key": "drafting_documentation"
       },
       {
         "code": "WHY_TOOL_PROOF",
@@ -8267,7 +8267,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -8276,7 +8276,7 @@
         }
       ],
       "raw_score": 97,
-      "clamped_score": 97
+      "clamped_score": 95
     }
   },
   "prod-04f90305-a550-4e75-abda-68d5a713ca25": {
@@ -8284,7 +8284,7 @@
     "id": "prod-04f90305-a550-4e75-abda-68d5a713ca25",
     "label": "prod 04f90305 — Quantitative Investment Engineer @ HarbourVest (2026-05-17)",
     "decision": "Pass",
-    "score": 35,
+    "score": 28,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -8819,18 +8819,18 @@
         "profile_unit_id": "ffe7ad89d27e0bd7"
       },
       {
-        "match_strength": "direct",
-        "weight": 96,
-        "coverageScore": 78,
+        "match_strength": "adjacent",
+        "weight": 70,
+        "coverageScore": 48,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
         "profile_unit_id": "433ef192c9b28bda"
       },
       {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
+        "match_strength": "adjacent",
+        "weight": 73,
+        "coverageScore": 51,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -8861,6 +8861,11 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
+        "weight": 0
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "medium",
         "weight": 0
       },
       {
@@ -9019,8 +9024,8 @@
           "note": "11"
         }
       ],
-      "raw_score": 35,
-      "clamped_score": 35
+      "raw_score": 28,
+      "clamped_score": 28
     }
   },
   "prod-05929d4e-1bfb-4f38-87be-c049f771c064": {
@@ -16040,9 +16045,9 @@
         "profile_unit_id": "05615cf8cf8ff52d"
       },
       {
-        "match_strength": "direct",
-        "weight": 103,
-        "coverageScore": 85,
+        "match_strength": "adjacent",
+        "weight": 77,
+        "coverageScore": 55,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -56490,9 +56495,9 @@
         "profile_unit_id": "05615cf8cf8ff52d"
       },
       {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 85,
+        "match_strength": "adjacent",
+        "weight": 80,
+        "coverageScore": 55,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -56571,7 +56576,7 @@
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 106,
+        "weight": 104,
         "match_strength": "direct",
         "match_key": "drafting_documentation"
       }
@@ -62545,8 +62550,8 @@
     "schema_version": 2,
     "id": "prod-2e80fb67-8754-4d7a-9710-8055f94f1fc7",
     "label": "prod 2e80fb67 — Wealth Management Client Service Associate @ Jefferies (2026-05-28)",
-    "decision": "Apply",
-    "score": 78,
+    "decision": "Review",
+    "score": 74,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -62754,9 +62759,9 @@
         "profile_unit_id": "ffe7ad89d27e0bd7"
       },
       {
-        "match_strength": "direct",
-        "weight": 100,
-        "coverageScore": 82,
+        "match_strength": "adjacent",
+        "weight": 74,
+        "coverageScore": 52,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -62810,16 +62815,16 @@
     ],
     "why_codes": [
       {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 100,
-        "match_strength": "direct",
-        "match_key": "drafting_documentation"
-      },
-      {
         "code": "WHY_EXECUTION_PROOF",
         "weight": 87,
         "match_strength": "adjacent",
         "match_key": "analysis_reporting"
+      },
+      {
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 74,
+        "match_strength": "adjacent",
+        "match_key": "drafting_documentation"
       }
     ],
     "risk_codes": [
@@ -62832,6 +62837,11 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -7.800000000000001
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -62976,7 +62986,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -62984,8 +62994,8 @@
           "note": "18.8"
         }
       ],
-      "raw_score": 78,
-      "clamped_score": 78
+      "raw_score": 77,
+      "clamped_score": 74
     }
   },
   "prod-2fade48a-ae63-4ba3-88ec-3055c18ee944": {
@@ -66825,9 +66835,9 @@
         "profile_unit_id": "05615cf8cf8ff52d"
       },
       {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 85,
+        "match_strength": "adjacent",
+        "weight": 80,
+        "coverageScore": 55,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -66906,7 +66916,7 @@
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 106,
+        "weight": 104,
         "match_strength": "direct",
         "match_key": "drafting_documentation"
       }
@@ -69599,7 +69609,7 @@
     "id": "prod-3224afc3-c494-471a-bc5c-0edf5119c4c0",
     "label": "prod 3224afc3 — Collateral Analyst @ Ares Management, L.P. (2026-05-20)",
     "decision": "Review",
-    "score": 72,
+    "score": 73,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -70311,18 +70321,18 @@
         "profile_unit_id": "ffe7ad89d27e0bd7"
       },
       {
-        "match_strength": "direct",
-        "weight": 95,
-        "coverageScore": 78,
+        "match_strength": "adjacent",
+        "weight": 69,
+        "coverageScore": 48,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
         "profile_unit_id": "433ef192c9b28bda"
       },
       {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 81,
+        "match_strength": "adjacent",
+        "weight": 72,
+        "coverageScore": 51,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -70575,15 +70585,15 @@
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 98,
-        "match_strength": "direct",
-        "match_key": "drafting_documentation"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 99,
         "match_strength": "direct",
         "match_key": "financial_analysis"
+      },
+      {
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 72,
+        "match_strength": "adjacent",
+        "match_key": "drafting_documentation"
       },
       {
         "code": "WHY_TOOL_PROOF",
@@ -70758,8 +70768,8 @@
           "note": "11"
         }
       ],
-      "raw_score": 72,
-      "clamped_score": 72
+      "raw_score": 73,
+      "clamped_score": 73
     }
   },
   "prod-33d3e32c-08b7-4816-a47a-cad7669a4885": {
@@ -142268,9 +142278,9 @@
         "profile_unit_id": "05615cf8cf8ff52d"
       },
       {
-        "match_strength": "direct",
-        "weight": 105,
-        "coverageScore": 85,
+        "match_strength": "adjacent",
+        "weight": 79,
+        "coverageScore": 55,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -142343,7 +142353,7 @@
     "why_codes": [
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 105,
+        "weight": 103,
         "match_strength": "direct",
         "match_key": "drafting_documentation"
       }
@@ -163448,7 +163458,7 @@
     "id": "prod-770621dd-c0a9-4e62-8bbb-54bc3d0e5dd4",
     "label": "prod 770621dd — Adjustments Analyst @ Human Interest (2026-05-11)",
     "decision": "Pass",
-    "score": 54,
+    "score": 49,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -163776,9 +163786,9 @@
         "profile_unit_id": "1c539cbe728ade0d"
       },
       {
-        "match_strength": "direct",
-        "weight": 100,
-        "coverageScore": 81,
+        "match_strength": "adjacent",
+        "weight": 74,
+        "coverageScore": 51,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -163811,9 +163821,9 @@
         "match_key": "analysis_reporting"
       },
       {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 100,
-        "match_strength": "direct",
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 80,
+        "match_strength": "adjacent",
         "match_key": "drafting_documentation"
       }
     ],
@@ -163967,8 +163977,8 @@
           "note": "7"
         }
       ],
-      "raw_score": 54,
-      "clamped_score": 54
+      "raw_score": 49,
+      "clamped_score": 49
     }
   },
   "prod-788f5c06-cce5-4bc0-a195-5640c677bcfe": {
@@ -202560,7 +202570,7 @@
     "id": "prod-922f2fcb-9985-4d84-9d2f-1e7a961709c5",
     "label": "prod 922f2fcb — Chief of Staff, Client Service @ Aduro Advisors (2026-04-13)",
     "decision": "Apply",
-    "score": 87,
+    "score": 82,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -202859,9 +202869,9 @@
         "profile_unit_id": "b9d0ddf130961ced"
       },
       {
-        "match_strength": "direct",
-        "weight": 95,
-        "coverageScore": 78,
+        "match_strength": "adjacent",
+        "weight": 69,
+        "coverageScore": 48,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -202958,12 +202968,6 @@
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 95,
-        "match_strength": "direct",
-        "match_key": "drafting_documentation"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 97,
         "match_strength": "direct",
         "match_key": "operations_execution"
@@ -202973,6 +202977,12 @@
         "weight": 78,
         "match_strength": "adjacent",
         "match_key": "analysis_reporting"
+      },
+      {
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 78,
+        "match_strength": "adjacent",
+        "match_key": "drafting_documentation"
       }
     ],
     "risk_codes": [
@@ -203119,8 +203129,8 @@
           "note": "8.399999999999999"
         }
       ],
-      "raw_score": 87,
-      "clamped_score": 87
+      "raw_score": 82,
+      "clamped_score": 82
     }
   },
   "prod-9249fb6b-ce6e-4cd1-89b8-2404e8ed7784": {
@@ -205568,9 +205578,9 @@
         "profile_unit_id": "1c539cbe728ade0d"
       },
       {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 85,
+        "match_strength": "adjacent",
+        "weight": 80,
+        "coverageScore": 55,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -205621,16 +205631,16 @@
         "match_key": "analysis_reporting"
       },
       {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 106,
-        "match_strength": "direct",
-        "match_key": "drafting_documentation"
-      },
-      {
         "code": "WHY_EXECUTION_PROOF",
         "weight": 82,
         "match_strength": "adjacent",
         "match_key": "clinical_stakeholder_fluency"
+      },
+      {
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 86,
+        "match_strength": "adjacent",
+        "match_key": "drafting_documentation"
       },
       {
         "code": "WHY_TOOL_PROOF",
@@ -241481,7 +241491,7 @@
     "id": "prod-b090b2fb-f529-4033-aa4e-356f07da845a",
     "label": "prod b090b2fb — Sustainability & Energy Intern @ IMEG (2026-04-10)",
     "decision": "Pass",
-    "score": 55,
+    "score": 54,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -241688,9 +241698,9 @@
         "profile_unit_id": "df3b249e460e1822"
       },
       {
-        "match_strength": "direct",
-        "weight": 96,
-        "coverageScore": 80,
+        "match_strength": "adjacent",
+        "weight": 70,
+        "coverageScore": 50,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -241733,9 +241743,9 @@
         "profile_unit_id": "df3b249e460e1822"
       },
       {
-        "match_strength": "direct",
-        "weight": 94,
-        "coverageScore": 78,
+        "match_strength": "adjacent",
+        "weight": 68,
+        "coverageScore": 48,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -241751,9 +241761,9 @@
         "profile_unit_id": "ee82828aac84d189"
       },
       {
-        "match_strength": "direct",
-        "weight": 97,
-        "coverageScore": 81,
+        "match_strength": "adjacent",
+        "weight": 71,
+        "coverageScore": 51,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -241789,16 +241799,16 @@
     ],
     "why_codes": [
       {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 97,
-        "match_strength": "direct",
-        "match_key": "drafting_documentation"
-      },
-      {
         "code": "WHY_EXECUTION_PROOF",
         "weight": 87,
         "match_strength": "adjacent",
         "match_key": "analysis_reporting"
+      },
+      {
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 77,
+        "match_strength": "adjacent",
+        "match_key": "drafting_documentation"
       }
     ],
     "risk_codes": [
@@ -241954,8 +241964,8 @@
           "note": "4"
         }
       ],
-      "raw_score": 59,
-      "clamped_score": 55
+      "raw_score": 54,
+      "clamped_score": 54
     }
   },
   "prod-b162a365-fb80-400b-88da-8504106ca643": {
@@ -252783,18 +252793,18 @@
         "profile_unit_id": "ffe7ad89d27e0bd7"
       },
       {
-        "match_strength": "direct",
-        "weight": 95,
-        "coverageScore": 78,
+        "match_strength": "adjacent",
+        "weight": 69,
+        "coverageScore": 48,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
         "profile_unit_id": "433ef192c9b28bda"
       },
       {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 81,
+        "match_strength": "adjacent",
+        "weight": 72,
+        "coverageScore": 51,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -253035,15 +253045,15 @@
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 98,
-        "match_strength": "direct",
-        "match_key": "drafting_documentation"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 108,
         "match_strength": "direct",
         "match_key": "financial_analysis"
+      },
+      {
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 72,
+        "match_strength": "adjacent",
+        "match_key": "drafting_documentation"
       },
       {
         "code": "WHY_TOOL_PROOF",
@@ -263730,9 +263740,9 @@
         "profile_unit_id": "a7694b81f5705671"
       },
       {
-        "match_strength": "direct",
-        "weight": 96,
-        "coverageScore": 80,
+        "match_strength": "adjacent",
+        "weight": 70,
+        "coverageScore": 50,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -268322,8 +268332,8 @@
     "schema_version": 2,
     "id": "prod-c296469d-b333-495f-a13a-077fd3b66b34",
     "label": "prod c296469d — Police Department Internship - Service Population Advocate Assistant @ City of Delray Beach (2026-04-20)",
-    "decision": "Review",
-    "score": 62,
+    "decision": "Pass",
+    "score": 51,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -268400,9 +268410,9 @@
         "profile_unit_id": "1ba59002639d9e53"
       },
       {
-        "match_strength": "direct",
-        "weight": 104,
-        "coverageScore": 84,
+        "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 54,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -268417,9 +268427,9 @@
         "match_key": "customer_service_guest_experience"
       },
       {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 104,
-        "match_strength": "direct",
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 78,
+        "match_strength": "adjacent",
         "match_key": "drafting_documentation"
       }
     ],
@@ -268428,6 +268438,11 @@
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": -3.9199999999999995
       }
     ],
     "scalars": {
@@ -268533,26 +268548,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Pass"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Pass"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Pass"
         },
         {
           "label": "penalty_sum",
-          "points": 0,
-          "note": "0"
+          "points": -4,
+          "note": "3.9199999999999995"
         }
       ],
-      "raw_score": 62,
-      "clamped_score": 62
+      "raw_score": 51,
+      "clamped_score": 51
     }
   },
   "prod-c35c03cf-5625-4743-9e25-a204f27c7d90": {
@@ -281157,7 +281172,7 @@
     "id": "prod-cd7b5be3-bce7-47ca-8d46-fff1df43c04a",
     "label": "prod cd7b5be3 — Account Executive @ Taylor Strategy (2026-05-11)",
     "decision": "Apply",
-    "score": 82,
+    "score": 81,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -281868,9 +281883,9 @@
         "profile_unit_id": "f0d39d87ba31f27d"
       },
       {
-        "match_strength": "direct",
-        "weight": 105,
-        "coverageScore": 84,
+        "match_strength": "adjacent",
+        "weight": 79,
+        "coverageScore": 54,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -281886,9 +281901,9 @@
         "profile_unit_id": "5392c016c6dedab3"
       },
       {
-        "match_strength": "direct",
-        "weight": 104,
-        "coverageScore": 83,
+        "match_strength": "adjacent",
+        "weight": 78,
+        "coverageScore": 53,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -281978,9 +281993,9 @@
         "match_key": "content_execution"
       },
       {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 105,
-        "match_strength": "direct",
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 86,
+        "match_strength": "adjacent",
         "match_key": "drafting_documentation"
       }
     ],
@@ -282125,8 +282140,8 @@
           "note": "15.399999999999999"
         }
       ],
-      "raw_score": 82,
-      "clamped_score": 82
+      "raw_score": 81,
+      "clamped_score": 81
     }
   },
   "prod-cdae93c3-7217-4fac-af36-3e1074492f6a": {
@@ -285824,7 +285839,7 @@
     "id": "prod-d04d3a3a-6bba-4811-ad57-7c801f1ffd8e",
     "label": "prod d04d3a3a — Business Operations & Strategy Analyst @ Ascend (2026-05-08)",
     "decision": "Apply",
-    "score": 92,
+    "score": 91,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -286168,9 +286183,9 @@
         "profile_unit_id": "1c539cbe728ade0d"
       },
       {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 85,
+        "match_strength": "adjacent",
+        "weight": 80,
+        "coverageScore": 55,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -286357,15 +286372,15 @@
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 106,
-        "match_strength": "direct",
-        "match_key": "drafting_documentation"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 99,
         "match_strength": "direct",
         "match_key": "operations_execution"
+      },
+      {
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 86,
+        "match_strength": "adjacent",
+        "match_key": "drafting_documentation"
       },
       {
         "code": "WHY_TOOL_PROOF",
@@ -286522,8 +286537,8 @@
           "note": "4"
         }
       ],
-      "raw_score": 92,
-      "clamped_score": 92
+      "raw_score": 91,
+      "clamped_score": 91
     }
   },
   "prod-d05e03fd-37ec-4a75-8a0e-bc488df4ef33": {
@@ -296692,9 +296707,9 @@
         "profile_unit_id": "48f59b37064b9a84"
       },
       {
-        "match_strength": "direct",
-        "weight": 103,
-        "coverageScore": 84,
+        "match_strength": "adjacent",
+        "weight": 77,
+        "coverageScore": 54,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -340909,9 +340924,9 @@
         "profile_unit_id": "1c539cbe728ade0d"
       },
       {
-        "match_strength": "direct",
-        "weight": 97,
-        "coverageScore": 81,
+        "match_strength": "adjacent",
+        "weight": 71,
+        "coverageScore": 51,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -347549,7 +347564,7 @@
     "id": "prod-f5ba5cc8-f434-48d2-8e17-53bb44f1534b",
     "label": "prod f5ba5cc8 — Account Coordinator @ PIMS (2026-05-07)",
     "decision": "Apply",
-    "score": 89,
+    "score": 84,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -348039,9 +348054,9 @@
         "profile_unit_id": "5bc20fcdb2e84034"
       },
       {
-        "match_strength": "direct",
-        "weight": 96,
-        "coverageScore": 80,
+        "match_strength": "adjacent",
+        "weight": 70,
+        "coverageScore": 50,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -348057,9 +348072,9 @@
         "profile_unit_id": "5392c016c6dedab3"
       },
       {
-        "match_strength": "direct",
-        "weight": 95,
-        "coverageScore": 79,
+        "match_strength": "adjacent",
+        "weight": 69,
+        "coverageScore": 49,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -348173,16 +348188,16 @@
         "match_key": "content_execution"
       },
       {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 96,
-        "match_strength": "direct",
-        "match_key": "drafting_documentation"
-      },
-      {
         "code": "WHY_EXECUTION_PROOF",
         "weight": 85,
         "match_strength": "adjacent",
         "match_key": "account_management"
+      },
+      {
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 77,
+        "match_strength": "adjacent",
+        "match_key": "drafting_documentation"
       }
     ],
     "risk_codes": [
@@ -348332,8 +348347,8 @@
           "note": "3.78"
         }
       ],
-      "raw_score": 89,
-      "clamped_score": 89
+      "raw_score": 84,
+      "clamped_score": 84
     }
   },
   "prod-f6387019-383f-456c-8d9f-c213b8f1bc20": {
@@ -350246,7 +350261,7 @@
     "id": "prod-f87cffb2-6685-4181-ac7f-5772cc5cc58d",
     "label": "prod f87cffb2 — Operations Associate @ ViewTrade Securities (2026-05-11)",
     "decision": "Review",
-    "score": 65,
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -350536,9 +350551,9 @@
         "profile_unit_id": "1c539cbe728ade0d"
       },
       {
-        "match_strength": "direct",
-        "weight": 103,
-        "coverageScore": 85,
+        "match_strength": "adjacent",
+        "weight": 77,
+        "coverageScore": 55,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -350583,9 +350598,9 @@
     ],
     "why_codes": [
       {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 103,
-        "match_strength": "direct",
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 83,
+        "match_strength": "adjacent",
         "match_key": "drafting_documentation"
       },
       {
@@ -350747,8 +350762,8 @@
           "note": "16.2"
         }
       ],
-      "raw_score": 65,
-      "clamped_score": 65
+      "raw_score": 60,
+      "clamped_score": 60
     }
   },
   "prod-fa105938-04eb-41e5-932e-891d16e16cd1": {
