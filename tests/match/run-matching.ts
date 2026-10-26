@@ -47,8 +47,8 @@ const sb = createClient(URL_, KEY, { auth: { persistSession: false } })
     const overrides: any = {}
     if (arg("max-years")) overrides.maxYearsRequired = Number(arg("max-years"))
     if (arg("add-preset")) overrides.addPresets = arg("add-preset")!.split(",")
-    const { data: tl } = await sb.from("client_profiles").select("timeline").eq("id", client).single()
-    const { criteria: c, warnings } = seedCriteria(l, { ...p!, timeline: tl?.timeline ?? null }, overrides)
+    const { data: tl } = await sb.from("client_profiles").select("timeline, grad_date, education_status").eq("id", client).single()
+    const { criteria: c, warnings } = seedCriteria(l, { ...p!, ...tl }, overrides)
     if (tl?.timeline && !c.availableFrom) warnings.push(`timeline "${tl.timeline}" names no month or season: no start rule`)
     for (const w of warnings) console.log("warning:", w)
     const { error: iErr } = await sb.from("client_match_criteria").upsert({

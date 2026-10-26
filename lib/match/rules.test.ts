@@ -3,7 +3,7 @@
 // Hard rules (lib/match/rules.ts) and criteria seeding (lib/match/criteria.ts),
 // offline. The rule that matters most: NOT STATED NEVER FAILS.
 
-import { parseTimeline, seedCriteria } from "./criteria"
+import { availableFromProfile, parseTimeline, seedCriteria } from "./criteria"
 import { applyRules, parseLocations, type MatchPosting } from "./rules"
 
 let failures = 0
@@ -91,6 +91,16 @@ ok("remote in India fails Alex", r({ locations: pl("Remote, , India"), remote: t
 ok("remote with no country passes", r({ locations: pl("Remote"), remote: true }).length === 0)
 ok("New York or London fails Alex (neither in his states)", r({ locations: pl("New York, NY; London, , United Kingdom") }).join() === "location")
 ok("Chicago or London passes Alex", r({ locations: pl("Chicago, IL; London, , United Kingdom") }).length === 0)
+
+// profile -> available_from (2026-10-26)
+{
+  const d = "2026-10-26"
+  ok("timeline month wins", availableFromProfile({ timeline: "June 2027", grad_date: "2027-05-10", education_status: "in_school" }, d).date === "2027-06-01")
+  ok("in school, future graduation", JSON.stringify(availableFromProfile({ timeline: "6-12 months", grad_date: "2027-05-10", education_status: "in_school" }, d)) === JSON.stringify({ date: "2027-05-10", source: "graduation" }))
+  ok("relative months", JSON.stringify(availableFromProfile({ timeline: "1-3 months" }, d)) === JSON.stringify({ date: "2026-11-26", source: "relative" }))
+  ok("Now / Actively looking: available now", availableFromProfile({ timeline: "Now" }, d).date === null && availableFromProfile({ timeline: "Actively looking", grad_date: "2025-05-12", education_status: "graduated" }, d).date === null)
+  ok("past season stays a past date", availableFromProfile({ timeline: "Summer 2026" }, d).date === "2026-06-01")
+}
 
 // timeline -> available_from
 ok("Alex's timeline seeds available_from 2027-06-01", alex.availableFrom === "2027-06-01")

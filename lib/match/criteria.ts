@@ -121,7 +121,7 @@ export function seedCriteria(
     gradDate: profile.grad_date ?? null,
     educationStatus: profile.education_status ?? null,
     timeline: profile.timeline ?? null,
-    availableFrom: parseTimeline(profile.timeline ?? null),
+    availableFrom: availableFromProfile(profile).date,
     salaryFloor: null,
     excludedTitleKeywords: splitList(lane.exclusions?.title_keywords),
     excludedEmployers: [],
@@ -154,6 +154,31 @@ export function parseTimeline(t: string | null): string | null {
   const season = Object.keys(SEASON_MONTH).find((k) => new RegExp(`\\b${k}\\b`).test(s))
   if (season) return `${year}-${String(SEASON_MONTH[season]).padStart(2, "0")}-01`
   return null
+}
+
+/**
+ * When the client can start, from the profile (2026-10-26). In order:
+ *   timeline     a month or season with a year ("June 2027", "Summer 2027")
+ *   graduation   still in school with a graduation date after today
+ *   relative     "6-12 months" / "3 months": today plus the first number
+ *   none         "Now", "Actively looking", blank: available now (null)
+ * A date after today puts the client in future-start mode: the queue's campus
+ * tier. Otherwise the client is available now.
+ */
+export function availableFromProfile(
+  p: { timeline?: string | null; grad_date?: string | null; education_status?: string | null },
+  today = new Date().toISOString().slice(0, 10),
+): { date: string | null; source: "timeline" | "graduation" | "relative" | "none" } {
+  const t = parseTimeline(p.timeline ?? null)
+  if (t) return { date: t, source: "timeline" }
+  if (p.grad_date && p.grad_date > today && p.education_status !== "graduated") return { date: p.grad_date.slice(0, 10), source: "graduation" }
+  const rel = String(p.timeline ?? "").toLowerCase().match(/\b(\d{1,2})\s*(?:-|to)?\s*(?:\d{1,2})?\s*months?\b/)
+  if (rel) {
+    const d = new Date(today + "T00:00:00Z")
+    d.setUTCMonth(d.getUTCMonth() + Number(rel[1]))
+    return { date: d.toISOString().slice(0, 10), source: "relative" }
+  }
+  return { date: null, source: "none" }
 }
 
 /** "Illinois, US" / "IL" / "illinois" -> "il"; null when unknown. */
