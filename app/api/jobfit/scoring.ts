@@ -434,6 +434,25 @@ function evidenceShapeCompatible(jobUnit: JobRequirementUnit, profileUnit: Profi
     if (adminOnly) return { compatible: false, degradeToAdjacent: true, boost: -7 }
   }
 
+  // A JD line whose only writing cue is "documentation" asks for records,
+  // process or technical docs ("solution design documentation", "billing
+  // documentation", "maintain accurate documentation"). Press releases,
+  // memos or floor plans are written work but not that work: adjacent, not
+  // direct. On West Monroe (C009) a press-release line matched "functional,
+  // technical, and solution design documentation" at direct/104 and was the
+  // only quality direct WHY, lifting a Review to Apply.
+  if (j === "drafting_documentation") {
+    const docsOnlyJob =
+      /\bdocumentation\b/i.test(jobUnit.snippet) &&
+      !/\b(press|media|pitch(es)?|articles?|blogs?|content|communications?|talking points|fact sheets?|bylines?|backgrounders?|legal|leases?|agreements?|contracts?|briefs?|motions?|pleadings?|memos?|memoranda|reports?|presentations?|summar(y|ies)|materials|letters?|correspondence|minutes|proposals?|copy)\b/i.test(jobUnit.snippet)
+    if (docsOnlyJob) {
+      const docsWork = /\b(documentation|documented|documenting|sops?|standard operating procedures?|procedures|process (maps?|flows?|documents?)|user (guides?|manuals?|stories)|manuals?|requirements|specifications|records|files|templates|wikis?|knowledge base)\b/i.test(
+        profileUnit.snippet
+      )
+      return { compatible: docsWork, degradeToAdjacent: !docsWork, boost: docsWork ? 0 : -6 }
+    }
+  }
+
   if (j === "hospital_or_environment") {
     const explicit = /\b(operating room|orthopedic|surgical|hospital|emt|surgeon|physician-facing|physician facing)\b/i.test(
       profileUnit.snippet

@@ -6002,8 +6002,8 @@
     "schema_version": 2,
     "id": "batch-40926k",
     "label": "40926k — Josselyn Chavez / HR Manager",
-    "decision": "Priority Apply",
-    "score": 97,
+    "decision": "Apply",
+    "score": 95,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -6214,9 +6214,9 @@
         "profile_unit_id": "d4e7da78b1c8b24f"
       },
       {
-        "match_strength": "direct",
-        "weight": 100,
-        "coverageScore": 82,
+        "match_strength": "adjacent",
+        "weight": 74,
+        "coverageScore": 52,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -6334,15 +6334,15 @@
     "why_codes": [
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 100,
-        "match_strength": "direct",
-        "match_key": "drafting_documentation"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 97,
         "match_strength": "direct",
         "match_key": "operations_execution"
+      },
+      {
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 83,
+        "match_strength": "adjacent",
+        "match_key": "drafting_documentation"
       },
       {
         "code": "WHY_TOOL_PROOF",
@@ -6491,7 +6491,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -6500,7 +6500,7 @@
         }
       ],
       "raw_score": 97,
-      "clamped_score": 97
+      "clamped_score": 95
     }
   },
   "batch-40926l": {
@@ -7805,8 +7805,8 @@
     "schema_version": 2,
     "id": "batch-40926o",
     "label": "40926o — Josselyn Chavez / Strategy and Operations Consultant",
-    "decision": "Priority Apply",
-    "score": 97,
+    "decision": "Apply",
+    "score": 95,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -8054,9 +8054,9 @@
         "profile_unit_id": "d4e7da78b1c8b24f"
       },
       {
-        "match_strength": "direct",
-        "weight": 95,
-        "coverageScore": 78,
+        "match_strength": "adjacent",
+        "weight": 69,
+        "coverageScore": 48,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -8156,12 +8156,6 @@
     "why_codes": [
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 95,
-        "match_strength": "direct",
-        "match_key": "drafting_documentation"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 97,
         "match_strength": "direct",
         "match_key": "operations_execution"
@@ -8171,6 +8165,12 @@
         "weight": 78,
         "match_strength": "adjacent",
         "match_key": "analysis_reporting"
+      },
+      {
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 78,
+        "match_strength": "adjacent",
+        "match_key": "drafting_documentation"
       },
       {
         "code": "WHY_TOOL_PROOF",
@@ -8312,7 +8312,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -8321,7 +8321,7 @@
         }
       ],
       "raw_score": 97,
-      "clamped_score": 97
+      "clamped_score": 95
     }
   },
   "batch-40926p": {
@@ -8329,7 +8329,7 @@
     "id": "batch-40926p",
     "label": "40926p — Josselyn Chavez / Associate to the Chairman",
     "decision": "Apply",
-    "score": 81,
+    "score": 76,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -8611,9 +8611,9 @@
         "profile_unit_id": "d4e7da78b1c8b24f"
       },
       {
-        "match_strength": "direct",
-        "weight": 94,
-        "coverageScore": 78,
+        "match_strength": "adjacent",
+        "weight": 68,
+        "coverageScore": 48,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -8737,12 +8737,6 @@
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 94,
-        "match_strength": "direct",
-        "match_key": "drafting_documentation"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 103,
         "match_strength": "direct",
         "match_key": "operations_execution"
@@ -8752,6 +8746,12 @@
         "weight": 78,
         "match_strength": "adjacent",
         "match_key": "analysis_reporting"
+      },
+      {
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 77,
+        "match_strength": "adjacent",
+        "match_key": "drafting_documentation"
       },
       {
         "code": "WHY_INDUSTRY_MATCH",
@@ -8912,8 +8912,8 @@
           "note": "14.399999999999999"
         }
       ],
-      "raw_score": 81,
-      "clamped_score": 81
+      "raw_score": 76,
+      "clamped_score": 76
     }
   },
   "batch-40926q": {
@@ -14631,18 +14631,18 @@
         "profile_unit_id": "a81eaa356d78e822"
       },
       {
-        "match_strength": "direct",
-        "weight": 101,
-        "coverageScore": 83,
+        "match_strength": "adjacent",
+        "weight": 75,
+        "coverageScore": 53,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
         "profile_unit_id": "d3051060ee29c338"
       },
       {
-        "match_strength": "direct",
-        "weight": 100,
-        "coverageScore": 82,
+        "match_strength": "adjacent",
+        "weight": 74,
+        "coverageScore": 52,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -14667,18 +14667,18 @@
         "profile_unit_id": "ee82828aac84d189"
       },
       {
-        "match_strength": "direct",
-        "weight": 102,
-        "coverageScore": 84,
+        "match_strength": "adjacent",
+        "weight": 76,
+        "coverageScore": 54,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
         "profile_unit_id": "f1cff924378655fe"
       },
       {
-        "match_strength": "direct",
-        "weight": 103,
-        "coverageScore": 85,
+        "match_strength": "adjacent",
+        "weight": 77,
+        "coverageScore": 55,
         "match_kind": "deliverable",
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
@@ -14796,12 +14796,6 @@
     "why_codes": [
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 103,
-        "match_strength": "direct",
-        "match_key": "drafting_documentation"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 99,
         "match_strength": "direct",
         "match_key": "policy_regulatory_research"
@@ -14811,6 +14805,12 @@
         "weight": 80,
         "match_strength": "adjacent",
         "match_key": "analysis_reporting"
+      },
+      {
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 83,
+        "match_strength": "adjacent",
+        "match_key": "drafting_documentation"
       }
     ],
     "risk_codes": [
