@@ -73,6 +73,13 @@ posting: a credential they are not on track for, a degree in a field they do
 not have, experience far beyond theirs, a clearance or citizenship they lack.
 Judge the client's experience from their background, not from their title.
 
+CAMPUS POSTINGS. When the client is still studying or cannot start until a
+future date (see "Available to start"), a posting marked "Campus or early
+career: yes" fits their stage better than an experienced-hire posting doing
+similar work, because it is built for when and how they can start. Score it
+about 10 points higher than an otherwise equal experienced-hire posting. This
+does not lift a campus posting in the wrong function above a good fit.
+
 THE COACH'S RECENT DECISIONS for this client, when given, show what this coach
 pushes and dismisses for this client and why. Weigh them: a posting like ones
 the coach dismissed as wrong function should score low; one like a push should
@@ -104,7 +111,7 @@ export function clientBrief(c: MatchCriteria, today = new Date()): string {
   const lines = [
     `Target roles: ${c.targetRoles.join("; ") || "not given"}`,
     `Stage: ${[c.educationStatus && `education ${c.educationStatus.replace(/_/g, " ")}`, graduationPhrase(c, today), c.timeline && `timeline "${c.timeline}"`].filter(Boolean).join(", ") || "not given"}`,
-    c.availableFrom && `Available to start: from ${c.availableFrom}`,
+    c.availableFrom && `Available to start: from ${c.availableFrom}${c.availableFrom > today.toISOString().slice(0, 10) ? " (in the future)" : ""}`,
     `Coach's usual ceiling on years a posting asks: ${c.maxYearsRequired ?? "none given"} (a guide, not a limit: see STRETCH ROLES)`,
     `Job type wanted: ${c.jobTypes.join(", ") || "not given"}`,
     `Where: ${c.markets.length ? c.markets.map((m) => m.name).join(", ") + (c.radiusMiles ? ` (within ${c.radiusMiles} miles)` : "") : "anywhere"}${c.remoteOk ? "; remote is fine" : ""}`,
@@ -135,6 +142,7 @@ export function postingBrief(p: MatchPosting): string {
     `Level: ${p.level ?? "not stated"}`,
     `Years of experience asked: ${years}`,
     `Employment type: ${p.employmentTypes?.join(", ") ?? "not stated"}`,
+    `Campus or early career: ${p.campus === null ? "not known" : p.campus ? "yes" : "no"}`,
     `Start: ${p.startType === "date" ? p.startDate : p.startType === "season" ? `${p.startSeason} ${p.startYear}` : p.startType === "immediate" ? "immediately" : "not stated"}`,
     `Pay: ${pay}`,
     (p.graduationFrom || p.graduationTo) && `Graduation window: ${p.graduationFrom ?? "?"} to ${p.graduationTo ?? "?"}`,

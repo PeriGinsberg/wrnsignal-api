@@ -27,6 +27,7 @@ const none: EnrichFields = {
   application_deadline: null, deadline_evidence: "",
   employment_types: "not_stated", employment_evidence: "",
   start_type: "not_stated", start_date: null, start_season: null, start_year: null, start_evidence: "",
+  campus_signal: false, campus_evidence: "",
 }
 const p = (f: Partial<EnrichFields>) => toPatch({ ...none, ...f }, "Financial Analyst - Chicago, IL").patch
 const ns = (x: Record<string, unknown>) => (x.enrichment_not_stated as string[]).join(",")
@@ -119,6 +120,13 @@ const dd = p({ start_type: "season", start_season: null, start_year: 2026, start
 ok("DoorDash 'Summer and Fall 2026' -> summer 2026", dd.start_season === "summer" && dd.start_year === 2026)
 const autumn = p({ start_type: "season", start_season: null, start_year: 2027, start_evidence: "Autumn 2027 cohort" })
 ok("'Autumn' in the quote reads as fall", autumn.start_season === "fall")
+
+// ── campus signal (added 2026-10-26)
+const camp = p({ campus_signal: true, campus_evidence: "2027 Global Private Bank Advisor Program" })
+ok("campus true with its quote", camp.campus_signal === true && (camp.enrichment_evidence as any).campus === "2027 Global Private Bank Advisor Program")
+ok("campus false stores false, no quote kept", empty.campus_signal === false && !("campus" in (empty.enrichment_evidence as any)))
+const noQuote = toPatch({ ...none, campus_signal: true, campus_evidence: "" }, "t")
+ok("campus true with no quote is stored false and recorded", noQuote.patch.campus_signal === false && noQuote.demoted.some((d) => d.field === "campus" && d.why === "no_quote"))
 
 // ── tools, title fallback
 ok("tools kept", JSON.stringify(p({ tools: ["Excel", "SQL"], tools_evidence: "Excel, SQL" }).tools) === '["Excel","SQL"]')

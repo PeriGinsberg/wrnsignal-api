@@ -24,7 +24,7 @@ const blank: MatchPosting = {
   title: "Financial Analyst", company: "Acme", locations: null, remote: null,
   yearsMin: null, yearsMax: null, yearsBasis: null, employmentTypes: null,
   salaryLow: null, salaryHigh: null, salaryPeriod: null, graduationFrom: null, graduationTo: null, level: null,
-  startType: null, startDate: null, startSeason: null, startYear: null, text: "",
+  startType: null, startDate: null, startSeason: null, startYear: null, campus: null, text: "",
 }
 const TODAY = "2026-10-25"
 const r = (p: Partial<MatchPosting>, c = alex) => applyRules(c, { ...blank, ...p }, TODAY)

@@ -81,6 +81,11 @@ export const EnrichSchema = z.object({
   start_season: z.enum(["spring", "summer", "fall", "winter"]).nullable(),
   start_year: z.number().int().nullable(),
   start_evidence: z.string(),
+
+  // Added 2026-10-26: 441 of Alex's 448 judged postings state no start, so the
+  // start rule alone cannot tell a campus role from an experienced hire.
+  campus_signal: z.boolean(),
+  campus_evidence: z.string(),
 })
 
 export type EnrichFields = z.infer<typeof EnrichSchema>
@@ -130,6 +135,10 @@ export const YEARS_RANGE_RULES = `- years_min / years_max are the years of profe
   experience" or "1+ years ... considered" can be met with no years at all, so
   keep the figure and set years_basis "preferred".
 - years_evidence: the sentence the figure came from, verbatim. Empty when not stated.`
+
+/** This year and next: the start years that read as campus hiring. In the prompt, so it changes on Jan 1. */
+const THIS_YEAR = new Date().getUTCFullYear()
+const CAMPUS_YEARS = `${THIS_YEAR} or ${THIS_YEAR + 1}`
 
 const SYSTEM = `You extract structured fields from a job posting. One posting in, one JSON object out.
 
@@ -245,7 +254,24 @@ ${INDUSTRY_RULES}
   EARLIEST one ("Summer/Fall 2027" -> season summer, year 2027) and quote the
   whole phrase.
 - Unused parts are null: a season has no start_date, a date has no season.
-- start_evidence: the words you took it from, verbatim. Empty when not_stated.`
+- start_evidence: the words you took it from, verbatim. Empty when not_stated.
+
+--- campus_signal / campus_evidence
+- true when the posting STATES that it hires students or recent graduates:
+    - a graduation window or class year ("Class of 2027", "graduating between
+      December 2026 and June 2027", "expected graduation 2027")
+    - a start in ${CAMPUS_YEARS} given as the role's start ("2027 start",
+      "full-time role starting in 2027", "Summer 2027 Analyst")
+    - "new grad", "new graduate", "recent graduate", "university graduate",
+      "college graduate" as the audience
+    - "campus" hiring ("campus recruiting", "on-campus", "campus hire")
+    - an early-career program ("early career program", "analyst program",
+      "development program", "rotational program", "leadership development
+      program", "graduate program", "early talent")
+- false otherwise. Do not infer it from a junior title, low years, a low salary,
+  or an internship by itself: an internship is campus only when the posting
+  also states one of the above.
+- campus_evidence: the words you took it from, verbatim. Empty when false.`
 
 /** Recorded on every enrichment_runs row, so a prompt change shows in the data. */
 export const ENRICH_PROMPT_SHA256 = createHash("sha256").update(SYSTEM).digest("hex")

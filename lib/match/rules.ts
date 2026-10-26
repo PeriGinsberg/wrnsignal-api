@@ -88,6 +88,8 @@ export type MatchPosting = {
   startDate: string | null
   startSeason: string | null
   startYear: number | null
+  /** The posting states it hires students or recent graduates. null = not looked at yet. */
+  campus: boolean | null
   /** What the judge reads: description, or a requirements summary when that is all there is. */
   text: string
 }

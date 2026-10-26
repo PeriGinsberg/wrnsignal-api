@@ -121,7 +121,7 @@ export class EnrichViolation extends Error {
  * requirements_summary, tools, level, function, industry.
  */
 export type Demotion = {
-  field: "function" | "industry" | "start"
+  field: "function" | "industry" | "start" | "campus"
   value: string
   why: "no_quote" | "not_in_list" | "rejected_by_database" | "start_unusable"
 }
@@ -203,6 +203,11 @@ export function toPatch(f: EnrichFields, title: string): { patch: Record<string,
     if (why) { notStated.push(field); demoted.push({ field, value: v, why }); return [null, null] }
     return [v, evidence]
   }
+  // campus: true needs its quote, like every stated value; true without one is stored as false and recorded
+  const campusText = f.campus_evidence.trim() || null
+  const campus = f.campus_signal && !!campusText
+  if (f.campus_signal && !campusText) demoted.push({ field: "campus", value: "true", why: "no_quote" })
+
   // employment type
   const employment = f.employment_types === "not_stated" ? null : [...new Set(f.employment_types)]
   if (!employment) notStated.push("employment_type")
@@ -232,7 +237,7 @@ export function toPatch(f: EnrichFields, title: string): { patch: Record<string,
   const [ind, indEv] = enumField(f.industry, f.industry_evidence, "industry", INDUSTRY_VALUES)
 
   const evidence: Record<string, unknown> = {}
-  for (const [k, v] of [["years", f.years_evidence], ["salary", f.salary_evidence], ["tools", f.tools_evidence], ["level", f.level_evidence], ["employment", f.employment_evidence]] as const) {
+  for (const [k, v] of [["years", f.years_evidence], ["salary", f.salary_evidence], ["tools", f.tools_evidence], ["level", f.level_evidence], ["employment", f.employment_evidence], ["campus", campus ? f.campus_evidence : ""]] as const) {
     if (v.trim()) evidence[k] = v.trim()
   }
   if (demoted.length) evidence.demoted = demoted
@@ -251,6 +256,7 @@ export function toPatch(f: EnrichFields, title: string): { patch: Record<string,
       function: fn, function_evidence: fnEv,
       industry: ind, industry_evidence: indEv,
       employment_types: employment,
+      campus_signal: campus,
       ...start,
       enrichment_evidence: evidence,
       enrichment_not_stated: notStated,
