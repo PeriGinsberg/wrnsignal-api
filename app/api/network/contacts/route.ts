@@ -82,13 +82,18 @@ export async function GET(req: NextRequest) {
     // `added_by_you` is the coach's own view: a coach looking at a board they
     // have added people to should see which ones are theirs, and cannot tell
     // from created_by_role alone if another coach has also worked the board.
-    // workbook_id: the contact's Networking workbook, at most one (unique index).
-    const contacts = (data ?? []).map(({ created_by_id, workbooks, ...c }: any) => ({
-      ...c,
-      added_by_coach: c.created_by_role === "coach",
-      added_by_you: c.created_by_role === "coach" && created_by_id === scope.actorId,
-      workbook_id: (Array.isArray(workbooks) ? workbooks[0]?.id : workbooks?.id) ?? null,
-    }))
+    const contacts = (data ?? []).map(({ created_by_id, ...c }) => {
+      // workbook_id: the contact's Networking workbook, at most one (unique
+      // index), flattened from the embed.
+      const { workbooks: embed, ...row } = c
+      const workbooks = embed as unknown as { id: string } | { id: string }[] | null
+      return {
+        ...row,
+        added_by_coach: c.created_by_role === "coach",
+        added_by_you: c.created_by_role === "coach" && created_by_id === scope.actorId,
+        workbook_id: (Array.isArray(workbooks) ? workbooks[0]?.id : workbooks?.id) ?? null,
+      }
+    })
     return withCorsJson(req, { ok: true, contacts }, 200)
   } catch (err: any) {
     return routeError(req, err)
