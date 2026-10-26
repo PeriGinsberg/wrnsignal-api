@@ -100,9 +100,25 @@ ok("season start", sSeason.start_type === "season" && sSeason.start_season === "
 const sNow = p({ start_type: "immediate", start_evidence: "Immediate start" })
 ok("immediate start", sNow.start_type === "immediate" && sNow.start_date === null && sNow.start_year === null)
 ok("no start: all NULL and 'start' named", empty.start_type === null && empty.start_text === null && ns(empty).split(",").includes("start"))
-ok("start with no quote is a violation", throws(() => p({ start_type: "immediate", start_evidence: "" })))
-ok("impossible start date is a violation", throws(() => p({ start_type: "date", start_date: "2027-02-30", start_evidence: "Feb 30" })))
-ok("season without a year is a violation", throws(() => p({ start_type: "season", start_season: "summer", start_year: null, start_evidence: "Summer" })))
+// Unusable start answers are stored as not stated and recorded, never a failure (2026-10-26).
+const unusable = (f: Partial<EnrichFields>) => {
+  const r = toPatch({ ...none, ...f }, "t")
+  return r.patch.start_type === null && r.patch.start_text === null && ns(r.patch).split(",").includes("start") &&
+    r.demoted.length === 1 && r.demoted[0].field === "start" && r.demoted[0].why === "start_unusable" &&
+    JSON.stringify((r.patch.enrichment_evidence as any).demoted) === JSON.stringify(r.demoted)
+}
+ok("start with no quote: not stated, recorded", unusable({ start_type: "immediate", start_evidence: "" }))
+ok("impossible start date: not stated, recorded", unusable({ start_type: "date", start_date: "2027-02-30", start_evidence: "Feb 30" }))
+ok("season without a year: not stated, recorded", unusable({ start_type: "season", start_season: "summer", start_year: null, start_evidence: "Summer" }))
+// The four real failures, as Haiku returned them.
+ok("OOS Management: date 'null' -> not stated", unusable({ start_type: "date", start_date: "null", start_evidence: "Start date: TBD" }))
+ok("Deloitte 'Summer 2027, Winter 2028' with no season or year -> not stated", unusable({ start_type: "season", start_season: null, start_year: null, start_evidence: "Summer 2027, Winter 2028" }))
+const arco = p({ start_type: "season", start_season: null, start_year: 2027, start_evidence: "Construction Project Manager Co-op (Summer/Fall 2027)" })
+ok("ARCO 'Summer/Fall 2027', season missing -> earliest named: summer 2027", arco.start_type === "season" && arco.start_season === "summer" && arco.start_year === 2027 && !ns(arco).split(",").includes("start"))
+const dd = p({ start_type: "season", start_season: null, start_year: 2026, start_evidence: "AI Research Fellowship, (Summer and Fall 2026)" })
+ok("DoorDash 'Summer and Fall 2026' -> summer 2026", dd.start_season === "summer" && dd.start_year === 2026)
+const autumn = p({ start_type: "season", start_season: null, start_year: 2027, start_evidence: "Autumn 2027 cohort" })
+ok("'Autumn' in the quote reads as fall", autumn.start_season === "fall")
 
 // ── tools, title fallback
 ok("tools kept", JSON.stringify(p({ tools: ["Excel", "SQL"], tools_evidence: "Excel, SQL" }).tools) === '["Excel","SQL"]')

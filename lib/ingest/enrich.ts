@@ -240,6 +240,10 @@ ${INDUSTRY_RULES}
   applications open.
 - "Summer 2027 Analyst" in a title states season summer 2027. "2027 Analyst
   Program" alone does not state a season or date: a year is not a start.
+- SEVERAL STARTS: when the posting offers more than one ("Summer/Fall 2027",
+  "Summer 2027, Winter 2028", "starts June or September 2027"), give the
+  EARLIEST one ("Summer/Fall 2027" -> season summer, year 2027) and quote the
+  whole phrase.
 - Unused parts are null: a season has no start_date, a date has no season.
 - start_evidence: the words you took it from, verbatim. Empty when not_stated.`
 

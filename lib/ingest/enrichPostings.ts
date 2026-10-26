@@ -120,7 +120,38 @@ export class EnrichViolation extends Error {
  * salary, salary_currency, graduation, application_deadline,
  * requirements_summary, tools, level, function, industry.
  */
-export type Demotion = { field: "function" | "industry"; value: string; why: "no_quote" | "not_in_list" | "rejected_by_database" }
+export type Demotion = {
+  field: "function" | "industry" | "start"
+  value: string
+  why: "no_quote" | "not_in_list" | "rejected_by_database" | "start_unusable"
+}
+
+const SEASONS = ["spring", "summer", "fall", "winter"]
+
+/**
+ * The start answer as stored, or null when it cannot be stored honestly.
+ * Unusable answers seen on 2026-10-25/26 (4 of ~2,500): a season with no
+ * season named ("Summer/Fall 2027" -> season null), and a date of "null".
+ * A usable part is kept: a season with a year but no name, when the quote
+ * names exactly one season, takes that season.
+ */
+function storableStart(f: EnrichFields, text: string): { start_type: string; start_date: string | null; start_season: string | null; start_year: number | null } | null {
+  if (f.start_type === "immediate") return { start_type: "immediate", start_date: null, start_season: null, start_year: null }
+  if (f.start_type === "date") {
+    const sd = f.start_date
+    return sd && YMD.test(sd) && new Date(sd + "T00:00:00Z").toISOString().slice(0, 10) === sd
+      ? { start_type: "date", start_date: sd, start_season: null, start_year: null }
+      : null
+  }
+  if (f.start_type === "season") {
+    const year = f.start_year && f.start_year >= 2000 && f.start_year <= 2100 ? f.start_year : null
+    // The earliest season named in the quote, when the model left it out.
+    const named = SEASONS.map((s) => ({ s, i: text.toLowerCase().search(new RegExp(`\\b${s === "fall" ? "(fall|autumn)" : s}\\b`)) })).filter((x) => x.i >= 0)
+    const season = f.start_season ?? (named.length ? SEASONS.filter((s) => named.some((n) => n.s === s))[0] : null)
+    return season && year ? { start_type: "season", start_date: null, start_season: season, start_year: year } : null
+  }
+  return null
+}
 
 export function toPatch(f: EnrichFields, title: string): { patch: Record<string, unknown>; demoted: Demotion[] } {
   const notStated: string[] = []
@@ -176,22 +207,24 @@ export function toPatch(f: EnrichFields, title: string): { patch: Record<string,
   const employment = f.employment_types === "not_stated" ? null : [...new Set(f.employment_types)]
   if (!employment) notStated.push("employment_type")
 
-  // start timing: the quote is required with any stated start
+  // start timing. An answer that cannot be stored honestly (no quote, no usable
+  // season or date) is stored as not stated and recorded, never a failure: the
+  // posting's other fields are worth keeping, and "start not stated" passes the
+  // start rule, which is the safe direction.
   const startText = f.start_evidence.trim() || null
   let start: { start_type: string | null; start_date: string | null; start_season: string | null; start_year: number | null; start_text: string | null } =
     { start_type: null, start_date: null, start_season: null, start_year: null, start_text: null }
   if (f.start_type === "not_stated") notStated.push("start")
   else {
-    if (!startText) throw new EnrichViolation(`start_type ${f.start_type} returned with no quote`)
-    if (f.start_type === "date") {
-      const sd = f.start_date
-      if (!sd || !YMD.test(sd) || new Date(sd + "T00:00:00Z").toISOString().slice(0, 10) !== sd) throw new EnrichViolation(`start_date "${sd}" is not a real YYYY-MM-DD date`)
-      start = { start_type: "date", start_date: sd, start_season: null, start_year: null, start_text: startText }
-    } else if (f.start_type === "season") {
-      if (!f.start_season || !f.start_year || f.start_year < 2000 || f.start_year > 2100) throw new EnrichViolation(`season start without a season and year (${f.start_season} ${f.start_year})`)
-      start = { start_type: "season", start_date: null, start_season: f.start_season, start_year: f.start_year, start_text: startText }
-    } else {
-      start = { start_type: "immediate", start_date: null, start_season: null, start_year: null, start_text: startText }
+    const s = startText ? storableStart(f, startText) : null
+    if (s) start = { ...s, start_text: startText }
+    else {
+      notStated.push("start")
+      demoted.push({
+        field: "start",
+        value: JSON.stringify({ type: f.start_type, date: f.start_date, season: f.start_season, year: f.start_year, quote: startText }),
+        why: "start_unusable",
+      })
     }
   }
 
