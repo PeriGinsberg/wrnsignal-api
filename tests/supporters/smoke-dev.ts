@@ -150,12 +150,19 @@ async function main() {
   ok("/api/profile refuses the supporter login", profAsMom.status === 403 && profAsMom.json?.error === "supporter_account", profAsMom.json)
   const { data: ghost } = await admin.from("client_profiles").select("id").eq("email", MOM_EMAIL)
   ok("...and did NOT create a client profile for them", (ghost ?? []).length === 0, ghost)
+  const { getAuthedProfileText } = await import("../../app/api/_lib/authProfile")
+  let jfErr = ""
+  try { await getAuthedProfileText(new Request(`${BASE}/api/jobfit`, { headers: { Authorization: `Bearer ${momLogin.jwt}` } }) as any) } catch (e: any) { jfErr = e?.message ?? "" }
+  const { data: ghost2 } = await admin.from("client_profiles").select("id").eq("email", MOM_EMAIL)
+  ok("the JobFit profile lookup refuses the supporter too, creating nothing", jfErr === "Profile not found" && (ghost2 ?? []).length === 0, jfErr)
 
   const dadLogin = await login(DAD_EMAIL)
   const wrong = await call(accept.POST, { path: "/api/supporter/accept", jwt: dadLogin.jwt, method: "POST", body: { token } })
   ok("another login cannot accept Mom's invite", wrong.status === 403, wrong.json)
   const accepted = await call(accept.POST, { path: "/api/supporter/accept", jwt: momLogin.jwt, method: "POST", body: { token } })
   ok("Mom accepts", accepted.json?.ok === true && accepted.json?.client_profile_id === CLIENT, accepted.json)
+  const { isActiveSupporterEmail: activeNow } = await import("../../lib/supporters")
+  ok("an accepted supporter counts as an active supporter email (blocks client account creation)", await activeNow(admin, MOM_EMAIL))
   const again = await call(accept.POST, { path: "/api/supporter/accept", jwt: momLogin.jwt, method: "POST", body: { token } })
   ok("accepting again is idempotent", again.json?.ok === true, again.json)
 
@@ -215,6 +222,8 @@ async function main() {
   ok("the client removes Mom", rev.json?.supporter?.status === "revoked", rev.json)
   const after = await call(supTracker.GET, { path: "", jwt: momLogin.jwt, params: { clientId: CLIENT } })
   ok("Mom is refused on her next request", after.status === 403, after.json)
+  const { isActiveSupporterEmail } = await import("../../lib/supporters")
+  ok("a revoked supporter is no longer an active supporter email", !(await isActiveSupporterEmail(admin, MOM_EMAIL)))
   const tagAfter = await call(applications.GET, { path: "/api/applications", jwt: client.jwt })
   ok("the Added by Mom tag survives the revoke", (tagAfter.json?.applications ?? []).some((a: any) => a.added_by_name === "Mom"))
 }

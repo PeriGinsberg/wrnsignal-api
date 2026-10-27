@@ -9,6 +9,7 @@
 
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
+import { isActiveSupporterEmail, alertSupporterPurchase } from "@/lib/supporters"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -146,6 +147,13 @@ async function handlePurchase(event: any) {
       revenuecatAppUserId: event.app_user_id ?? email,
       productId, amountCents, currency, purchasedAtIso,
     })
+    return
+  }
+
+  // An active supporter's email never becomes a client account. An iOS
+  // purchase has no checkout to refuse it at, so it lands here: alert a person.
+  if (await isActiveSupporterEmail(supabase, email)) {
+    await alertSupporterPurchase({ email, source: "revenuecat", reference: appleTransactionId ?? null })
     return
   }
 

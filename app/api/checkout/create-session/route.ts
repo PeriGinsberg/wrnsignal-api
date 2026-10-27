@@ -7,6 +7,7 @@ import { type NextRequest } from "next/server"
 import Stripe from "stripe"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { isActiveSupporterEmail, SUPPORTER_EMAIL_TAKEN } from "@/lib/supporters"
 import { getAppUrl } from "@/lib/urls"
 
 export const runtime = "nodejs"
@@ -70,6 +71,12 @@ export async function POST(req: NextRequest) {
 
     if (!email) {
       return withCorsJson(req, { error: "Email is required." }, 400)
+    }
+
+    // Refused BEFORE payment: the webhook could not make an account for this
+    // email anyway (one login, one role, lib/supporters.ts).
+    if (await isActiveSupporterEmail(getSupabase(), email)) {
+      return withCorsJson(req, { error: SUPPORTER_EMAIL_TAKEN }, 409)
     }
 
     const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID

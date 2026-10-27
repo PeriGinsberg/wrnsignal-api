@@ -2,6 +2,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { isActiveSupporterEmail, SUPPORTER_EMAIL_TAKEN } from "@/lib/supporters"
 import { canonicalizeLegacyJobType, normalizeJobType } from "@/lib/jobType"
 import { owningCoachId as owningCoachIdFor, resolveDelegation } from "@/lib/collab/delegation"
 import { getAuthedUser, getProfileRowOrNull } from "@/lib/collab/identity"
@@ -155,6 +156,12 @@ export async function POST(req: NextRequest) {
 
     if (existingProfile) {
       return withCorsJson(req, { ok: false, error: "An account with this email already exists" }, 409)
+    }
+
+    // One login, one role: never a client account for an active supporter's
+    // email (lib/supporters.ts).
+    if (await isActiveSupporterEmail(supabase, email)) {
+      return withCorsJson(req, { ok: false, error: SUPPORTER_EMAIL_TAKEN }, 409)
     }
 
     // ── STEP 4: Create Supabase auth user ──

@@ -30,6 +30,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../../../_lib/cors"
+import { isActiveSupporterEmail, SUPPORTER_EMAIL_TAKEN } from "@/lib/supporters"
 import { sendClientInvite } from "@/lib/email/sendClientInvite"
 import { getAppUrl } from "@/lib/urls"
 import { logCoachClientEvent } from "../../../../_lib/coachClientEvents"
@@ -199,6 +200,12 @@ export async function POST(
     } else {
       // ── Branch: create-new ───────────────────────────────────────
       branch = "create-new"
+
+      // One login, one role: never a client account for an active supporter's
+      // email (lib/supporters.ts).
+      if (await isActiveSupporterEmail(supabase, normalizedEmail)) {
+        return withCorsJson(req, { ok: false, error: SUPPORTER_EMAIL_TAKEN }, 409)
+      }
 
       // Step 1: create auth user
       const { data: authData, error: authErr } = await supabase.auth.admin.createUser({

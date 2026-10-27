@@ -1,6 +1,7 @@
 // FILE: app/api/_lib/authProfile.ts
 
 import { createClient } from "@supabase/supabase-js"
+import { isSupporterLogin } from "@/lib/supporters"
 
 const SUPABASE_URL = process.env.SUPABASE_URL
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -231,6 +232,12 @@ export async function getAuthedProfileText(
 
   if (byUserErr) throw new Error(`Profile lookup failed: ${byUserErr.message}`)
   if (byUserId?.id) return await buildAuthedProfile(personaId,byUserId)
+
+  // A SUPPORTER LOGIN IS NEVER MADE A CLIENT. Both create branches below would
+  // otherwise hand a supporter calling /api/jobfit a client profile of their
+  // own. "Profile not found" keeps the 404 the routes already return for a
+  // caller with no profile. See lib/supporters.ts.
+  if (await isSupporterLogin(supabaseAdmin, { userId, email })) throw new Error("Profile not found")
 
   // If no email, create a user-owned row
   if (!email) {

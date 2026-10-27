@@ -2,6 +2,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../_lib/cors"
+import { isSupporterLogin } from "@/lib/supporters"
 import { isCoached } from "../_lib/coachedClient"
 import { canonicalizeLegacyJobType, normalizeJobType } from "@/lib/jobType"
 
@@ -253,21 +254,12 @@ export async function GET(req: NextRequest) {
     // JobFit. One login, one role (20261115_client_supporters.sql). Checked by
     // login and by the invited email, because a supporter who has signed in but
     // not yet accepted has no supporter_user_id on the row.
-    const supporterChecks = [
-      supabase.from("client_supporters").select("id").eq("supporter_user_id", userId).limit(1),
-      ...(email
-        ? [supabase.from("client_supporters").select("id").eq("email", email).in("status", ["invited", "active"]).limit(1)]
-        : []),
-    ]
-    for (const { data: sup, error: supErr } of await Promise.all(supporterChecks)) {
-      if (supErr) throw new Error(`Supporter lookup failed: ${supErr.message}`)
-      if (sup?.length) {
-        return withCorsJson(
-          req,
-          { ok: false, error: "supporter_account", message: "This login is a supporter account, not a SIGNAL client account." },
-          403,
-        )
-      }
+    if (await isSupporterLogin(supabase, { userId, email })) {
+      return withCorsJson(
+        req,
+        { ok: false, error: "supporter_account", message: "This login is a supporter account, not a SIGNAL client account." },
+        403,
+      )
     }
 
     // Not a supporter either: auto-create

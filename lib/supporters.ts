@@ -10,7 +10,9 @@
 // coach-only table.
 
 import { createHash, randomBytes } from "node:crypto"
-import { sendToClient, type SendResult } from "./email/send"
+import type { SupabaseClient } from "@supabase/supabase-js"
+import { sendToClient, NON_PROD_REDIRECT, type SendResult } from "./email/send"
+import { getPostmarkClient, FROM_EMAIL, INTERNAL_STREAM } from "./postmark"
 
 export const MAX_SUPPORTERS = 2
 export const INVITE_DAYS = 7
@@ -46,6 +48,79 @@ export function hashInviteToken(token: string): string {
 
 export function normEmail(e: unknown): string {
   return String(e ?? "").trim().toLowerCase()
+}
+
+// ── ONE LOGIN, ONE ROLE ─────────────────────────────────────────────────────
+//
+// A supporter is never also a client. Every path that creates a client_profiles
+// row asks one of these two first:
+//
+//   isActiveSupporterEmail  a path creating an account FOR an email: coach
+//                           create-client, the prospect invite and setup, Stripe
+//                           checkout and webhook, the RevenueCat webhook
+//   isSupporterLogin        a path auto-creating a profile for the CALLER:
+//                           /api/profile and getAuthedProfileText. Wider: any
+//                           supporter row on the login, or a live invite to its
+//                           email, because an invited supporter who has signed
+//                           in but not accepted has no login on the row yet.
+//
+// A failed read throws. Creating an account cannot be undone quietly, so an
+// unanswered question is a no.
+
+export const SUPPORTER_EMAIL_TAKEN =
+  "This email belongs to a SIGNAL supporter, so it cannot also be a client account. Use a different email."
+
+export async function isActiveSupporterEmail(supabase: SupabaseClient, email: string | null | undefined): Promise<boolean> {
+  const e = normEmail(email)
+  if (!e) return false
+  const { data, error } = await supabase
+    .from("client_supporters")
+    .select("id")
+    .eq("email", e)
+    .eq("status", "active")
+    .limit(1)
+  if (error) throw new Error(`Supporter lookup failed: ${error.message}`)
+  return (data?.length ?? 0) > 0
+}
+
+export async function isSupporterLogin(
+  supabase: SupabaseClient,
+  login: { userId: string; email: string | null },
+): Promise<boolean> {
+  const checks = [
+    supabase.from("client_supporters").select("id").eq("supporter_user_id", login.userId).limit(1),
+    ...(login.email
+      ? [supabase.from("client_supporters").select("id").eq("email", normEmail(login.email)).in("status", ["invited", "active"]).limit(1)]
+      : []),
+  ]
+  for (const { data, error } of await Promise.all(checks)) {
+    if (error) throw new Error(`Supporter lookup failed: ${error.message}`)
+    if (data?.length) return true
+  }
+  return false
+}
+
+/**
+ * A PURCHASE from a supporter's email, refused at the webhook. Checkout refuses
+ * these before payment, so reaching here means the payment went through some
+ * other way (an iOS purchase, or checkout opened before they became a
+ * supporter). The money is taken and no account exists, so a person has to
+ * look: refund, or set them up under another email. Never throws.
+ */
+export async function alertSupporterPurchase(args: { email: string; source: "stripe" | "revenuecat"; reference: string | null }) {
+  const line = `[supporter-purchase] ${args.source} purchase from active supporter ${args.email} (${args.reference ?? "no reference"}): no client account created`
+  console.error(line)
+  try {
+    await getPostmarkClient().sendEmail({
+      From: FROM_EMAIL,
+      To: NON_PROD_REDIRECT,
+      Subject: `[SIGNAL] Purchase from a supporter's email: ${args.email}`,
+      TextBody: `${line}\n\nThey paid, but the email is an active supporter, so no client account was made (one login, one role). Refund them, or remove them as a supporter and re-run the purchase setup.`,
+      MessageStream: INTERNAL_STREAM,
+    })
+  } catch (e: any) {
+    console.error("[supporter-purchase] alert email failed:", e?.message ?? e)
+  }
 }
 
 export function firstName(name: unknown, fallback: string): string {

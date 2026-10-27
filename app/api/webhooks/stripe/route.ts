@@ -10,6 +10,7 @@
 import { type NextRequest, NextResponse, after } from "next/server"
 import Stripe from "stripe"
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
+import { isActiveSupporterEmail, alertSupporterPurchase } from "@/lib/supporters"
 import { buildSignalsFromRow, fireConversions } from "../../_lib/conversions"
 import type { PurchaseSignals } from "../../_lib/conversions/types"
 import { getAppUrl } from "@/lib/urls"
@@ -210,6 +211,10 @@ async function handleCheckoutCompleted(
       .eq("id", existing.id)
 
     console.log("[stripe-webhook] Updated existing profile for:", email)
+  } else if (await isActiveSupporterEmail(supabase, email)) {
+    // Backstop for checkout's own refusal. Paid, but no account: alert a person.
+    await alertSupporterPurchase({ email, source: "stripe", reference: paymentIntentId ?? null })
+    return null
   } else {
     const { data: inserted, error: insertErr } = await supabase
       .from("client_profiles")
