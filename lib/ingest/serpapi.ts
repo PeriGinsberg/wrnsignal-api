@@ -27,6 +27,7 @@ import type { ControlResult, FetchResult, FetchedPosting, IngestPair, SourceAdap
 import { httpJson } from "./http"
 import type { SearchBudget } from "./searchCap"
 import { normText } from "./fingerprint"
+import { chooseApplyLink, linksFromRaw } from "./applyLinks"
 
 const API = "https://serpapi.com/search.json"
 
@@ -79,11 +80,9 @@ export function postedAt(extensions: unknown, now: Date): string | null {
  * Brands", "BCG Careers - Boston Consulting Group"). Phase 0 found the first
  * listed link was usually an aggregator even when the employer's was present.
  */
-function applyUrl(j: any): string | null {
-  const opts: { title?: string; link?: string }[] = Array.isArray(j.apply_options) ? j.apply_options : []
-  const word = String(j.company_name || "").toLowerCase().replace(/^the\s+/, "").split(/[^a-z0-9]+/)[0] || ""
-  const own = word.length > 2 ? opts.find((o) => String(o.title || "").toLowerCase().includes(word)) : undefined
-  return own?.link ?? opts[0]?.link ?? j.share_link ?? null
+/** The best apply link by lib/ingest/applyLinks.ts: employer or ATS, then boards, republishers last. */
+function applyLink(j: any) {
+  return chooseApplyLink(String(j.company_name ?? ""), linksFromRaw(j), j.share_link ?? null)
 }
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
@@ -111,13 +110,15 @@ export function cleanTitle(title: string, company: string): string {
 }
 
 function mapPosting(j: any, now: Date): FetchedPosting {
+  const link = applyLink(j)
   return {
     source_job_id: j.job_id ? String(j.job_id) : null,
     // Cleaned. Google's original title stays in raw.title.
     title: cleanTitle(j.title, j.company_name),
     company: String(j.company_name ?? "").trim(),
     location: j.location ? String(j.location) : null,
-    apply_url: applyUrl(j),
+    apply_url: link?.url ?? null,
+    ...(link ? { apply_link_kind: link.kind } : {}),
     posted_at: postedAt(j.extensions, now),
     raw: j,
   }
@@ -184,12 +185,25 @@ export function serpApiAdapter(opts: { apiKey?: string; maxPages?: number; budge
       let requests = 0
       let attempts = 0
       let capReached = false
+      let pageError: string | null = null
 
       for (let page = 1; page <= maxPages; page++) {
         // Out of searches with more pages on offer: keep what is in hand rather
         // than fail the pair, and record that the cap cut it short.
         if (page > 1 && opts.budget && opts.budget.remaining === 0) { opts.budget.refuse(); capReached = true; break }
-        const r = await search(q, page === 1 ? null : next)
+        let r: Awaited<ReturnType<typeof search>>
+        try {
+          r = await search(q, page === 1 ? null : next)
+        } catch (e: any) {
+          // A later page failing keeps the pages in hand: Google rejected the
+          // next_page_token on 10 of 127 pairs on 2026-10-26, and the pair kept
+          // nothing. The first page failing is still the pair's failure.
+          if (page === 1) throw e
+          requests++
+          attempts++
+          pageError = String(e?.message ?? e)
+          break
+        }
         requests++
         attempts += r.attempts
         perPage.push(r.jobs.length)
@@ -213,6 +227,7 @@ export function serpApiAdapter(opts: { apiKey?: string; maxPages?: number; budge
           // exhausted one.
           truncated: Boolean(next) && perPage.length === maxPages && perPage[perPage.length - 1] > 0,
           cap_reached: capReached,
+          ...(pageError ? { next_page_error: pageError } : {}),
           dropped_blank: postings.filter((p) => !p.title || !p.company).length,
         },
       }
