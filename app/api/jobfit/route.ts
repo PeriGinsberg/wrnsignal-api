@@ -217,6 +217,28 @@ export async function POST(req: NextRequest) {
       return withCorsJson(req, { error: "Unauthorized: missing bearer token" }, 401)
     }
 
+    // SCORING A JOB ALREADY ON THE TRACKER ("Score this job now").
+    //
+    // With application_id, the run attaches to THAT row and no row is ever
+    // created. Without it, the route falls back to its old find-or-create by
+    // company + title, which misses whenever the title is edited before the
+    // scan or two rows match, and then adds a duplicate. The id must belong to
+    // the caller: anything else is refused rather than quietly scored onto a
+    // new row, since a new row is exactly what the caller asked not to get.
+    const targetAppId = typeof body?.application_id === "string" ? body.application_id.trim() : ""
+    let targetApp: { id: string; job_url: string | null } | null = null
+    if (targetAppId) {
+      const { data: owned, error: ownErr } = await supabase
+        .from("signal_applications")
+        .select("id, job_url")
+        .eq("id", targetAppId)
+        .eq("profile_id", profileId)
+        .maybeSingle()
+      if (ownErr) throw new Error(`Application lookup failed: ${ownErr.message}`)
+      if (!owned) return withCorsJson(req, { error: "That tracker job was not found." }, 404)
+      targetApp = owned
+    }
+
     // Profile assembly (load client_profiles + optional persona, build
     // effectiveProfileText and profileOverrides) is delegated to the shared
     // pipeline helper so coach and client paths stay in sync.
@@ -282,8 +304,23 @@ export async function POST(req: NextRequest) {
           // and find it again. See the fresh-scan branch for the full note.
           let signalApplicationId: string | null = null
 
+          if (targetApp) {
+            // The cached run IS this job's score now. The find-or-create below
+            // never wrote the run onto an existing row; for a tracked job that
+            // would leave it unscored, which is the one thing this call is for.
+            const { error: linkErr } = await supabase.from("signal_applications").update({
+              signal_decision: String(cleaned?.decision || ""),
+              signal_score: (cleaned as any)?.score ?? null,
+              signal_run_at: new Date().toISOString(),
+              jobfit_run_id: (existingRun as any).id,
+              updated_at: new Date().toISOString(),
+              ...(shouldFillJobUrl(targetApp.job_url, userJobUrl) ? { job_url: userJobUrl } : {}),
+            }).eq("id", targetApp.id)
+            if (linkErr) console.warn("[jobfit/route] cache-hit tracked-row link failed:", linkErr.message)
+            else signalApplicationId = targetApp.id
+          }
           // Ensure a signal_application exists even on cache hits
-          try {
+          else try {
             let cachedCompany = String(cleaned?.job_signals?.companyName || "").trim()
             let cachedTitle = String(cleaned?.job_signals?.jobTitle || "").trim()
             const cachedLocation = String(cleaned?.job_signals?.location?.city || "").trim()
@@ -532,8 +569,8 @@ export async function POST(req: NextRequest) {
         })
 
         if (runId) {
-          let existingApp: any = null
-          if (companyName) {
+          let existingApp: any = targetApp
+          if (!existingApp && companyName) {
             const { data, error: lookupErr } = await supabase
               .from("signal_applications")
               // job_url joins the select for the same reason it does on the

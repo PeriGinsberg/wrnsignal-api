@@ -22,11 +22,25 @@ import { FRAMER_URL } from "../../../lib/urls"
 export const JOBFIT_URL = `${FRAMER_URL}/signal/jobfit`
 
 export async function openInSignal(runId: string): Promise<void> {
+  await jumpToJobFit(`run=${encodeURIComponent(runId)}`)
+}
+
+/**
+ * Score a job that is already on the tracker. JobFit reads the row by id
+ * (GET /api/applications/[id]/score-prefill), fills company, title and link,
+ * and sends the id back on the scan so the run lands on THIS row rather than
+ * a new one.
+ */
+export async function scoreInSignal(applicationId: string): Promise<void> {
+  await jumpToJobFit(`score_app=${encodeURIComponent(applicationId)}`)
+}
+
+async function jumpToJobFit(query: string): Promise<void> {
   const { data } = await getSupabaseBrowser().auth.getSession()
   const p = new URLSearchParams()
   if (data.session?.access_token) p.set("access_token", data.session.access_token)
   if (data.session?.refresh_token) p.set("refresh_token", data.session.refresh_token)
   // Tokens go in the FRAGMENT, not the query string: a fragment is not sent to
   // the server and does not land in access logs or a Referer header.
-  window.location.replace(`${JOBFIT_URL}?run=${runId}#${p.toString()}`)
+  window.location.replace(`${JOBFIT_URL}?${query}#${p.toString()}`)
 }

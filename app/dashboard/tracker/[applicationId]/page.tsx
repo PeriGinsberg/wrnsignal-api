@@ -43,7 +43,7 @@ import {
 } from "../../../../lib/localDate"
 import { Collapsible } from "../../network/contacts/[contactId]/Collapsible"
 import { ClientJobNotes } from "../ClientJobNotes"
-import { openInSignal } from "../openInSignal"
+import { openInSignal, scoreInSignal } from "../openInSignal"
 import { JobHistory } from "../JobHistory"
 import { NetworkAtCompany } from "./NetworkAtCompany"
 import { CoachResponseBox } from "./CoachResponseBox"
@@ -379,15 +379,21 @@ export default function ApplicationDetailPage({
                 // run behind it: a coach-sourced job copies the number across,
                 // and rows that predate the FK never had one. Saying so beats a
                 // dead link or a silently missing control.
-                <p style={{ fontSize: 13.5, color: S.text.dim, margin: "10px 0 0", lineHeight: "19px" }}>
-                  The full analysis isn&apos;t saved for this one.
-                </p>
+                <>
+                  <p style={{ fontSize: 13.5, color: S.text.dim, margin: "10px 0 0", lineHeight: "19px" }}>
+                    The full analysis isn&apos;t saved for this one.
+                  </p>
+                  <ScoreNow applicationId={app.id} />
+                </>
               )}
             </>
           ) : (
-            <div style={{ fontSize: 14.5, color: S.text.muted, paddingTop: 6 }}>
-              This one hasn&apos;t been scored.
-            </div>
+            <>
+              <div style={{ fontSize: 14.5, color: S.text.muted, paddingTop: 6 }}>
+                This one hasn&apos;t been scored.
+              </div>
+              <ScoreNow applicationId={app.id} />
+            </>
           )}
         </div>
       </div>
@@ -1106,4 +1112,23 @@ const backLink: React.CSSProperties = {
 const factLabel: React.CSSProperties = {
   fontSize: 12, fontWeight: 800, letterSpacing: 1.2, textTransform: "uppercase",
   color: S.text.muted, marginBottom: 10,
+}
+
+/**
+ * Any job with no JobFit run behind it: never scored, or a score copied across
+ * with nothing saved. Opens JobFit on this row; the result lands back here.
+ */
+function ScoreNow({ applicationId }: { applicationId: string }) {
+  return (
+    <button
+      onClick={() => void scoreInSignal(applicationId)}
+      style={{
+        background: "none", border: "none", padding: "10px 0 0",
+        color: S.action.quietInk, fontSize: 14, fontWeight: 700,
+        cursor: "pointer", fontFamily: "inherit",
+      }}
+    >
+      Score this job now →
+    </button>
+  )
 }

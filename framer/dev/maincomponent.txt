@@ -1252,6 +1252,13 @@ export default function WRNSignalTabs(props: {
     // the way there instead of a workspace whose every call would refuse them.
     // Set from /api/profile, which answers 403 supporter_account for them.
     const [isSupporter, setIsSupporter] = React.useState(false)
+    // SCORING A JOB THAT IS ALREADY ON THE TRACKER. The tracker opens
+    // /signal/jobfit?score_app=<application id> ("Score this job now"). The id
+    // rides back on the scan as application_id, so the run attaches to that
+    // row and no new row is made. One scan only: cleared when it returns, on
+    // a job reset, or when the user says it is a different job.
+    const [scoreAppId, setScoreAppId] = React.useState<string | null>(null)
+    const [scoreAppLabel, setScoreAppLabel] = React.useState("")
 
     const [copiedKey, setCopiedKey] = React.useState<string | null>(null)
     const copyText = (txt: string, key?: string) => {
@@ -1733,6 +1740,33 @@ export default function WRNSignalTabs(props: {
                                     if (mounted) setLoadingJobFit(false)
                                 })
                         }
+                        // ── Score a tracked job: ?score_app=<id> ─────────
+                        const scoreApp = deepUrl.searchParams.get("score_app")
+                        if (scoreApp && !runId && mounted) {
+                            fetch(`${API_BASE}/api/applications/${encodeURIComponent(scoreApp)}/score-prefill`, {
+                                headers: { Authorization: `Bearer ${session.access_token}` },
+                            })
+                                .then((res) => {
+                                    if (!res.ok) throw new Error(`${res.status}`)
+                                    return res.json()
+                                })
+                                .then((data) => {
+                                    if (!mounted || !data?.application) return
+                                    const a = data.application
+                                    setManualCompanyName(a.company_name || "")
+                                    setManualJobTitle(a.job_title || "")
+                                    setJobUrl(a.job_url || "")
+                                    setScoreAppId(a.id)
+                                    setScoreAppLabel(
+                                        [a.job_title, a.company_name].filter(Boolean).join(" at ")
+                                    )
+                                    setJobfitApplicationId(a.id)
+                                    setTab("jobfit")
+                                })
+                                .catch((err) => {
+                                    console.warn("[score-app] Failed to load tracker job:", err)
+                                })
+                        }
                     }
                     // ── End deep link ────────────────────────────────────
                 } else {
@@ -2024,6 +2058,8 @@ export default function WRNSignalTabs(props: {
         setCoverLetterResult(null)
         setPositioningBy(null)
         setCoverLetterBy(null)
+        setScoreAppId(null)
+        setScoreAppLabel("")
         setTab("jobfit")
         setJobInputOpen(true)
         setJobContext({ title: "", company: "" })
@@ -2304,6 +2340,7 @@ export default function WRNSignalTabs(props: {
                     company_name: manualCompanyName.trim(),
                     job_title: manualJobTitle.trim(),
                     ...(jobUrl.trim() ? { job_url: jobUrl.trim() } : {}),
+                    ...(scoreAppId ? { application_id: scoreAppId } : {}),
                     ...(selectedPersonaId
                         ? { persona_id: selectedPersonaId }
                         : {}),
@@ -2323,6 +2360,16 @@ export default function WRNSignalTabs(props: {
             // scan, so a destination that needs an id simply is not offered.
             setJobfitRunId(normalized?.jobfit_run_id ?? null)
             setJobfitApplicationId(normalized?.signal_application_id ?? null)
+            // The tracked job has its score; the next scan is a new job.
+            if (scoreAppId) {
+                setScoreAppId(null)
+                setScoreAppLabel("")
+                if (typeof window !== "undefined") {
+                    const u = new URL(window.location.href)
+                    u.searchParams.delete("score_app")
+                    window.history.replaceState({}, "", u.pathname + u.search)
+                }
+            }
             // A new scan is a new question. Drop any half-finished networking
             // hand-off so a prompt raised for the previous job cannot land on
             // this one and link the wrong company.
@@ -4727,6 +4774,23 @@ export default function WRNSignalTabs(props: {
                             <div style={scanFieldError}>{urlError}</div>
                         ) : null}
                     </div>
+                    ) : null}
+                    {scoreAppId && showJobFitLandingCTA ? (
+                        <div style={{ ...scanNote, marginBottom: 10 }}>
+                            Scoring the job on your tracker{scoreAppLabel ? `: ${scoreAppLabel}` : ""}. Paste the job
+                            description if it isn't filled in. The result goes on that job.{" "}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setScoreAppId(null)
+                                    setScoreAppLabel("")
+                                    setJobfitApplicationId(null)
+                                }}
+                                style={scanBackLink}
+                            >
+                                Score a different job instead
+                            </button>
+                        </div>
                     ) : null}
                     {showJobFitLandingCTA
                         ? renderPrimaryRunButton(
