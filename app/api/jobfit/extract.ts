@@ -4564,6 +4564,12 @@ export function extractJobSignals(
     !/\b(media|ad|ads|advertising|digital|programmatic|space|time) buyers?\b/i.test(titleOnly) &&
     !/\b(talent|candidate|recruit\w*|consultant|consulting)\b/i.test(titleOnly)
 
+  // Hotel front office titles are Operations (DEF-034). Title only. Without it
+  // the family came from tags, so the same front desk role read Operations at
+  // Loews and Hyatt but Sales at JW Marriott ("follow up calls" -> post-sale).
+  const jobTitleIsFrontOffice =
+    /\b(front desk|front office|guest services?|guest relations|night audit(or)?|concierge)\b/i.test(titleOnly)
+
   // "Internship Program - Data Analytics" is an analytics role (prod run
   // 378022a7 classed it Other). Title only, for the same body-slice reason.
   const jobTitleIsDataAnalytics = /\bdata analytics\b/i.test(titleOnly)
@@ -4685,7 +4691,7 @@ export function extractJobSignals(
             ? "Healthcare"
             : jobTitleIsTrades
               ? "Trades"
-              : jobTitleIsProcurement
+              : jobTitleIsProcurement || jobTitleIsFrontOffice
                 ? "Operations"
               : jobTitleIsHR
                 ? "HR"

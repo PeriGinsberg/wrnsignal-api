@@ -32,14 +32,14 @@ Update at the end of the session.
 
 | Metric | Count |
 |---|---|
-| Cases run | 13 |
-| Verdicts CORRECT | 1 (C007: right band, wrong reason) |
-| Verdicts BUG | 12 |
-| False-fires | 16 |
+| Cases run | 16 |
+| Verdicts CORRECT | 2 (C007: right band, wrong reason; C012: right band, wrong reason) |
+| Verdicts BUG | 14 |
+| False-fires | 18 |
 | False-clears | 5 (DEF-019, DEF-027, DEF-028, DEF-016/C009 AI-tools requirement verified; DEF-002 unverified) |
-| Wrong-verdicts (top-line APPLY/REVIEW/PASS wrong) | 11 |
-| Known-bug repeats (family-mismatch etc.) | 1 (prod a4e1b70a Events Marketing Associate: Marketing vs Operations target, −12) |
-| New defects opened | 33 (DEF-005…033; DEF-008 closed NOT-A-DEFECT) |
+| Wrong-verdicts (top-line APPLY/REVIEW/PASS wrong) | 13 |
+| Known-bug repeats (family-mismatch etc.) | 3 (prod a4e1b70a Events Marketing Associate: Marketing vs Operations target, −12; C010 and C011: hospitality targets read as Sales only, −12) |
+| New defects opened | 36 (DEF-005…036; DEF-008 closed NOT-A-DEFECT) |
 
 **Detector fire tally** (how often each detector fired, and how often that fire was wrong):
 
@@ -47,9 +47,9 @@ Update at the end of the session.
 |---|---|---|---|
 | knockout gate ledger | 0 | 0 | — |
 | RISK_OWNERSHIP_VERB_MISMATCH | 0 | ? | **unmeasurable** — detectors were OFF on both runs |
-| RISK_MISSING_PROOF | 12 | 8 | 67% |
+| RISK_MISSING_PROOF | 13 | 9 | 69% |
 | RISK_MISSING_TOOLS | 4 | 2 | 50% |
-| RISK_LIMITED_MATCH_EVIDENCE | 4 | 4 | 100% |
+| RISK_LIMITED_MATCH_EVIDENCE | 5 | 5 | 100% |
 | GATE_FIELD_MISMATCH (force_pass) | 1 | 1 | 100% |
 | GATE_CREDENTIAL_REQUIRED (force_pass) | 1 | 1 | 100% |
 | RISK_SUBFAMILY_MISMATCH | 2 | 2 | 100% |
@@ -58,7 +58,7 @@ Update at the end of the session.
 | unsupported_skill_claim | 0 | 0 | — |
 | hard_credential_absent | 0 | 0 | — |
 | people_mgmt_absent | 0 | 0 | — |
-| RISK_FAMILY_MISMATCH (known bug) | 0 | 0 | — |
+| RISK_FAMILY_MISMATCH (known bug) | 2 | 1 | 50% (C010 wrong; C011 penalty applied but risk hidden, DEF-035) |
 | RISK_EXPERIENCE seniority | 0 | 0 | — |
 
 > **Caveat on this tally.** The detector flags (`JOBFIT_DETECTORS*`) were off for C001 and
@@ -107,6 +107,9 @@ Severity key: **S1** = wrong top-line verdict, user acts on bad advice. **S2** =
 | DEF-031 | Years parser (`extract.ts:3142`) reads years of school as years of experience | false-fire → wrong-verdict | **S2** | 2 | prod 9875d6c0 (Dow Jones Communications Intern), prod 318bb989 (JLL Communications Internship) | "Completed at least two years toward your bachelor's degree" and "with 2-3 years completed majoring in Communications" became yearsRequired 2 → RISK_EXPERIENCE "requires 2+ years of experience" on internships; the writer then said "JLL typically seeks 2-3 years" | `ACADEMIC_YEARS_AFTER`: a match followed by toward/in a degree/college/major, "of college/coursework/study", or "completed" is skipped, and later matches are still read (all matches, not just the first) | **FIXED on branch `jobfit-grounded-risks`**. Dow Jones Review/71 → Apply/78; JLL Pass/55 → Review/63. Regression: Cushman & Wakefield EIC Intern ×2 and IMEG Sustainability Intern lose the same false 2-year floor; no verdict change |
 | DEF-032 | `drafting_documentation` (`extract.ts:1445`): job side bare `"documentation"` (`:1579`) + profile side bare `"wrote"` (`:1475`) put PR writing and technical/solution-design documentation under one key, and same-key = direct | false-fire (WHY) → wrong-verdict | **S1** | 1 | C009 | West Monroe "supporting the creation of functional, technical, and solution design documentation" (a Salesforce/ServiceNow configuration duty) matched "Wrote and pitched 5+ press releases" as **direct / 104**. That is the only quality direct WHY (`decision.ts:109`), so it alone escapes the no-quality-direct Review cap (`decision.ts:252`). Removing that JD clause replays Review/74 | Split technical/solution/functional documentation (requirements docs, solution designs, user stories, SOPs, test scripts) from PR/editorial writing, or make the press/editorial ↔ technical pair adjacent-only. Related to DEF-015 (same bare `"documentation"` job phrase) and architectural debt #3. Audit the corpus for direct drafting_documentation WHYs whose job line names technical/solution/functional docs before choosing | **FIXED on branch `jobfit-documentation-match`** (not in dev or prod). Audit first: 78 direct drafting_documentation WHYs in the 629-run corpus; the false ones were JD lines whose only writing cue is bare "documentation" (records, billing, audit, process, technical/solution docs) matched to press releases, memos, essays or floor plans. Fix is a shape check in `evidenceShapeCompatible` (`scoring.ts`): a documentation-only JD line (no press/legal/report/memo/presentation/materials genre word) is direct only when the résumé line shows documentation work (documentation, SOPs, procedures, process maps, manuals, requirements, records, files, templates); otherwise adjacent. Regression: 24 cases change underneath, 35 matches direct→adjacent, nothing outside this key moves. 5 verdicts move, all down, each audited: Jefferies WM CSA Apply→Review ("follow up on outstanding documentation" ↔ investment memo); Crisis24 Ops Specialist PA→Apply ("accurate documentation" ↔ event logistics; its remaining directs are thin, incl. DEF-024 excel); Josselyn HR Manager and Strategy & Ops PA→Apply/95 (personnel-file / current-state documentation ↔ restructuring communications); Delray Beach police SPA intern Review→Pass/51 (admin documentation ↔ essays; poli-sci student targeting court internships, borderline, Pass defensible). C009 replays Review/74. Test: `app/api/jobfit/documentationMatch.test.ts` |
 | DEF-033 | `customer_service_guest_experience` job phrase `"customer service"` (`extract.ts:493`) | false-fire (risk) | S3 | 1 | C009 | "improve the customer experience and performance across marketing, sales, commerce, and customer service **functions**" (the client functions a consultant transforms) became a candidate customer-service duty and a RISK_MISSING_PROOF "customer service, guest experience, and issue resolution". Weight 0, no verdict effect | Skip "customer service" when it sits in a list of business functions ("…, and customer service functions/teams/organizations") or on a consulting-transformation line. Context fix, same shape as architectural debt #1 | OPEN |
+| DEF-034 | Profile family inference has no hospitality vocabulary (`lib/jobfit-family-inference.ts` Sales `:60-77`, Operations `:185-205`) | wrong-verdict | **S1** | 2 | C010, C011 | Target roles "Hospitality Front Desk, Guest Services, Sales, Food and Beverage, Sales" resolve to `["Sales"]` only: front desk, guest services and food and beverage match no family, and the bare "Sales" token wins. Front-office postings classify Operations (tag inference, no title rule), so `computeBaseScore` takes −12 instead of +10 (`scoring.ts:873-881`), a 22-point swing. Loews Review/69 → Apply/91 and Hyatt Review/62 → Apply/84 with Operations added. Already listed in §5 ("sports management / guest services") | Map hospitality roles (front desk, front office, guest services, guest relations, concierge, hotel, hospitality, food and beverage, F&B, banquet, rooms division) to Operations, the family the JD side already gives front-office postings. Pair with a JD title rule (front desk / front office / guest services agent / night auditor / concierge → Operations in the cascade at `extract.ts:4536`) so a front-desk posting stops drifting to Sales on post-sale tags (C012). Audit the 629-run corpus diff | **FIXED on branch `jobfit-hospitality-family`** (not in dev or prod). Profile: front desk, guest services/relations, concierge, hospitality, hotel, food and beverage, F&B, banquet(s), rooms division, night audit(or) → Operations. No bare "front office" on the profile side: Aiden's MLB "front office role" target matched it in the first draft. JD: title-only `jobTitleIsFrontOffice` (front desk, front office, guest services, guest relations, night auditor, concierge) → Operations, beside procurement in the cascade. Regression: 0 drift on 68 core + 628 prod (the corpus freezes targetFamilies and has no front-office title). Live check on 198 prod `client_profiles.target_roles`: 3 move, all intended (Cole Sales → Sales + Operations; Zach Sherman "Front Desk, Concierge, Guest Services" Other → Operations; Peri's coach test profile "guest services, fan engagement" Other → Operations). C010 Apply/91, C011 Apply/84, C012 Apply/93 now on Operations. Tests: `lib/jobfit-family-inference.test.ts`, `app/api/jobfit/jobFamilyAndBoilerplate.test.ts` |
+| DEF-035 | `RISK_FAMILY_MISMATCH` hidden while its −12 stays in the score: risk suppressed on `strongTitleMatch` (`scoring.ts:1720-1728`), base penalty not (`scoring.ts:880-881`; the title-match offset at `:902` covers hard-tech families only) | wrong-verdict (unexplained) | S2 | 1 | C011 | Hyatt "Front Office Agent" shares "front" with target "hospitality front desk"; "agent" is a noise token (`scoring.ts:784`), so overlap = 1/2 and the risk is suppressed. The −12 is still taken, so the user sees Review/62 with only the generic limited-match risk and no reason. Loews ("Front Office Agent - OVN", overlap 1/3) shows the same penalty as a risk. A one-token match on "front" is also weak evidence of a title match | Make the two sites agree: if a strong title match suppresses the risk, cancel the −12 for non-technical families too (same rationale as `:902`), or keep showing the risk. Separately, require a shared token that is not a generic modifier ("front", "office", "desk" alone) before counting a title match as strong | OPEN. **Measured and NOT shipped (2026-10-27):** showing the risk on a strong title match for non-technical families added RISK_FAMILY_MISMATCH to 86 of 696 regression cases and moved 2 verdicts down (Rubenstein PR Internship Apply → Review, GEO Recruiting Coordinator Review → Pass): the risk is not display-only, it feeds the guardrails and the score again. Needs its own audit, or the other half (cancel the −12 when the title match is strong) |
+| DEF-036 | Front-desk vocabulary on both sides: `customer_service_guest_experience` profilePhrases (`extract.ts:461-487`) and no JD key for registration / check-in / reservations / payment processing | coverage gap | S2 | 2 | C010, C011 | Cole's front-desk bullets ("Managed all reservations… check-ins, check-outs, and credit card payments in HMS", "Resolved guest concerns as Manager on Duty", "Worked a 3-person front desk… check-ins") produce **no** profile unit. His customer-service evidence is the summary's aspiration sentence ("Pursuing a Front Desk Agent… role", the DEF-026 class, résumé side) plus the skills line and one concierge bullet at strength 4. Hyatt's JD yields one unit: "guest registration process", "processing forms of payment", "responding to guest inquires", "communication of hotel services" read nothing. Misreads alongside: "food safety standards" → policy_regulatory_research; "Completed 8-week management training" → product_training_enablement (receiving training, not delivering it). Not decisive here (the concierge bullet still carries the direct match when the aspiration line is removed), but it leaves Hyatt on one WHY | Add front-desk phrases on both sides (check-in(s), check-out(s), reservations, guest registration, front desk, guest inquiries/concerns, payment processing) under customer_service_guest_experience or a new front_office_operations key; drop "Pursuing / Seeking … role" summary sentences from profile units like the DEF-026 header lines | OPEN |
 
 ---
 
@@ -788,6 +791,116 @@ LAYER: extraction-jd (DEF-032 job side, DEF-016, DEF-033) + extraction-resume (D
 KNOWN-BUG? no. DEF-032 is architectural debt #3 (key granularity / semantic nonsense matches).
 
 AFTER FIX (branch jobfit-documentation-match): Review/74. drafting_documentation now adjacent/78.
+```
+
+### CASE C010 — C.B. → Loews Coral Gables, Front Office Agent (overnight)
+
+```
+CASE ID:        C010
+DATE:           2026-10-27
+RUN ID:         bbe50bbe-4b60-40a1-a7f6-bf2c112708c7
+RÉSUMÉ:         C.B. Penn State Hospitality Management, Dec 2026. Front Desk Associate at a 36-room five-star
+                property (all reservations, check-ins/outs, payments in HMS, Manager on Duty, concierge), front
+                desk at Wyndham Deerfield Beach, Hilton management internship, student-restaurant on-duty manager.
+                Target roles: Hospitality Front Desk, Guest Services, Sales, Food and Beverage, Sales.
+JD:             Loews Coral Gables Front Office Agent, overnight. Check-in/out, payments, guest inquiries,
+                upselling, knowledge of events / group bookings / banquet orders. No years, credential or tool gate.
+SHIPPED RESULT: Review / 69  (raw 69, penalty 0, gate none)
+resume_source:  MISSING (not exported, see §5)
+isSeniorRole:   false   isTrainingProgram: false   jobFamily: Operations (tag inference)
+gate_triggered: none
+detector fires: RISK_FAMILY_MISMATCH medium -12 ("Your stated target field is Sales")
+WHYs:           event_coordination direct/103 (club networking events <-> "upcoming events, group bookings");
+                customer_service_guest_experience direct/95 (summary aspiration "Pursuing a Front Desk Agent…")
+case files:     evals/jobfit/cases/C010/ (gitignored, contains PII)
+pull:           tests/jobfit-regression/pull-prod-case.ts --run bbe50bbe-4b60-40a1-a7f6-bf2c112708c7 --case C010
+repro:          tests/jobfit-regression/_cole-frontdesk.local.ts (worktree engine reproduces Review/69 exactly)
+
+REPORTED AS:    "Loews says his target role is different" (Peri). He targets front desk / guest services.
+
+VERDICT CHECK:  BUG, wrong-verdict (under), S1. Expected Apply (~90). A hospitality senior with front-desk,
+  reservations, payment and Manager-on-Duty experience applying to a front-desk role is the target role.
+
+WHAT THE ENGINE ACTUALLY SAW:
+  - targetFamilies ["Sales"]: no family rule knows front desk, guest services or food and beverage
+    (lib/jobfit-family-inference.ts:185-205 Operations list; :60-77 Sales takes the bare "sales" token).
+  - jobFamily Operations, so computeBaseScore takes -12 instead of +10 (scoring.ts:873-881).
+  - The real front-desk bullets build no profile unit (DEF-036); the customer-service direct match rests on
+    the summary's aspiration sentence. The event_coordination direct match (club events <-> banquet / group
+    bookings knowledge) is generous but harmless.
+
+COUNTERFACTUALS (worktree engine, _cole-frontdesk.local.ts):
+  A. as prod                                   Review/69
+  B. targets + "Operations"                    Apply/91, no risks
+  C. B, aspiration sentence removed             Apply/91 (concierge bullet carries the direct match)
+
+DEFECTS:  DEF-034 (new, S1, decisive). DEF-036 (new, S2). Known RISK_FAMILY_MISMATCH class (vocabulary gap
+  already listed in §5).
+NOT BUGS: no gate is correct. "Overnight shift" is not modelled and should not be.
+LAYER:    extraction-resume (profile family inference) -> scoring family term behaved as coded.
+KNOWN-BUG? yes, family-mismatch class; the specific fix (hospitality vocabulary) is DEF-034.
+
+AFTER FIX (branch jobfit-hospitality-family): Apply/91, no risks.
+```
+
+### CASE C011 — C.B. → Hyatt Dream South Beach, Front Office Associate / Front Desk Agent
+
+```
+CASE ID:        C011
+DATE:           2026-10-27
+RUN ID:         b18bfd3e-f631-4571-a637-a673a0e42b9b
+RÉSUMÉ:         Same as C010.
+JD:             Hyatt Dream South Beach Front Office Associate. 1,286 chars: guest registration, communication of
+                hotel services and promotions, payments, guest inquiries; qualifications are traits (desire to
+                serve, communication skills, standing, overnight shifts). "If you have worked at other Hotels as
+                a front desk clerk… we'd love to hear from you."
+SHIPPED RESULT: Review / 62  (raw 62, penalty 0, gate none)
+resume_source:  MISSING
+isSeniorRole:   false   isTrainingProgram: false   jobFamily: Operations
+gate_triggered: none
+detector fires: RISK_LIMITED_MATCH_EVIDENCE medium 0 (the only risk shown)
+WHYs:           customer_service_guest_experience direct/95 (summary aspiration sentence)
+case files:     evals/jobfit/cases/C011/
+repro:          _cole-frontdesk.local.ts (reproduces Review/62 exactly)
+
+REPORTED AS:    "Hyatt said review but gave no risks" (Peri).
+
+VERDICT CHECK:  BUG, wrong-verdict (under), S1. Expected Apply. The posting asks for prior hotel front-desk
+  work, which is exactly his history.
+
+WHAT THE ENGINE ACTUALLY SAW:
+  - Same -12 family penalty as C010 (DEF-034), but the RISK_FAMILY_MISMATCH that explains it is suppressed:
+    "Front Office Agent" vs target "hospitality front desk" shares "front", "agent" is a noise token
+    (scoring.ts:784), overlap 1/2 = strongTitleMatch, and scoring.ts:1728 skips the risk while
+    scoring.ts:880-881 still subtracts 12. Hence "Review with no risks" (DEF-035).
+  - One JD unit only; registration, payments, inquiries and service communication read nothing (DEF-036).
+
+COUNTERFACTUALS:
+  A. as prod                                   Review/62
+  B. targets + "Operations"                    Apply/84 (limited-match risk remains, one WHY)
+  C. B, aspiration sentence removed             Apply/84
+
+DEFECTS:  DEF-034 (decisive), DEF-035 (new, S2: penalty without its risk), DEF-036.
+LAYER:    extraction-resume (family) + scoring/display inconsistency (DEF-035) + extraction-jd coverage.
+KNOWN-BUG? DEF-034 is the family-mismatch class; DEF-035 is new.
+
+AFTER FIX (branch jobfit-hospitality-family): Apply/84, targets Sales + Operations. DEF-035 still open (it no
+  longer fires here because the family now matches).
+```
+
+### CASE C012 — C.B. → JW Marriott (TB Isle Resort), Front Desk Agent (control)
+
+```
+CASE ID:        C012
+DATE:           2026-10-27
+RUN ID:         94a9c740-f28f-4570-a76d-0eceed8ccd9b
+SHIPPED RESULT: Apply / 93  (raw 93, penalty -4)
+jobFamily:      Sales (tag inference: post_sale_support "Build rapport with VIPs… follow up calls" -> sales_bd)
+VERDICT CHECK:  CORRECT band, wrong reason. Apply is right, but it rests on the posting being misread as Sales,
+  which happens to match the bare "Sales" target (+10). Without that luck the same candidate lands Review
+  like C010/C011. The post_sale_support RISK_MISSING_PROOF (high, -3.6) is a false fire: guest follow-up on
+  a front desk is not post-sale account support.
+DEFECTS:  DEF-034 (JD title rule half); RISK_MISSING_PROOF false fire counted in the tally.
 ```
 
 ## 5. OPEN QUESTIONS / PAYLOAD GAPS

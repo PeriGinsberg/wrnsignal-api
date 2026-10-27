@@ -199,7 +199,14 @@ export function inferTargetFamilies(
     roles.includes("process analyst") ||
     /\bproject coordinator\b/.test(roles) ||
     /\bprogram coordinator\b/.test(roles) ||
-    /\boperations\b/.test(roles)
+    /\boperations\b/.test(roles) ||
+    // Hotel / guest-facing roles: the JD side reads front office and guest
+    // services postings as Operations, so "Hospitality Front Desk, Guest
+    // Services" targets fell to whatever else was listed (Sales) and took the
+    // family mismatch on the roles they asked for (REGISTER DEF-034, C010/C011).
+    // No bare "front office": in sports it means team management (an MLB
+    // "front office role" target).
+    /\b(front desk|guest services?|guest relations|concierge|hospitality|hotel|food and beverage|food & beverage|f&b|banquets?|rooms division|night audit(or)?)\b/.test(roles)
   ) {
     out.push("Operations")
   }

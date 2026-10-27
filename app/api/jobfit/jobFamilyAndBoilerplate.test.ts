@@ -36,6 +36,17 @@ ok("'Consulting Engineer' is not made Consulting", family("Consulting Engineer")
     family("Operations Coordinator", blurb) === "Operations", family("Operations Coordinator", blurb))
 }
 
+console.log("\nhotel front office titles")
+// DEF-034: the same front desk role read Operations at Loews and Hyatt but Sales
+// at JW Marriott, on tags alone ("follow up calls" -> post-sale support).
+{
+  const jw = "Build rapport with VIPs and distinguished visitors, follow up calls, encourage feedback throughout guests stay.\nOutstanding guest service skills.\nProcess check-in and check-out for guests."
+  ok("'Front Desk Agent' is Operations even with post-sale lines", family("Front Desk Agent", jw) === "Operations", family("Front Desk Agent", jw))
+  ok("'Front Office Agent - OVN' is Operations", family("Front Office Agent - OVN") === "Operations", family("Front Office Agent - OVN"))
+  ok("'Guest Services Agent' is Operations", family("Guest Services Agent") === "Operations", family("Guest Services Agent"))
+  ok("'Night Auditor' is Operations", family("Night Auditor") === "Operations", family("Night Auditor"))
+}
+
 console.log("\nwork authorization is not a requirement")
 const NOTE = "Note: This position is not eligible for any employment-based immigration sponsorship. UBS will not provide any assistance or sign any documentation in support of any other form of immigration sponsorship including optional practical training (OPT) or curricular practical training (CPT)."
 for (const line of [

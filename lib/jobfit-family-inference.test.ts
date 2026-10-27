@@ -37,6 +37,14 @@ expect("Data Science, Data Engineer, Data Analyst, Machine Learning Engineer", [
 // still catches e.g. a psychology grad on a SWE role (core case 0410q).
 expect("psychology research assistant, mental health counselor, clinical psychology trainee", ["Other"])
 
+// Hotel / guest-facing targets are Operations, the family front office
+// postings read as (DEF-034, C010/C011: Cole's front desk targets read Sales only).
+expect("Hospitality Front Desk, Guest Services, Sales, Food and Beverage, Sales", ["Sales", "Operations"])
+expect("Front Desk, Concierge, Guest Services", ["Operations"])
+expect("Hotel Management Trainee", ["Operations"])
+// "front office" alone is sports team management, not a hotel desk.
+expect("I want to grow into a front office role with an MLB team", ["Other"])
+
 // Nothing stated at all → [] (unknown), not ["Other"]. 69 of 175 prod profiles
 // had empty target_roles and were taking a family-mismatch penalty for it.
 expect("", [])
