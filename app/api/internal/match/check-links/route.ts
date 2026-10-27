@@ -1,8 +1,9 @@
 // app/api/internal/match/check-links/route.ts
 //
 // Nightly: is each client's top 30 still open? See lib/match/linkCheck.ts.
-// A page that says the job is closed takes the posting out of every queue; a
-// bot wall or an error is recorded as unknown and changes nothing.
+// A page that says the job is closed takes the posting out of every queue;
+// links that all answer 404/410 mark it likely closed (ranked last, still
+// shown); a bot wall or an error is recorded as unknown and changes nothing.
 //
 // Runs after the ingest sweeps (03:00, 04:30) and before the morning review.
 
@@ -12,7 +13,8 @@ import { runLinkCheck } from "@/lib/match/linkCheck"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-export const maxDuration = 300
+// The ingest crons' limit: an unknown link now also checks the posting's other links.
+export const maxDuration = 800
 
 function authorised(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET

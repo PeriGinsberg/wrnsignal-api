@@ -24,6 +24,12 @@ export type Market = {
    * judgment pass decides distance inside them.
    */
   states: string[]
+  /**
+   * Rank this market's postings above an equal score elsewhere in the same
+   * timing tier (Daniel, 2026-10-27: US-wide, Chicago first). Never passes or
+   * fails a posting.
+   */
+  preferred?: boolean
 }
 
 export type MatchCriteria = {
@@ -75,6 +81,8 @@ export const PRESET_CITIES: Record<string, string[]> = {
   nashville: ["nashville"],
   washington_dc: ["washington dc", "washington d c", "district of columbia", "arlington", "mclean", "tysons", "reston", "bethesda", "alexandria"],
   south_florida: ["miami", "coral gables", "doral", "fort lauderdale", "ft lauderdale", "boca raton", "west palm beach"],
+  // US-wide: no city names, so it never chooses one office's link over another.
+  united_states: [],
 }
 
 /**
@@ -97,6 +105,10 @@ export const PRESET_STATES: Record<string, string[]> = {
   nashville: ["tn"],
   washington_dc: ["dc", "md", "va"],
   south_florida: ["fl"],
+  // US only, no metro limit: fails a posting only when every location it names is abroad.
+  united_states: ["al", "ak", "az", "ar", "ca", "co", "ct", "de", "dc", "fl", "ga", "hi", "id", "il", "in", "ia", "ks", "ky", "la", "me",
+    "md", "ma", "mi", "mn", "ms", "mo", "mt", "ne", "nv", "nh", "nj", "nm", "ny", "nc", "nd", "oh", "ok", "or", "pa", "ri", "sc", "sd",
+    "tn", "tx", "ut", "vt", "va", "wa", "wv", "wi", "wy"],
 }
 
 /**

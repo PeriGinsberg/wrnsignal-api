@@ -9,7 +9,7 @@
  * client's queue, as that client sees it (their market link when they have
  * one). One GET each, no retry beyond the one request.
  *
- * THREE VERDICTS, and only one of them changes anything:
+ * FOUR VERDICTS per posting, and only closed takes it out of the queue:
  *   closed   the page SAYS so: closed, expired, filled, no longer accepting,
  *            no longer available. Sets postings.closed_at, which takes the
  *            posting out of every client's queue and out of matching.
@@ -18,13 +18,21 @@
  *            network error. Recorded, never closed: a wrong close is a job the
  *            coach never sees, which is the quiet failure.
  *   open     the page loaded and says none of the above.
+ *   likely_closed  the client's link was unknown, so the posting's other apply
+ *            links were checked too, and every one that gave an answer was a
+ *            404 or 410, none live (Daniel's Deloitte rows, 2026-10-27). Never
+ *            sets closed_at: the posting stays in the queue, ranked last. Bot
+ *            walls alone stay unknown.
  * Every check is recorded on the posting (link_check_status, _evidence, _url,
  * link_checked_at), so a close is checkable from the quote that caused it.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { linksFromRaw } from "../ingest/applyLinks"
 
-export type LinkVerdict = { status: "open" | "closed" | "unknown"; evidence: string; httpStatus: number | null }
+/** One link. gone = a 404 or 410 that was not a bot wall: the page answered that it is not there. */
+export type LinkVerdict = { status: "open" | "closed" | "unknown"; evidence: string; httpStatus: number | null; gone?: boolean }
+export type PostingLinkStatus = "open" | "closed" | "likely_closed" | "unknown"
 
 /**
  * Phrases that mean the job is gone. Each names the job or the applications,
@@ -79,7 +87,7 @@ export function classifyPage(httpStatus: number | null, html: string): LinkVerdi
   const text = visibleText(html)
   const wall = text.match(BOT_WALL) ?? html.match(BOT_WALL_HTML)
   if (wall || [401, 403, 429, 999].includes(httpStatus)) return { status: "unknown", evidence: `bot wall or block (HTTP ${httpStatus}${wall ? `, "${wall[0]}"` : ""})`, httpStatus }
-  if (httpStatus >= 400) return { status: "unknown", evidence: `HTTP ${httpStatus}`, httpStatus }
+  if (httpStatus >= 400) return { status: "unknown", evidence: `HTTP ${httpStatus}`, httpStatus, gone: httpStatus === 404 || httpStatus === 410 }
   for (const re of CLOSED) {
     const m = text.match(re)
     if (m) {
@@ -89,6 +97,29 @@ export function classifyPage(httpStatus: number | null, html: string): LinkVerdi
   }
   return { status: "open", evidence: "", httpStatus }
 }
+
+/**
+ * A posting's links -> its verdict. Pure. Closed if any page says so; open if
+ * any loaded; likely_closed if at least one answered 404/410 and none was live
+ * (walls and errors are not answers); else unknown.
+ */
+export function postingVerdict(links: { url: string; v: LinkVerdict }[]): { status: PostingLinkStatus; evidence: string; url: string | null } {
+  const closed = links.find((x) => x.v.status === "closed")
+  if (closed) return { status: "closed", evidence: closed.v.evidence, url: closed.url }
+  const open = links.find((x) => x.v.status === "open")
+  if (open) return { status: "open", evidence: "", url: open.url }
+  const gone = links.filter((x) => x.v.gone)
+  const host = (u: string) => { try { return new URL(u).hostname.replace(/^www\./, "") } catch { return u.slice(0, 60) } }
+  if (gone.length) return {
+    status: "likely_closed",
+    evidence: links.map((x) => `${x.v.evidence} ${host(x.url)}`).join("; ").slice(0, 1000),
+    url: gone[0].url,
+  }
+  return { status: "unknown", evidence: links[0]?.v.evidence ?? "no link", url: links[0]?.url ?? null }
+}
+
+/** Other apply links checked when the client's own link is unknown. */
+const MAX_EXTRA_LINKS = 4
 
 const TIMEOUT_MS = 15_000
 const MAX_BYTES = 2_000_000
@@ -114,8 +145,10 @@ export type LinkCheckSummary = {
   links: number
   open: number
   closed: number
+  likelyClosed: number
   unknown: number
   closedRows: CheckedRow[]
+  likelyClosedRows: CheckedRow[]
   unknownRows: CheckedRow[]
 }
 type CheckedRow = { postingId: string; title: string; company: string; url: string; evidence: string }
@@ -128,7 +161,9 @@ async function pool<T>(items: T[], n: number, fn: (t: T) => Promise<void>) {
 /**
  * Check the top `top` of every active client's queue (or one client's).
  * Writes the verdict to postings unless dryRun. A posting in several clients'
- * top 30 is checked once per distinct link; one closed link closes it.
+ * top 30 is checked once per distinct link; one closed link closes it. When
+ * the client's link gives no answer, up to MAX_EXTRA_LINKS of the posting's
+ * other apply links are checked as well.
  */
 export async function runLinkCheck(
   sb: SupabaseClient,
@@ -144,23 +179,37 @@ export async function runLinkCheck(
   // One check per (posting, link).
   const work = new Map<string, any>()
   for (const r of rows) work.set(`${r.posting_id} ${r.apply_url}`, r)
-  const verdicts: { row: any; v: LinkVerdict }[] = []
-  await pool([...work.values()], 6, async (r) => { verdicts.push({ row: r, v: await checkLink(r.apply_url) }) })
+  const checked = new Map<string, { row: any; links: { url: string; v: LinkVerdict }[] }>()
+  await pool([...work.values()], 6, async (r) => {
+    const v = await checkLink(r.apply_url)
+    const cur = checked.get(r.posting_id) ?? { row: r, links: [] }
+    cur.links.push({ url: r.apply_url, v })
+    checked.set(r.posting_id, cur)
+  })
 
-  // Per posting: closed if any link is closed, else open if any is open, else unknown.
-  const byPosting = new Map<string, { row: any; v: LinkVerdict }>()
-  const order = { closed: 2, open: 1, unknown: 0 } as const
-  for (const x of verdicts) {
-    const cur = byPosting.get(x.row.posting_id)
-    if (!cur || order[x.v.status] > order[cur.v.status]) byPosting.set(x.row.posting_id, x)
+  // No answer from the client's link: try the posting's other apply links, so a
+  // run of 404/410s behind a walled link can still say likely closed.
+  const unsure = [...checked.entries()].filter(([, c]) => postingVerdict(c.links).status === "unknown").map(([id]) => id)
+  for (let i = 0; i < unsure.length; i += 100) {
+    const { data: raws, error: rErr } = await sb.from("postings").select("id, raw").in("id", unsure.slice(i, i + 100))
+    if (rErr) throw new Error(`postings raw: ${rErr.message}`)
+    const extra: { id: string; url: string }[] = []
+    for (const p of raws ?? []) {
+      const seen = new Set(checked.get(p.id)!.links.map((l) => l.url))
+      for (const l of linksFromRaw(p.raw).filter((l) => !seen.has(l.url)).slice(0, MAX_EXTRA_LINKS)) { seen.add(l.url); extra.push({ id: p.id, url: l.url }) }
+    }
+    await pool(extra, 6, async (x) => { checked.get(x.id)!.links.push({ url: x.url, v: await checkLink(x.url) }) })
   }
+
+  const byPosting = new Map([...checked.entries()].map(([id, c]) => [id, { row: c.row, links: c.links.length, v: postingVerdict(c.links) }]))
 
   const now = new Date().toISOString()
   if (!opts.dryRun) {
     for (const [id, { row, v }] of byPosting) {
       const patch: Record<string, unknown> = {
-        link_checked_at: now, link_check_status: v.status, link_check_evidence: v.evidence || null, link_check_url: row.apply_url,
+        link_checked_at: now, link_check_status: v.status, link_check_evidence: v.evidence || null, link_check_url: v.url ?? row.apply_url,
       }
+      // Only a page that says closed closes. likely_closed stays visible, ranked last.
       if (v.status === "closed") patch.closed_at = now
       const { error: uErr } = await sb.from("postings").update(patch).eq("id", id)
       if (uErr) throw new Error(`postings update ${id}: ${uErr.message}`)
@@ -168,16 +217,18 @@ export async function runLinkCheck(
   }
 
   const all = [...byPosting.values()]
-  const listed = (status: LinkVerdict["status"]) => all.filter((x) => x.v.status === status)
-    .map(({ row, v }) => ({ postingId: row.posting_id, title: row.title, company: row.company, url: row.apply_url, evidence: v.evidence }))
+  const listed = (status: PostingLinkStatus) => all.filter((x) => x.v.status === status)
+    .map(({ row, v }) => ({ postingId: row.posting_id, title: row.title, company: row.company, url: v.url ?? row.apply_url, evidence: v.evidence }))
   return {
     clients: new Set(rows.map((r: any) => r.client_profile_id)).size,
     postings: byPosting.size,
-    links: work.size,
+    links: all.reduce((n, x) => n + x.links, 0),
     open: all.filter((x) => x.v.status === "open").length,
     closed: all.filter((x) => x.v.status === "closed").length,
+    likelyClosed: all.filter((x) => x.v.status === "likely_closed").length,
     unknown: all.filter((x) => x.v.status === "unknown").length,
     closedRows: listed("closed"),
+    likelyClosedRows: listed("likely_closed"),
     unknownRows: listed("unknown"),
   }
 }

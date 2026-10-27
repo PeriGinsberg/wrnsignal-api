@@ -74,6 +74,17 @@ export const criteriaHash = (c: MatchCriteria) =>
   createHash("sha256").update(JSON.stringify(c) + "|" + JUDGE_PROMPT_SHA256 + "|" + RULES_VERSION).digest("hex")
 
 /** A postings row (enriched or not) in the matcher's shape. `text` is filled in later for the ones judged. */
+/**
+ * Is the posting in one of the client's preferred markets? Read from the
+ * cities its location names: a preset's city list, or a market written as a
+ * city ("Cincinnati, OH"). Ranking only (posting_matches.preferred_market).
+ */
+export function inPreferredMarket(markets: Market[], p: MatchPosting): boolean {
+  const cities = new Set(markets.filter((m) => m.preferred)
+    .flatMap((m) => PRESET_CITIES[m.name] ?? [m.name.split(",")[0].trim().toLowerCase()]))
+  return !!cities.size && !!p.locations?.some((l) => l.city && cities.has(l.city))
+}
+
 export function fromPosting(p: any, text = ""): MatchPosting {
   const loc = String(p.location ?? "")
   // A place abroad in Google's original title outranks Google's location field.
@@ -216,8 +227,8 @@ export async function runMatching(
   let judgeErrors = 0
   try {
     await upsert([
-      ...failed.map((e) => ({ ...base(e.p), ...cleared, rule_failures: e.fails })),
-      ...noText.map((e) => ({ ...base(e.p), ...cleared, rule_failures: [] })),
+      ...failed.map((e) => ({ ...base(e.p), ...cleared, rule_failures: e.fails, preferred_market: false })),
+      ...noText.map((e) => ({ ...base(e.p), ...cleared, rule_failures: [], preferred_market: inPreferredMarket(criteria.markets, fromPosting(e.p)) })),
     ])
 
     // Descriptions only for the postings being judged: raw is the heavy column.
@@ -233,11 +244,11 @@ export async function runMatching(
       try {
         const { judgment, usage: u } = await judge(criteria, fromPosting(e.p, postingText(r?.source ?? e.p.source, r?.raw)), { effort, examples })
         usage.push(u)
-        judgedRows.push({ ...base(e.p), ...marketLink(e.p, r?.raw), rule_failures: [], score: judgment.score, judge_reason: judgment.reason, judge_evidence: judgment.evidence || null, judge_error: null, judged_at: new Date().toISOString() })
+        judgedRows.push({ ...base(e.p), ...marketLink(e.p, r?.raw), preferred_market: inPreferredMarket(criteria.markets, fromPosting(e.p)), rule_failures: [], score: judgment.score, judge_reason: judgment.reason, judge_evidence: judgment.evidence || null, judge_error: null, judged_at: new Date().toISOString() })
       } catch (err: any) {
         judgeErrors++
         // Shown unjudged rather than hidden: a failed judgment must not drop a posting.
-        judgedRows.push({ ...base(e.p), ...marketLink(e.p, r?.raw), ...cleared, rule_failures: [], judge_error: String(err?.message ?? err).slice(0, 500) })
+        judgedRows.push({ ...base(e.p), ...marketLink(e.p, r?.raw), preferred_market: inPreferredMarket(criteria.markets, fromPosting(e.p)), ...cleared, rule_failures: [], judge_error: String(err?.message ?? err).slice(0, 500) })
       }
       if (judgedRows.length >= 100) await upsert(judgedRows.splice(0))
     })

@@ -26,7 +26,8 @@ const sb = createClient(URL_, KEY, { auth: { persistSession: false } })
 
 ;(async () => {
   const res = await runLinkCheck(sb, { top: Number(arg("top") ?? 30), clientProfileId: arg("client"), dryRun })
-  console.log(`${dryRun ? "[dry run] " : ""}clients ${res.clients}, postings ${res.postings}, links ${res.links}: open ${res.open}, closed ${res.closed}, unknown ${res.unknown}`)
+  console.log(`${dryRun ? "[dry run] " : ""}clients ${res.clients}, postings ${res.postings}, links ${res.links}: open ${res.open}, closed ${res.closed}, likely closed ${res.likelyClosed}, unknown ${res.unknown}`)
   for (const r of res.unknownRows) console.log(`  unknown ${r.company} | ${r.title}: ${r.evidence}\n    ${r.url}`)
+  for (const r of res.likelyClosedRows) console.log(`  likely closed ${r.company} | ${r.title}: ${r.evidence}`)
   for (const r of res.closedRows) console.log(`  CLOSED ${r.company} | ${r.title}\n    ${r.url}\n    "${r.evidence}"`)
 })().catch((e) => { console.error(e); process.exit(1) })

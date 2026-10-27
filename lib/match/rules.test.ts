@@ -5,7 +5,7 @@
 
 import { availableFromProfile, parseTimeline, PRESET_STATES, seedCriteria, UnknownPresetError } from "./criteria"
 import { applyRules, parseLocations, titleAbroad, type MatchPosting } from "./rules"
-import { criteriaFromRow, fromPosting } from "./runMatching"
+import { criteriaFromRow, fromPosting, inPreferredMarket } from "./runMatching"
 
 let failures = 0
 function ok(label: string, cond: boolean) {
@@ -159,6 +159,30 @@ ok("salary floor: hourly pay is not converted, so it passes a yearly floor", app
 ok("majors: the coach's entry, else the intake form's", sami.majors === null
   && criteriaFromRow({ markets: [], majors: "B.A. Psychology" }, { profile_structured: { intakeMeta: { major: "Econ" } } }).majors === "B.A. Psychology"
   && criteriaFromRow({ markets: [] }, { profile_structured: { intakeMeta: { major: "Econ" } } }).majors === "Econ")
+
+// Daniel's #6 (2026-10-27), dismissed wrong_location "no US jobs": PA Consulting's
+// Growth Strategy Analyst says "United States" and its text quotes a New York pay
+// range, but the coach found no US opening. Nothing in the posting says abroad, so
+// the title rule must not fire and a US-wide location passes a US market. Catching
+// it needs the employer's own listings, not the location rule.
+const pa = fromPosting({ title: "Early Career | Growth Strategy Analyst (2027)", company: "PA Consulting", location: "United States" })
+ok("Daniel #6 PA Consulting: no place abroad in the title", titleAbroad(pa.title) === null)
+ok("Daniel #6 PA Consulting: 'United States' passes a NYC market", applyRules(sami, pa, TODAY).length === 0)
+
+// Daniel (2026-10-27): US only, no other location limit, Chicago ranked higher.
+const daniel = criteriaFromRow({ client_profile_id: "daniel", active: true, remote_ok: true, job_types: ["full_time"],
+  markets: [{ name: "chicago", states: PRESET_STATES.chicago, preferred: true }, { name: "united_states", states: PRESET_STATES.united_states }] }, { profile_structured: {} })
+const posted = (location: string, title = "Analyst") => fromPosting({ title, company: "X", location })
+ok("US only: every state and DC", PRESET_STATES.united_states.length === 51 && PRESET_STATES.united_states.includes("dc") && PRESET_STATES.united_states.includes("hi"))
+ok("US only: Boston passes", applyRules(daniel, posted("Boston, MA"), TODAY).length === 0)
+ok("US only: a bare 'United States' passes", applyRules(daniel, posted("United States"), TODAY).length === 0)
+ok("US only: London fails", applyRules(daniel, posted("London, , United Kingdom"), TODAY).join() === "location")
+ok("US only: a title abroad fails", applyRules(daniel, posted("New York, NY", "Graduate Analyst - London"), TODAY).join() === "location")
+ok("Chicago preferred: Chicago and Evanston", inPreferredMarket(daniel.markets, posted("Chicago, IL")) && inPreferredMarket(daniel.markets, posted("Evanston, IL, United States")))
+ok("Chicago preferred: one office of several", inPreferredMarket(daniel.markets, posted("Boston, MA; Chicago, IL")))
+ok("Chicago preferred: Boston and a bare 'United States' are not", !inPreferredMarket(daniel.markets, posted("Boston, MA")) && !inPreferredMarket(daniel.markets, posted("United States")))
+ok("no preferred market: nothing is preferred", !inPreferredMarket(sami.markets, posted("New York, NY")))
+ok("a market written as a city can be preferred", inPreferredMarket([{ name: "Cincinnati, OH", states: ["oh"], preferred: true }], posted("Cincinnati, OH")))
 
 console.log(failures ? `\n${failures} failure(s)` : "\nall passed")
 if (failures) process.exit(1)

@@ -3,7 +3,7 @@
 // The apply-link verdict (lib/match/linkCheck.ts), offline. Closed only when
 // the page says so; a bot wall or an error is unknown, never closed.
 
-import { classifyPage, fetchUrlFor } from "./linkCheck"
+import { classifyPage, fetchUrlFor, postingVerdict, type LinkVerdict } from "./linkCheck"
 
 let failures = 0
 function ok(label: string, cond: boolean) {
@@ -36,6 +36,30 @@ ok("a captcha widget on a job page is not a wall", classifyPage(200, "<html><bod
 ok("LinkedIn job page -> its public job endpoint", fetchUrlFor("https://www.linkedin.com/jobs/view/fall-2027-advisory-associate-at-brg-4447192463?utm_campaign=x") === "https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/4447192463")
 ok("other links are fetched as they are", fetchUrlFor("https://www.wayfair.com/careers/job/commercial-analyst/2-10074") === "https://www.wayfair.com/careers/job/commercial-analyst/2-10074")
 ok("no response is unknown", classifyPage(null, "").status === "unknown")
+
+// Daniel's review (2026-10-27). #3 Wayfair Commercial Analyst: the employer page
+// is the generic "no longer active" page an unknown job id also gets (an open
+// Wayfair job page does not carry the phrase).
+ok("Daniel #3 Wayfair: 'This job is no longer active' is closed", v(200, "<p>Loading</p><p>This job is no longer active. Please search for another job below.</p>").status === "closed")
+// #1 and #5 Deloitte (closed per the coach): the client's link is ZipRecruiter
+// behind Cloudflare, so that link alone stays unknown.
+ok("Daniel #1/#5 Deloitte: ZipRecruiter's Cloudflare 403 is unknown, never closed", v(403, "<p>Just a moment...</p>").status === "unknown")
+ok("a 404 or 410 is gone; a wall or a 500 is not", v(410, "").gone === true && v(404, "<p>Not found</p>").gone === true && !v(403, "<p>Just a moment...</p>").gone && !v(500, "").gone)
+
+// The posting verdict across its links (the client's link, then its other apply links).
+const L = (url: string, status: number | null, body = ""): { url: string; v: LinkVerdict } => ({ url, v: v(status, body) })
+const wall = (url: string) => L(url, 403, "<p>Just a moment...</p>")
+// Daniel #1 Deloitte Chicago: ZipRecruiter and Monster walled, the one answering link 410.
+const d1 = postingVerdict([wall("https://www.ziprecruiter.com/c/deloitte/Job/x"), wall("https://www.monster.com/job-openings/x"), L("https://talents.vaia.com/companies/deloitte/x", 410)])
+ok("Daniel #1: walls plus a 410, none live -> likely_closed", d1.status === "likely_closed")
+ok("Daniel #1: the evidence names each link's answer", d1.evidence.includes("HTTP 410 talents.vaia.com") && d1.evidence.includes("ziprecruiter.com"))
+// Daniel #5 Deloitte Miami: one republisher page loads, so the rule does not apply.
+ok("Daniel #5: a 404 beside a live page -> open, not likely_closed", postingVerdict([wall("https://www.ziprecruiter.com/x"), L("https://www.talent.com/x", 404), L("https://digitalhire.com/x", 200, "<h1>Analyst</h1>"), L("https://ai-search.io/x", 429)]).status === "open")
+ok("bot walls alone stay unknown", postingVerdict([wall("https://a.com/x"), L("https://b.com/x", 429), L("https://c.com/x", null)]).status === "unknown")
+ok("a 500 is not an answer: unknown", postingVerdict([L("https://a.com/x", 500)]).status === "unknown")
+// Daniel #3 Wayfair: the employer page says so, the republishers 410.
+ok("Daniel #3: an employer 'no longer active' page beside 410s -> closed", postingVerdict([L("https://www.wayfair.com/careers/job/x", 200, "<p>This job is no longer active.</p>"), L("https://bebee.com/x", 410)]).status === "closed")
+ok("no links -> unknown", postingVerdict([]).status === "unknown")
 
 console.log(failures ? `\n${failures} failure(s)` : "\nall passed")
 if (failures) process.exit(1)

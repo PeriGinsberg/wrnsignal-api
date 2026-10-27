@@ -1,5 +1,6 @@
 -- 20261109_link_check_majors_market_link.sql
--- Three fixes from the coach review of Sami's top 14 (2026-10-26).
+-- Three fixes from the coach review of Sami's top 14 (2026-10-26), plus two
+-- from Daniel's review (2026-10-27): likely_closed and preferred markets.
 --
 --   1. Closed postings. The nightly link check (lib/match/linkCheck.ts) reads
 --      the apply page of each client's top 30. A page that says the job is
@@ -11,6 +12,9 @@
 --        link_check_status     open / closed / unknown
 --        link_check_evidence   the words that decided it, or the reason it is unknown
 --        link_check_url        the link that was checked
+--      likely_closed (Daniel, 2026-10-27): the client's link gave no answer and
+--      every other apply link that did was a 404 or 410, none live. It does NOT
+--      set closed_at: the posting stays in the queue, ranked below everything.
 --   2. Required majors. Enrichment reads the degree fields a posting asks for,
 --      with the quote in enrichment_evidence.majors, and the judge compares them
 --      with the client's majors (client_match_criteria.majors).
@@ -21,6 +25,10 @@
 --      cities, when that differs from the posting's own link. The queue shows
 --      it in place of the posting's link.
 --        posting_matches.apply_url, posting_matches.apply_link_kind
+--   4. Preferred markets (Daniel, 2026-10-27: US only, Chicago first). A market
+--      can be marked preferred in client_match_criteria.markets; matching sets
+--      posting_matches.preferred_market when a posting's location names one of
+--      its cities, and the queue ranks it above an equal score in the same tier.
 --
 -- Link-check writes are re-reads, not sightings: the trigger leaves
 -- last_seen_at alone for them, as it does for enrichment and link re-choices.
@@ -51,14 +59,14 @@ ALTER TABLE public.postings
 ALTER TABLE public.postings DROP CONSTRAINT IF EXISTS postings_link_check_status_known;
 ALTER TABLE public.postings
   ADD CONSTRAINT postings_link_check_status_known CHECK (
-    link_check_status IS NULL OR link_check_status IN ('open', 'closed', 'unknown')
+    link_check_status IS NULL OR link_check_status IN ('open', 'closed', 'likely_closed', 'unknown')
   );
 COMMENT ON COLUMN public.postings.required_majors IS
   'Degree fields the posting asks for, as written (catch-alls like "related field" kept). NULL = not stated. Quote in enrichment_evidence.majors.';
 COMMENT ON COLUMN public.postings.closed_at IS
   'Set by the link check when the apply page says the job is closed, expired, filled or no longer accepting. A closed posting is out of every queue.';
 COMMENT ON COLUMN public.postings.link_check_status IS
-  'Last link check: open, closed, or unknown (bot wall, error, 404/410). Unknown never closes.';
+  'Last link check: open, closed, likely_closed (every answering link 404/410, none live: ranked last, never closed) or unknown (bot wall, error). Only closed sets closed_at.';
 
 ALTER TABLE public.client_match_criteria
   ADD COLUMN IF NOT EXISTS majors text;
@@ -67,7 +75,8 @@ COMMENT ON COLUMN public.client_match_criteria.majors IS
 
 ALTER TABLE public.posting_matches
   ADD COLUMN IF NOT EXISTS apply_url text,
-  ADD COLUMN IF NOT EXISTS apply_link_kind text;
+  ADD COLUMN IF NOT EXISTS apply_link_kind text,
+  ADD COLUMN IF NOT EXISTS preferred_market boolean NOT NULL DEFAULT false;
 ALTER TABLE public.posting_matches DROP CONSTRAINT IF EXISTS posting_matches_apply_link_kind_known;
 ALTER TABLE public.posting_matches
   ADD CONSTRAINT posting_matches_apply_link_kind_known CHECK (
@@ -76,6 +85,8 @@ ALTER TABLE public.posting_matches
   );
 COMMENT ON COLUMN public.posting_matches.apply_url IS
   'This client''s apply link when it differs from the posting''s: the one naming the client''s market city. NULL = the posting''s own.';
+COMMENT ON COLUMN public.posting_matches.preferred_market IS
+  'The posting''s location names a city of one of the client''s preferred markets. Ranking only: above an equal score in the same tier.';
 
 -- The aggregator branch is unchanged from 20261103; the pin now also covers a
 -- link check (link_checked_at changed).
@@ -125,7 +136,7 @@ WITH (security_invoker = true) AS
     q.*,
     row_number() OVER (
       PARTITION BY q.client_profile_id
-      ORDER BY q.tier, q.score DESC NULLS LAST, q.republished_only, q.first_queued_at DESC
+      ORDER BY q.likely_closed, q.tier, q.score DESC NULLS LAST, q.preferred_market DESC, q.republished_only, q.first_queued_at DESC
     ) AS rank
   FROM (
     SELECT
@@ -151,6 +162,8 @@ WITH (security_invoker = true) AS
       p.first_seen_at,
       p.last_seen_at,
       p.link_checked_at, p.link_check_status,
+      (p.link_check_status = 'likely_closed') AS likely_closed,
+      m.preferred_market,
       p.start_type, p.start_date, p.start_season, p.start_year, p.start_text,
       p.employment_types,
       CASE p.start_type
@@ -193,7 +206,7 @@ WITH (security_invoker = true) AS
   ) q;
 REVOKE ALL ON public.client_match_queue FROM anon, authenticated;
 COMMENT ON VIEW public.client_match_queue IS
-  'Ranked review queue: unactioned postings that pass the client''s hard rules, were seen in the last 14 days and are not closed (link check). Ranked in timing tiers (20261106, 20261107): a client whose available_from is in the future gets campus postings scoring 40 or more first, then "timing unknown"; a client available now gets postings starting now, within 3 months or not stated first, then "starts in 3+ months". Within a tier: best score first, unjudged last, republished-only below others at equal score. apply_url is the client''s market link when matching chose one (market_link). is_new = first queued after the client''s last review.';
+  'Ranked review queue: unactioned postings that pass the client''s hard rules, were seen in the last 14 days and are not closed (link check). Ranked in timing tiers (20261106, 20261107): a client whose available_from is in the future gets campus postings scoring 40 or more first, then "timing unknown"; a client available now gets postings starting now, within 3 months or not stated first, then "starts in 3+ months". Within a tier: best score first, unjudged last; at equal score a preferred-market posting first, then republished-only below others. likely_closed (link check) ranks below every tier. apply_url is the client''s market link when matching chose one (market_link). is_new = first queued after the client''s last review.';
 
 NOTIFY pgrst, 'reload schema';
 
@@ -207,8 +220,10 @@ COMMIT;
 --      AND column_name IN ('required_majors','majors_basis','closed_at','link_checked_at','link_check_status','link_check_evidence','link_check_url')) = 7 AS posting_columns,
 --   EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'client_match_criteria' AND column_name = 'majors') AS criteria_majors,
 --   (SELECT count(*) FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'posting_matches'
---      AND column_name IN ('apply_url','apply_link_kind')) = 2 AS match_link_columns,
+--      AND column_name IN ('apply_url','apply_link_kind','preferred_market')) = 3 AS match_link_columns,
 --   EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'postings_canonical' AND column_name = 'closed_at') AS canonical_rebuilt,
 --   EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'client_match_queue' AND column_name = 'market_link') AS queue_rebuilt,
 --   pg_get_functiondef('public.postings_touch_last_seen()'::regprocedure) LIKE '%link_checked_at%' AS trigger_pins_link_check,
---   pg_get_viewdef('public.client_match_queue'::regclass) LIKE '%closed_at IS NULL%' AS queue_drops_closed;
+--   pg_get_viewdef('public.client_match_queue'::regclass) LIKE '%closed_at IS NULL%' AS queue_drops_closed,
+--   pg_get_viewdef('public.client_match_queue'::regclass) LIKE '%likely_closed%' AS queue_ranks_likely_closed_last,
+--   pg_get_constraintdef((SELECT oid FROM pg_constraint WHERE conname = 'postings_link_check_status_known')) LIKE '%likely_closed%' AS status_allows_likely_closed;
