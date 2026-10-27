@@ -211398,6 +211398,13 @@
     ],
     "profile_evidence_units": [
       {
+        "id": "0448fa1743d88183",
+        "key": "customer_service_guest_experience",
+        "kind": "stakeholder",
+        "strength": 5,
+        "label": "customer service, guest experience, and issue resolution"
+      },
+      {
         "id": "11bff0b57a8a313a",
         "key": "content_execution",
         "kind": "function",
@@ -211453,6 +211460,15 @@
         "match_key": "content_execution",
         "job_unit_key": "content_execution",
         "profile_unit_id": "d7901a6e4de3a6cf"
+      },
+      {
+        "match_strength": "direct",
+        "weight": 94,
+        "coverageScore": 78,
+        "match_kind": "stakeholder",
+        "match_key": "customer_service_guest_experience",
+        "job_unit_key": "customer_service_guest_experience",
+        "profile_unit_id": "0448fa1743d88183"
       },
       {
         "match_strength": "direct",

@@ -113,5 +113,20 @@ Sourced 40+ candidates per week for technical roles`)
   ok("sourcing candidates is not procurement", !k.includes("procurement_sourcing"), k.join(","))
 }
 
+console.log("\nhotel front desk (DEF-036)")
+{
+  const cs = "customer_service_guest_experience"
+  const has = (line: string) => profileKeys(line).includes(cs)
+  ok("reservations, check-ins and check-outs are guest service",
+    has("Managed all reservations with no central booking team, plus check-ins, check-outs, and credit card payments in HMS"))
+  ok("a front desk job title is guest service", has("Front Desk Associate | Hotel Yellowstone | Jackson, WY"))
+  ok("resolving guest concerns is guest service", has("Resolved guest concerns as Manager on Duty with authority to issue comps"))
+  ok("promoting reservations in a marketing campaign is not", !has("Supported marketing campaigns promoting reservations at state park systems"))
+  ok("weekly check-ins with a manager are not", !has("Held weekly check-ins with my manager to review project status"))
+  ok("JD guest registration is a guest service duty",
+    extractJobSignals("Front Desk Agents are responsible for the guest registration process and communication of hotel services.", { userJobTitle: "Front Desk Agent" })
+      .requirement_units?.some((u) => u.key === cs) === true)
+}
+
 console.log(`\n${pass} passed, ${fail} failed`)
 if (fail) process.exit(1)

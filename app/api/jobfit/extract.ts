@@ -478,10 +478,31 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "clients per shift",
       "customers per shift",
       "guests per shift",
+      // Hotel front desk work (DEF-036, C010/C011): Cole's reservations,
+      // check-in and Manager on Duty bullets built no unit. Check-ins only as
+      // the front desk pair, never alone ("weekly check-ins with my manager").
+      // No bare "reservations" ("marketing campaigns promoting reservations")
+      // or bare "front desk" ("built front desk staff schedules").
+      "front desk associate",
+      "front desk agent",
+      "front desk operations",
+      "check-ins, check-outs",
+      "check-ins and check-outs",
+      "check-in and check-out",
+      "guest check-in",
+      "guest concerns",
+      "guest requests",
+      "guest recovery",
     ],
     jobPhrases: [
       "guest experience",
       "guest services",
+      "front desk",
+      "guest registration",
+      "check-in and check-out",
+      "check-ins and check-outs",
+      "guest requests",
+      "guest concerns",
       // No JD "client service": finance postings use it for the Client
       // Service Associate title and "client service oriented" traits.
       "guest service",
