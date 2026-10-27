@@ -16,6 +16,7 @@ export type Suggestion = {
   job_url: string
   location: string
   note: string
+  job_description?: string
   added_by_name: string | null
 }
 
@@ -70,6 +71,7 @@ export function SuggestedStrip({ suggestions, onHandled }: { suggestions: Sugges
               <div style={{ fontSize: 13, color: S.text.muted, marginTop: 3 }}>
                 Added by {s.added_by_name ?? "a supporter"}
                 {s.location ? ` · ${s.location}` : ""}
+                {s.job_description ? " · Job description included" : ""}
               </div>
               {s.note && <div style={{ fontSize: 13.5, color: S.text.secondary, marginTop: 6 }}>{s.note}</div>}
               {s.job_url && (

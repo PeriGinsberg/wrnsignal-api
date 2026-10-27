@@ -1756,6 +1756,15 @@ export default function WRNSignalTabs(props: {
                                     setManualCompanyName(a.company_name || "")
                                     setManualJobTitle(a.job_title || "")
                                     setJobUrl(a.job_url || "")
+                                    // The posting text a supporter pasted, when
+                                    // there is one: the scan is then one click.
+                                    // "confirm" because company, title and the
+                                    // job preview render ONLY on that step (see
+                                    // THE ACTUAL FIX in the URL fetch handler).
+                                    if (a.job_description) {
+                                        setJob(a.job_description)
+                                        setManualPasteStep("confirm")
+                                    }
                                     setScoreAppId(a.id)
                                     setScoreAppLabel(
                                         [a.job_title, a.company_name].filter(Boolean).join(" at ")

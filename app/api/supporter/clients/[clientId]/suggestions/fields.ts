@@ -7,6 +7,8 @@ export type SuggestionFields = {
   job_url?: string
   location?: string
   note?: string
+  /** The posting's text, optional. Fills JobFit when the client scores the job. */
+  job_description?: string
 }
 
 const LIMITS: Record<keyof SuggestionFields, number> = {
@@ -15,6 +17,7 @@ const LIMITS: Record<keyof SuggestionFields, number> = {
   job_url: 2000,
   location: 200,
   note: 2000,
+  job_description: 50000,
 }
 
 export function readSuggestionFields(

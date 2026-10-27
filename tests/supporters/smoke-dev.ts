@@ -1,4 +1,5 @@
-// Run (DEV ONLY), after 20261115_client_supporters.sql is applied on dev and
+// Run (DEV ONLY), after 20261115_client_supporters.sql and
+// 20261116_suggestion_job_description.sql are applied on dev and
 // feature_modes.supporters is set to 'free' there:
 //
 //   set -a; . <(grep -E '^(SUPABASE_URL|SUPABASE_SERVICE_ROLE_KEY|NEXT_PUBLIC_SUPABASE_ANON_KEY)=' .env.local | sed 's/\r$//'); set +a
@@ -185,8 +186,9 @@ async function main() {
   ok("Dad, invited but not accepted, sees nothing", dadTracker.status === 403, dadTracker.json)
 
   console.log("\nsuggestions")
-  const s1 = await call(supSuggest.POST, { path: "", jwt: momLogin.jwt, method: "POST", params: { clientId: CLIENT }, body: { company_name: "Globex", job_title: "Associate", job_url: "https://globex.example/jobs/1", note: "Saw this" } })
+  const s1 = await call(supSuggest.POST, { path: "", jwt: momLogin.jwt, method: "POST", params: { clientId: CLIENT }, body: { company_name: "Globex", job_title: "Associate", job_url: "https://globex.example/jobs/1", note: "Saw this", job_description: `JD-TEXT-${RUN}` } })
   ok("Mom suggests a job", s1.status === 201 && s1.json?.suggestion?.status === "pending", s1.json)
+  ok("...with the job description she pasted", s1.json?.suggestion?.job_description === `JD-TEXT-${RUN}`)
   const bad = await call(supSuggest.POST, { path: "", jwt: momLogin.jwt, method: "POST", params: { clientId: CLIENT }, body: { company_name: "", job_title: "x" } })
   ok("a suggestion without a company is refused", bad.status === 400)
   const edit = await call(supSuggestion.PATCH, { path: "", jwt: momLogin.jwt, method: "PATCH", params: { clientId: CLIENT, id: s1.json.suggestion.id }, body: { job_title: "Senior Associate" } })
@@ -198,6 +200,11 @@ async function main() {
 
   const acc = await call(meSuggestion.POST, { path: "", jwt: client.jwt, method: "POST", params: { id: s1.json.suggestion.id }, body: { action: "accept" } })
   ok("the client accepts it", acc.json?.application?.added_by_role === "supporter", acc.json)
+  const prefill = await import("../../app/api/applications/[id]/score-prefill/route")
+  const pre = await call(prefill.GET, { path: "", jwt: client.jwt, params: { id: acc.json.application.id } })
+  ok("Score this job now prefill carries the pasted description", pre.json?.application?.job_description === `JD-TEXT-${RUN}`, pre.json)
+  const preMom = await call(prefill.GET, { path: "", jwt: momLogin.jwt, params: { id: acc.json.application.id } })
+  ok("...and refuses the supporter", preMom.status >= 400, preMom.json)
   const twice = await call(meSuggestion.POST, { path: "", jwt: client.jwt, method: "POST", params: { id: s1.json.suggestion.id }, body: { action: "accept" } })
   ok("accepting twice does not make a second row", twice.status === 409)
   const lateEdit = await call(supSuggestion.PATCH, { path: "", jwt: momLogin.jwt, method: "PATCH", params: { clientId: CLIENT, id: s1.json.suggestion.id }, body: { job_title: "x" } })

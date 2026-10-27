@@ -34,7 +34,7 @@ export const SUPPORTER_PUBLIC_COLUMNS =
   "id, email, display_name, status, invite_expires_at, invite_sent_at, accepted_at, revoked_at, created_at"
 
 export const SUGGESTION_COLUMNS =
-  "id, supporter_id, company_name, job_title, job_url, location, note, status, application_id, decided_at, created_at, updated_at"
+  "id, supporter_id, company_name, job_title, job_url, location, note, job_description, status, application_id, decided_at, created_at, updated_at"
 
 /** A fresh invite token and the hash that is stored. The token is only ever emailed. */
 export function newInviteToken(): { token: string; hash: string } {

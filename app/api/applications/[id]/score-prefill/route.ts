@@ -1,11 +1,12 @@
 // app/api/applications/[id]/score-prefill/route.ts
 //
 // What JobFit needs to score a job that is already on the tracker: the row's
-// company, title, location and posting link. Framer reads it when the tracker
-// opens /signal/jobfit?score_app=<id>, fills the form, and sends the same id
-// back as application_id on POST /api/jobfit, which attaches the run to this
-// row instead of creating one (see the SCORING A JOB ALREADY ON THE TRACKER
-// block in app/api/jobfit/route.ts).
+// company, title, location and posting link, and the job description when a
+// supporter pasted one into the suggestion this row was accepted from. Framer
+// reads it when the tracker opens /signal/jobfit?score_app=<id>, fills the
+// form, and sends the same id back as application_id on POST /api/jobfit,
+// which attaches the run to this row instead of creating one (see the
+// SCORING A JOB ALREADY ON THE TRACKER block in app/api/jobfit/route.ts).
 //
 // Owner only. A row that is not the caller's is a 404, the same answer as a
 // row that does not exist.
@@ -26,7 +27,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params
     const me = await getCallerProfile(req, "id")
-    const { data, error } = await getSupabaseAdmin()
+    const supabase = getSupabaseAdmin()
+    const { data, error } = await supabase
       .from("signal_applications")
       .select("id, company_name, job_title, location, job_url, jobfit_run_id")
       .eq("id", id)
@@ -34,7 +36,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       .maybeSingle()
     if (error) throw new Error(`Application lookup failed: ${error.message}`)
     if (!data) return withCorsJson(req, { ok: false, error: "That tracker job was not found." }, 404)
-    return withCorsJson(req, { ok: true, application: data })
+
+    // Scoped to the caller as well as the row, so a mis-linked suggestion can
+    // never hand one client another's posting text.
+    const { data: sug, error: sugErr } = await supabase
+      .from("supporter_job_suggestions")
+      .select("job_description")
+      .eq("application_id", data.id)
+      .eq("client_profile_id", me.id)
+      .limit(1)
+      .maybeSingle()
+    if (sugErr) throw new Error(`Suggestion lookup failed: ${sugErr.message}`)
+
+    return withCorsJson(req, { ok: true, application: { ...data, job_description: sug?.job_description || null } })
   } catch (err) {
     return routeError(req, err)
   }

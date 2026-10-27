@@ -41,6 +41,7 @@ type Suggestion = {
   job_url: string
   location: string
   note: string
+  job_description: string
   status: "pending" | "accepted" | "dismissed"
   added_by_name: string | null
   mine: boolean
@@ -249,6 +250,9 @@ function Suggestions({ clientId, name, suggestions, onChanged }: {
                   </span>
                 </div>
                 {s.note && <p style={{ fontSize: 13.5, color: S.text.secondary, margin: "8px 0 0" }}>{s.note}</p>}
+                {s.job_description && (
+                  <p style={{ fontSize: 13, color: S.text.muted, margin: "6px 0 0" }}>Job description included</p>
+                )}
                 {s.job_url && (
                   <a href={s.job_url} target="_blank" rel="noreferrer" style={{ fontSize: 13.5, color: S.action.quietInk, fontWeight: 700 }}>
                     Job posting
@@ -282,6 +286,7 @@ function SuggestionForm({ clientId, existing, onDone, onCancel }: {
     job_url: existing?.job_url ?? "",
     location: existing?.location ?? "",
     note: existing?.note ?? "",
+    job_description: existing?.job_description ?? "",
   })
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState("")
@@ -300,8 +305,14 @@ function SuggestionForm({ clientId, existing, onDone, onCancel }: {
   const field = (key: keyof typeof f, text: string, required = false) => (
     <label style={{ display: "block", marginTop: 12 }}>
       <span style={label}>{text}{required ? "" : " (optional)"}</span>
-      {key === "note" ? (
-        <textarea value={f[key]} onChange={(e) => setF({ ...f, [key]: e.target.value })} rows={3} style={{ ...input, resize: "vertical" }} />
+      {key === "note" || key === "job_description" ? (
+        <textarea
+          value={f[key]}
+          onChange={(e) => setF({ ...f, [key]: e.target.value })}
+          rows={key === "job_description" ? 8 : 3}
+          maxLength={key === "job_description" ? 50000 : 2000}
+          style={{ ...input, resize: "vertical" }}
+        />
       ) : (
         <input value={f[key]} required={required} onChange={(e) => setF({ ...f, [key]: e.target.value })} style={input} />
       )}
@@ -316,6 +327,11 @@ function SuggestionForm({ clientId, existing, onDone, onCancel }: {
       {field("job_url", "Link to the posting")}
       {field("location", "Location")}
       {field("note", "Why it might be a fit")}
+      {field("job_description", "Job description")}
+      <p style={{ fontSize: 13, color: S.text.muted, margin: "6px 0 0", lineHeight: "19px" }}>
+        Paste the posting&apos;s text if you can. SIGNAL needs it to score the job, and some sites, like LinkedIn, won&apos;t
+        let us read it from the link.
+      </p>
       {err && <p style={{ color: S.meaning.error.ink, fontWeight: 700, fontSize: 14 }}>{err}</p>}
       <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
         <button type="submit" disabled={saving} style={{ ...action(S, "primary"), borderRadius: 10, padding: "10px 18px", fontSize: 14, fontFamily: "inherit", opacity: saving ? 0.55 : 1 }}>
