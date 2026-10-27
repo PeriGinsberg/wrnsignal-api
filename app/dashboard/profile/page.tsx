@@ -26,12 +26,13 @@
 import { Suspense, useCallback, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { LIGHT as S } from "../../../lib/theme/surfaces"
-import { AccountIcon, ResumeIcon, ProfileIcon } from "../../../components/icons"
+import { AccountIcon, ResumeIcon, ProfileIcon, NetworkIcon } from "../../../components/icons"
 import { authFetch } from "../network/authFetch"
 import { profileCompletion } from "../dashboardState"
 import { BasicsSection, type Profile } from "./BasicsSection"
 import { ResumeSection } from "./ResumeSection"
 import { AccountSection } from "./AccountSection"
+import { SupportersSection } from "./SupportersSection"
 
 // THE NETWORKING SECTION IS GONE, with the templates and the merge variables
 // it existed to feed. It rendered ProfileForm from network/profile, which read
@@ -44,6 +45,8 @@ import { AccountSection } from "./AccountSection"
 const SECTIONS = [
   { key: "basics", label: "Basics", icon: <ProfileIcon size={19} /> },
   { key: "resume", label: "Resume", icon: <ResumeIcon size={19} /> },
+  // Listed only when the plan flag allows supporters (see `supportersOn`).
+  { key: "supporters", label: "Supporters", icon: <NetworkIcon size={19} /> },
   { key: "account", label: "Account", icon: <AccountIcon size={19} /> },
 ] as const
 
@@ -66,6 +69,15 @@ function MyProfile() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
+  // The plan flag, from the server. Off hides the section entirely rather
+  // than showing a door that says "not for you".
+  const [supportersOn, setSupportersOn] = useState(false)
+  useEffect(() => {
+    void authFetch("/api/me/supporters")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setSupportersOn(!!j?.available))
+      .catch(() => setSupportersOn(false))
+  }, [])
 
   const load = useCallback(async () => {
     try {
@@ -181,7 +193,7 @@ function MyProfile() {
           aria-label="Profile sections"
           style={{ flex: "0 0 232px", display: "flex", flexDirection: "column", gap: 4, minWidth: 200 }}
         >
-          {SECTIONS.map((s) => {
+          {SECTIONS.filter((s) => s.key !== "supporters" || supportersOn).map((s) => {
             const active = section === s.key
             return (
               <button
@@ -214,6 +226,7 @@ function MyProfile() {
         >
           {section === "basics" && <BasicsSection profile={profile} onSave={save} />}
           {section === "resume" && <ResumeSection profile={profile} onSave={save} />}
+          {section === "supporters" && supportersOn && <SupportersSection />}
           {section === "account" && <AccountSection profile={profile} />}
         </section>
       </div>

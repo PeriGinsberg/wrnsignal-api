@@ -8,12 +8,7 @@
 // Authorization: 'full' (matches the precedent set by other routes
 // that modify the client's record — profile PATCH, personas, recommend-job).
 // Status validation uses the shared APP_STATUSES allowlist so server +
-// client + the coach edit pill agree on what's pickable. The
-// 'coach_recommended' value is intentionally NOT in the allowlist —
-// it's set by the rec-creation flow, not by manual edit; a coach
-// transitioning a coach_recommended-status app picks one of the 6
-// pickable values to move it forward, and the original state is
-// preserved in status_history.
+// client + the coach edit pill agree on what's pickable.
 //
 // History write reuses the existing logStatusChange helper from
 // app/api/_lib/applicationStatusHistory.ts so the transition feeds

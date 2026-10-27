@@ -6,12 +6,6 @@
 // 4-or-more-option popover → pick a value → PATCH the API → optimistic
 // local update. Stops click propagation so the surrounding card header
 // (which toggles expand/collapse on click) doesn't fire.
-//
-// Status detection: 'coach_recommended' is intentionally NOT pickable
-// (it's a system-set state from the rec-creation flow). When the card's
-// CURRENT status is 'coach_recommended', the pill still displays it
-// with the canonical color; the dropdown lets the coach pick any of
-// the 6 standard values to transition the app forward.
 
 import { useEffect, useRef, useState } from "react"
 import { T } from "../../../../../lib/dashboard-theme"
@@ -60,8 +54,6 @@ export function ApplicationStatusEditPill({
     return () => document.removeEventListener("mousedown", onClickAway)
   }, [open])
 
-  // Display the current value with its canonical color, even when the
-  // value is 'coach_recommended' (not pickable but still displayable).
   const currentStyle = APP_STATUS_STYLE[value] ?? APP_STATUS_STYLE.saved
 
   async function setStatus(next: ApplicationStatus) {

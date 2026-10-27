@@ -44,6 +44,8 @@ import { type SupabaseClient } from "@supabase/supabase-js"
 import { resolveCaller } from "./identity"
 import { resolveDelegation } from "./delegation"
 import { ForbiddenError } from "./errors"
+import { getAuthedUser } from "./identity"
+import { featureAllowed } from "../features"
 
 declare const SUBJECT_BRAND: unique symbol
 
@@ -51,8 +53,8 @@ declare const SUBJECT_BRAND: unique symbol
  *  resolveScope can make one. */
 export type SubjectId = string & { readonly [SUBJECT_BRAND]: true }
 
-export type ActorRole = "self" | "coach"
-export type AccessLevel = "owner" | "view" | "annotate" | "full"
+export type ActorRole = "self" | "coach" | "supporter"
+export type AccessLevel = "owner" | "view" | "annotate" | "full" | "supporter"
 
 /** The caller, already identified. Separated from the Request so the ladder is
  *  testable without a JWT. */
@@ -80,6 +82,12 @@ export type Scope = {
    * the principal's, when a delegate is acting.
    */
   linkId?: string
+  /**
+   * The client_supporters row, when a supporter is acting. A supporter has no
+   * client_profiles row, so actorId is their LOGIN (auth.users.id) and this is
+   * what their writes are stamped with.
+   */
+  supporterId?: string
 }
 
 // Lives in ./errors so identity.ts can throw it too; re-exported here so every
@@ -229,6 +237,9 @@ export async function resolveRequestScope(
  * that is gone by then.
  */
 export function authorRole(scope: Scope): "client" | "coach" {
+  // A supporter never writes to a table with an author_role column, and
+  // mapping them to "client" would record the client as having done it.
+  if (scope.actorRole === "supporter") throw new ForbiddenError("Supporters cannot write here")
   return scope.actorRole === "coach" ? "coach" : "client"
 }
 
@@ -251,4 +262,59 @@ export function editedBy(scope: Scope): {
   edited_at: string
 } {
   return { edited_by_role: authorRole(scope), edited_by_id: scope.actorId, edited_at: new Date().toISOString() }
+}
+
+/**
+ * A SUPPORTER reaching a client.
+ *
+ * NOT A RUNG ON THE COACH LADDER. A supporter's rights (read the tracker, the
+ * results and the profile; add jobs as suggestions) do not fit view, annotate
+ * or full, so they are not expressed as an access level a coach route could
+ * accept. Every coach and client route resolves the caller to a client_profiles
+ * row, which a supporter does not have, so those routes refuse them before this
+ * is ever consulted. Only the /api/supporter routes call it.
+ *
+ * Granted only when ALL hold, re-read on every request (so a revoke or the plan
+ * flag turning off takes effect on the next call):
+ *   - a client_supporters row for this login and this client
+ *   - status 'active'
+ *   - the supporters feature is allowed for the client (lib/features.ts)
+ * Deny throws, like resolveScope.
+ */
+export async function resolveSupporterScope(
+  supabase: SupabaseClient,
+  login: { userId: string },
+  clientProfileId: string,
+): Promise<Scope> {
+  const wanted = (clientProfileId ?? "").trim()
+  if (!wanted) throw new ForbiddenError("Forbidden")
+  const { data, error } = await supabase
+    .from("client_supporters")
+    .select("id, client_profile_id, status")
+    .eq("supporter_user_id", login.userId)
+    .eq("client_profile_id", wanted)
+    .eq("status", "active")
+    .maybeSingle()
+  if (error) throw new Error(`client_supporters lookup failed: ${error.message}`)
+  if (!data) throw new ForbiddenError("Forbidden")
+  if (!(await featureAllowed(supabase, "supporters", wanted))) {
+    throw new ForbiddenError("Forbidden: supporter access is not available for this client")
+  }
+  return {
+    actorId: login.userId,
+    actorRole: "supporter",
+    subjectId: wanted as SubjectId,
+    accessLevel: "supporter",
+    supporterId: data.id as string,
+  }
+}
+
+/** The request form: the bearer token, then the check above. */
+export async function resolveSupporterRequestScope(
+  req: Request,
+  supabase: SupabaseClient,
+  clientProfileId: string,
+): Promise<Scope> {
+  const { userId } = await getAuthedUser(req)
+  return resolveSupporterScope(supabase, { userId }, clientProfileId)
 }

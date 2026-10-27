@@ -1247,6 +1247,11 @@ export default function WRNSignalTabs(props: {
     const [magicLinkSent, setMagicLinkSent] = React.useState(false)
     const [accessToken, setAccessToken] = React.useState<string | null>(null)
     const [authedEmail, setAuthedEmail] = React.useState<string | null>(null)
+    // A SUPPORTER signed in here. Supporters follow a client's search from
+    // /dashboard/supporter and cannot run JobFit, so this component shows them
+    // the way there instead of a workspace whose every call would refuse them.
+    // Set from /api/profile, which answers 403 supporter_account for them.
+    const [isSupporter, setIsSupporter] = React.useState(false)
 
     const [copiedKey, setCopiedKey] = React.useState<string | null>(null)
     const copyText = (txt: string, key?: string) => {
@@ -1837,6 +1842,16 @@ export default function WRNSignalTabs(props: {
     async function loadPersonas(token: string) {
         setPersonasLoading(true)
         try {
+            const prof = await fetch(`${API_BASE}/api/profile`, {
+                headers: { Authorization: `Bearer ${token}` },
+            })
+            if (prof.status === 403) {
+                const pj = await prof.json().catch(() => null)
+                if (pj?.error === "supporter_account") {
+                    setIsSupporter(true)
+                    return
+                }
+            }
             const res = await fetch(`${API_BASE}/api/personas`, {
                 headers: { Authorization: `Bearer ${token}` },
             })
@@ -3730,6 +3745,32 @@ export default function WRNSignalTabs(props: {
                     >
                         Loading your session…
                     </div>
+                </div>
+            </div>
+        )
+    }
+
+    if (isLoggedIn && isSupporter) {
+        return (
+            <div style={outerFrame}>
+                <div style={{ maxWidth: 520, margin: "0 auto", padding: "64px 24px", textAlign: "center" as const }}>
+                    <div style={{ fontSize: 26, fontWeight: 800, color: L_NAVY, letterSpacing: -0.4 }}>
+                        Supporters can't run JobFit
+                    </div>
+                    <div style={{ fontSize: 15, color: L_MUTED, lineHeight: 1.6, marginTop: 12 }}>
+                        You're signed in as a supporter. You can see the job tracker, JobFit results and cover
+                        letters of the person you support, and suggest jobs for them, from your supporter view.
+                    </div>
+                    <button
+                        onClick={() => void openDashboard("/dashboard/supporter")}
+                        style={{
+                            marginTop: 24, background: L_NAVY, color: "#FFFFFF", border: "none",
+                            borderRadius: 10, padding: "13px 24px", fontSize: 15, fontWeight: 700,
+                            cursor: "pointer", fontFamily: "inherit",
+                        }}
+                    >
+                        Open my supporter view
+                    </button>
                 </div>
             </div>
         )

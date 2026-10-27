@@ -13,6 +13,7 @@ import { signOutCompletely } from "../../lib/signOut"
 // where it belongs the next time it is touched.
 import { openInSignal } from "./tracker/openInSignal"
 import { FeedbackSlideIn } from "../../components/feedback/FeedbackSlideIn"
+import { SupporterShell } from "./supporter/SupporterShell"
 import {
   HomeIcon, TrackIcon, NetworkIcon, ProfileIcon, CoachesHubIcon,
   SignOutIcon, ScoreAJobIcon, CompaniesIcon,
@@ -538,6 +539,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [passwordSubmitting, setPasswordSubmitting] = useState(false)
   const showDevAuth = process.env.NEXT_PUBLIC_DEV_AUTH === "true"
   const pathname = usePathname()
+  // SUPPORTERS live under /dashboard/supporter, with their own shell and no
+  // client or coach nav. They have no client_profiles row, so nothing below
+  // that reads /api/profile applies to them. The accept page renders signed in
+  // or not: it is where a new supporter signs in.
+  const isSupporterRoute = (pathname ?? "").startsWith("/dashboard/supporter")
+  const isSupporterAccept = (pathname ?? "").startsWith("/dashboard/supporter/accept")
 
   // HOOKS BEFORE EVERY EARLY RETURN. These sat further down, below the
   // `status === "loading"` and `status === "unauthed"` guards, so the moment
@@ -764,7 +771,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Check coach status once authed
   useEffect(() => {
-    if (status !== "authed") return
+    if (status !== "authed" || isSupporterRoute) return
     async function checkCoach() {
       try {
         const supabase = getSupabaseBrowser()
@@ -774,6 +781,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setAuthToken(token)
         setSignedInEmail(session?.user?.email ?? null)
         const res = await fetch("/api/profile", { headers: { Authorization: `Bearer ${token}` } })
+        if (res.status === 403) {
+          // A supporter who opened a client page: send them to their own.
+          const j = await res.json().catch(() => null)
+          if (j?.error === "supporter_account") window.location.replace("/dashboard/supporter")
+          return
+        }
         if (!res.ok) return
         const j = await res.json()
         setIsCoach(!!j.profile?.is_coach)
@@ -782,7 +795,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       } catch {}
     }
     checkCoach()
-  }, [status])
+  }, [status, isSupporterRoute])
 
   async function sendMagicLink(e: React.FormEvent) {
     e.preventDefault()
@@ -919,6 +932,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
     )
   }
+
+  if (isSupporterAccept) return <SupporterShell signedIn={status === "authed"}>{children}</SupporterShell>
 
   if (status === "unauthed") {
     return (
@@ -1136,6 +1151,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // After the auth gates above: a bare route is still signed-in only.
   if (isBareRoute(pathname)) return <>{children}</>
+  // Signed in, on the supporter area: their own shell, never the client nav.
+  if (isSupporterRoute) return <SupporterShell signedIn>{children}</SupporterShell>
 
   return (
     <div

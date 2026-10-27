@@ -38,6 +38,7 @@ import { ApplicationsView } from "./ApplicationsView"
 import { InterviewsView, type Interview } from "./InterviewsView"
 import { HistoryView, type Run } from "./HistoryView"
 import type { Application } from "./ApplicationCard"
+import type { Suggestion } from "./SuggestedStrip"
 
 const TABS = [
   { key: "applications", label: "Applications" },
@@ -70,19 +71,21 @@ function Tracker() {
   const [interviews, setInterviews] = useState<Interview[]>([])
   const [runs, setRuns] = useState<Run[]>([])
   const [coachRecs, setCoachRecs] = useState<any[]>([])
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setError(null)
-    // Four INDEPENDENT reads. A failure in any one leaves that section empty
+    // INDEPENDENT reads. A failure in any one leaves that section empty
     // rather than blanking the page: a student whose run history 500s should
     // still be able to work their applications.
-    const [aRes, iRes, rRes, cRes] = await Promise.allSettled([
+    const [aRes, iRes, rRes, cRes, sRes] = await Promise.allSettled([
       authFetch("/api/applications"),
       authFetch("/api/interviews"),
       authFetch("/api/runs"),
       authFetch("/api/coach/my-recommendations"),
+      authFetch("/api/me/suggestions"),
     ])
 
     async function body(r: PromiseSettledResult<Response>): Promise<any | null> {
@@ -90,12 +93,13 @@ function Tracker() {
       return r.value.json().catch(() => null)
     }
 
-    const [a, i, run, c] = await Promise.all([body(aRes), body(iRes), body(rRes), body(cRes)])
+    const [a, i, run, c, sug] = await Promise.all([body(aRes), body(iRes), body(rRes), body(cRes), body(sRes)])
     if (a) setApplications(a.applications || [])
     else setError("We couldn't load your applications. Refresh to try again.")
     if (i) setInterviews(i.interviews || [])
     if (run) setRuns(run.runs || [])
     if (c) setCoachRecs(c.recommendations || [])
+    if (sug) setSuggestions(sug.suggestions || [])
     setLoading(false)
   }, [])
 
@@ -215,6 +219,7 @@ function Tracker() {
           unanswered={unanswered}
           coachLabel={coachLabel}
           coachSourcedIds={coachSourcedIds}
+          suggestions={suggestions}
           onCreated={load}
         />
       )}

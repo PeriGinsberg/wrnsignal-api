@@ -5,7 +5,7 @@
 
 import { makeFakeDb } from "../_lib/fakeSupabase"
 import { renderSowEmail } from "../../lib/sow/email"
-import { coachBccFor, redactPrivateLinks, redactRow, PRIVATE_SOW_LINK, PRIVATE_SIGN_IN_LINK } from "../../lib/email/clientEmailLog"
+import { coachBccFor, redactPrivateLinks, redactRow, PRIVATE_SOW_LINK, PRIVATE_SIGN_IN_LINK, PRIVATE_SUPPORTER_LINK } from "../../lib/email/clientEmailLog"
 
 let pass = 0
 let fail = 0
@@ -32,6 +32,13 @@ async function main() {
   ok("pasted magic link shows the label", ih.includes(`<p>${PRIVATE_SIGN_IN_LINK}</p>`), ih)
   const it = redactPrivateLinks(`Sign in:\n${magic}\n\nThanks`)
   ok("magic link gone from text, rest kept", it === `Sign in:\n${PRIVATE_SIGN_IN_LINK}\n\nThanks`, it)
+
+  const sup = "https://wrnsignal-api.vercel.app/dashboard/supporter/accept?token=Zq3-abc_123"
+  const sh = redactPrivateLinks(`<a href="${sup}">Accept</a><p>${sup}</p>`, { html: true })
+  ok("supporter invite token gone from HTML", !sh.includes("Zq3-abc_123") && sh.includes(`<p>${PRIVATE_SUPPORTER_LINK}</p>`), sh)
+  ok("supporter invite token gone from text", redactPrivateLinks(`Accept:
+${sup}`) === `Accept:
+${PRIVATE_SUPPORTER_LINK}`)
 
   const plain = "https://wrnsignal-api.vercel.app/dashboard/practice/round-1 and https://workforcereadynow.com/consult-request"
   ok("ordinary links untouched", redactPrivateLinks(plain) === plain)

@@ -247,7 +247,30 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 3) No profile exists at all — auto-create
+    // 3) No profile exists at all. A SUPPORTER LOGIN IS NEVER MADE A CLIENT:
+    // without this, the first /api/profile read from any dashboard page would
+    // create a client_profiles row for them, and with it their own tracker and
+    // JobFit. One login, one role (20261115_client_supporters.sql). Checked by
+    // login and by the invited email, because a supporter who has signed in but
+    // not yet accepted has no supporter_user_id on the row.
+    const supporterChecks = [
+      supabase.from("client_supporters").select("id").eq("supporter_user_id", userId).limit(1),
+      ...(email
+        ? [supabase.from("client_supporters").select("id").eq("email", email).in("status", ["invited", "active"]).limit(1)]
+        : []),
+    ]
+    for (const { data: sup, error: supErr } of await Promise.all(supporterChecks)) {
+      if (supErr) throw new Error(`Supporter lookup failed: ${supErr.message}`)
+      if (sup?.length) {
+        return withCorsJson(
+          req,
+          { ok: false, error: "supporter_account", message: "This login is a supporter account, not a SIGNAL client account." },
+          403,
+        )
+      }
+    }
+
+    // Not a supporter either: auto-create
     const { data: created, error: createErr } = await supabase
       .from("client_profiles")
       .insert({

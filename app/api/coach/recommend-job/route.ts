@@ -263,6 +263,10 @@ export async function POST(req: NextRequest) {
         signal_score: fullAnalysis.score,
         signal_run_at: new Date().toISOString(),
         jobfit_run_id: jobfitRunId,
+        // Who added it, as a column: the coach who clicked, not the principal
+        // a delegate acts for.
+        added_by_role: "coach",
+        added_by_profile_id: coachProfileId,
       })
       .select("*")
       .single()

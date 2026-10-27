@@ -24,6 +24,8 @@ export const CLIENT_EMAIL_TYPES = [
   "practice_feedback",
   "networking_plan",
   "coach_message",
+  "supporter_invite",
+  "supporter_suggestion",
 ] as const
 export type ClientEmailType = (typeof CLIENT_EMAIL_TYPES)[number]
 
@@ -35,10 +37,13 @@ export const CLIENT_EMAIL_TYPE_LABEL: Record<ClientEmailType, string> = {
   practice_feedback: "Practice feedback",
   networking_plan: "Networking plan",
   coach_message: "Message",
+  supporter_invite: "Supporter invite",
+  supporter_suggestion: "Job from a supporter",
 }
 
 export const PRIVATE_SOW_LINK = "[private SOW link]"
 export const PRIVATE_SIGN_IN_LINK = "[private sign-in link]"
+export const PRIVATE_SUPPORTER_LINK = "[private supporter invite link]"
 
 // A URL runs to the next space, quote or angle bracket. In HTML an & inside it
 // is &amp;, which this still matches.
@@ -48,6 +53,8 @@ const PRIVATE_LINKS: { re: string; label: string }[] = [
   { re: `https?://[^\\s"'<>/]+/sow/[A-Za-z0-9_-]{20,}${URL_TAIL}`, label: PRIVATE_SOW_LINK },
   // A Supabase magic link: <project>.supabase.co/auth/v1/verify?token=...
   { re: `https?://[^\\s"'<>/]+/auth/v1/verify\\?${URL_TAIL}`, label: PRIVATE_SIGN_IN_LINK },
+  // A supporter invite: whoever holds the token can accept it (lib/supporters.ts).
+  { re: `https?://[^\\s"'<>/]+/dashboard/supporter/accept\\?${URL_TAIL}`, label: PRIVATE_SUPPORTER_LINK },
 ]
 
 /**

@@ -90,6 +90,9 @@ type ClientApplication = {
   company_name: string
   job_title: string
   application_status: string
+  /** 'supporter' when the client accepted a job a supporter suggested. */
+  added_by_role?: string
+  added_by_name?: string | null
   signal_decision: string | null
   signal_score: number | null
   job_url: string | null
@@ -315,6 +318,12 @@ export default function CoachClientPage() {
   const [inviteError, setInviteError] = useState<string | null>(null)
   const [coachRecs, setCoachRecs] = useState<CoachRec[]>([])
   const [clientApps, setClientApps] = useState<ClientApplication[]>([])
+  // Jobs the client's supporters suggested, waiting or decided. Read only here:
+  // only the client accepts or passes.
+  const [supporterSuggestions, setSupporterSuggestions] = useState<Array<{
+    id: string; company_name: string; job_title: string; status: "pending" | "accepted" | "dismissed"
+    added_by_name: string | null; created_at: string
+  }>>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -428,6 +437,7 @@ export default function CoachClientPage() {
       setInvitedAt((profileData.capture as Capture | null)?.invited_at ?? null)
       setClientApps(trackerData.applications || [])
       setCoachRecs(trackerData.recommendations || [])
+      setSupporterSuggestions(trackerData.supporter_suggestions || [])
 
       // Default to first ACTIVE persona for the Source-a-Job selector.
       // Archived personas should never be auto-selected for new analyses.
@@ -1122,6 +1132,27 @@ export default function CoachClientPage() {
             )}
           </div>
 
+          {/* Section A2: From supporters. Silent when the client has none. */}
+          {supporterSuggestions.length > 0 && (
+            <div style={{ marginBottom: 32 }}>
+              <div style={{ ...eyebrow, color: T.INK_LINK, marginBottom: 12 }}>
+                FROM SUPPORTERS <span style={{ color: T.DIM, fontWeight: 700 }}>({supporterSuggestions.length})</span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {supporterSuggestions.map((s) => (
+                  <div key={s.id} style={{ ...card, padding: 14, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                    <span style={{ fontSize: TYPE.body, fontWeight: 950, color: T.TEXT }}>{s.company_name}</span>
+                    <span style={{ fontSize: TYPE.secondary, color: T.MUTED }}>{s.job_title}</span>
+                    <span style={{ fontSize: TYPE.secondary, color: T.DIM }}>Added by {s.added_by_name ?? "a supporter"}</span>
+                    <span style={{ fontSize: TYPE.secondary, fontWeight: 800, color: s.status === "pending" ? T.INK_EMPHASIS : T.MUTED }}>
+                      {s.status === "pending" ? "Waiting for the client" : s.status === "accepted" ? "Added to the tracker" : "Not added"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Section B: Their Applications */}
           <div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
@@ -1194,6 +1225,9 @@ export default function CoachClientPage() {
                       >
                         <span style={{ fontSize: TYPE.body, fontWeight: 950, color: T.TEXT }}>{app.company_name}</span>
                         <span style={{ fontSize: TYPE.secondary, color: T.MUTED }}>— {app.job_title}</span>
+                        {app.added_by_role === "supporter" && (
+                          <span style={{ fontSize: TYPE.secondary, color: T.DIM }}>Added by {app.added_by_name ?? "a supporter"}</span>
+                        )}
                         <ApplicationStatusEditPill
                           value={app.application_status}
                           getToken={getToken}

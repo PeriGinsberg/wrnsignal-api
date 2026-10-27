@@ -97,7 +97,6 @@ const STATUS_WORDS: Record<string, string> = {
   offer: "Offer",
   rejected: "No offer",
   withdrawn: "Withdrawn",
-  coach_recommended: "Recommended by your coach",
 }
 const word = (s: string | null | undefined) =>
   s ? STATUS_WORDS[s] ?? s.replace(/_/g, " ") : "—"
@@ -155,7 +154,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     // control, not a convenience.
     const { data: app, error: appErr } = await supabase
       .from("signal_applications")
-      .select("id, profile_id, created_at, applied_date, application_status")
+      .select("id, profile_id, created_at, applied_date, application_status, added_by_role, added_by_supporter_id")
       .eq("id", id)
       .maybeSingle()
     if (appErr) throw new Error(`Application lookup failed: ${appErr.message}`)
@@ -211,14 +210,22 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const createdRow = history.find((h) => h.from_status === null)
     const initialStatus =
       createdRow?.to_status ?? history[0]?.from_status ?? app.application_status
+    // Who added it is a column (added_by_role), not a status. The status that
+    // used to stand for "a coach added this", coach_recommended, was never
+    // written by anything and is gone from the CHECK (20261115).
+    let addedLabel = "Added to your tracker"
+    if (app.added_by_role === "coach") addedLabel = "Added to your tracker by your coach"
+    if (app.added_by_role === "supporter") {
+      const { data: sup } = app.added_by_supporter_id
+        ? await supabase.from("client_supporters").select("display_name").eq("id", app.added_by_supporter_id).maybeSingle()
+        : { data: null }
+      addedLabel = `Suggested by ${sup?.display_name ?? "a supporter"}, added to your tracker`
+    }
     events.push({
       kind: "added",
       at: createdRow?.changed_at ?? app.created_at,
       actor: actorOf(createdRow?.changed_by ?? null),
-      label:
-        initialStatus === "coach_recommended"
-          ? "Added to your tracker by your coach"
-          : "Added to your tracker",
+      label: addedLabel,
       detail: initialStatus && initialStatus !== "saved" ? `as ${word(initialStatus)}` : null,
     })
 

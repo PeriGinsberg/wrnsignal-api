@@ -25,6 +25,7 @@ import {
 import { SearchIcon } from "../../../components/icons"
 import { ApplicationCard, type Application } from "./ApplicationCard"
 import { AddJobForm } from "./AddJobForm"
+import { SuggestedStrip, type Suggestion } from "./SuggestedStrip"
 import { sortForNeed } from "./applicationOrder"
 import { STATUS_FILTERS, statusLabel, statusMeaning } from "./vocab"
 import {
@@ -47,7 +48,7 @@ function timeOf(a: Application): number {
 }
 
 export function ApplicationsView({
-  applications, nextInterviewFor, unanswered, coachLabel, coachSourcedIds, onCreated,
+  applications, nextInterviewFor, unanswered, coachLabel, coachSourcedIds, suggestions = [], onCreated,
 }: {
   applications: Application[]
   nextInterviewFor: (a: Application) => string | null
@@ -66,6 +67,8 @@ export function ApplicationsView({
    * telling you about your own reply rather than about the job.
    */
   coachSourcedIds: Set<string>
+  /** Jobs a supporter suggested, waiting on the client. */
+  suggestions?: Suggestion[]
   onCreated: () => void
 }) {
   const [query, setQuery] = useState("")
@@ -161,6 +164,8 @@ export function ApplicationsView({
           <AddJobForm onClose={() => setAdding(false)} onCreated={() => { setAdding(false); onCreated() }} />
         </div>
       )}
+
+      <SuggestedStrip suggestions={suggestions} onHandled={onCreated} />
 
       {/* From your coach. INFORMATIONAL ONLY as of 2026-08-10 — it points at the
           jobs and carries no action of its own.

@@ -8,16 +8,11 @@
 //   - app/api/coach/clients/[clientId]/applications/[applicationId]/status
 //                                                  server validation
 //
-// The DB CHECK constraint on signal_applications.application_status
-// (supabase/migrations/20260413_coach_client_system.sql:162) accepts
-// 7 values: the 6 below PLUS 'coach_recommended'. We deliberately
-// exclude 'coach_recommended' from this list because it's a
-// system-set state (written by /api/coach/recommend-job when a coach
-// sources a job for a client), not a user-pickable option. A coach
-// editing a coach_recommended-status app via the dropdown picks one
-// of the 6 below to transition the app forward — the original
-// coach_recommended state is preserved in
-// signal_applications_status_history for audit.
+// These six are the whole of the DB CHECK constraint on
+// signal_applications.application_status
+// (supabase/migrations/20261115_client_supporters.sql). It used to accept a
+// seventh, 'coach_recommended', which nothing ever wrote: recommend-job saves
+// coach jobs as 'saved'. Who added a job is signal_applications.added_by_role.
 
 export const APP_STATUSES = [
   "saved",
@@ -34,9 +29,7 @@ export function isValidApplicationStatus(s: unknown): s is ApplicationStatus {
   return typeof s === "string" && (APP_STATUSES as readonly string[]).includes(s)
 }
 
-// Canonical pill colors for each status value. Includes 'coach_recommended'
-// since some cards display that state even though it's not user-pickable
-// in the dropdowns. Previously duplicated in:
+// Canonical pill colors for each status value. Previously duplicated in:
 //   - app/dashboard/tracker/page.tsx                STATUS_STYLE
 //   - app/dashboard/coach/applications-recent/page.tsx  APP_STATUS_STYLE
 // Both now import from here.
@@ -69,7 +62,4 @@ export const APP_STATUS_STYLE: Record<string, { bg: string; color: string }> = {
   offer: { bg: "#D6EFEC", color: "#00757A" },
   rejected: { bg: "#FBE3E2", color: "#C0322F" },
   withdrawn: { bg: "#E9EEF4", color: "#3D5878" },
-  // Ice fill, navy word: the same ground as `saved` but a different ink, since
-  // the two never mean the same thing and the label already says which.
-  coach_recommended: { bg: "#DCEDF9", color: "#08203F" },
 }

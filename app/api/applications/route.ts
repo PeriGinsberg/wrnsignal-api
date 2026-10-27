@@ -178,8 +178,25 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // The "Added by" tag on a job a supporter suggested and the client
+    // accepted. display_name is kept on the supporter row after a revoke, so
+    // the tag survives it.
+    const supporterIds = Array.from(
+      new Set((data || []).map((app: any) => app.added_by_supporter_id).filter(Boolean)),
+    ) as string[]
+    const supporterName = new Map<string, string>()
+    if (supporterIds.length > 0) {
+      const { data: sups } = await supabase
+        .from("client_supporters")
+        .select("id, display_name")
+        .in("id", supporterIds)
+        .eq("client_profile_id", profileId)
+      for (const s of sups || []) supporterName.set(s.id as string, s.display_name as string)
+    }
+
     const apps = (data || []).map((app: any) => ({
       ...app,
+      added_by_name: app.added_by_supporter_id ? supporterName.get(app.added_by_supporter_id) ?? null : null,
       interview_count: Array.isArray(app.signal_interviews) ? app.signal_interviews.length : 0,
       persona_name: app.client_personas?.name || null,
       // Read-only JD captured at scoring time, surfaced for interview prep

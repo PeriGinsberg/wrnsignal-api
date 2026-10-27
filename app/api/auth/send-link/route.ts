@@ -2,7 +2,8 @@
 //
 // Server-side magic link sender with profile gate.
 // Checks client_profiles BEFORE sending OTP:
-//   - No active profile → 403 (no_account)
+//   - No active profile → 403 (no_account), unless the email is an ACTIVE
+//     supporter, who gets a link to /dashboard/supporter
 //   - is_coach          → magic link to /dashboard/coach
 //   - coached           → magic link to /dashboard/coaching-hub
 //   - profile_complete  → magic link to /dashboard/tracker
@@ -60,6 +61,28 @@ export async function POST(req: NextRequest) {
     }
 
     if (!profile) {
+      // A supporter has no client profile by design. Only an ACCEPTED one signs
+      // in here; an invited one signs in from the link in their invite email,
+      // which is what proves they own the address.
+      const { data: sup, error: supErr } = await supabase
+        .from("client_supporters")
+        .select("id")
+        .eq("email", email)
+        .eq("status", "active")
+        .limit(1)
+      if (supErr) {
+        console.error("[send-link] Supporter lookup error:", supErr.message)
+        return withCorsJson(req, { error: "server_error", message: "Profile lookup failed." }, 500)
+      }
+      if (sup?.length) {
+        const redirectTo = `${getAppUrl(req)}/dashboard/supporter`
+        const { error: sendErr } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } })
+        if (sendErr) {
+          console.error("[send-link] OTP send error:", sendErr.message)
+          return withCorsJson(req, { error: "send_failed", message: sendErr.message }, 500)
+        }
+        return withCorsJson(req, { ok: true, sent: true, redirectTo, profileComplete: false })
+      }
       return withCorsJson(
         req,
         { error: "no_account", message: "No active account found for this email." },

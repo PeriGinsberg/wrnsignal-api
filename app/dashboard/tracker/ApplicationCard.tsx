@@ -48,6 +48,9 @@ export type Application = TrackedApp & {
   /** People on the networking board at the linked company. 0 when unlinked. */
   contact_count?: number
   coach_annotations?: unknown[]
+  /** 'supporter' when a supporter suggested it and the client accepted it. */
+  added_by_role?: string
+  added_by_name?: string | null
 }
 
 function initials(name: string): string {
@@ -191,6 +194,14 @@ export function ApplicationCard({
             >
               <span style={coachSt.dot} />
               <span style={{ ...coachSt.text, fontSize: 13 }}>{COACH_SOURCED_LABEL}</span>
+            </span>
+          )}
+          {/* A supporter suggested it and the client added it. Named, unlike
+              the coach marker: a client can have two supporters, and which
+              one sent it is the point. Muted, because the client chose it. */}
+          {a.added_by_role === "supporter" && (
+            <span data-testid="added-by-supporter" style={{ display: "block", color: S.text.muted, fontSize: 13, marginTop: 5 }}>
+              Added by {a.added_by_name ?? "a supporter"}
             </span>
           )}
         </span>

@@ -109,8 +109,26 @@ export async function GET(
       }
     }
 
+    // Supporters: the "Added by" tag on jobs they suggested, and every
+    // suggestion still waiting on the client (or already decided), so the
+    // coach sees what the family is sending.
+    const [{ data: supporters }, { data: suggestions }] = await Promise.all([
+      supabase
+        .from("client_supporters")
+        .select("id, display_name, status")
+        .eq("client_profile_id", clientProfileId),
+      supabase
+        .from("supporter_job_suggestions")
+        .select("id, supporter_id, company_name, job_title, job_url, location, note, status, application_id, decided_at, created_at")
+        .eq("client_profile_id", clientProfileId)
+        .order("created_at", { ascending: false })
+        .limit(50),
+    ])
+    const supporterName = new Map((supporters || []).map((s: any) => [s.id as string, s.display_name as string]))
+
     const enrichedApps = (applications || []).map((app: any) => ({
       ...app,
+      added_by_name: app.added_by_supporter_id ? supporterName.get(app.added_by_supporter_id) ?? null : null,
       interview_count: Array.isArray(app.signal_interviews) ? app.signal_interviews.length : 0,
       persona_name: app.client_personas?.name || null,
       // Read-only JD captured at scoring time (see /api/applications GET).
@@ -158,6 +176,10 @@ export async function GET(
       applications: enrichedApps,
       recommendations: recommendations || [],
       history: historyRuns,
+      supporter_suggestions: (suggestions || []).map((s: any) => ({
+        ...s,
+        added_by_name: supporterName.get(s.supporter_id) ?? null,
+      })),
     })
   } catch (err: any) {
     const msg = err?.message || String(err)
