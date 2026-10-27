@@ -133,7 +133,17 @@ ok("Jan 11 2027 internship start fails Alex", r({ startType: "date", startDate: 
 ok("June 15 2027 start passes", r({ startType: "date", startDate: "2027-06-15" }).length === 0)
 ok("May 15 2027 start passes (within a month of June 1)", r({ startType: "date", startDate: "2027-05-15" }).length === 0)
 ok("Summer 2027 passes", r({ startType: "season", startSeason: "summer", startYear: 2027 }).length === 0)
-ok("Spring 2027 fails (over by May 31)", r({ startType: "season", startSeason: "spring", startYear: 2027 }).join() === "start")
+ok("Spring 2027 fails (starts in March)", r({ startType: "season", startSeason: "spring", startYear: 2027 }).join() === "start")
+// Lindsey (free 2027-05-01, 2026-10-27): the season used to be read by its END,
+// so Spring 2027 (to May 31) passed her. #6 Nicholas & Lence: Spring 2027.
+const lindsey = { ...alex, availableFrom: "2027-05-01" }
+ok("Lindsey #6: Spring 2027 fails a client free May 1", r({ startType: "season", startSeason: "spring", startYear: 2027 }, lindsey).join() === "start")
+ok("Lindsey: Summer 2027 passes", r({ startType: "season", startSeason: "summer", startYear: 2027 }, lindsey).length === 0)
+ok("Lindsey: a June 1 2027 date passes", r({ startType: "date", startDate: "2027-06-01" }, lindsey).length === 0)
+// #11 Zèya and #14 Alzheimer's Association state no start but run around classes
+// now; enrichment reads them as immediate (lib/ingest/enrich.ts), which fails her.
+ok("Lindsey #11/#14: a school-year role read as immediate fails", r({ startType: "immediate" }, lindsey).join() === "start")
+ok("a season within the grace month passes (spring 2027, free April 1)", r({ startType: "season", startSeason: "spring", startYear: 2027 }, { ...alex, availableFrom: "2027-04-01" }).length === 0)
 ok("Fall 2026 fails", r({ startType: "season", startSeason: "fall", startYear: 2026 }).join() === "start")
 const now = { ...alex, availableFrom: null }
 ok("client with no available_from: no start rule", r({ startType: "immediate" }, now).length === 0)

@@ -74,5 +74,32 @@ ok("multi-office: no market link for a client elsewhere", chooseMarketLink("Will
 ok("no markets: none", chooseMarketLink("Willis Towers Watson", multi, []) === null)
 ok("the default choice is unchanged (LinkedIn)", chooseApplyLink("Willis Towers Watson", multi)?.url === multi[0].url)
 
+// Lindsey's review (2026-10-27).
+// #1, #6, #9: Handshake needs an account to see the job. A republisher, not a board.
+ok("Handshake is a sign-up site, ranked as a republisher", classifyLink("https://app.joinhandshake.com/public/jobs/11381824", "Link Logistics Real Estate").kind === "republisher")
+ok("an employer link beats Handshake", chooseApplyLink("Acme Corp", [{ url: "https://app.joinhandshake.com/public/jobs/1" }, { url: "https://careers.acmecorp.com/jobs/1" }])?.kind === "employer")
+ok("a board link beats Handshake", chooseApplyLink("Acme Corp", [{ url: "https://app.joinhandshake.com/public/jobs/1" }, { url: "https://www.indeed.com/viewjob?jk=1" }])?.kind === "board")
+ok("Handshake alone is still chosen", chooseApplyLink("Acme Corp", [{ url: "https://app.joinhandshake.com/public/jobs/1" }])?.url === "https://app.joinhandshake.com/public/jobs/1")
+// #7 Avenue Z: Google merged Claim Health's same-titled job into the listing.
+const avenueZ = [
+  { url: "https://www.builtinnyc.com/job/content-marketing-intern/11688771", source: "Built In NYC" },
+  { url: "https://www.indeed.com/viewjob?jk=e8606f799720b128", source: "indeed.com" },
+  { url: "https://www.ycombinator.com/companies/claim-health/jobs/jevdxiH-content-marketing-intern", source: "ycombinator.com" },
+  { url: "https://jobs.ashbyhq.com/claim-health/08f325db-b705-4359-b5b9-84d5660ceac6", source: "ashbyhq.com" },
+]
+ok("Lindsey #7: another company's Ashby account is not Avenue Z's employer link", classifyLink(avenueZ[3].url, "Avenue Z").rank > classifyLink(avenueZ[1].url, "Avenue Z").rank)
+ok("Lindsey #7: Indeed is chosen over Claim Health's Ashby page", chooseApplyLink("Avenue Z", avenueZ)?.url === avenueZ[1].url)
+ok("an ATS account that names the employer is still first", chooseApplyLink("Avenue Z", [...avenueZ, { url: "https://jobs.ashbyhq.com/avenuez/123", source: "ashbyhq.com" }])?.url === "https://jobs.ashbyhq.com/avenuez/123")
+ok("an opaque ATS account is still the employer kind when it is the only link", chooseApplyLink("JPMorgan Chase", [{ url: "https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/job/1" }])?.kind === "employer")
+// Capital One (Daniel's and Sami's #2): the LinkedIn link is a Clorox job.
+const capOne = [
+  { url: "https://talents.vaia.com/companies/capital-one/business-analyst-associate-august-2027-136678194/", source: "Talents By Vaia" },
+  { url: "https://www.linkedin.com/jobs/view/sales-analyst-recent-grad-summer-2027-start-at-the-clorox-company-4469175642", source: "linkedin.com" },
+]
+ok("Capital One: a LinkedIn job at the Clorox Company ranks last", classifyLink(capOne[1].url, "Capital one").rank === 400)
+ok("Capital One: the Vaia copy of the right job is chosen instead", chooseApplyLink("Capital one", capOne)?.url === capOne[0].url)
+ok("a LinkedIn job at the same employer is still a board link", classifyLink("https://www.linkedin.com/jobs/view/business-analyst-at-capital-one-4469175699", "Capital One").kind === "board")
+ok("a LinkedIn address without '-at-' is still a board link", classifyLink("https://www.linkedin.com/jobs/view/4469175699", "Capital One").kind === "board")
+
 console.log(failures ? `\n${failures} failure(s)` : "\nall passed")
 if (failures) process.exit(1)

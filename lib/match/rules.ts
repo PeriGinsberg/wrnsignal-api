@@ -27,8 +27,9 @@ import { citiesOf } from "../ingest/link"
  *   2026-10-25.4  start timing against available_from; employment types read
  *   2026-10-26.1  an internship-only client fails a stated non-internship type
  *   2026-10-26.2  a place abroad that the title states is the posting's location
+ *   2026-10-27.1  a season starts on its first month, not its last
  */
-export const RULES_VERSION = "2026-10-26.2"
+export const RULES_VERSION = "2026-10-27.1"
 
 /** Country names a location can end with. US spellings are handled separately. */
 const COUNTRIES = new Set([
@@ -153,8 +154,13 @@ export type RuleFailure = "location" | "years" | "graduation" | "excluded_title"
 
 /** "Clearly before" allows a month: a June 1 start for a client free June 15 is not a mismatch. */
 const START_GRACE_DAYS = 31
-const SEASON_END: Record<string, (y: number) => string> = {
-  spring: (y) => `${y}-05-31`, summer: (y) => `${y}-08-31`, fall: (y) => `${y}-11-30`, winter: (y) => `${y}-03-31`,
+/**
+ * A season's start: the months client_match_queue's tiers use. It used to be
+ * the season's END, so a Spring 2027 internship (ending 2027-05-31) passed a
+ * client free from 2027-05-01 (Lindsey's #6, 2026-10-27).
+ */
+const SEASON_START: Record<string, (y: number) => string> = {
+  spring: (y) => `${y}-03-01`, summer: (y) => `${y}-06-01`, fall: (y) => `${y}-09-01`, winter: (y) => `${y}-01-01`,
 }
 const addDays = (d: string, n: number) => new Date(Date.parse(d + "T00:00:00Z") + n * 86400e3).toISOString().slice(0, 10)
 
@@ -163,12 +169,12 @@ const addDays = (d: string, n: number) => new Date(Date.parse(d + "T00:00:00Z") 
  * can fail; "start not stated" always passes.
  *   immediate -> fails when the client is not free within a month of today
  *   date      -> fails when it is more than a month before available_from
- *   season    -> fails when the whole season is over before available_from
+ *   season    -> its first month, as a date: fails when more than a month before available_from
  */
 export function startsTooEarly(availableFrom: string, p: Pick<MatchPosting, "startType" | "startDate" | "startSeason" | "startYear">, today: string): boolean {
   if (p.startType === "immediate") return availableFrom > addDays(today, START_GRACE_DAYS)
   if (p.startType === "date" && p.startDate) return addDays(p.startDate, START_GRACE_DAYS) < availableFrom
-  if (p.startType === "season" && p.startSeason && p.startYear) return SEASON_END[p.startSeason](p.startYear) < availableFrom
+  if (p.startType === "season" && p.startSeason && p.startYear) return addDays(SEASON_START[p.startSeason](p.startYear), START_GRACE_DAYS) < availableFrom
   return false
 }
 

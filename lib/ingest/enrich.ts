@@ -266,7 +266,11 @@ ${INDUSTRY_RULES}
                 summer, fall, winter) and start_year ("Summer 2027 internship",
                 "Fall 2026 start", "spring semester 2027"). Treat autumn as fall.
     "immediate" "immediately", "ASAP", "immediate start", "start right away",
-                "urgently hiring to start now".
+                "urgently hiring to start now". Also a SCHOOL-YEAR role that
+                states no start: part-time work fitted around classes now
+                ("around your class schedule", "based on school load",
+                "during the semester", "during the academic year", "one year
+                commitment" for a student). It is running now, not next summer.
     "not_stated" anything else, including no start mentioned at all.
 - Only the job's start. NOT a start: the application deadline, the posting
   date, the graduation date asked of candidates, an interview date, or when
