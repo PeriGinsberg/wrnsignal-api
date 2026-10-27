@@ -30,6 +30,96 @@ export type Market = {
    * fails a posting.
    */
   preferred?: boolean
+  /**
+   * Only for these employers (an EMPLOYER_PRESETS key): the market's states
+   * count only when the posting's employer is on that list. Anthony,
+   * 2026-10-27: pro teams and leagues anywhere in the US, everything else near
+   * NYC.
+   */
+  employers?: string
+}
+
+/**
+ * Employer lists a market can be limited to. Full names only: a bare nickname
+ * ("Liberty", "Kings", "Heat") would also match Liberty Mutual or Burger King.
+ * Matched as whole words on the company name, case and punctuation ignored.
+ */
+export const EMPLOYER_PRESETS: Record<string, string[]> = {
+  pro_sports: [
+    // leagues and their offices
+    "nfl", "national football league", "nba", "national basketball association", "nba g league", "wnba",
+    "women's national basketball association", "mlb", "major league baseball", "minor league baseball", "milb", "nhl",
+    "national hockey league", "mls", "major league soccer", "nwsl", "national women's soccer league", "usl",
+    "united soccer league", "pwhl", "professional women's hockey league",
+    // groups that run teams
+    "kroenke sports & entertainment", "harris blitzer sports & entertainment", "monumental sports & entertainment",
+    "maple leaf sports & entertainment", "fenway sports group", "madison square garden sports", "msg sports",
+    "ilitch sports + entertainment", "pegula sports and entertainment", "comcast spectacor", "rock entertainment group",
+    "tampa bay sports & entertainment", "bse global", "jacksonville jaguars llc",
+    // NFL
+    "arizona cardinals", "atlanta falcons", "baltimore ravens", "buffalo bills", "carolina panthers", "chicago bears",
+    "cincinnati bengals", "cleveland browns", "dallas cowboys", "denver broncos", "detroit lions", "green bay packers",
+    "houston texans", "indianapolis colts", "jacksonville jaguars", "kansas city chiefs", "las vegas raiders",
+    "los angeles chargers", "los angeles rams", "miami dolphins", "minnesota vikings", "new england patriots",
+    "new orleans saints", "new york giants", "new york jets", "philadelphia eagles", "pittsburgh steelers",
+    "san francisco 49ers", "seattle seahawks", "tampa bay buccaneers", "tennessee titans", "washington commanders",
+    // NBA
+    "atlanta hawks", "boston celtics", "brooklyn nets", "charlotte hornets", "chicago bulls", "cleveland cavaliers",
+    "dallas mavericks", "denver nuggets", "detroit pistons", "golden state warriors", "houston rockets", "indiana pacers",
+    "la clippers", "los angeles clippers", "los angeles lakers", "memphis grizzlies", "miami heat", "milwaukee bucks",
+    "minnesota timberwolves", "new orleans pelicans", "new york knicks", "oklahoma city thunder", "orlando magic",
+    "philadelphia 76ers", "phoenix suns", "portland trail blazers", "sacramento kings", "san antonio spurs",
+    "toronto raptors", "utah jazz", "washington wizards",
+    // MLB
+    "arizona diamondbacks", "atlanta braves", "baltimore orioles", "boston red sox", "chicago cubs", "chicago white sox",
+    "cincinnati reds", "cleveland guardians", "colorado rockies", "detroit tigers", "houston astros", "kansas city royals",
+    "los angeles angels", "los angeles dodgers", "miami marlins", "milwaukee brewers", "minnesota twins", "new york mets",
+    "new york yankees", "oakland athletics", "sacramento athletics", "las vegas athletics", "philadelphia phillies",
+    "pittsburgh pirates", "san diego padres", "san francisco giants", "seattle mariners", "st louis cardinals",
+    "tampa bay rays", "texas rangers", "toronto blue jays", "washington nationals",
+    // NHL
+    "anaheim ducks", "boston bruins", "buffalo sabres", "calgary flames", "carolina hurricanes", "chicago blackhawks",
+    "colorado avalanche", "columbus blue jackets", "dallas stars", "detroit red wings", "edmonton oilers",
+    "florida panthers", "los angeles kings", "minnesota wild", "montreal canadiens", "nashville predators",
+    "new jersey devils", "new york islanders", "new york rangers", "ottawa senators", "philadelphia flyers",
+    "pittsburgh penguins", "san jose sharks", "seattle kraken", "st louis blues", "tampa bay lightning",
+    "toronto maple leafs", "utah mammoth", "utah hockey club", "vancouver canucks", "vegas golden knights",
+    "washington capitals", "winnipeg jets",
+    // MLS
+    "atlanta united", "austin fc", "charlotte fc", "chicago fire", "fc cincinnati", "colorado rapids", "columbus crew",
+    "dc united", "fc dallas", "houston dynamo", "inter miami", "la galaxy", "lafc", "los angeles fc", "minnesota united",
+    "cf montreal", "nashville sc", "new england revolution", "new york city fc", "nycfc", "new york red bulls",
+    "orlando city", "philadelphia union", "portland timbers", "real salt lake", "san diego fc", "san jose earthquakes",
+    "seattle sounders", "sporting kansas city", "st louis city sc", "toronto fc", "vancouver whitecaps",
+    // WNBA
+    "atlanta dream", "chicago sky", "connecticut sun", "dallas wings", "golden state valkyries", "indiana fever",
+    "las vegas aces", "los angeles sparks", "minnesota lynx", "new york liberty", "phoenix mercury", "seattle storm",
+    "washington mystics", "toronto tempo", "portland fire",
+    // NWSL
+    "angel city fc", "bay fc", "chicago stars fc", "houston dash", "kansas city current", "gotham fc",
+    "north carolina courage", "orlando pride", "portland thorns", "racing louisville", "san diego wave", "seattle reign",
+    "utah royals", "washington spirit", "boston legacy", "denver summit",
+  ],
+}
+
+/** "St. Louis Cardinals, LLC" -> " st louis cardinals llc ": ampersand and plus kept as words, dots dropped. */
+const employerWords = (s: string) =>
+  ` ${s.toLowerCase().replace(/[.’']/g, "").replace(/&/g, " & ").replace(/\+/g, " + ").replace(/[^a-z0-9&+]+/g, " ").trim()} `
+
+/** Is this company on the preset's list? Whole words, so "kings" alone never matches. */
+export function employerInPreset(preset: string, company: string): boolean {
+  const names = EMPLOYER_PRESETS[preset]
+  if (!names) throw new UnknownEmployerPresetError(preset)
+  const co = employerWords(company)
+  return names.some((n) => co.includes(employerWords(n)))
+}
+
+/** A market names an employer list EMPLOYER_PRESETS does not have. Matching stops rather than guessing. */
+export class UnknownEmployerPresetError extends Error {
+  constructor(public preset: string) {
+    super(`unknown employer preset "${preset}": add it to EMPLOYER_PRESETS in lib/match/criteria.ts or fix the market`)
+    this.name = "UnknownEmployerPresetError"
+  }
 }
 
 export type MatchCriteria = {

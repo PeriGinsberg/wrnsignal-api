@@ -194,5 +194,25 @@ ok("Chicago preferred: Boston and a bare 'United States' are not", !inPreferredM
 ok("no preferred market: nothing is preferred", !inPreferredMarket(sami.markets, posted("New York, NY")))
 ok("a market written as a city can be preferred", inPreferredMarket([{ name: "Cincinnati, OH", states: ["oh"], preferred: true }], posted("Cincinnati, OH")))
 
+// Anthony (2026-10-27): pro team or league anywhere in the US; everything else
+// within 50 miles of NYC, plus remote.
+const anthony = criteriaFromRow({ client_profile_id: "anthony", active: true, remote_ok: true, job_types: ["full_time"],
+  markets: [{ name: "nyc", states: PRESET_STATES.nyc, preferred: true }, { name: "united_states", states: PRESET_STATES.united_states, employers: "pro_sports" }] }, { profile_structured: {} })
+const job = (company: string, location: string) => applyRules(anthony, { ...fromPosting({ title: "Partnerships Coordinator", company, location }) }, TODAY)
+ok("Anthony: a team in Denver passes", job("Denver Broncos", "Englewood, CO").length === 0)
+ok("Anthony: a league office in Dallas passes", job("NBA", "Dallas, TX").length === 0)
+ok("Anthony: a team-owning group passes", job("Kroenke Sports & Entertainment", "Denver, CO").length === 0)
+ok("Anthony: punctuation and suffixes ignored", job("St. Louis Cardinals, LLC", "St. Louis, MO").length === 0 && job("D.C. United", "Washington, DC").length === 0)
+ok("Anthony: an agency in Chicago fails", job("Wasserman", "Chicago, IL").join() === "location")
+ok("Anthony: an agency in New York passes", job("Wasserman", "New York, NY").length === 0)
+ok("Anthony: NJ is inside the NYC market", job("Octagon", "Jersey City, NJ").length === 0)
+ok("Anthony: a nickname alone is not a team (Liberty Mutual, Burger King)", job("Liberty Mutual Insurance", "Boston, MA").join() === "location" && job("Burger King", "Miami, FL").join() === "location")
+ok("Anthony: a remote role passes anywhere", applyRules(anthony, fromPosting({ title: "Partnerships Coordinator", company: "Wasserman", location: "Remote, US" }), TODAY).length === 0)
+ok("Anthony: a team abroad still fails", job("Toronto Raptors", "Toronto, ON, Canada").join() === "location")
+ok("Anthony: the NYC market is preferred, the team market is not", inPreferredMarket(anthony.markets, posted("New York, NY")) && !inPreferredMarket(anthony.markets, posted("Denver, CO")))
+let unknownPreset = false
+try { criteriaFromRow({ markets: [{ name: "united_states", states: ["co"], employers: "pro_sport" }] }, { profile_structured: {} }) } catch (e: any) { unknownPreset = e.name === "UnknownEmployerPresetError" }
+ok("an unknown employer list stops matching", unknownPreset)
+
 console.log(failures ? `\n${failures} failure(s)` : "\nall passed")
 if (failures) process.exit(1)
