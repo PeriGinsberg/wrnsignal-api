@@ -78,7 +78,6 @@ export type EmailJob = { title: string; company: string; url: string }
 export function coachJobEmailContent(args: {
   clientFirstName: string
   coachName: string
-  coachFirstName: string
   jobs: EmailJob[]
   trackerUrl: string
 }): { subject: string; html: string; text: string } {
@@ -90,7 +89,6 @@ export function coachJobEmailContent(args: {
     : `${args.coachName} added ${args.jobs.length} jobs to your tracker: ${label(first)} and ${rest.length} more`
 
   const hi = `<div style="font-size:18px;color:#2A0F35;margin-bottom:16px;">Hi ${escapeHtml(args.clientFirstName)},</div>`
-  const ask = `Open it to see how you scored, and let ${escapeHtml(args.coachFirstName)} know what you think.`
   const html = one
     ? `${hi}
 
@@ -98,7 +96,7 @@ export function coachJobEmailContent(args: {
   ${escapeHtml(args.coachName)} added a job to your Job Tracker: <strong style="color:#2A0F35;">${escapeHtml(label(first))}</strong>.
 </p>
 
-<p style="${P}">${ask}</p>
+<p style="${P}">Open it and review it for yourself. Read each bullet and decide if this job fits your search goals.</p>
 
 <div style="text-align:center;margin-bottom:24px;">
   <a href="${first.url}" style="${BUTTON}">Open the job</a>
@@ -113,7 +111,7 @@ export function coachJobEmailContent(args: {
 ${args.jobs.map((j) => `  <li style="margin-bottom:6px;"><a href="${j.url}" style="${LINK}">${escapeHtml(label(j))}</a></li>`).join("\n")}
 </ul>
 
-<p style="${P}">Open each one to see how you scored, and let ${escapeHtml(args.coachFirstName)} know what you think.</p>
+<p style="${P}">Open each one and review it for yourself. Read each bullet and decide if this job fits your search goals.</p>
 
 <div style="text-align:center;margin-bottom:24px;">
   <a href="${args.trackerUrl}" style="${BUTTON}">Open my Job Tracker</a>
@@ -124,7 +122,7 @@ ${args.jobs.map((j) => `  <li style="margin-bottom:6px;"><a href="${j.url}" styl
 
 ${args.coachName} added a job to your Job Tracker: ${label(first)}.
 
-Open it to see how you scored, and let ${args.coachFirstName} know what you think:
+Open it and review it for yourself. Read each bullet and decide if this job fits your search goals.
 ${first.url}`
     : `Hi ${args.clientFirstName},
 
@@ -132,7 +130,9 @@ ${args.coachName} added ${args.jobs.length} jobs to your Job Tracker:
 
 ${args.jobs.map((j) => `- ${label(j)}: ${j.url}`).join("\n")}
 
-Open each one to see how you scored, and let ${args.coachFirstName} know what you think. Your Job Tracker:
+Open each one and review it for yourself. Read each bullet and decide if this job fits your search goals.
+
+Your Job Tracker:
 ${args.trackerUrl}`
 
   return { subject, html, text }
@@ -216,7 +216,6 @@ export async function sendDueCoachJobEmails(
       content: coachJobEmailContent({
         clientFirstName: firstWord(client.name, "there"),
         coachName,
-        coachFirstName: coachName === "Your coach" ? "your coach" : firstWord(coachName, "your coach"),
         jobs,
         trackerUrl: `${opts.appUrl}/dashboard/tracker`,
       }),

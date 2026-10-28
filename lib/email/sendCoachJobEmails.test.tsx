@@ -24,7 +24,7 @@ describe("readyBatches", () => {
   })
 })
 
-const base = { clientFirstName: "Sam", coachName: "Erin Lopez", coachFirstName: "Erin", trackerUrl: "https://app.example/dashboard/tracker" }
+const base = { clientFirstName: "Sam", coachName: "Erin Lopez", trackerUrl: "https://app.example/dashboard/tracker" }
 const J1 = { title: "Analyst", company: "Acme & Co", url: "https://app.example/dashboard/tracker/app-1" }
 const J2 = { title: "Associate", company: "Globex", url: "https://app.example/dashboard/tracker/app-2" }
 const J3 = { title: "Planner", company: "Initech", url: "https://app.example/dashboard/tracker/app-3" }
@@ -36,7 +36,8 @@ describe("coachJobEmailContent", () => {
     expect(c.html).toContain("Analyst at Acme &amp; Co")
     expect(c.html).toContain(`href="${J1.url}"`)
     expect(c.text).toContain(J1.url)
-    expect(c.text).toContain("let Erin know")
+    expect(c.html).toContain("Open it and review it for yourself. Read each bullet and decide if this job fits your search goals.")
+    expect(c.text).toContain("Open it and review it for yourself. Read each bullet and decide if this job fits your search goals.")
   })
 
   it("several jobs: one email that names and links each, plus the tracker", () => {
@@ -47,6 +48,8 @@ describe("coachJobEmailContent", () => {
       expect(c.text).toContain(`${j.title} at ${j.company}: ${j.url}`)
     }
     expect(c.html).toContain(`href="${base.trackerUrl}"`)
+    expect(c.html).toContain("Open each one and review it for yourself. Read each bullet and decide if this job fits your search goals.")
+    expect(c.text).toContain("Open each one and review it for yourself. Read each bullet and decide if this job fits your search goals.")
   })
 
   it("escapes names in the HTML and uses no em dashes", () => {
