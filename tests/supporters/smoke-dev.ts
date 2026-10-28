@@ -1,8 +1,9 @@
-// Run (DEV ONLY), after 20261115_client_supporters.sql and
-// 20261116_suggestion_job_description.sql are applied on dev and
+// Run (DEV ONLY), after 20261115_client_supporters.sql,
+// 20261116_suggestion_job_description.sql and
+// 20261117_supporter_extraction_usage.sql are applied on dev and
 // feature_modes.supporters is set to 'free' there:
 //
-//   set -a; . <(grep -E '^(SUPABASE_URL|SUPABASE_SERVICE_ROLE_KEY|NEXT_PUBLIC_SUPABASE_ANON_KEY)=' .env.local | sed 's/\r$//'); set +a
+//   set -a; . <(grep -E '^(SUPABASE_URL|SUPABASE_SERVICE_ROLE_KEY|NEXT_PUBLIC_SUPABASE_ANON_KEY|ANTHROPIC_API_KEY)=' .env.local | sed 's/\r$//'); set +a
 //   NODE_OPTIONS=--use-system-ca npx tsx tests/supporters/smoke-dev.ts
 //
 // The supporter flow end to end against the real dev database, by calling the
@@ -12,9 +13,16 @@
 //
 // NO EMAIL IS SENT: POSTMARK_API_KEY is cleared below, so every send fails
 // gracefully and the routes report email_sent / client_emailed false.
+//
+// ONE AI CALL: the auto-fill paste check sends one long posting to Claude
+// Haiku through parse-job-text's code (a few cents). The link checks read a
+// page served from this process, so they make no AI call and touch no
+// outside site.
 
 import { createClient } from "@supabase/supabase-js"
 import { createHash, randomBytes } from "node:crypto"
+import { createServer } from "node:http"
+import type { AddressInfo } from "node:net"
 
 delete process.env.POSTMARK_API_KEY
 
@@ -25,8 +33,8 @@ if (!URL_.includes("zydrqckpwidipwbhrfgd")) {
   console.error(`Refusing to run: SUPABASE_URL is not dev (${URL_ || "unset"}).`)
   process.exit(2)
 }
-if (!SERVICE || !ANON) {
-  console.error("SUPABASE_SERVICE_ROLE_KEY and NEXT_PUBLIC_SUPABASE_ANON_KEY are required.")
+if (!SERVICE || !ANON || !process.env.ANTHROPIC_API_KEY) {
+  console.error("SUPABASE_SERVICE_ROLE_KEY, NEXT_PUBLIC_SUPABASE_ANON_KEY and ANTHROPIC_API_KEY are required.")
   process.exit(2)
 }
 
@@ -48,6 +56,23 @@ function ok(label: string, cond: boolean, detail?: unknown) {
 }
 
 const made = { users: [] as string[], profileId: null as string | null }
+
+// A job page with JSON-LD, and one that blocks us, both on 127.0.0.1.
+const JOB_PAGE_DESC = `Posting-${RUN}. You will reconcile accounts, build monthly reporting for the controller, and support the audit. Requirements: a degree in accounting or finance and strong Excel.`
+const jobPages = createServer((req, res) => {
+  if (req.url === "/job") {
+    const ld = {
+      "@context": "https://schema.org", "@type": "JobPosting", title: "Staff Accountant",
+      hiringOrganization: { name: "Umbrella Corp" }, description: JOB_PAGE_DESC,
+      jobLocation: { address: { addressLocality: "Raccoon City", addressRegion: "MO", addressCountry: "US" } },
+    }
+    res.writeHead(200, { "Content-Type": "text/html" })
+    res.end(`<html><head><script type="application/ld+json">${JSON.stringify(ld)}</script></head><body><h1>Staff Accountant</h1></body></html>`)
+  } else {
+    res.writeHead(403, { "Content-Type": "text/html" })
+    res.end("<html><body>Access denied</body></html>")
+  }
+})
 
 async function login(email: string): Promise<{ userId: string; jwt: string }> {
   const { data, error } = await admin.auth.admin.createUser({ email, password: PASSWORD, email_confirm: true })
@@ -93,6 +118,8 @@ async function main() {
   const supProfile = await import("../../app/api/supporter/clients/[clientId]/profile/route")
   const supSuggest = await import("../../app/api/supporter/clients/[clientId]/suggestions/route")
   const supSuggestion = await import("../../app/api/supporter/clients/[clientId]/suggestions/[id]/route")
+  const supExtract = await import("../../app/api/supporter/clients/[clientId]/extract-job/route")
+  const parseUrlRoute = await import("../../app/api/parse-job-url/route")
   const profileRoute = await import("../../app/api/profile/route")
   const applications = await import("../../app/api/applications/route")
 
@@ -224,6 +251,68 @@ async function main() {
   const del = await call(supSuggestion.DELETE, { path: "", jwt: momLogin.jwt, method: "DELETE", params: { clientId: CLIENT, id: s3.json.suggestion.id } })
   ok("Mom deletes a pending suggestion", del.json?.ok === true, del.json)
 
+  console.log("\nauto-fill")
+  await new Promise<void>((r) => jobPages.listen(0, "127.0.0.1", () => r()))
+  const PAGES = `http://127.0.0.1:${(jobPages.address() as AddressInfo).port}`
+  const usedToday = async () =>
+    (await admin.from("supporter_extraction_usage").select("used").eq("supporter_user_id", momLogin.userId).maybeSingle()).data?.used ?? 0
+  const { count: sugBefore } = await admin.from("supporter_job_suggestions").select("id", { count: "exact", head: true }).eq("client_profile_id", CLIENT)
+  const extract = (jwt: string, body: unknown) => call(supExtract.POST, { path: "", jwt, method: "POST", params: { clientId: CLIENT }, body })
+
+  const fromLink = await extract(momLogin.jwt, { url: `${PAGES}/job` })
+  ok("a job link fills company, title, location, link and description", fromLink.status === 200 &&
+    fromLink.json?.job?.company_name === "Umbrella Corp" && fromLink.json?.job?.job_title === "Staff Accountant" &&
+    fromLink.json?.job?.location === "Raccoon City, MO, US" && fromLink.json?.job?.job_url === `${PAGES}/job` &&
+    fromLink.json?.job?.job_description === JOB_PAGE_DESC, fromLink.json)
+  ok("...and counts one fill", fromLink.json?.remaining === 19 && (await usedToday()) === 1, { remaining: fromLink.json?.remaining })
+  const jobfitRoute = await call(parseUrlRoute.POST, { path: "/api/parse-job-url", method: "POST", body: { url: `${PAGES}/job` } })
+  ok("JobFit's parse-job-url reads the same page the same way", jobfitRoute.status === 200 &&
+    jobfitRoute.json?.companyName === fromLink.json?.job?.company_name && jobfitRoute.json?.jobTitle === fromLink.json?.job?.job_title &&
+    jobfitRoute.json?.location === fromLink.json?.job?.location && jobfitRoute.json?.jobDescription === fromLink.json?.job?.job_description, jobfitRoute.json)
+
+  const blocked = await extract(momLogin.jwt, { url: `${PAGES}/blocked` })
+  ok("a link the site blocks asks for the description instead", blocked.status === 422 && blocked.json?.suggestion === "paste_text", blocked.json)
+  ok("...and the failed fetch still counts", (await usedToday()) === 2)
+
+  const short = await extract(momLogin.jwt, { text: "Analyst at Acme" })
+  ok("a too-short paste is refused", short.status === 400, short.json)
+  ok("...without costing a fill", (await usedToday()) === 2)
+
+  // Past parse-job-text's 8,000-character description cap, with a marker at
+  // the end, so a whole description proves the raised cap on this route.
+  const duties = Array.from({ length: 110 }, (_, i) =>
+    `- Duty ${i + 1}: reconcile general ledger account ${1000 + i}, explain any variance over the threshold, and file the support in the close binder.`)
+  const longPaste = [
+    "Senior Accountant", "Globex Corporation", "Springfield, OR (Hybrid)", "",
+    "About the role", "Globex is hiring a Senior Accountant to own month-end close for two business units.", "",
+    "Responsibilities", ...duties, "",
+    "Requirements", "- Bachelor's degree in Accounting", "- 3+ years of public or corporate accounting", "",
+    `Reference code END-${RUN}`,
+  ].join("\n")
+  const fromText = await extract(momLogin.jwt, { text: longPaste })
+  const desc = String(fromText.json?.job?.job_description ?? "")
+  ok("a pasted description fills company, title and location", fromText.status === 200 &&
+    /globex/i.test(fromText.json?.job?.company_name ?? "") && /senior accountant/i.test(fromText.json?.job?.job_title ?? "") &&
+    /springfield/i.test(fromText.json?.job?.location ?? ""), fromText.json?.job && { ...fromText.json.job, job_description: `(${desc.length} chars)` })
+  ok("...and the description comes back whole, past JobFit's 8,000-character cap", desc.length > 8000 && desc.includes(`END-${RUN}`), { length: desc.length, tail: desc.slice(-120) })
+
+  const asClient = await extract(client.jwt, { url: `${PAGES}/job` })
+  ok("the client cannot use the supporter auto-fill", asClient.status === 403, asClient.json)
+  const asDad = await extract(dadLogin.jwt, { url: `${PAGES}/job` })
+  ok("Dad, invited but not accepted, cannot either", asDad.status === 403, asDad.json)
+
+  const { count: runs } = await admin.from("jobfit_runs").select("id", { count: "exact", head: true }).eq("client_profile_id", CLIENT)
+  ok("auto-fill scored nothing (no JobFit run)", runs === 0, { runs })
+  const { count: sugAfter } = await admin.from("supporter_job_suggestions").select("id", { count: "exact", head: true }).eq("client_profile_id", CLIENT)
+  ok("...and saved nothing (no new suggestion)", sugAfter === sugBefore, { sugBefore, sugAfter })
+
+  await admin.from("supporter_extraction_usage").update({ used: 19 }).eq("supporter_user_id", momLogin.userId)
+  const last = await extract(momLogin.jwt, { url: `${PAGES}/blocked` })
+  ok("the 20th fill of the day goes through", last.status === 422 && last.json?.remaining === 0, last.json)
+  const over = await extract(momLogin.jwt, { url: `${PAGES}/job` })
+  ok("the 21st is refused with the daily limit", over.status === 429 && over.json?.code === "DAILY_LIMIT", over.json)
+  ok("...and takes nothing", (await usedToday()) === 20)
+
   console.log("\nrevoke")
   const rev = await call(meSupporter.DELETE, { path: "", jwt: client.jwt, method: "DELETE", params: { id: mom.json.supporter.id } })
   ok("the client removes Mom", rev.json?.supporter?.status === "revoked", rev.json)
@@ -246,6 +335,7 @@ async function cleanup() {
     await admin.from("client_supporters").delete().eq("client_profile_id", made.profileId)
     await admin.from("client_profiles").delete().eq("id", made.profileId)
   }
+  if (made.users.length) await admin.from("supporter_extraction_usage").delete().in("supporter_user_id", made.users)
   for (const id of made.users) await admin.auth.admin.deleteUser(id)
   console.log(`\ncleaned up: profile ${made.profileId ?? "none"}, ${made.users.length} logins`)
 }
@@ -253,6 +343,7 @@ async function cleanup() {
 main()
   .catch((e) => { failures++; console.error("  FAIL  smoke threw:", e?.message ?? e) })
   .finally(async () => {
+    jobPages.close()
     await cleanup()
     console.log(`\n${failures === 0 ? "all passed" : `${failures} failed`}`)
     process.exit(failures ? 1 : 0)

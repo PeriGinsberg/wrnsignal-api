@@ -17,7 +17,12 @@ export async function supporterFetch(path: string, init: RequestInit = {}): Prom
     if (init.body) headers["Content-Type"] = "application/json"
     const res = await fetch(path, { ...init, headers })
     const j = await res.json().catch(() => null)
-    if (!res.ok || !j?.ok) return { ok: false, status: res.status, error: j?.error || j?.message || "Something went wrong. Try again." }
+    if (!res.ok || !j?.ok) {
+      return {
+        ok: false, status: res.status, error: j?.error || j?.message || "Something went wrong. Try again.",
+        code: j?.code, suggestion: j?.suggestion,
+      }
+    }
     return j
   } catch {
     return { ok: false, error: "Network error. Try again." }

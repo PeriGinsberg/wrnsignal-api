@@ -277,6 +277,78 @@ function Suggestions({ clientId, name, suggestions, onChanged }: {
   )
 }
 
+type FilledJob = { company_name: string; job_title: string; location: string; job_url: string; job_description: string }
+
+/** A single token that reads as a web address, not a pasted description. */
+const looksLikeLink = (s: string) => !/\s/.test(s) && /^(https?:\/\/)?[\w-]+(\.[\w-]+)+(\/|\?|$)/i.test(s)
+
+// Fills the form from a job link or the posting's text, with the same parse
+// JobFit uses (POST .../extract-job). Nothing is scored or saved: the supporter
+// checks the fields and sends the suggestion as usual.
+function AutoFill({ clientId, onFill, onLink }: {
+  clientId: string; onFill: (job: FilledJob) => void; onLink: (url: string) => void
+}) {
+  const [raw, setRaw] = useState("")
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<{ tone: "ok" | "warn" | "error"; text: string } | null>(null)
+
+  async function run() {
+    const value = raw.trim()
+    if (!value) return
+    const isLink = looksLikeLink(value)
+    setBusy(true)
+    setMsg(null)
+    const j = await supporterFetch(`/api/supporter/clients/${clientId}/extract-job`, {
+      method: "POST",
+      body: JSON.stringify(isLink ? { url: value } : { text: value }),
+    })
+    setBusy(false)
+    if (j.ok) {
+      onFill(j.job)
+      setRaw("")
+      setMsg({ tone: "ok", text: "Filled in. Check each field before you send it." })
+    } else if (isLink && j.suggestion === "paste_text") {
+      // Keep the link on the suggestion; ask for the text instead.
+      onLink(/^https?:\/\//i.test(value) ? value : `https://${value}`)
+      setRaw("")
+      setMsg({
+        tone: "warn",
+        text: "This site won't let us read the posting. Copy the job description from the page, paste it here, and press Auto-fill again.",
+      })
+    } else {
+      setMsg({ tone: "error", text: j.error })
+    }
+  }
+
+  const ink = msg?.tone === "ok" ? S.meaning.done.ink : msg?.tone === "warn" ? S.meaning.attention.ink : S.meaning.error.ink
+  return (
+    <div style={{ marginTop: 12, padding: "12px 14px", borderRadius: 10, background: S.well }}>
+      <span style={label}>Auto-fill (optional)</span>
+      <textarea
+        data-testid="autofill-input"
+        value={raw}
+        onChange={(e) => setRaw(e.target.value)}
+        rows={3}
+        maxLength={50000}
+        placeholder="Paste a job link or the job description"
+        style={{ ...input, resize: "vertical", background: S.card }}
+      />
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8, flexWrap: "wrap" }}>
+        <button
+          type="button"
+          onClick={() => void run()}
+          disabled={busy || !raw.trim()}
+          style={{ ...action(S, "optional"), borderRadius: 10, padding: "8px 14px", fontSize: 13.5, fontFamily: "inherit", opacity: busy || !raw.trim() ? 0.55 : 1 }}
+        >
+          {busy ? "Reading the posting…" : "Auto-fill"}
+        </button>
+        <span style={{ fontSize: 13, color: S.text.muted }}>Fills in the fields below. You can change anything.</span>
+      </div>
+      {msg && <p style={{ color: ink, fontWeight: 700, fontSize: 13.5, margin: "8px 0 0", lineHeight: "19px" }}>{msg.text}</p>}
+    </div>
+  )
+}
+
 function SuggestionForm({ clientId, existing, onDone, onCancel }: {
   clientId: string; existing?: Suggestion; onDone: () => void; onCancel: () => void
 }) {
@@ -322,6 +394,21 @@ function SuggestionForm({ clientId, existing, onDone, onCancel }: {
   return (
     <form onSubmit={save} style={{ ...card, marginTop: 16 }}>
       <div style={{ fontSize: 16, fontWeight: 800 }}>{existing ? "Edit your suggestion" : "Suggest a job"}</div>
+      <AutoFill
+        clientId={clientId}
+        onLink={(url) => setF((prev) => ({ ...prev, job_url: url }))}
+        onFill={(job) =>
+          // Only what came back: a blank never wipes something already typed.
+          setF((prev) => ({
+            ...prev,
+            company_name: job.company_name || prev.company_name,
+            job_title: job.job_title || prev.job_title,
+            location: job.location || prev.location,
+            job_url: job.job_url || prev.job_url,
+            job_description: job.job_description || prev.job_description,
+          }))
+        }
+      />
       {field("job_title", "Job title", true)}
       {field("company_name", "Company", true)}
       {field("job_url", "Link to the posting")}
