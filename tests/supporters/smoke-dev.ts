@@ -286,8 +286,10 @@ async function main() {
     "Senior Accountant", "Globex Corporation", "Springfield, OR (Hybrid)", "",
     "About the role", "Globex is hiring a Senior Accountant to own month-end close for two business units.", "",
     "Responsibilities", ...duties, "",
-    "Requirements", "- Bachelor's degree in Accounting", "- 3+ years of public or corporate accounting", "",
-    `Reference code END-${RUN}`,
+    // The marker sits in a requirement, not a trailing line: the model rightly
+    // drops a lone reference code as not part of the description.
+    "Requirements", "- Bachelor's degree in Accounting", "- 3+ years of public or corporate accounting",
+    `- Experience with the END-${RUN} close checklist`,
   ].join("\n")
   const fromText = await extract(momLogin.jwt, { text: longPaste })
   const desc = String(fromText.json?.job?.job_description ?? "")
