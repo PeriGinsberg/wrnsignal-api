@@ -26,6 +26,7 @@ export const CLIENT_EMAIL_TYPES = [
   "coach_message",
   "supporter_invite",
   "supporter_suggestion",
+  "coach_job",
 ] as const
 export type ClientEmailType = (typeof CLIENT_EMAIL_TYPES)[number]
 
@@ -39,6 +40,7 @@ export const CLIENT_EMAIL_TYPE_LABEL: Record<ClientEmailType, string> = {
   coach_message: "Message",
   supporter_invite: "Supporter invite",
   supporter_suggestion: "Job from a supporter",
+  coach_job: "Job from your coach",
 }
 
 export const PRIVATE_SOW_LINK = "[private SOW link]"

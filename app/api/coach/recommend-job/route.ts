@@ -11,6 +11,7 @@ import { resolveDelegation } from "@/lib/collab/delegation"
 import { isolatePosting, type IsolatedPosting } from "@/lib/jobs/isolatePosting"
 import { getAuthedUser, getProfileId } from "@/lib/collab/identity"
 import { errorStatus } from "@/app/api/_lib/routeError"
+import { queueCoachJobEmail } from "@/lib/email/sendCoachJobEmails"
 
 
 export const runtime = "nodejs"
@@ -283,11 +284,21 @@ export async function POST(req: NextRequest) {
       .update({ application_id: appRow.id })
       .eq("id", recRow.id)
 
+    // The client hears about it by email, batched: several jobs this coach
+    // adds within 10 minutes go out as one (lib/email/sendCoachJobEmails.ts).
+    const emailQueued = await queueCoachJobEmail(supabase, {
+      applicationId: appRow.id,
+      clientProfileId,
+      coachProfileId,
+      coachClientId: coachClientRow.id,
+    })
+
     return withCorsJson(req, {
       ok: true,
       recommendation: { ...recRow, application_id: appRow.id },
       application: appRow,
       jobfit: fullAnalysis,
+      client_email_queued: emailQueued,
     }, 201)
   } catch (err: any) {
     const msg = err?.message || String(err)

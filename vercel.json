@@ -32,6 +32,10 @@
     {
       "path": "/api/internal/tasks/overdue-digest",
       "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/internal/coach-jobs/send-emails",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
