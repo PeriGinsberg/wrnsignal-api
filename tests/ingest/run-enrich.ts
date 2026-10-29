@@ -28,6 +28,7 @@ import { existsSync, readFileSync } from "fs"
 import { join } from "path"
 import { createClient } from "@supabase/supabase-js"
 import { countWorklist, runEnrichment } from "../../lib/ingest/enrichPostings"
+import { paceCheckAfterManualRun } from "../../lib/pipeline/manualPace"
 
 const PROD_REF = "ejhnokcnahauvrcbcmic"
 const ENV_FILE = join(__dirname, "..", "..", ".env.phase0")
@@ -75,4 +76,5 @@ const sb = createClient(URL_, KEY, { auth: { persistSession: false } })
   for (const r of s.rows) for (const d of r.demoted) console.log(`  demoted ${d.field}="${d.value}" (${d.why}): ${r.company} | ${r.title}`)
   for (const r of s.rows) if (r.status === "failed") console.log(`  failed ${r.source} ${r.company} | ${r.title}: ${r.error?.slice(0, 200)}`)
   console.log("Worklist:", JSON.stringify(await countWorklist(sb)))
+  if (!flag("dry")) await paceCheckAfterManualRun(sb, env("SEARCHAPI_KEY"))
 })().catch((e) => { console.error(e); process.exit(1) })
