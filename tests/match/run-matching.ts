@@ -18,6 +18,7 @@ import { join } from "path"
 import { createClient } from "@supabase/supabase-js"
 import { seedCriteria } from "../../lib/match/criteria"
 import { runMatching } from "../../lib/match/runMatching"
+import { paceCheckAfterManualRun } from "../../lib/pipeline/manualPace"
 
 const PROD_REF = "ejhnokcnahauvrcbcmic"
 const ENV_FILE = join(__dirname, "..", "..", ".env.phase0")
@@ -79,4 +80,5 @@ const sb = createClient(URL_, KEY, { auth: { persistSession: false } })
   if (!process.env.ANTHROPIC_API_KEY) { console.error("ANTHROPIC_API_KEY must be set"); process.exit(1) }
   const s = await runMatching(sb, { clientProfileId: client, dryRun: flag("dry"), limit: arg("limit") ? Number(arg("limit")) : undefined, triggeredBy: "manual:run-matching" })
   console.log(JSON.stringify(s))
+  if (!flag("dry")) await paceCheckAfterManualRun(sb, env("SEARCHAPI_KEY"))
 })().catch((e) => { console.error(e); process.exit(1) })

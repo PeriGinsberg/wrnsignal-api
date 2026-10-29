@@ -327,6 +327,8 @@ export type EnrichSummary = {
   cacheWriteTokens: number
   outputTokens: number
   costUsd: number
+  /** Candidates not started because the deadline passed. Still due: the next run takes them. */
+  deferred: number
   rows: EnrichRow[]
 }
 
@@ -365,13 +367,14 @@ export async function countWorklist(sb: SupabaseClient): Promise<WorklistCounts>
   }
 }
 
-async function pool<T, R>(items: T[], n: number, fn: (t: T) => Promise<R>): Promise<R[]> {
+/** Runs fn over items, n at a time. Once stop() is true no new item starts; results hold only the started ones. */
+async function pool<T, R>(items: T[], n: number, fn: (t: T) => Promise<R>, stop: () => boolean = () => false): Promise<R[]> {
   const res: R[] = new Array(items.length)
   let next = 0
   await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
-    for (;;) { const i = next++; if (i >= items.length) return; res[i] = await fn(items[i]) }
+    for (;;) { if (stop()) return; const i = next++; if (i >= items.length) return; res[i] = await fn(items[i]) }
   }))
-  return res
+  return res.filter((r) => r !== undefined)
 }
 
 export async function runEnrichment(
@@ -398,6 +401,11 @@ export async function runEnrichment(
      * fixed prompt, constraint or outage), never something every run repeats.
      */
     retryFailed?: boolean
+    /**
+     * Epoch ms after which no new posting starts (the nightly pipeline's
+     * function time limit). Those not started stay due for the next run.
+     */
+    deadline?: number
   } = {},
 ): Promise<EnrichSummary> {
   const limit = opts.limit ?? 500
@@ -505,7 +513,7 @@ export async function runEnrichment(
         return { ...base, status: "failed", attempts: usage.attempts, error: err, usage }
       }
       return { ...base, demoted, status: "enriched", attempts: usage.attempts, error: null, usage }
-    })
+    }, () => opts.deadline !== undefined && Date.now() >= opts.deadline)
   } catch (e: any) {
     if (runId) await sb.from("enrichment_runs").update({ status: "error", error: String(e?.message ?? e).slice(0, 2000), finished_at: new Date().toISOString() }).eq("id", runId)
     throw e
@@ -525,6 +533,7 @@ export async function runEnrichment(
     cacheWriteTokens: sum("cacheWriteTokens"),
     outputTokens: sum("outputTokens"),
     costUsd: rows.reduce((n, r) => n + (r.usage?.costUsd ?? 0), 0),
+    deferred: candidates.length - rows.length,
     rows,
   }
 

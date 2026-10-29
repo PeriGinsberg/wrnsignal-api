@@ -22,6 +22,7 @@ import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { runNightly } from "@/lib/ingest/nightly"
 import { ADAPTERS } from "@/lib/ingest/boards"
+import { finishStep, startStep, STEPS, type Step } from "@/lib/pipeline/runs"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -82,9 +83,24 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ source: str
     return Response.json({ ok: true, source, skipped: "ingest tables absent in this environment", environment })
   }
 
+  // The pipeline's record of this sweep (pipeline_runs), read by the 09:00
+  // watchdog. Best-effort: without the table the sweep runs exactly as before.
+  const step = `ats_${source}` as Step
+  let pipelineRunId: string | null = null
+  if ((STEPS as readonly string[]).includes(step)) {
+    try { pipelineRunId = await startStep(supabase, step, `nightly:${source}`) } catch (e: any) { console.error(`[ingest-nightly:${source}] pipeline_runs not recorded: ${e?.message || e}`) }
+  }
+
   try {
     const res = await runNightly(supabase, { environment, source })
     const ping: PingResult = res.alert ? "skipped_alert" : await pingDeadMansSwitch(source)
+    if (pipelineRunId) {
+      // Every ingest alert reason is a fault (lib/ingest/nightly.ts), and the ingest alert has already gone out.
+      await finishStep(supabase, pipelineRunId, {
+        status: res.alert ? "error" : "ok", units: res.totals.runs, detail: { ...res.totals, durationMs: res.durationMs },
+        error: res.alert ? `ingest alert: ${res.alert.reasons.map((r) => r.kind).join(", ")}` : undefined,
+      }).catch((e: any) => console.error(`[ingest-nightly:${source}] pipeline_runs not updated: ${e?.message || e}`))
+    }
 
     return Response.json({
       ok: true,
@@ -98,6 +114,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ source: str
     })
   } catch (err: any) {
     console.error(`[ingest-nightly:${source}] sweep failed:`, err?.message || err)
+    if (pipelineRunId) await finishStep(supabase, pipelineRunId, { status: "error", error: String(err?.message || err) }).catch(() => {})
     return Response.json(
       { ok: false, source, environment, error: String(err?.message || err).slice(0, 500) },
       { status: 500 }

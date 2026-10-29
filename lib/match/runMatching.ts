@@ -132,9 +132,10 @@ async function pageAll<T>(q: (from: number, to: number) => PromiseLike<{ data: T
   return out
 }
 
-async function pool<T>(items: T[], n: number, fn: (t: T) => Promise<void>) {
+/** Runs fn over items, n at a time. Once stop() is true no new item starts. */
+async function pool<T>(items: T[], n: number, fn: (t: T) => Promise<void>, stop: () => boolean = () => false) {
   let next = 0
-  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { for (;;) { const i = next++; if (i >= items.length) return; await fn(items[i]) } }))
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { for (;;) { if (stop()) return; const i = next++; if (i >= items.length) return; await fn(items[i]) } }))
 }
 
 export type MatchSummary = {
@@ -150,17 +151,22 @@ export type MatchSummary = {
   newlyQueued: number
   costUsd: number
   apiCalls: number
+  /**
+   * Passed the rules but not judged this run: over judgeLimit or past the
+   * deadline. They get no row (or keep their stale one), so the next run takes them.
+   */
+  deferred: number
 }
 
-export async function runMatching(
-  sb: SupabaseClient,
-  opts: { clientProfileId: string; effort?: "low" | "medium"; dryRun?: boolean; triggeredBy?: string; limit?: number },
-): Promise<MatchSummary> {
-  const effort = opts.effort ?? "low"
-  const { data: row, error: cErr } = await sb.from("client_match_criteria").select("*").eq("client_profile_id", opts.clientProfileId).single()
-  if (cErr || !row) throw new Error(`no client_match_criteria for ${opts.clientProfileId}: ${cErr?.message ?? "missing"}`)
+/**
+ * What a run for this client would evaluate, read without judging anything:
+ * the criteria, every live posting, the client's match rows, and the work list.
+ */
+export async function loadMatchWork(sb: SupabaseClient, clientProfileId: string) {
+  const { data: row, error: cErr } = await sb.from("client_match_criteria").select("*").eq("client_profile_id", clientProfileId).single()
+  if (cErr || !row) throw new Error(`no client_match_criteria for ${clientProfileId}: ${cErr?.message ?? "missing"}`)
   if (!row.active) throw new Error("criteria inactive")
-  const { data: profile, error: pErr } = await sb.from("client_profiles").select(PROFILE_COLS).eq("id", opts.clientProfileId).single()
+  const { data: profile, error: pErr } = await sb.from("client_profiles").select(PROFILE_COLS).eq("id", clientProfileId).single()
   if (pErr || !profile) throw new Error(`client_profiles: ${pErr?.message}`)
   const criteria = criteriaFromRow(row, profile)
   const hash = criteriaHash(criteria)
@@ -170,18 +176,36 @@ export async function runMatching(
     .select("id, source, title, cleaned_title, company, location, apply_url, years_min, years_max, years_basis, salary_low, salary_high, salary_period, graduation_from, graduation_to, level, requirements_summary, description_md5, enriched_at, employment_types, start_type, start_date, start_season, start_year, campus_signal, required_majors, majors_basis, enrichment_evidence")
     .gte("last_seen_at", since).is("closed_at", null).order("id").range(a, b))
   const existing = new Map((await pageAll<any>((a, b) => sb.from("posting_matches")
-    .select("posting_id, criteria_hash, description_md5, action, updated_at").eq("client_profile_id", opts.clientProfileId).order("posting_id").range(a, b)))
+    .select("posting_id, criteria_hash, description_md5, action, updated_at").eq("client_profile_id", clientProfileId).order("posting_id").range(a, b)))
     .map((m) => [m.posting_id, m]))
 
   const awaitingEnrichment = postings.filter((p) => p.description_md5 && !p.enriched_at).length
   // Re-enriched since its match row was written: the fields the rules read changed.
   const reenriched = (p: any, m: any) => !!p.enriched_at && new Date(p.enriched_at) > new Date(m.updated_at)
-  let work = postings.filter((p) => {
+  const work = postings.filter((p) => {
     if (p.description_md5 && !p.enriched_at) return false
     const m = existing.get(p.id)
     return !m || (!m.action && (m.criteria_hash !== hash || m.description_md5 !== p.description_md5 || reenriched(p, m)))
   })
-  if (opts.limit) work = work.slice(0, opts.limit)
+  return { criteria, hash, postings, existing, awaitingEnrichment, work }
+}
+
+export async function runMatching(
+  sb: SupabaseClient,
+  opts: {
+    clientProfileId: string; effort?: "low" | "medium"; dryRun?: boolean; triggeredBy?: string; limit?: number
+    /** Most postings to judge this run (the nightly pipeline's cap). New postings go first. */
+    judgeLimit?: number
+    /** Only postings this client has no match row for: the nightly first pass, so new jobs reach every client before any re-judging. */
+    newOnly?: boolean
+    /** Epoch ms after which no new judgment starts (the function time limit). */
+    deadline?: number
+  },
+): Promise<MatchSummary> {
+  const effort = opts.effort ?? "low"
+  const { criteria, hash, postings, existing, awaitingEnrichment, work: all } = await loadMatchWork(sb, opts.clientProfileId)
+  const scoped = opts.newOnly ? all.filter((p) => !existing.has(p.id)) : all
+  const work = opts.limit ? scoped.slice(0, opts.limit) : scoped
 
   // The coach's latest decisions for this client: matches and their lanes' results.
   const lanes = await pageAll<any>((a, b) => sb.from("search_lanes").select("id").eq("client_profile_id", opts.clientProfileId).range(a, b))
@@ -227,7 +251,11 @@ export async function runMatching(
   const evaluated = work.map((p) => ({ p, fails: applyRules(criteria, fromPosting(p)) }))
   const failed = evaluated.filter((e) => e.fails.length)
   const noText = evaluated.filter((e) => !e.fails.length && !e.p.description_md5)
-  const toJudge = evaluated.filter((e) => !e.fails.length && e.p.description_md5)
+  // New postings before re-judging ones whose criteria or description changed:
+  // a capped night leaves the backlog, not the new jobs.
+  const passing = evaluated.filter((e) => !e.fails.length && e.p.description_md5)
+  const toJudge = [...passing.filter((e) => !existing.has(e.p.id)), ...passing.filter((e) => existing.has(e.p.id))]
+    .slice(0, opts.judgeLimit ?? Infinity)
 
   const usage: JudgeUsage[] = []
   let judgeErrors = 0
@@ -257,7 +285,7 @@ export async function runMatching(
         judgedRows.push({ ...base(e.p), ...marketLink(e.p, r?.raw), preferred_market: inPreferredMarket(criteria.markets, fromPosting(e.p)), ...cleared, rule_failures: [], judge_error: String(err?.message ?? err).slice(0, 500) })
       }
       if (judgedRows.length >= 100) await upsert(judgedRows.splice(0))
-    })
+    }, () => opts.deadline !== undefined && Date.now() >= opts.deadline)
     await upsert(judgedRows)
   } catch (e: any) {
     if (runId) await sb.from("match_runs").update({ status: "error", error: String(e?.message ?? e).slice(0, 2000), finished_at: new Date().toISOString() }).eq("id", runId)
@@ -274,6 +302,7 @@ export async function runMatching(
   const summary: MatchSummary = {
     runId, scanned: postings.length, awaitingEnrichment, evaluated: work.length, ruleFailed: failed.length, judged: usage.length,
     unjudgedNoDescription: noText.length, judgeErrors, newlyQueued, costUsd: sum("costUsd"), apiCalls: usage.length + judgeErrors,
+    deferred: passing.length - usage.length - judgeErrors,
   }
   if (runId) {
     const { error } = await sb.from("match_runs").update({

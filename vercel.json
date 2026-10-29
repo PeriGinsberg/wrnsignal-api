@@ -22,10 +22,6 @@
       "schedule": "30 4 * * *"
     },
     {
-      "path": "/api/internal/match/check-links",
-      "schedule": "0 6 * * *"
-    },
-    {
       "path": "/api/internal/automation/run",
       "schedule": "*/30 * * * *"
     },
@@ -36,6 +32,18 @@
     {
       "path": "/api/internal/coach-jobs/send-emails",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/internal/pipeline/tick",
+      "schedule": "*/15 5-7 * * *"
+    },
+    {
+      "path": "/api/internal/pipeline/watchdog",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/internal/pipeline/cost-report",
+      "schedule": "0 13 * * 1"
     }
   ]
 }
