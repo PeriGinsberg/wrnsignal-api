@@ -5,7 +5,7 @@
 //   GET  ?task_id=  the draft: the step's template from the client's main
 //        coach's Settings, with [First Name], [Drive folder link] and
 //        [Scheduling link] filled.
-//   POST { task_id, subject, body, cc_parent } sends the coach's edited draft
+//   POST { task_id, subject, body, cc_parent, cc } sends the coach's edited draft
 //        as their own message, then releases the step. Refused while any
 //        [bracket] is left.
 //
@@ -57,6 +57,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       subject: b?.subject,
       body: b?.body,
       ccParent: b?.cc_parent,
+      cc: b?.cc,
     })
     if (!r.ok) return withCorsJson(req, { ok: false, error: r.error }, r.status)
     return withCorsJson(req, { ok: true, ...r.data })

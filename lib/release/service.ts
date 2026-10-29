@@ -202,6 +202,8 @@ export async function sendReleaseEmail(
     subject?: unknown
     body?: unknown
     ccParent?: unknown
+    /** Typed CC addresses (lib/email/cc.ts). */
+    cc?: unknown
     provider?: MessageProvider
   },
 ): Promise<Result<{ to: string; redirected: boolean }>> {
@@ -215,7 +217,7 @@ export async function sendReleaseEmail(
   const sent = await sendCoachMessage(db, {
     coachClientId: args.coachClientId,
     actor: args.actor,
-    input: { channel: "email", subject, body, cc_parent: args.ccParent === true },
+    input: { channel: "email", subject, body, cc_parent: args.ccParent === true, cc: args.cc },
     provider: args.provider,
   })
   if (!sent.ok) return fail(`${sent.error} Nothing changed: the step is still waiting to be released.`, sent.status)

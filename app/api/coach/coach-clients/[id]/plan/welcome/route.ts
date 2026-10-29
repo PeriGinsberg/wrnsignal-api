@@ -5,7 +5,7 @@
 //
 //   GET  ?task_id=  what the editor opens with: to, parent email, first name,
 //        Drive link, the matching template and all the coach's templates.
-//   POST { task_id, send, start, subject, body, cc_parent } sends it (send
+//   POST { task_id, send, start, subject, body, cc_parent, cc } sends it (send
 //        true) or not (send false), then releases the task and shares the
 //        Drive workspace, as a plain release does.
 //
@@ -59,6 +59,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       subject: b?.subject,
       body: b?.body,
       ccParent: b?.cc_parent,
+      cc: b?.cc,
     })
     if (!r.ok) return withCorsJson(req, { ok: false, error: r.error }, r.status)
     return withCorsJson(req, { ok: true, result: r.data })

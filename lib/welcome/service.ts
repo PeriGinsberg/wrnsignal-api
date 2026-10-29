@@ -16,6 +16,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { sendToClient, type SendResult } from "../email/send"
+import { resolveCc } from "../email/cc"
 import { logProspectEvent } from "../prospects/history"
 import { applyTaskAction } from "../plan/service"
 import type { DriveApi } from "../sow/workspace"
@@ -155,6 +156,8 @@ export async function sendWelcome(
     subject?: unknown
     body?: unknown
     ccParent?: unknown
+    /** Typed CC addresses (lib/email/cc.ts). */
+    cc?: unknown
     mail?: SendEmail
     drive?: DriveApi
   },
@@ -173,8 +176,9 @@ export async function sendWelcome(
     const body = typeof args.body === "string" ? fillFirstName(args.body.replace(/\r\n/g, "\n").trim(), x.first_name) : ""
     const problem = welcomeProblem({ subject, body, driveUrl: x.drive_url, schedulingLink: template.scheduling_link })
     if (problem) return fail(problem)
-    const cc = args.ccParent === true ? x.parent_email : null
-    if (args.ccParent === true && !cc) return fail("There is no parent email on this record to copy.")
+    const copy = resolveCc({ ccParent: args.ccParent, cc: args.cc, parentEmail: x.parent_email, to: x.to })
+    if (!copy.ok) return fail(copy.error)
+    const cc = copy.cc
 
     const rendered = renderWelcomeEmail(body, { drive: x.drive_url, scheduling: template.scheduling_link })
     const result = await (args.mail ?? sendToClient)({

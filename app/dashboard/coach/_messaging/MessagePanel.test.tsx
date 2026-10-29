@@ -64,8 +64,23 @@ describe("MessagePanel", () => {
     fireEvent.change(body(), { target: { value: "Hi Alex" } })
     fireEvent.click(sendBtn())
     await screen.findByText("Message sent.")
-    expect(posts).toEqual([{ channel: "email", subject: "Next steps", body: "Hi Alex", cc_parent: false }])
+    expect(posts).toEqual([{ channel: "email", subject: "Next steps", body: "Hi Alex", cc_parent: false, cc: "" }])
     expect(onSent).toHaveBeenCalledOnce()
+  })
+
+  it("sends typed CC addresses, and won't send one that isn't an address", async () => {
+    render(<MessagePanel open onClose={() => {}} coachClientId="cc-1" />)
+    await screen.findByText("alex@example.com")
+    fireEvent.change(subject(), { target: { value: "Next steps" } })
+    fireEvent.change(body(), { target: { value: "Hi Alex" } })
+    const cc = screen.getByLabelText("CC") as HTMLInputElement
+    fireEvent.change(cc, { target: { value: "mentor@example.com, mentor" } })
+    expect(screen.getByText(/isn.t an email address/)).toBeTruthy()
+    expect(sendBtn().disabled).toBe(true)
+    fireEvent.change(cc, { target: { value: "mentor@example.com, aunt@example.com" } })
+    fireEvent.click(sendBtn())
+    await screen.findByText("Message sent.")
+    expect(posts).toEqual([{ channel: "email", subject: "Next steps", body: "Hi Alex", cc_parent: false, cc: "mentor@example.com, aunt@example.com" }])
   })
 
   it("keeps the draft and shows the error when the send fails", async () => {

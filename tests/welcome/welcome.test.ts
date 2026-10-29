@@ -180,6 +180,12 @@ async function main() {
     const db4 = seed({ parent: null })
     const r4 = await sendWelcome(db4.client as any, { coachClientId: CC, taskId: "t1", actor: COACH, send: true, start: "resume_workshop", subject: "s", body: BODY, ccParent: true, mail: mailer().send, drive: fakeDrive().drive })
     ok("cc the parent with no parent email: refused", !r4.ok && /parent/.test(r4.error))
+    const m6 = mailer()
+    const r6 = await sendWelcome(seed().client as any, { coachClientId: CC, taskId: "t1", actor: COACH, send: true, start: "resume_workshop", subject: "s", body: BODY, cc: "nope", mail: m6.send, drive: fakeDrive().drive })
+    ok("a typed CC that isn't an address: refused, nothing sent", !r6.ok && /nope/.test(r6.error) && m6.sent.length === 0)
+    const m7 = mailer()
+    const r7 = await sendWelcome(seed().client as any, { coachClientId: CC, taskId: "t1", actor: COACH, send: true, start: "resume_workshop", subject: "s", body: BODY, cc: "mentor@example.com", mail: m7.send, drive: fakeDrive().drive })
+    ok("a typed CC alone is copied", r7.ok && m7.sent[0]?.cc === "mentor@example.com", r7.ok ? String(m7.sent[0]?.cc) : r7.error)
     const r5 = await sendWelcome(seed().client as any, { coachClientId: CC, taskId: "t1", actor: COACH, send: true, start: "land", subject: "s", body: "b", mail: mailer().send, drive: fakeDrive().drive })
     ok("a template not set up: refused", !r5.ok && /Land/.test(r5.error))
   }

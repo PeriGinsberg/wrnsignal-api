@@ -145,7 +145,7 @@ export function SowPanel({ coachClientId, engagementId, refreshKey = 0, onSent }
     }
   }
 
-  async function send(email: { subject: string; body: string; cc_parent: boolean }) {
+  async function send(email: { subject: string; body: string; cc_parent: boolean; cc: string }) {
     if (dirty && !(await save())) { setSending(null); return }
     setSending("busy")
     setSendError(null)

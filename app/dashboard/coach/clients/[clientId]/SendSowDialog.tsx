@@ -12,6 +12,7 @@ import { useState } from "react"
 import { btnPrimary } from "../../../../../lib/dashboard-theme"
 import { signatureHtml } from "../../../../../lib/email/signature"
 import { SOW_EMAIL_BODY_MAX, SOW_EMAIL_SUBJECT_MAX, SOW_LINK_TOKEN, hasSowLink } from "@/lib/sow/email"
+import { badCc } from "@/lib/email/cc"
 
 const field: React.CSSProperties = {
   background: "#fff", color: "#08203F", border: "1px solid #C9D6E3", borderRadius: 8,
@@ -33,14 +34,16 @@ export function SendSowDialog({
   resend: boolean
   busy: boolean
   error: string | null
-  onSend: (email: { subject: string; body: string; cc_parent: boolean }) => void
+  onSend: (email: { subject: string; body: string; cc_parent: boolean; cc: string }) => void
   onClose: () => void
 }) {
   const [subject, setSubject] = useState(initialSubject)
   const [body, setBody] = useState(initialBody)
   const [ccParent, setCcParent] = useState(false)
+  const [cc, setCc] = useState("")
   const missingLink = !hasSowLink(body)
-  const ready = !!to && !!subject.trim() && !!body.trim() && !missingLink && !busy
+  const ccBad = badCc(cc)
+  const ready = !!to && !!subject.trim() && !!body.trim() && !missingLink && !ccBad && !busy
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(8,32,63,0.45)", zIndex: 1000, overflowY: "auto", padding: "24px 12px" }}>
@@ -68,6 +71,10 @@ export function SendSowDialog({
             cc the parent ({parentEmail})
           </label>
         )}
+        <label htmlFor="sow-cc" style={{ display: "block", fontSize: 12, fontWeight: 800, marginBottom: 4 }}>CC</label>
+        <input id="sow-cc" type="text" inputMode="email" placeholder="Optional. Separate addresses with commas."
+          value={cc} onChange={(e) => setCc(e.target.value)} style={{ ...field, marginBottom: ccBad ? 4 : 10 }} />
+        {ccBad && <p style={{ fontSize: 12, color: "#B42318", margin: "0 0 10px" }}>&ldquo;{ccBad}&rdquo; isn&rsquo;t an email address.</p>}
 
         <label style={{ display: "block", fontSize: 12, fontWeight: 800, marginBottom: 4 }}>Subject</label>
         <input aria-label="Subject" value={subject} maxLength={SOW_EMAIL_SUBJECT_MAX} onChange={(e) => setSubject(e.target.value)} style={{ ...field, marginBottom: 10 }} />
@@ -89,7 +96,7 @@ export function SendSowDialog({
 
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button type="button" style={small} onClick={onClose}>Cancel</button>
-          <button type="button" disabled={!ready} onClick={() => onSend({ subject, body, cc_parent: ccParent })}
+          <button type="button" disabled={!ready} onClick={() => onSend({ subject, body, cc_parent: ccParent, cc })}
             style={{ ...btnPrimary, padding: "8px 18px", fontSize: 14, opacity: ready ? 1 : 0.5, cursor: ready ? "pointer" : "default" }}>
             {busy ? "Sending…" : resend ? "Re-send" : "Send"}
           </button>
