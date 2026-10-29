@@ -13,6 +13,7 @@
 import { useEffect, useState } from "react"
 import { btnPrimary } from "@/lib/dashboard-theme"
 import { signatureHtml } from "@/lib/email/signature"
+import { badCc } from "@/lib/email/cc"
 import { getSupabaseBrowser } from "@/lib/supabase-browser"
 import {
   DRIVE_BUTTON,
@@ -74,6 +75,7 @@ export function WelcomeEmailDialog({ coachClientId, taskId, onDone, onClose }: {
   const [subject, setSubject] = useState("")
   const [body, setBody] = useState("")
   const [ccParent, setCcParent] = useState(false)
+  const [cc, setCc] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -106,6 +108,7 @@ export function WelcomeEmailDialog({ coachClientId, taskId, onDone, onClose }: {
     : !draft.to ? "This client has no email address. Add one to their record first."
     : !template ? "Pick which welcome email this is."
     : welcomeProblem({ subject, body, driveUrl: draft.drive_url, schedulingLink: template.scheduling_link })
+      ?? (badCc(cc) ? `"${badCc(cc)}" in CC isn't an email address.` : null)
 
   async function go(send: boolean) {
     setBusy(true)
@@ -113,7 +116,7 @@ export function WelcomeEmailDialog({ coachClientId, taskId, onDone, onClose }: {
     try {
       const res = await authFetch(`/api/coach/coach-clients/${coachClientId}/plan/welcome`, {
         method: "POST",
-        body: JSON.stringify(send ? { task_id: taskId, send: true, start, subject, body, cc_parent: ccParent } : { task_id: taskId, send: false }),
+        body: JSON.stringify(send ? { task_id: taskId, send: true, start, subject, body, cc_parent: ccParent, cc } : { task_id: taskId, send: false }),
       })
       const j = await res.json().catch(() => ({}))
       if (!res.ok || !j?.ok) { setError(j?.error || "Couldn't do that"); return }
@@ -153,6 +156,9 @@ export function WelcomeEmailDialog({ coachClientId, taskId, onDone, onClose }: {
                 cc the parent ({draft.parent_email})
               </label>
             )}
+            <label style={label} htmlFor="welcome-cc">CC</label>
+            <input id="welcome-cc" type="text" inputMode="email" placeholder="Optional. Separate addresses with commas."
+              value={cc} onChange={(e) => setCc(e.target.value)} style={{ ...field, marginBottom: 12 }} />
 
             <label style={label} htmlFor="welcome-template">Welcome email</label>
             <select id="welcome-template" aria-label="Welcome email" value={start} onChange={(e) => pick(e.target.value as WelcomeStart | "")} style={{ ...field, marginBottom: 4 }}>

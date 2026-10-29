@@ -114,6 +114,16 @@ async function main() {
     const noCc = await sendCoachMessage(db.client, { coachClientId: CC_ID, actor: PERI, provider, input: { subject: "S", body: "B" } })
     ok("parent not CC'd unless ticked", noCc.ok && sent[1]?.cc === null)
     ok("Peri's signature appended", sent[1]?.text === "B\n\nPeri Ginsberg\nWorkforce Ready Now\n")
+
+    const typed = await sendCoachMessage(db.client, {
+      coachClientId: CC_ID, actor: ERIN, provider,
+      input: { subject: "S", body: "B", cc_parent: true, cc: "mentor@example.com; Parent@Example.com, erin+coach@workforcereadynow.com alex@example.com" },
+    })
+    ok("typed CC added after the parent, each once, never the client", typed.ok && sent[2]?.cc === "parent@example.com, mentor@example.com, erin+coach@workforcereadynow.com", sent[2]?.cc ?? "")
+    ok("a sender already on CC is not also BCC'd", JSON.stringify(sent[2]?.bcc) === "[]", JSON.stringify(sent[2]?.bcc))
+    ok("log: the whole CC line", db.tables.client_emails[2]?.cc_email === sent[2]?.cc)
+    const typedOnly = await sendCoachMessage(db.client, { coachClientId: CC_ID, actor: PERI, provider, input: { subject: "S", body: "B", cc: " mentor@example.com " } })
+    ok("typed CC without the parent", typedOnly.ok && sent[3]?.cc === "mentor@example.com", sent[3]?.cc ?? "")
   })
 
   console.log("send, not production")
@@ -124,6 +134,8 @@ async function main() {
     const m = sent[0]
     ok("redirected to Peri only", r.ok && m?.to === "peri@workforcereadynow.com" && m?.cc === null && m?.bcc.length === 0, JSON.stringify(m))
     ok("subject names who it was for", m?.subject === "[local -> alex@example.com, cc parent@example.com, bcc peri@workforcereadynow.com] Hello", m?.subject)
+    await sendCoachMessage(db.client, { coachClientId: CC_ID, actor: PERI, provider, input: { subject: "Hi", body: "Hi", cc: "mentor@example.com" } })
+    ok("typed CC not mailed outside production, named in the subject", sent[1]?.cc === null && sent[1]?.subject === "[local -> alex@example.com, cc mentor@example.com, bcc peri@workforcereadynow.com] Hi", sent[1]?.subject)
     const row = db.tables.client_emails[0]
     ok("log keeps the intended To and marks the redirect", row?.to_email === "alex@example.com" && row?.redirected === true && row?.delivered_to === "peri@workforcereadynow.com")
   })
@@ -136,6 +148,10 @@ async function main() {
     ok("no subject", (await send(PERI, { body: "x" })).ok === false)
     ok("no body", (await send(PERI, { subject: "x", body: "  " })).ok === false)
     ok("SMS refused", (await send(PERI, { channel: "sms", subject: "x", body: "x" })).ok === false)
+    const badCc = await send(PERI, { subject: "x", body: "x", cc: "mentor@example.com, not-an-email" })
+    ok("a CC that isn't an address refused, naming it", !badCc.ok && badCc.error.includes("not-an-email"), JSON.stringify(badCc))
+    ok("CC as a non-string refused", (await send(PERI, { subject: "x", body: "x", cc: ["mentor@example.com"] })).ok === false)
+    ok("more than 10 CC refused", (await send(PERI, { subject: "x", body: "x", cc: Array.from({ length: 11 }, (_, i) => `p${i}@example.com`).join(",") })).ok === false)
     db.tables.coach_messaging_settings[1].sending_email = "erin@gmail.com"
     const bad = await send(ERIN, { subject: "x", body: "x" })
     ok("off-domain sending address refused", !bad.ok && bad.status === 409)

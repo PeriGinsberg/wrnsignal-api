@@ -86,6 +86,15 @@ async function main() {
     ok("the plain-text version carries the URL", r.text.includes("https://x/sow/abc") && !r.text.includes("[SOW link]"))
   }
 
+  console.log("\nsending, typed CC")
+  {
+    const db = seed()
+    const m = mailer()
+    const r = await go(db, m.send, { ccParent: true, cc: "mentor@example.com" })
+    ok("parent and typed CC both copied", r.ok && m.sent[0]?.cc === "mom@example.com, mentor@example.com", r.ok ? String(m.sent[0]?.cc) : r.error)
+    ok("both recorded on the SOW", row(db, "eng-1").sent_cc === "mom@example.com, mentor@example.com")
+  }
+
   console.log("\nsending")
   {
     const db = seed()
@@ -164,6 +173,7 @@ async function main() {
     await bad("a message without [SOW link]", seed(), { body: "Hi Aiden, here it is." })
     await bad("an empty subject", seed(), { subject: "  " })
     await bad("cc the parent with no parent email", seed({ parent: null }), { ccParent: true })
+    await bad("a typed CC that isn't an address", seed(), { cc: "mentor@example.com, mentor" })
     await bad("an approved package", seed({ proposal: "approved" }))
     const db = seed()
     db.tables.coach_client_engagement_deliverables.find((d) => d.id === "d1")!.not_needed = true

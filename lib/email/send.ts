@@ -22,6 +22,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import { getPostmarkClient, CLIENT_STREAM, INTERNAL_STREAM, FROM_EMAIL } from "../postmark"
 import { getSupabaseAdmin } from "../collab/identity"
 import { coachBccFor, logClientEmail, type ClientEmailType } from "./clientEmailLog"
+import { splitCc } from "./cc"
 
 export const CLIENT_LAYOUT_ALIAS = "signal-client"
 
@@ -195,7 +196,8 @@ export async function sendToClient(args: {
   content?: { subject: string; html: string; text: string }
   from?: string
   /**
-   * A copy, e.g. a prospect's parent. Outside production it is not sent: the
+   * A copy, e.g. a prospect's parent: one address or several, comma-separated
+   * (resolveCc in ./cc.ts). Outside production it is not sent: the
    * redirect covers it, and the subject names it instead, so a test shows who
    * would have been copied without mailing them.
    */
@@ -213,7 +215,7 @@ export async function sendToClient(args: {
   let bcc: string[] = []
   try {
     db = args.log.db ?? getSupabaseAdmin()
-    bcc = await coachBccFor(db, { coachClientId: args.log.coachClientId, actor: args.log.actor, exclude: [intended, cc] })
+    bcc = await coachBccFor(db, { coachClientId: args.log.coachClientId, actor: args.log.actor, exclude: [intended, ...splitCc(cc)] })
   } catch (e: any) {
     console.warn("[email] coach BCC lookup failed, sending without it:", e?.message ?? String(e))
   }

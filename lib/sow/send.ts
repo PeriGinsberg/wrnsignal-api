@@ -18,6 +18,7 @@
 import { createHash, randomBytes } from "crypto"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { sendToClient, type SendResult } from "../email/send"
+import { resolveCc } from "../email/cc"
 import { advanceIfPresent } from "../prospects/stages"
 import { logProspectEvent } from "../prospects/history"
 import { emitProspectEvent } from "../prospects/automation"
@@ -52,6 +53,8 @@ export async function sendClientSow(
     subject: unknown
     body: unknown
     ccParent: unknown
+    /** Typed CC addresses (lib/email/cc.ts). */
+    cc?: unknown
     appUrl: string
     send?: SendEmail
   },
@@ -77,8 +80,9 @@ export async function sendClientSow(
   if (!body) return fail("The email needs a message.")
   if (body.length > SOW_EMAIL_BODY_MAX) return fail(`The message can be at most ${SOW_EMAIL_BODY_MAX} characters.`)
   if (!hasSowLink(body)) return fail(`The message must include ${SOW_LINK_TOKEN}, where the link to their SOW goes.`)
-  const cc = args.ccParent === true ? (client.parent_email?.trim() || null) : null
-  if (args.ccParent === true && !cc) return fail("There is no parent email on this record to copy.")
+  const copy = resolveCc({ ccParent: args.ccParent, cc: args.cc, parentEmail: client.parent_email, to: x.email })
+  if (!copy.ok) return fail(copy.error)
+  const cc = copy.cc
 
   // An unsaved SOW is saved as shown (its defaults) before it is frozen.
   let row: SowRow | null = x.row

@@ -5,10 +5,12 @@
 //   GET   what the panel shows before the coach types: To, the parent (for the
 //         optional CC), whether there is a phone number (SMS, coming soon),
 //         the coach's sending address and signature.
-//   POST  { channel: "email", subject, body, cc_parent } sends it.
+//   POST  { channel: "email", subject, body, cc_parent, cc } sends it; cc is
+//         any further addresses the coach typed, comma-separated.
 //
-// From, To and the copies are worked out on the server from the record and the
+// From, To and the BCC are worked out on the server from the record and the
 // signed-in coach's settings; nothing the browser sends can change them. The
+// CC is the coach's choice: the parent, typed addresses, or both. The
 // rules are in lib/messaging/sendCoachMessage.ts. Auth and ownership are the
 // Communications tab's (../emails/route.ts).
 

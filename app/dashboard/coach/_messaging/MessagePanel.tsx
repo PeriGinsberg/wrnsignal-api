@@ -25,6 +25,7 @@ import { SavingSpinner } from "../SavingSpinner"
 import { apiJson } from "../_tasks/taskClient"
 import { SignaturePreview } from "./SignaturePreview"
 import { leftoverBrackets, releaseProblem } from "@/lib/release/model"
+import { badCc } from "@/lib/email/cc"
 
 export type MessageContext = {
   to: string | null
@@ -68,6 +69,7 @@ export function MessagePanel({ open, onClose, coachClientId, onSent, release = n
   const [subject, setSubject] = useState("")
   const [body, setBody] = useState("")
   const [ccParent, setCcParent] = useState(false)
+  const [cc, setCc] = useState("")
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -84,6 +86,7 @@ export function MessagePanel({ open, onClose, coachClientId, onSent, release = n
     setSubject("")
     setBody("")
     setCcParent(false)
+    setCc("")
     setError(null)
     setConfirmDelete(false)
   }
@@ -148,7 +151,8 @@ export function MessagePanel({ open, onClose, coachClientId, onSent, release = n
   const left = release ? leftoverBrackets(`${subject}
 ${body}`) : []
   const problem = release ? releaseProblem(subject, body) : null
-  const canSend = !!ctx?.to && !!ctx?.from && subject.trim() !== "" && body.trim() !== "" && !sending && !problem
+  const ccBad = badCc(cc)
+  const canSend = !!ctx?.to && !!ctx?.from && subject.trim() !== "" && body.trim() !== "" && !sending && !problem && !ccBad
 
   async function send() {
     if (!canSend) return
@@ -158,11 +162,11 @@ ${body}`) : []
       const j = release
         ? await apiJson<Sent>(`/api/coach/coach-clients/${coachClientId}/plan/release-email`, {
             method: "POST",
-            body: JSON.stringify({ task_id: release.taskId, subject: subject.trim(), body, cc_parent: ccParent }),
+            body: JSON.stringify({ task_id: release.taskId, subject: subject.trim(), body, cc_parent: ccParent, cc }),
           })
         : await apiJson<Sent>(`/api/coach/coach-clients/${coachClientId}/messages`, {
             method: "POST",
-            body: JSON.stringify({ channel: "email", subject: subject.trim(), body, cc_parent: ccParent }),
+            body: JSON.stringify({ channel: "email", subject: subject.trim(), body, cc_parent: ccParent, cc }),
           })
       clearDraft()
       setSent({ to: j.to, redirected: j.redirected })
@@ -270,6 +274,19 @@ ${body}`) : []
                   CC {ctx.parent_name ? `${ctx.parent_name} (${ctx.parent_email})` : ctx.parent_email}
                 </label>
               )}
+              <div>
+                <label htmlFor="message-cc" style={fieldLabel}>CC</label>
+                <input
+                  id="message-cc"
+                  type="text"
+                  inputMode="email"
+                  placeholder="Optional. Separate addresses with commas."
+                  style={{ ...input, fontSize: TYPE.secondary }}
+                  value={cc}
+                  onChange={(e) => setCc(e.target.value)}
+                />
+                {ccBad && <div style={{ fontSize: TYPE.label, color: T.ERROR, marginTop: 4 }}>&ldquo;{ccBad}&rdquo; isn&rsquo;t an email address.</div>}
+              </div>
               <ReadOnlyField name="FROM" value={ctx ? ctx.from : "…"} missing="You don't have a sending address yet. Ask Peri to set one up." />
 
               <div>

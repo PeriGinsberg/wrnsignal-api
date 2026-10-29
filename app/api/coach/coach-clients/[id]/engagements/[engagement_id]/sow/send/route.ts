@@ -1,6 +1,6 @@
 // app/api/coach/coach-clients/[id]/engagements/[engagement_id]/sow/send/route.ts
 //
-// POST { subject, body, cc_parent } sends the client their SOW: freezes it,
+// POST { subject, body, cc_parent, cc } sends the client their SOW: freezes it,
 // makes a new private link, withdraws any other SOW that is out for this
 // client, emails it, and records it. See lib/sow/send.ts for the order and
 // for what happens when the email fails.
@@ -41,6 +41,7 @@ export async function POST(
       subject: body?.subject,
       body: body?.body,
       ccParent: body?.cc_parent,
+      cc: body?.cc,
       appUrl: getAppUrl(req),
     })
     if (!r.ok) return withCorsJson(req, { ok: false, error: r.error }, r.status)

@@ -8,7 +8,8 @@
 //   Reply-To  the same address, so replies land in the coach's own inbox.
 //   To        the record's email: the invited email, else the client's profile
 //             email (the order the SOW uses).
-//   CC        the parent's email, only when the coach ticks it.
+//   CC        the parent's email when the coach ticks it, and any addresses
+//             they type (lib/email/cc.ts).
 //   BCC       the coach who sent it, so they have a copy in their inbox. Not
 //             the client's main coach.
 //
@@ -24,6 +25,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { environmentLabel, isProduction, NON_PROD_REDIRECT } from "../email/send"
 import { logClientEmail } from "../email/clientEmailLog"
+import { resolveCc, splitCc } from "../email/cc"
 import { composeMessage, MESSAGE_BODY_MAX, MESSAGE_SUBJECT_MAX } from "./compose"
 import { getMessagingSettings, isAllowedSendingAddress } from "./settings"
 import { providerFor } from "./providers"
@@ -94,7 +96,7 @@ export async function sendCoachMessage(
     provider?: MessageProvider
   },
 ): Promise<Result<{ message_id: string; to: string; redirected: boolean; sent_at: string }>> {
-  const input = (args.input ?? {}) as { channel?: unknown; subject?: unknown; body?: unknown; cc_parent?: unknown }
+  const input = (args.input ?? {}) as { channel?: unknown; subject?: unknown; body?: unknown; cc_parent?: unknown; cc?: unknown }
   if (input.channel != null && input.channel !== "email") return fail("Only email can be sent for now.")
   const subject = typeof input.subject === "string" ? input.subject.replace(/[\r\n]+/g, " ").trim() : ""
   const body = typeof input.body === "string" ? input.body.trim() : ""
@@ -107,12 +109,13 @@ export async function sendCoachMessage(
   if (!ctx) return fail("Client relationship not found", 404)
   if (!ctx.to) return fail("This record has no email address. Add one first.")
   if (!ctx.from) return fail("You don't have a sending address yet. Ask Peri to set one up.", 409)
-  const cc = input.cc_parent === true ? ctx.parent_email : null
-  if (input.cc_parent === true && !cc) return fail("There is no parent email on this record to copy.")
+  const copy = resolveCc({ ccParent: input.cc_parent, cc: input.cc, parentEmail: ctx.parent_email, to: ctx.to })
+  if (!copy.ok) return fail(copy.error)
+  const cc = copy.cc
 
   const from = ctx.from
   const norm = (e: string | null) => (e ?? "").toLowerCase()
-  const bcc = [from].filter((e) => norm(e) !== norm(ctx.to) && norm(e) !== norm(cc))
+  const bcc = [from].filter((e) => norm(e) !== norm(ctx.to) && !splitCc(cc ?? "").some((c) => norm(c) === norm(e)))
 
   const production = isProduction()
   const deliveredTo = production ? ctx.to : NON_PROD_REDIRECT
