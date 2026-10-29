@@ -99,12 +99,107 @@ export const EMPLOYER_PRESETS: Record<string, string[]> = {
     "angel city fc", "bay fc", "chicago stars fc", "houston dash", "kansas city current", "gotham fc",
     "north carolina courage", "orlando pride", "portland thorns", "racing louisville", "san diego wave", "seattle reign",
     "utah royals", "washington spirit", "boston legacy", "denver summit",
+    // Minor-league, developmental and MLB Partner League teams, current plus announced expansion, from the
+    // Wikipedia league tables as of 2026-10-29 (revisions: List of Minor League Baseball leagues and teams
+    // 1381049806, American Hockey League 1381484203, ECHL 1382374368, NBA G League 1381233256, USL Championship
+    // 1382179319, USL League One 1382609790, USL Super League 1374235372, MLS Next Pro 1376138204). Complex,
+    // Dominican and fall leagues left out: no front office to hire. College athletics is not on this list.
+    // minor and developmental leagues
+    "american hockey league", "ahl", "echl", "usl championship", "usl league one", "usl super league", "mls next pro",
+    "american association of professional baseball", "atlantic league of professional baseball", "frontier league",
+    "pioneer league",
+    // MiLB (Triple-A to Single-A)
+    "buffalo bisons", "charlotte knights", "columbus clippers", "durham bulls", "gwinnett stripers",
+    "indianapolis indians", "iowa cubs", "jacksonville jumbo shrimp", "lehigh valley ironpigs", "louisville bats",
+    "memphis redbirds", "nashville sounds", "norfolk tides", "omaha storm chasers", "rochester red wings",
+    "scranton/wilkes-barre railriders", "st. paul saints", "syracuse mets", "toledo mud hens", "worcester red sox",
+    "albuquerque isotopes", "el paso chihuahuas", "las vegas aviators", "oklahoma city comets", "reno aces",
+    "round rock express", "sacramento river cats", "salt lake bees", "sugar land space cowboys", "tacoma rainiers",
+    "akron rubberducks", "altoona curve", "binghamton rumble ponies", "chesapeake baysox", "erie seawolves",
+    "harrisburg senators", "hartford yard goats", "new hampshire fisher cats", "portland sea dogs",
+    "reading fightin phils", "richmond flying squirrels", "somerset patriots", "biloxi shuckers", "birmingham barons",
+    "chattanooga lookouts", "columbus clingstones", "knoxville smokies", "montgomery biscuits", "pensacola blue wahoos",
+    "rocket city trash pandas", "amarillo sod poodles", "arkansas travelers", "corpus christi hooks",
+    "frisco roughriders", "midland rockhounds", "northwest arkansas naturals", "ozarks springbirds",
+    "san antonio missions", "tulsa drillers", "wichita turbo tubs", "beloit sky carp", "cedar rapids kernels",
+    "dayton dragons", "fort wayne tincaps", "great lakes loons", "lake county captains", "lansing lugnuts",
+    "peoria chiefs", "quad cities river bandits", "south bend cubs", "west michigan whitecaps",
+    "wisconsin timber rattlers", "asheville tourists", "bowling green hot rods", "brooklyn cyclones", "frederick keys",
+    "greensboro grasshoppers", "greenville drive", "hub city spartanburgers", "hudson valley renegades",
+    "jersey shore blueclaws", "rome emperors", "wilmington blue rocks", "winston-salem dash", "eugene emeralds",
+    "everett aquasox", "hillsboro hops", "spokane indians", "tri-city dust devils", "vancouver canadians",
+    "augusta greenjackets", "charleston riverdogs", "columbia fireflies", "delmarva shorebirds",
+    "fayetteville woodpeckers", "fredericksburg nationals", "hickory crawdads", "hill city howlers",
+    "kannapolis cannon ballers", "myrtle beach pelicans", "salem ridgeyaks", "wilson warbirds", "bradenton marauders",
+    "clearwater threshers", "daytona tortugas", "dunedin blue jays", "fort myers mighty mussels", "jupiter hammerheads",
+    "lakeland flying tigers", "palm beach cardinals", "st. lucie mets", "tampa tarpons", "fresno grizzlies",
+    "inland empire 66ers", "lake elsinore storm", "ontario tower buzzers", "rancho cucamonga quakes", "san jose giants",
+    "stockton ports", "visalia rawhide",
+    // MLB Partner Leagues (American Association, Atlantic, Frontier, Pioneer)
+    "chicago dogs", "fargo-moorhead redhawks", "gary southshore railcats", "kansas city monarchs",
+    "lake country dockhounds", "lincoln saltdogs", "milwaukee milkmen", "sioux city explorers", "sioux falls canaries",
+    "winnipeg goldeyes", "charleston dirty birds", "hagerstown flying boxcars", "high point rockers",
+    "lancaster stormers", "lexington legends", "long island ducks", "southern maryland blue crabs",
+    "staten island ferryhawks", "york revolution", "brockton rox", "cleburne railroaders", "down east bird dawgs",
+    "evansville otters", "florence y'alls", "gateway grizzlies", "joliet slammers", "kane county cougars",
+    "lake erie crushers", "mississippi mud monsters", "new jersey jackals", "new york boulders", "ottawa titans",
+    "québec capitales", "schaumburg boomers", "sussex county miners", "tri-city valleycats", "trois-rivières aigles",
+    "washington wild things", "windy city thunderbolts", "billings mustangs", "boise hawks", "glacier range riders",
+    "great falls voyagers", "idaho falls chukars", "long beach coast", "missoula paddleheads", "modesto roadsters",
+    "oakland ballers", "ogden raptors", "yuba-sutter freebirds",
+    // AHL
+    "charlotte checkers", "hartford wolf pack", "hershey bears", "lehigh valley phantoms", "providence bruins",
+    "wilkes-barre/scranton penguins", "belleville senators", "cleveland monsters", "hamilton hammers", "laval rocket",
+    "rochester americans", "syracuse crunch", "toronto marlies", "utica comets", "chicago wolves",
+    "grand rapids griffins", "iowa wild", "manitoba moose", "milwaukee admirals", "rockford icehogs", "texas stars",
+    "abbotsford canucks", "calgary wranglers", "coachella valley firebirds", "colorado eagles",
+    "henderson silver knights", "ontario reign", "san diego gulls", "san jose barracuda", "tucson roadrunners",
+    "springfield thunderbirds", "bakersfield condors",
+    // ECHL (incl. announced expansion)
+    "adirondack thunder", "greensboro gargoyles", "maine mariners", "norfolk admirals", "reading royals",
+    "trenton ironhawks", "trois-rivières lions", "worcester railers", "atlanta gladiators", "florida everblades",
+    "greenville swamp rabbits", "jacksonville icemen", "orlando solar bears", "savannah ghost pirates",
+    "south carolina stingrays", "bloomington bison", "cincinnati cyclones", "fort wayne komets", "indy fuel",
+    "kalamazoo wings", "toledo walleye", "wheeling nailers", "allen americans", "idaho steelheads",
+    "kansas city mavericks", "new mexico goatheads", "rapid city rush", "tahoe knight monsters", "tulsa oilers",
+    "wichita thunder", "augusta lynx",
+    // NBA G League
+    "capital city go-go", "cleveland charge", "college park skyhawks", "delaware blue coats", "grand rapids gold",
+    "greensboro swarm", "laketown squadron", "long island nets", "maine celtics", "motor city cruise",
+    "noblesville boom", "osceola magic", "raptors 905", "westchester knicks", "windy city bulls", "wisconsin herd",
+    "austin spurs", "coachella valley lakers", "iowa wolves", "memphis hustle", "mexico city capitanes",
+    "oklahoma city blue", "rio grande valley vipers", "rip city remix", "salt lake city stars", "san diego clippers",
+    "santa cruz warriors", "sioux falls skyforce", "stockton kings", "texas legends", "valley suns",
+    // USL Championship (incl. announced expansion)
+    "birmingham legion fc", "brooklyn fc", "charleston battery", "detroit city fc", "hartford athletic", "indy eleven",
+    "loudoun united fc", "louisville city fc", "miami fc", "pittsburgh riverhounds sc", "rhode island fc",
+    "sporting club jacksonville", "tampa bay rowdies", "colorado springs switchbacks fc", "el paso locomotive fc",
+    "las vegas lights fc", "lexington sc", "monterey bay fc", "new mexico united", "oakland roots sc",
+    "orange county sc", "phoenix rising fc", "sacramento republic fc", "san antonio fc", "fc tulsa",
+    "athletic club boise", "atlético dallas", "reno city fc", "ozark united fc",
+    // USL League One (incl. announced expansion)
+    "av alta fc", "charlotte independence", "chattanooga red wolves sc", "corpus christi fc", "fort wayne fc",
+    "forward madison fc", "greenville triumph sc", "fc naples", "new york cosmos", "one knoxville sc",
+    "portland hearts of pine", "richmond kickers", "sarasota paradise", "spokane velocity fc", "union omaha",
+    "westchester sc", "sporting cascades fc", "fort lauderdale united fc", "port st. lucie sc",
+    "thousand oaks pro soccer", "rodeo sc", "usl long island",
+    // USL Super League (incl. announced expansion)
+    "carolina ascent fc", "dallas trinity fc", "dc power fc", "tampa bay sun fc", "buffalo pro soccer",
+    "oakland soul sc", "rally madison fc",
+    // MLS NEXT Pro (incl. announced expansion)
+    "ct united fc", "columbus crew 2", "fc cincinnati 2", "new england revolution ii", "new york city fc ii",
+    "new york red bulls ii", "philadelphia union ii", "toronto fc ii", "atlanta united 2", "carolina core fc",
+    "chattanooga fc", "chicago fire fc ii", "crown legacy fc", "huntsville city fc", "inter miami cf ii",
+    "orlando city b", "austin fc ii", "colorado rapids 2", "houston dynamo 2", "sporting kansas city ii",
+    "minnesota united fc 2", "north texas sc", "st. louis city 2", "los angeles fc 2", "portland timbers 2",
+    "real monarchs", "san jose earthquakes ii", "tacoma defiance", "ventura county fc", "whitecaps fc 2",
+    "jacksonville armada fc", "forest city cleveland", "ac grand rapids", "the island f.c.",
   ],
 }
 
-/** "St. Louis Cardinals, LLC" -> " st louis cardinals llc ": ampersand and plus kept as words, dots dropped. */
+/** "St. Louis Cardinals, LLC" -> " st louis cardinals llc ": ampersand and plus kept as words, dots and accents dropped. */
 const employerWords = (s: string) =>
-  ` ${s.toLowerCase().replace(/[.’']/g, "").replace(/&/g, " & ").replace(/\+/g, " + ").replace(/[^a-z0-9&+]+/g, " ").trim()} `
+  ` ${s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[.’']/g, "").replace(/&/g, " & ").replace(/\+/g, " + ").replace(/[^a-z0-9&+]+/g, " ").trim()} `
 
 /** Is this company on the preset's list? Whole words, so "kings" alone never matches. */
 export function employerInPreset(preset: string, company: string): boolean {

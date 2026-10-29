@@ -29,8 +29,9 @@ import { citiesOf } from "../ingest/link"
  *   2026-10-26.2  a place abroad that the title states is the posting's location
  *   2026-10-27.1  a season starts on its first month, not its last
  *   2026-10-27.2  a market can be limited to listed employers (pro sports teams and leagues)
+ *   2026-10-29.1  pro sports list adds minor-league teams; accents ignored in employer names
  */
-export const RULES_VERSION = "2026-10-27.2"
+export const RULES_VERSION = "2026-10-29.1"
 
 /** Country names a location can end with. US spellings are handled separately. */
 const COUNTRIES = new Set([

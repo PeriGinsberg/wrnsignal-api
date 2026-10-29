@@ -209,6 +209,12 @@ ok("Anthony: NJ is inside the NYC market", job("Octagon", "Jersey City, NJ").len
 ok("Anthony: a nickname alone is not a team (Liberty Mutual, Burger King)", job("Liberty Mutual Insurance", "Boston, MA").join() === "location" && job("Burger King", "Miami, FL").join() === "location")
 ok("Anthony: a remote role passes anywhere", applyRules(anthony, fromPosting({ title: "Partnerships Coordinator", company: "Wasserman", location: "Remote, US" }), TODAY).length === 0)
 ok("Anthony: a team abroad still fails", job("Toronto Raptors", "Toronto, ON, Canada").join() === "location")
+ok("Anthony: MiLB, AHL, G League, ECHL and USL teams pass anywhere in the US",
+  job("Durham Bulls", "Durham, NC").length === 0 && job("Hershey Bears", "Hershey, PA").length === 0 && job("Iowa Wolves", "Des Moines, IA").length === 0 &&
+  job("Florida Everblades", "Estero, FL").length === 0 && job("Birmingham Legion FC", "Birmingham, AL").length === 0)
+ok("Anthony: accents ignored (Atlético Dallas, Atletico Dallas)", job("Atlético Dallas", "Dallas, TX").length === 0 && job("Atletico Dallas", "Dallas, TX").length === 0)
+ok("Anthony: a college team in Durham fails, as does one in Ann Arbor", job("Duke Blue Devils", "Durham, NC").join() === "location" && job("University of Michigan Athletics", "Ann Arbor, MI").join() === "location")
+ok("Anthony: a college team within 50 miles of NYC passes", job("Columbia Lions", "New York, NY").length === 0)
 ok("Anthony: the NYC market is preferred, the team market is not", inPreferredMarket(anthony.markets, posted("New York, NY")) && !inPreferredMarket(anthony.markets, posted("Denver, CO")))
 let unknownPreset = false
 try { criteriaFromRow({ markets: [{ name: "united_states", states: ["co"], employers: "pro_sport" }] }, { profile_structured: {} }) } catch (e: any) { unknownPreset = e.name === "UnknownEmployerPresetError" }
