@@ -247,7 +247,8 @@ export function toPatch(f: EnrichFields, title: string): { patch: Record<string,
   const [ind, indEv] = enumField(f.industry, f.industry_evidence, "industry", INDUSTRY_VALUES)
 
   // required majors: the fields need their quote and a basis, like every stated
-  // value; otherwise stored as not stated and recorded
+  // value; otherwise stored as not stated and recorded. Like campus, NULL is
+  // the not-stated record: postings_not_stated_fields_known has no majors group
   const majorsText = f.majors_evidence.trim() || null
   let majors = f.required_majors === "not_stated" ? null : [...new Set(f.required_majors.map((m) => m.trim()).filter(Boolean))]
   if (majors && !majors.length) majors = null
@@ -255,7 +256,6 @@ export function toPatch(f: EnrichFields, title: string): { patch: Record<string,
     demoted.push({ field: "majors", value: JSON.stringify(majors), why: "no_quote" })
     majors = null
   }
-  if (!majors) notStated.push("majors")
 
   const evidence: Record<string, unknown> = {}
   for (const [k, v] of [["years", f.years_evidence], ["salary", f.salary_evidence], ["tools", f.tools_evidence], ["level", f.level_evidence], ["employment", f.employment_evidence], ["campus", campus ? f.campus_evidence : ""], ["majors", majors ? f.majors_evidence : ""]] as const) {

@@ -128,7 +128,7 @@ export function clientBrief(c: MatchCriteria, today = new Date()): string {
     c.availableFrom && `Available to start: from ${c.availableFrom}${c.availableFrom > today.toISOString().slice(0, 10) ? " (in the future)" : ""}`,
     `Coach's usual ceiling on years a posting asks: ${c.maxYearsRequired ?? "none given"} (a guide, not a limit: see STRETCH ROLES)`,
     `Job type wanted: ${c.jobTypes.join(", ") || "not given"}`,
-    `Where: ${c.markets.length ? c.markets.map((m) => m.name + (m.preferred ? " (preferred)" : "")).join(", ") + (c.radiusMiles ? ` (within ${c.radiusMiles} miles)` : "") : "anywhere"}${c.remoteOk ? "; remote is fine" : ""}`,
+    `Where: ${c.markets.length ? c.markets.map((m) => m.name + (m.preferred ? " (preferred)" : "") + (m.employers ? ` (${m.employers.replace(/_/g, " ")} employers only)` : "")).join(", ") + (c.radiusMiles ? ` (within ${c.radiusMiles} miles)` : "") : "anywhere"}${c.remoteOk ? "; remote is fine" : ""}`,
     c.majors && `Majors: ${c.majors}`,
     c.salaryFloor && `Salary floor: ${c.salaryFloor.amount} per ${c.salaryFloor.period}`,
     c.targetIndustries.length && `Target industries: ${c.targetIndustries.join(", ")}`,

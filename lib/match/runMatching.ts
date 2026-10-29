@@ -32,7 +32,7 @@ import { createHash } from "crypto"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { postingText } from "../ingest/enrichPostings"
 import { chooseMarketLink, linksFromRaw } from "../ingest/applyLinks"
-import { PRESET_CITIES, type MatchCriteria, type Market } from "./criteria"
+import { EMPLOYER_PRESETS, PRESET_CITIES, UnknownEmployerPresetError, type MatchCriteria, type Market } from "./criteria"
 import { applyRules, parseLocations, RULES_VERSION, titleAbroad, type MatchPosting } from "./rules"
 import { judge, JUDGE_PROMPT_SHA256, type JudgeUsage, type PastDecision } from "./judge"
 
@@ -42,13 +42,19 @@ const EXAMPLES = 10
 
 const PROFILE_COLS = "id, grad_date, education_status, timeline, resume_text, profile_text, profile_structured, coach_notes_avoid, coach_notes_concerns"
 
+/** An employer-limited market must name a list that exists: stop before matching, not halfway through. */
+function checkedMarkets(markets: Market[]): Market[] {
+  for (const m of markets) if (m.employers && !EMPLOYER_PRESETS[m.employers]) throw new UnknownEmployerPresetError(m.employers)
+  return markets
+}
+
 /** client_match_criteria row + client_profiles row -> what rules and judge read. */
 export function criteriaFromRow(row: any, profile: any): MatchCriteria {
   const notes = [profile.coach_notes_avoid && `Avoid: ${profile.coach_notes_avoid}`, profile.coach_notes_concerns && `Concerns: ${profile.coach_notes_concerns}`, row.notes]
     .filter(Boolean).join("\n") || null
   return {
     clientProfileId: row.client_profile_id,
-    markets: (row.markets ?? []) as Market[],
+    markets: checkedMarkets((row.markets ?? []) as Market[]),
     radiusMiles: row.radius_miles ?? null,
     remoteOk: row.remote_ok,
     maxYearsRequired: row.max_years_required ?? null,

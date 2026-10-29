@@ -35,7 +35,7 @@ const ns = (x: Record<string, unknown>) => (x.enrichment_not_stated as string[])
 
 // ── nothing stated: every group named, every value NULL
 const empty = p({})
-ok("nothing stated names every group", ns(empty) === "years,salary,salary_currency,graduation,application_deadline,requirements_summary,tools,level,employment_type,start,function,industry,majors")
+ok("nothing stated names every group", ns(empty) === "years,salary,salary_currency,graduation,application_deadline,requirements_summary,tools,level,employment_type,start,function,industry")
 ok("nothing stated: values NULL, cleaned title kept", empty.years_min === null && empty.salary_low === null && empty.deadline_text === null && empty.cleaned_title === "Financial Analyst")
 ok("success clears a previous failure", empty.enrichment_failed_at === null && empty.enrichment_error === null)
 
@@ -151,7 +151,7 @@ ok("Greenhouse text from raw.content HTML", postingText("grnhse", { content: "&l
 const maj = p({ required_majors: ["Finance", "Economics", "related field"], majors_basis: "required", majors_evidence: "Bachelor's degree in Finance, Economics or a related field" })
 ok("majors stored as written, with basis and quote", (maj.required_majors as string[]).join("|") === "Finance|Economics|related field" && maj.majors_basis === "required"
   && (maj.enrichment_evidence as any).majors === "Bachelor's degree in Finance, Economics or a related field")
-ok("majors not stated: NULL, named not stated", empty.required_majors === null && empty.majors_basis === null && ns(empty).includes("majors"))
+ok("majors not stated: NULL, not a not-stated group (the database allows none)", empty.required_majors === null && empty.majors_basis === null && !ns(empty).includes("majors"))
 const majNoQuote = toPatch({ ...none, required_majors: ["Accounting"], majors_basis: "required", majors_evidence: "" }, "t")
 ok("majors with no quote: stored not stated and recorded", majNoQuote.patch.required_majors === null && majNoQuote.demoted.some((d) => d.field === "majors" && d.why === "no_quote"))
 const majNoBasis = toPatch({ ...none, required_majors: ["Accounting"], majors_basis: "not_stated", majors_evidence: "Accounting degree" }, "t")

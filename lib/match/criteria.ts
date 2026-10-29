@@ -30,6 +30,191 @@ export type Market = {
    * fails a posting.
    */
   preferred?: boolean
+  /**
+   * Only for these employers (an EMPLOYER_PRESETS key): the market's states
+   * count only when the posting's employer is on that list. Anthony,
+   * 2026-10-27: pro teams and leagues anywhere in the US, everything else near
+   * NYC.
+   */
+  employers?: string
+}
+
+/**
+ * Employer lists a market can be limited to. Full names only: a bare nickname
+ * ("Liberty", "Kings", "Heat") would also match Liberty Mutual or Burger King.
+ * Matched as whole words on the company name, case and punctuation ignored.
+ */
+export const EMPLOYER_PRESETS: Record<string, string[]> = {
+  pro_sports: [
+    // leagues and their offices
+    "nfl", "national football league", "nba", "national basketball association", "nba g league", "wnba",
+    "women's national basketball association", "mlb", "major league baseball", "minor league baseball", "milb", "nhl",
+    "national hockey league", "mls", "major league soccer", "nwsl", "national women's soccer league", "usl",
+    "united soccer league", "pwhl", "professional women's hockey league",
+    // groups that run teams
+    "kroenke sports & entertainment", "harris blitzer sports & entertainment", "monumental sports & entertainment",
+    "maple leaf sports & entertainment", "fenway sports group", "madison square garden sports", "msg sports",
+    "ilitch sports + entertainment", "pegula sports and entertainment", "comcast spectacor", "rock entertainment group",
+    "tampa bay sports & entertainment", "bse global", "jacksonville jaguars llc",
+    // NFL
+    "arizona cardinals", "atlanta falcons", "baltimore ravens", "buffalo bills", "carolina panthers", "chicago bears",
+    "cincinnati bengals", "cleveland browns", "dallas cowboys", "denver broncos", "detroit lions", "green bay packers",
+    "houston texans", "indianapolis colts", "jacksonville jaguars", "kansas city chiefs", "las vegas raiders",
+    "los angeles chargers", "los angeles rams", "miami dolphins", "minnesota vikings", "new england patriots",
+    "new orleans saints", "new york giants", "new york jets", "philadelphia eagles", "pittsburgh steelers",
+    "san francisco 49ers", "seattle seahawks", "tampa bay buccaneers", "tennessee titans", "washington commanders",
+    // NBA
+    "atlanta hawks", "boston celtics", "brooklyn nets", "charlotte hornets", "chicago bulls", "cleveland cavaliers",
+    "dallas mavericks", "denver nuggets", "detroit pistons", "golden state warriors", "houston rockets", "indiana pacers",
+    "la clippers", "los angeles clippers", "los angeles lakers", "memphis grizzlies", "miami heat", "milwaukee bucks",
+    "minnesota timberwolves", "new orleans pelicans", "new york knicks", "oklahoma city thunder", "orlando magic",
+    "philadelphia 76ers", "phoenix suns", "portland trail blazers", "sacramento kings", "san antonio spurs",
+    "toronto raptors", "utah jazz", "washington wizards",
+    // MLB
+    "arizona diamondbacks", "atlanta braves", "baltimore orioles", "boston red sox", "chicago cubs", "chicago white sox",
+    "cincinnati reds", "cleveland guardians", "colorado rockies", "detroit tigers", "houston astros", "kansas city royals",
+    "los angeles angels", "los angeles dodgers", "miami marlins", "milwaukee brewers", "minnesota twins", "new york mets",
+    "new york yankees", "oakland athletics", "sacramento athletics", "las vegas athletics", "philadelphia phillies",
+    "pittsburgh pirates", "san diego padres", "san francisco giants", "seattle mariners", "st louis cardinals",
+    "tampa bay rays", "texas rangers", "toronto blue jays", "washington nationals",
+    // NHL
+    "anaheim ducks", "boston bruins", "buffalo sabres", "calgary flames", "carolina hurricanes", "chicago blackhawks",
+    "colorado avalanche", "columbus blue jackets", "dallas stars", "detroit red wings", "edmonton oilers",
+    "florida panthers", "los angeles kings", "minnesota wild", "montreal canadiens", "nashville predators",
+    "new jersey devils", "new york islanders", "new york rangers", "ottawa senators", "philadelphia flyers",
+    "pittsburgh penguins", "san jose sharks", "seattle kraken", "st louis blues", "tampa bay lightning",
+    "toronto maple leafs", "utah mammoth", "utah hockey club", "vancouver canucks", "vegas golden knights",
+    "washington capitals", "winnipeg jets",
+    // MLS
+    "atlanta united", "austin fc", "charlotte fc", "chicago fire", "fc cincinnati", "colorado rapids", "columbus crew",
+    "dc united", "fc dallas", "houston dynamo", "inter miami", "la galaxy", "lafc", "los angeles fc", "minnesota united",
+    "cf montreal", "nashville sc", "new england revolution", "new york city fc", "nycfc", "new york red bulls",
+    "orlando city", "philadelphia union", "portland timbers", "real salt lake", "san diego fc", "san jose earthquakes",
+    "seattle sounders", "sporting kansas city", "st louis city sc", "toronto fc", "vancouver whitecaps",
+    // WNBA
+    "atlanta dream", "chicago sky", "connecticut sun", "dallas wings", "golden state valkyries", "indiana fever",
+    "las vegas aces", "los angeles sparks", "minnesota lynx", "new york liberty", "phoenix mercury", "seattle storm",
+    "washington mystics", "toronto tempo", "portland fire",
+    // NWSL
+    "angel city fc", "bay fc", "chicago stars fc", "houston dash", "kansas city current", "gotham fc",
+    "north carolina courage", "orlando pride", "portland thorns", "racing louisville", "san diego wave", "seattle reign",
+    "utah royals", "washington spirit", "boston legacy", "denver summit",
+    // Minor-league, developmental and MLB Partner League teams, current plus announced expansion, from the
+    // Wikipedia league tables as of 2026-10-29 (revisions: List of Minor League Baseball leagues and teams
+    // 1381049806, American Hockey League 1381484203, ECHL 1382374368, NBA G League 1381233256, USL Championship
+    // 1382179319, USL League One 1382609790, USL Super League 1374235372, MLS Next Pro 1376138204). Complex,
+    // Dominican and fall leagues left out: no front office to hire. College athletics is not on this list.
+    // minor and developmental leagues
+    "american hockey league", "ahl", "echl", "usl championship", "usl league one", "usl super league", "mls next pro",
+    "american association of professional baseball", "atlantic league of professional baseball", "frontier league",
+    "pioneer league",
+    // MiLB (Triple-A to Single-A)
+    "buffalo bisons", "charlotte knights", "columbus clippers", "durham bulls", "gwinnett stripers",
+    "indianapolis indians", "iowa cubs", "jacksonville jumbo shrimp", "lehigh valley ironpigs", "louisville bats",
+    "memphis redbirds", "nashville sounds", "norfolk tides", "omaha storm chasers", "rochester red wings",
+    "scranton/wilkes-barre railriders", "st. paul saints", "syracuse mets", "toledo mud hens", "worcester red sox",
+    "albuquerque isotopes", "el paso chihuahuas", "las vegas aviators", "oklahoma city comets", "reno aces",
+    "round rock express", "sacramento river cats", "salt lake bees", "sugar land space cowboys", "tacoma rainiers",
+    "akron rubberducks", "altoona curve", "binghamton rumble ponies", "chesapeake baysox", "erie seawolves",
+    "harrisburg senators", "hartford yard goats", "new hampshire fisher cats", "portland sea dogs",
+    "reading fightin phils", "richmond flying squirrels", "somerset patriots", "biloxi shuckers", "birmingham barons",
+    "chattanooga lookouts", "columbus clingstones", "knoxville smokies", "montgomery biscuits", "pensacola blue wahoos",
+    "rocket city trash pandas", "amarillo sod poodles", "arkansas travelers", "corpus christi hooks",
+    "frisco roughriders", "midland rockhounds", "northwest arkansas naturals", "ozarks springbirds",
+    "san antonio missions", "tulsa drillers", "wichita turbo tubs", "beloit sky carp", "cedar rapids kernels",
+    "dayton dragons", "fort wayne tincaps", "great lakes loons", "lake county captains", "lansing lugnuts",
+    "peoria chiefs", "quad cities river bandits", "south bend cubs", "west michigan whitecaps",
+    "wisconsin timber rattlers", "asheville tourists", "bowling green hot rods", "brooklyn cyclones", "frederick keys",
+    "greensboro grasshoppers", "greenville drive", "hub city spartanburgers", "hudson valley renegades",
+    "jersey shore blueclaws", "rome emperors", "wilmington blue rocks", "winston-salem dash", "eugene emeralds",
+    "everett aquasox", "hillsboro hops", "spokane indians", "tri-city dust devils", "vancouver canadians",
+    "augusta greenjackets", "charleston riverdogs", "columbia fireflies", "delmarva shorebirds",
+    "fayetteville woodpeckers", "fredericksburg nationals", "hickory crawdads", "hill city howlers",
+    "kannapolis cannon ballers", "myrtle beach pelicans", "salem ridgeyaks", "wilson warbirds", "bradenton marauders",
+    "clearwater threshers", "daytona tortugas", "dunedin blue jays", "fort myers mighty mussels", "jupiter hammerheads",
+    "lakeland flying tigers", "palm beach cardinals", "st. lucie mets", "tampa tarpons", "fresno grizzlies",
+    "inland empire 66ers", "lake elsinore storm", "ontario tower buzzers", "rancho cucamonga quakes", "san jose giants",
+    "stockton ports", "visalia rawhide",
+    // MLB Partner Leagues (American Association, Atlantic, Frontier, Pioneer)
+    "chicago dogs", "fargo-moorhead redhawks", "gary southshore railcats", "kansas city monarchs",
+    "lake country dockhounds", "lincoln saltdogs", "milwaukee milkmen", "sioux city explorers", "sioux falls canaries",
+    "winnipeg goldeyes", "charleston dirty birds", "hagerstown flying boxcars", "high point rockers",
+    "lancaster stormers", "lexington legends", "long island ducks", "southern maryland blue crabs",
+    "staten island ferryhawks", "york revolution", "brockton rox", "cleburne railroaders", "down east bird dawgs",
+    "evansville otters", "florence y'alls", "gateway grizzlies", "joliet slammers", "kane county cougars",
+    "lake erie crushers", "mississippi mud monsters", "new jersey jackals", "new york boulders", "ottawa titans",
+    "québec capitales", "schaumburg boomers", "sussex county miners", "tri-city valleycats", "trois-rivières aigles",
+    "washington wild things", "windy city thunderbolts", "billings mustangs", "boise hawks", "glacier range riders",
+    "great falls voyagers", "idaho falls chukars", "long beach coast", "missoula paddleheads", "modesto roadsters",
+    "oakland ballers", "ogden raptors", "yuba-sutter freebirds",
+    // AHL
+    "charlotte checkers", "hartford wolf pack", "hershey bears", "lehigh valley phantoms", "providence bruins",
+    "wilkes-barre/scranton penguins", "belleville senators", "cleveland monsters", "hamilton hammers", "laval rocket",
+    "rochester americans", "syracuse crunch", "toronto marlies", "utica comets", "chicago wolves",
+    "grand rapids griffins", "iowa wild", "manitoba moose", "milwaukee admirals", "rockford icehogs", "texas stars",
+    "abbotsford canucks", "calgary wranglers", "coachella valley firebirds", "colorado eagles",
+    "henderson silver knights", "ontario reign", "san diego gulls", "san jose barracuda", "tucson roadrunners",
+    "springfield thunderbirds", "bakersfield condors",
+    // ECHL (incl. announced expansion)
+    "adirondack thunder", "greensboro gargoyles", "maine mariners", "norfolk admirals", "reading royals",
+    "trenton ironhawks", "trois-rivières lions", "worcester railers", "atlanta gladiators", "florida everblades",
+    "greenville swamp rabbits", "jacksonville icemen", "orlando solar bears", "savannah ghost pirates",
+    "south carolina stingrays", "bloomington bison", "cincinnati cyclones", "fort wayne komets", "indy fuel",
+    "kalamazoo wings", "toledo walleye", "wheeling nailers", "allen americans", "idaho steelheads",
+    "kansas city mavericks", "new mexico goatheads", "rapid city rush", "tahoe knight monsters", "tulsa oilers",
+    "wichita thunder", "augusta lynx",
+    // NBA G League
+    "capital city go-go", "cleveland charge", "college park skyhawks", "delaware blue coats", "grand rapids gold",
+    "greensboro swarm", "laketown squadron", "long island nets", "maine celtics", "motor city cruise",
+    "noblesville boom", "osceola magic", "raptors 905", "westchester knicks", "windy city bulls", "wisconsin herd",
+    "austin spurs", "coachella valley lakers", "iowa wolves", "memphis hustle", "mexico city capitanes",
+    "oklahoma city blue", "rio grande valley vipers", "rip city remix", "salt lake city stars", "san diego clippers",
+    "santa cruz warriors", "sioux falls skyforce", "stockton kings", "texas legends", "valley suns",
+    // USL Championship (incl. announced expansion)
+    "birmingham legion fc", "brooklyn fc", "charleston battery", "detroit city fc", "hartford athletic", "indy eleven",
+    "loudoun united fc", "louisville city fc", "miami fc", "pittsburgh riverhounds sc", "rhode island fc",
+    "sporting club jacksonville", "tampa bay rowdies", "colorado springs switchbacks fc", "el paso locomotive fc",
+    "las vegas lights fc", "lexington sc", "monterey bay fc", "new mexico united", "oakland roots sc",
+    "orange county sc", "phoenix rising fc", "sacramento republic fc", "san antonio fc", "fc tulsa",
+    "athletic club boise", "atlético dallas", "reno city fc", "ozark united fc",
+    // USL League One (incl. announced expansion)
+    "av alta fc", "charlotte independence", "chattanooga red wolves sc", "corpus christi fc", "fort wayne fc",
+    "forward madison fc", "greenville triumph sc", "fc naples", "new york cosmos", "one knoxville sc",
+    "portland hearts of pine", "richmond kickers", "sarasota paradise", "spokane velocity fc", "union omaha",
+    "westchester sc", "sporting cascades fc", "fort lauderdale united fc", "port st. lucie sc",
+    "thousand oaks pro soccer", "rodeo sc", "usl long island",
+    // USL Super League (incl. announced expansion)
+    "carolina ascent fc", "dallas trinity fc", "dc power fc", "tampa bay sun fc", "buffalo pro soccer",
+    "oakland soul sc", "rally madison fc",
+    // MLS NEXT Pro (incl. announced expansion)
+    "ct united fc", "columbus crew 2", "fc cincinnati 2", "new england revolution ii", "new york city fc ii",
+    "new york red bulls ii", "philadelphia union ii", "toronto fc ii", "atlanta united 2", "carolina core fc",
+    "chattanooga fc", "chicago fire fc ii", "crown legacy fc", "huntsville city fc", "inter miami cf ii",
+    "orlando city b", "austin fc ii", "colorado rapids 2", "houston dynamo 2", "sporting kansas city ii",
+    "minnesota united fc 2", "north texas sc", "st. louis city 2", "los angeles fc 2", "portland timbers 2",
+    "real monarchs", "san jose earthquakes ii", "tacoma defiance", "ventura county fc", "whitecaps fc 2",
+    "jacksonville armada fc", "forest city cleveland", "ac grand rapids", "the island f.c.",
+  ],
+}
+
+/** "St. Louis Cardinals, LLC" -> " st louis cardinals llc ": ampersand and plus kept as words, dots and accents dropped. */
+const employerWords = (s: string) =>
+  ` ${s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[.’']/g, "").replace(/&/g, " & ").replace(/\+/g, " + ").replace(/[^a-z0-9&+]+/g, " ").trim()} `
+
+/** Is this company on the preset's list? Whole words, so "kings" alone never matches. */
+export function employerInPreset(preset: string, company: string): boolean {
+  const names = EMPLOYER_PRESETS[preset]
+  if (!names) throw new UnknownEmployerPresetError(preset)
+  const co = employerWords(company)
+  return names.some((n) => co.includes(employerWords(n)))
+}
+
+/** A market names an employer list EMPLOYER_PRESETS does not have. Matching stops rather than guessing. */
+export class UnknownEmployerPresetError extends Error {
+  constructor(public preset: string) {
+    super(`unknown employer preset "${preset}": add it to EMPLOYER_PRESETS in lib/match/criteria.ts or fix the market`)
+    this.name = "UnknownEmployerPresetError"
+  }
 }
 
 export type MatchCriteria = {

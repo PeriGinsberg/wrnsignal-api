@@ -15,7 +15,7 @@
  *     posting (a full-time client pushed a part-time seasonal role)
  */
 
-import type { MatchCriteria } from "./criteria"
+import { employerInPreset, type MatchCriteria } from "./criteria"
 import { citiesOf } from "../ingest/link"
 
 /**
@@ -28,8 +28,10 @@ import { citiesOf } from "../ingest/link"
  *   2026-10-26.1  an internship-only client fails a stated non-internship type
  *   2026-10-26.2  a place abroad that the title states is the posting's location
  *   2026-10-27.1  a season starts on its first month, not its last
+ *   2026-10-27.2  a market can be limited to listed employers (pro sports teams and leagues)
+ *   2026-10-29.1  pro sports list adds minor-league teams; accents ignored in employer names
  */
-export const RULES_VERSION = "2026-10-27.1"
+export const RULES_VERSION = "2026-10-29.1"
 
 /** Country names a location can end with. US spellings are handled separately. */
 const COUNTRIES = new Set([
@@ -186,7 +188,8 @@ export function applyRules(c: MatchCriteria, p: MatchPosting, today = new Date()
   // location. "Remote" passes only when it is not remote from abroad.
   const abroadOnly = !!p.locations?.length && p.locations.every((l) => l.country && l.country !== "US")
   if (c.markets.length && p.locations?.length && !(p.remote && c.remoteOk && !abroadOnly)) {
-    const allowed = new Set(c.markets.flatMap((m) => m.states))
+    // A market limited to listed employers counts only for those employers.
+    const allowed = new Set(c.markets.filter((m) => !m.employers || employerInPreset(m.employers, p.company)).flatMap((m) => m.states))
     const placed = p.locations.filter((l) => l.state || (l.country && l.country !== "US"))
     // Every location must be placeable to fail: one unknown location passes.
     if (placed.length === p.locations.length && placed.every((l) => (l.country && l.country !== "US") || !allowed.has(l.state!))) {
