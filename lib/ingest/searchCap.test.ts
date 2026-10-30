@@ -155,6 +155,21 @@ const controlCalls = () => calls.filter((c) => c.startsWith(NONSENSE)).length
     ok("dryRun builds the alert but does not send it", sent.length === 0)
   }
 
+  // ── 3. A deadline stops new pairs; the next run takes the rest ──────────
+  {
+    calls = []
+    controlError = null
+    const { sb, runs } = fakeSb()
+    const finished: string[] = []
+    const swept = await runSweep(searchApiAdapter({ apiKey: "k", maxPages: 1 }), chicago, [GOOGLE_JOBS], sb, {
+      deadline: Date.now() + 100, onPair: async (p) => { finished.push(p.id!) },
+    })
+    ok("deadline: the pair in hand finishes, no new pair starts", swept.length === 1 && runs.length === 1)
+    ok("deadline: onPair reports each finished pair", finished.length === 1 && finished[0] === chicago[0].id)
+    const run = await runGoogleJobs(fakeSb().sb, chicago.slice(1), { provider: "searchapi", apiKey: "k", maxPages: 1, cap: 50, dryRun: true, deadline: Date.now() - 1 })
+    ok("runGoogleJobs: a passed deadline starts nothing and is not a cap stop", run.swept.length === 0 && !run.budget.stopped && run.alert === null)
+  }
+
   console.log(failures ? `\n${failures} failure(s)` : "\nall passed")
   if (failures) process.exit(1)
 })().catch((e) => { console.error(e); process.exit(1) })

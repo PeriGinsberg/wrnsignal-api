@@ -65,6 +65,8 @@ export async function runGoogleJobs(
     environment?: string
     dryRun?: boolean
     send?: (a: IngestAlert) => Promise<void>
+    /** Epoch ms after which no new pair starts (runSweep). */
+    deadline?: number
   } = {}
 ): Promise<GoogleJobsRun> {
   const startedAt = Date.now()
@@ -72,7 +74,7 @@ export async function runGoogleJobs(
   const adapter = opts.adapter
     ? opts.adapter(budget)
     : googleJobsAdapter({ provider: opts.provider, apiKey: opts.apiKey, maxPages: opts.maxPages, budget })
-  const swept = await runSweep(adapter, pairs, [GOOGLE_JOBS], sb, { budget })
+  const swept = await runSweep(adapter, pairs, [GOOGLE_JOBS], sb, { budget, deadline: opts.deadline })
 
   if (!budget.stopped) return { swept, budget, alert: null }
 

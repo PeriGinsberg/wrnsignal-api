@@ -4,7 +4,7 @@
 // the watchdog reports, and the cost pace arithmetic and its once-per-period rule.
 
 import { pickPairs, type LastSearch, type PairRow } from "./pairs"
-import { nextStep, MAX_CONTINUATIONS, type RunRow } from "./runs"
+import { closeStale, nextStep, MAX_CONTINUATIONS, STALE_RUNNING_MS, TICK_STEPS, type RunRow } from "./runs"
 import { watchdogFindings } from "./watchdog"
 import { lastWeek, monthWindow, paceAlerts, projectSearches, projectSpend, runPaceCheck, weeklyReportText, type StepTotals } from "./cost"
 
@@ -45,7 +45,12 @@ const row = (step: RunRow["step"], status: RunRow["status"], detail: Record<stri
 const ns = (rows: RunRow[]) => { const x = nextStep(rows); return x.kind === "run" ? `${x.step}${x.continuation ? "+" : ""}` : x.kind }
 ok("nothing yet: Google Jobs", ns([]) === "google_jobs")
 ok("ATS rows do not count as tick steps", ns([row("ats_grnhse", "ok"), row("ats_smartrecruiters", "ok")]) === "google_jobs")
-ok("Google Jobs capped or failed is still done for the night: enrich next", ns([row("google_jobs", "capped", { capReason: "cap" })]) === "enrich" && ns([row("google_jobs", "error")]) === "enrich")
+ok("Google Jobs at its cap or failed is done for the night: enrich next", ns([row("google_jobs", "capped", { capReason: "cap" })]) === "enrich" && ns([row("google_jobs", "error")]) === "enrich")
+ok("Google Jobs out of time: Google Jobs again", ns([row("google_jobs", "capped", { capReason: "deadline", deferred: 27 })]) === "google_jobs+")
+ok("Google Jobs killed: Google Jobs again", ns([row("google_jobs", "capped", { capReason: "killed" })]) === "google_jobs+")
+ok("match killed: match again", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "capped", { capReason: "killed" })]) === "match+")
+ok("link check killed: not run again", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "ok"), row("link_check", "capped", { capReason: "killed" })]) === "done")
+ok("a running ATS sweep does not hold up the ticks", ns([row("ats_smartrecruiters", "running")]) === "google_jobs")
 ok("enrich out of time: enrich again", ns([row("google_jobs", "ok"), row("enrich", "capped", { capReason: "deadline" })]) === "enrich+")
 ok("enrich at its cap: match next", ns([row("google_jobs", "ok"), row("enrich", "capped", { capReason: "cap" })]) === "match")
 ok("a running row: busy", ns([row("google_jobs", "ok"), row("enrich", "running")]) === "busy")
@@ -53,12 +58,31 @@ const many = [row("google_jobs", "ok"), ...Array.from({ length: MAX_CONTINUATION
 ok("continuations stop after MAX_CONTINUATIONS: match next", ns(many) === "match")
 ok("all four done: done", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "ok"), row("link_check", "ok")]) === "done")
 
+// ---- closing a killed run
+{
+  const updates: any[] = []
+  const fakeSb: any = { from: () => ({ update: (u: any) => ({ eq: async () => { updates.push(u); return { error: null } } }) }) }
+  const now = Date.parse("2026-10-30T05:20:00Z")
+  const killed = { ...row("google_jobs", "running", { pairsDone: ["p1"] }), started_at: "2026-10-30T05:00:33Z" }
+  const sr = { ...row("ats_smartrecruiters", "running"), started_at: "2026-10-30T04:30:06Z" }
+  const fresh = { ...row("enrich", "running"), started_at: new Date(now - STALE_RUNNING_MS + 60_000).toISOString() }
+  ;(async () => {
+    const closed = await closeStale(fakeSb, [killed, sr, fresh], now, TICK_STEPS)
+    ok("closeStale: only stale rows of the steps given (not the ATS row, not a fresh one)", closed.length === 1 && closed[0] === killed)
+    ok("closeStale: killed is capped, not an error, with its progress kept", updates[0]?.status === "capped" && updates[0]?.error === null && updates[0]?.detail.capReason === "killed" && updates[0]?.detail.pairsDone[0] === "p1")
+    ok("closeStale: and the next tick runs it again", ns([killed]) === "google_jobs+")
+  })()
+}
+
 // ---- watchdog
 const w = watchdogFindings([row("ats_grnhse", "ok"), row("google_jobs", "error"), row("enrich", "ok"), row("match", "capped", { capReason: "deadline", deferred: 812 }), row("link_check", "running")])
 ok("watchdog: a missing step is skipped", w.some((f) => f.startsWith("ats_smartrecruiters: skipped")))
 ok("watchdog: out of time with work left is reported", w.some((f) => f.startsWith("match: ran out of time") && f.includes("812")))
 ok("watchdog: still running is reported", w.some((f) => f.startsWith("link_check: still running")))
 ok("watchdog: a failure is not repeated (the tick sent it)", !w.some((f) => f.startsWith("google_jobs")) && w.length === 3)
+const w2 = watchdogFindings([row("ats_grnhse", "ok"), row("ats_smartrecruiters", "capped", { capReason: "deadline", pairsLeft: 4 }), row("google_jobs", "capped", { capReason: "killed" }), row("enrich", "ok"), row("match", "ok"), row("link_check", "ok")])
+ok("watchdog: an ATS sweep with pairs left is reported", w2.some((f) => f.startsWith("ats_smartrecruiters: ran out of time") && f.includes("4")))
+ok("watchdog: a killed step left that way is reported as killed", w2.some((f) => f.startsWith("google_jobs: was killed at the time limit")))
 
 // ---- cost arithmetic
 const nov10 = monthWindow(new Date("2026-11-11T00:00:00Z"))

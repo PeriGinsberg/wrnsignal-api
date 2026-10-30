@@ -37,6 +37,10 @@ export type NightlyResult = {
   runs: { source: string; org: string; pair: string; outcome: BoardOutcome }[]
   totals: IngestAlert["totals"]
   durationMs: number
+  /** Pairs swept by this call. */
+  pairsDone: string[]
+  /** Pairs neither swept now nor in donePairIds: the deadline stopped the call first. */
+  pairsLeft: number
 }
 
 type ScopedPair = IngestPair & { sources: string[] | null }
@@ -69,7 +73,21 @@ const pairsFor = (pairs: ScopedPair[], source: string) =>
 
 export async function runNightly(
   sb: SupabaseClient,
-  opts: { environment?: string; dryRun?: boolean; source?: string } = {}
+  opts: {
+    environment?: string
+    dryRun?: boolean
+    source?: string
+    /**
+     * SPLIT ACROSS CALLS. SmartRecruiters is 22 pairs x 52 boards, about 1,400s,
+     * against an 800s function limit: it was killed half way every night. With
+     * a deadline no new pair starts after it; donePairIds are the pairs earlier
+     * calls tonight finished, so the next call takes the rest. onPair records
+     * each finished pair as it goes, so a kill loses at most the pair in hand.
+     */
+    deadline?: number
+    donePairIds?: ReadonlySet<string>
+    onPair?: (pairId: string) => Promise<void>
+  } = {}
 ): Promise<NightlyResult> {
   const environment = opts.environment ?? process.env.VERCEL_ENV ?? "local"
   const startedAt = Date.now()
@@ -88,11 +106,18 @@ export async function runNightly(
     )
   }
   const runs: NightlyResult["runs"] = []
+  const pairsDone: string[] = []
+  let pairsLeft = 0
 
   for (const { adapter, boards } of sources) {
+    const todo = pairsFor(pairs, adapter.source).filter((p) => !opts.donePairIds?.has(p.id!))
     // runSweep caches boards for local-filtering sources and does not for
     // server-filtering ones, so this one call is correct for both.
-    const swept = await runSweep(adapter, pairsFor(pairs, adapter.source), boards, sb)
+    const swept = await runSweep(adapter, todo, boards, sb, {
+      deadline: opts.deadline,
+      onPair: async (pair) => { pairsDone.push(pair.id!); if (opts.onPair) await opts.onPair(pair.id!) },
+    })
+    pairsLeft += todo.length - swept.length
     for (const { pair, outcomes } of swept) {
       for (const outcome of outcomes) {
         runs.push({ source: adapter.source, org: outcome.org, pair: pair.title, outcome })
@@ -106,12 +131,15 @@ export async function runNightly(
   // reach a person: it becomes a reason on the same alert as ingest failures.
   // Runs on a dry run too: dryRun only withholds the email, the sweep above
   // still writes.
+  // Once per sweep, by the call that finishes it.
   let linkerError: string | null = null
-  try {
-    await runLinker(sb, { triggeredBy: `nightly:${opts.source ?? "all"}` })
-  } catch (err: any) {
-    linkerError = String(err?.message || err).slice(0, 500)
-    console.error(`linker failed: ${linkerError}`)
+  if (pairsLeft === 0) {
+    try {
+      await runLinker(sb, { triggeredBy: `nightly:${opts.source ?? "all"}` })
+    } catch (err: any) {
+      linkerError = String(err?.message || err).slice(0, 500)
+      console.error(`linker failed: ${linkerError}`)
+    }
   }
 
   const totals = {
@@ -126,7 +154,9 @@ export async function runNightly(
   // ---- the three conditions
   const reasons: AlertReason[] = []
 
-  if (totals.found === 0) reasons.push({ kind: "zero_found", totalFound: 0 })
+  // Only over pairs this call swept: a call with none (everything done
+  // earlier) found nothing because it looked at nothing.
+  if (totals.found === 0 && (runs.length > 0 || !opts.donePairIds?.size)) reasons.push({ kind: "zero_found", totalFound: 0 })
 
   // STRICTLY false. A null control could not be performed -- an empty board has
   // nothing to narrow -- and is not evidence of a broken filter.
@@ -177,7 +207,7 @@ export async function runNightly(
 
   if (alert && !opts.dryRun) await sendIngestAlert(alert)
 
-  return { alert, runs, totals, durationMs }
+  return { alert, runs, totals, durationMs, pairsDone, pairsLeft }
 }
 
 export { alertSubject, alertBody }

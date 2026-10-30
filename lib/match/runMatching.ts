@@ -132,6 +132,37 @@ async function pageAll<T>(q: (from: number, to: number) => PromiseLike<{ data: T
   return out
 }
 
+/** Rows per posting_matches upsert. 500 drew a gateway error page (Cole, 2026-10-30); 100 is well inside it. */
+export const UPSERT_BATCH = 100
+const RETRY_WAITS_MS = [2_000, 6_000]
+
+/**
+ * A failure the next attempt can succeed at: a gateway's HTML error page in
+ * place of PostgREST's JSON, a 5xx, or the connection dropping. A constraint
+ * or bad column fails the same way every time and is thrown at once.
+ */
+export function isTransientDbError(e: { message?: string; status?: number } | null | undefined): boolean {
+  if (!e) return false
+  const m = String(e.message ?? "")
+  return m.trimStart().startsWith("<") || (e.status ?? 0) >= 500 || /fetch failed|ECONNRESET|ETIMEDOUT|socket hang up|timeout/i.test(m)
+}
+
+/** Upserts in batches of UPSERT_BATCH, each retried twice on a transient failure. Upserts are idempotent, so a retry is safe. */
+export async function upsertMatches(sb: SupabaseClient, rows: any[], wait = (ms: number) => new Promise((r) => setTimeout(r, ms))) {
+  for (let i = 0; i < rows.length; i += UPSERT_BATCH) {
+    const batch = rows.slice(i, i + UPSERT_BATCH)
+    for (let attempt = 0; ; attempt++) {
+      const { error, status } = await sb.from("posting_matches").upsert(batch, { onConflict: "client_profile_id,posting_id" })
+      if (!error) break
+      if (attempt >= RETRY_WAITS_MS.length || !isTransientDbError({ message: error.message, status })) {
+        const msg = error.message.trimStart().startsWith("<") ? `HTTP ${status}, an HTML error page instead of a database response` : error.message
+        throw new Error(`posting_matches upsert failed (rows ${i + 1}-${i + batch.length} of ${rows.length}, ${attempt + 1} attempt(s)): ${msg}`)
+      }
+      await wait(RETRY_WAITS_MS[attempt])
+    }
+  }
+}
+
 /** Runs fn over items, n at a time. Once stop() is true no new item starts. */
 async function pool<T>(items: T[], n: number, fn: (t: T) => Promise<void>, stop: () => boolean = () => false) {
   let next = 0
@@ -241,10 +272,7 @@ export async function runMatching(
   }
   const upsert = async (rows: any[]) => {
     if (opts.dryRun || !rows.length) return
-    for (let i = 0; i < rows.length; i += 500) {
-      const { error } = await sb.from("posting_matches").upsert(rows.slice(i, i + 500), { onConflict: "client_profile_id,posting_id" })
-      if (error) throw new Error("posting_matches upsert failed: " + error.message)
-    }
+    await upsertMatches(sb, rows)
   }
   const cleared = { score: null, judge_reason: null, judge_evidence: null, judge_error: null, judged_at: null }
 
