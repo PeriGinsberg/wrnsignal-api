@@ -2,7 +2,7 @@
  * The nightly pipeline's record: one pipeline_runs row per step per run
  * (20261111_nightly_pipeline.sql).
  *
- * A NIGHT IS A UTC DATE. The ATS sweeps (03:00, 04:30), the pipeline ticks
+ * A NIGHT IS A UTC DATE. The ATS sweeps (03:00-03:15, 04:00-04:45), the pipeline ticks
  * (05:00-07:45) and the watchdog (09:00) all fall on the same UTC date, so they
  * share one key without any timezone arithmetic.
  *
@@ -20,11 +20,17 @@ export type TickStep = (typeof TICK_STEPS)[number]
 export type StepStatus = "running" | "ok" | "capped" | "error"
 
 /**
- * Why a step stopped with work left. "deadline": the function's time ran out;
- * the next tick continues. "cap": the nightly cap is spent; nothing more runs
- * tonight and the cap alert goes out.
+ * Why a step stopped with work left. "deadline": it stopped itself before the
+ * function's time limit; the next run continues. "killed": the platform killed
+ * it at the limit (closeStale found it still running); the next run continues
+ * the same way, because every step's work is idempotent and picks up from what
+ * is recorded. "cap": the nightly cap is spent; nothing more runs tonight and
+ * the cap alert goes out.
  */
-export type CapReason = "deadline" | "cap"
+export type CapReason = "deadline" | "killed" | "cap"
+/** Stopped with work left that the next run picks up. */
+export const resumes = (r: Pick<RunRow, "status" | "detail">) =>
+  r.status === "capped" && (r.detail?.capReason === "deadline" || r.detail?.capReason === "killed")
 
 export type RunRow = {
   id: string
@@ -91,31 +97,41 @@ const latest = (rows: RunRow[], step: Step) => rows.filter((r) => r.step === ste
 /**
  * The next tick step for tonight. Stale running rows must already have been
  * closed (closeStale). A step is finished when its latest row is ok, error or
- * capped at the cap; capped at the deadline means run it again, up to
- * MAX_CONTINUATIONS. Google Jobs and the link check run once a night: a second
- * Google Jobs run would spend a second night's searches.
+ * capped at the cap; stopped at the deadline or killed means run it again, up
+ * to MAX_CONTINUATIONS. The link check runs once. Google Jobs continues too: a
+ * continuation searches only pairs not searched in the last 20 hours, under
+ * what is left of the night's search cap (tick.ts), so it never pays twice.
+ *
+ * Only tick steps make a tick wait. The ATS sweeps run on their own crons
+ * beside the ticks and keep their own order (app/api/internal/ingest/run-nightly).
  */
 export function nextStep(rows: RunRow[]): Next {
-  const running = rows.find((r) => r.status === "running")
+  const running = rows.find((r) => r.status === "running" && (TICK_STEPS as readonly string[]).includes(r.step))
   if (running) return { kind: "busy", step: running.step, since: running.started_at }
   for (const step of TICK_STEPS) {
     const last = latest(rows, step)
     if (!last) return { kind: "run", step, continuation: false }
-    const resumable = step === "enrich" || step === "match"
     const runs = rows.filter((r) => r.step === step).length
-    if (resumable && last.status === "capped" && last.detail?.capReason === "deadline" && runs <= MAX_CONTINUATIONS) {
+    if (step !== "link_check" && resumes(last) && runs <= MAX_CONTINUATIONS) {
       return { kind: "run", step, continuation: true }
     }
   }
   return { kind: "done" }
 }
 
-/** Closes running rows a killed function left behind. Returns them, so the caller can alert. */
-export async function closeStale(sb: SupabaseClient, rows: RunRow[], now = Date.now()): Promise<RunRow[]> {
-  const stale = rows.filter((r) => r.status === "running" && now - new Date(r.started_at).getTime() > STALE_RUNNING_MS)
+/**
+ * Closes running rows a killed function left behind, as capped with capReason
+ * "killed", so the next run of the step picks up where it stopped. Returns
+ * them, so the caller can alert: a kill means a step outran its own deadline,
+ * which is a fault to fix even though nothing is lost.
+ */
+export async function closeStale(sb: SupabaseClient, rows: RunRow[], now = Date.now(), steps: readonly Step[] = STEPS): Promise<RunRow[]> {
+  const stale = rows.filter((r) => r.status === "running" && steps.includes(r.step) && now - new Date(r.started_at).getTime() > STALE_RUNNING_MS)
   for (const r of stale) {
-    await finishStep(sb, r.id, { status: "error", error: `did not finish: still running ${Math.round((now - new Date(r.started_at).getTime()) / 60_000)} min after it started (function killed or timed out)` })
-    r.status = "error"
+    const detail = { ...r.detail, capReason: "killed", killedAfterMin: Math.round((now - new Date(r.started_at).getTime()) / 60_000) }
+    await finishStep(sb, r.id, { status: "capped", units: r.units, costUsd: r.cost_usd, searches: r.searches, detail })
+    r.status = "capped"
+    r.detail = detail
   }
   return stale
 }

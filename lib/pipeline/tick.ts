@@ -2,10 +2,12 @@
  * One tick of the nightly pipeline: run the next step tonight still needs.
  *
  * ORDER: Google Jobs -> enrich -> match -> link check, after the ATS sweeps
- * (03:00, 04:30), which keep their own crons and only record here. The cron
+ * (03:00-03:15, 04:00-04:45), which keep their own crons and only record here. The cron
  * fires every 15 minutes from 05:00 to 07:45 UTC; each tick does one step (or
  * one stretch of a long one) inside the function's time limit, so a step that
- * runs out of time continues on the next tick instead of being killed.
+ * runs out of time continues on the next tick instead of being killed. If one
+ * is killed anyway, the next tick closes its row as "killed" and continues it
+ * the same way (runs.ts closeStale).
  *
  * CAPS ARE PER NIGHT: searches, postings enriched and judgments, summed over
  * every run of the step tonight. Hitting one stops that step for the night and
@@ -17,12 +19,12 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js"
-import { runGoogleJobs } from "../ingest/googleJobs"
+import { GOOGLE_JOBS_SOURCES, runGoogleJobs } from "../ingest/googleJobs"
 import { runLinker } from "../ingest/link"
 import { countWorklist, runEnrichment } from "../ingest/enrichPostings"
 import { runMatching } from "../match/runMatching"
 import { runLinkCheck } from "../match/linkCheck"
-import { closeStale, finishStep, nextStep, nightOf, nightRows, startStep, type RunRow, type StepResult, type TickStep } from "./runs"
+import { closeStale, finishStep, nextStep, nightOf, nightRows, startStep, TICK_STEPS, type RunRow, type StepResult, type TickStep } from "./runs"
 import { loadAndPickPairs } from "./pairs"
 import { runPaceCheck, SEARCHAPI_MONTHLY_FEE_USD } from "./cost"
 
@@ -47,15 +49,37 @@ type Ctx = { sb: SupabaseClient; rows: RunRow[]; deadline: number; environment: 
 
 const tonight = (rows: RunRow[], step: TickStep) => rows.filter((r) => r.step === step).reduce((n, r) => n + r.units, 0)
 
-async function googleJobsStep({ sb, environment }: Ctx): Promise<StepResult> {
-  const pick = await loadAndPickPairs(sb, { cap: CAPS.searches, maxPages: MAX_PAGES })
+/**
+ * Google Jobs searches already spent tonight, read from ingest_runs rather than
+ * pipeline_runs: a killed run never records its searches in pipeline_runs, but
+ * each pair it finished wrote its ingest_runs row.
+ */
+export async function searchesSince(sb: SupabaseClient, since: string): Promise<number> {
+  let n = 0
+  for (let a = 0; ; a += 1000) {
+    const { data, error } = await sb.from("ingest_runs").select("requests_made").in("source", [...GOOGLE_JOBS_SOURCES])
+      .gte("finished_at", since).order("finished_at").range(a, a + 999)
+    if (error) throw new Error("ingest_runs read failed: " + error.message)
+    n += (data ?? []).reduce((s, r: any) => s + (r.requests_made ?? 0), 0)
+    if (!data || data.length < 1000) return n
+  }
+}
+
+async function googleJobsStep({ sb, rows, deadline, environment }: Ctx): Promise<StepResult> {
+  // A continuation: what earlier runs tonight spent comes off the cap, and
+  // pairs they searched are "recent" (searched in the last 20 hours), so only
+  // the rest are picked.
+  const first = rows.find((r) => r.step === "google_jobs")
+  const spentEarlier = first ? await searchesSince(sb, first.started_at) : 0
+  const cap = CAPS.searches - spentEarlier
+  const pick = await loadAndPickPairs(sb, { cap: Math.max(cap, 0), maxPages: MAX_PAGES })
   const detail: Record<string, any> = {
     pairs: pick.picked.length, pairsActive: pick.total, waiting: pick.waiting, recent: pick.recent, estimate: pick.estimate,
-    priority: pick.picked.filter((p) => p.priority).length,
+    priority: pick.picked.filter((p) => p.priority).length, searchesEarlierTonight: spentEarlier, capRemaining: cap,
   }
   if (!pick.picked.length) return { status: "ok", detail }
   // The cap alert, if the cap stops the run, is runGoogleJobs' own (search_cap); not sent twice.
-  const run = await runGoogleJobs(sb, pick.picked, { cap: CAPS.searches, maxPages: MAX_PAGES, environment })
+  const run = await runGoogleJobs(sb, pick.picked, { cap, maxPages: MAX_PAGES, environment, deadline })
   const outcomes = run.swept.flatMap((s) => s.outcomes.map((o) => ({ pair: s.pair, o })))
   const errors = outcomes.filter((x) => x.o.status === "error")
   Object.assign(detail, {
@@ -73,6 +97,8 @@ async function googleJobsStep({ sb, environment }: Ctx): Promise<StepResult> {
     return { ...base, status: "error", detail, error: `${errors.length} of ${outcomes.length} searches failed${linkerError ? ", and the linker failed" : ""}\n${msg}` }
   }
   if (run.budget.stopped) return { ...base, status: "capped", detail: { ...detail, capReason: "cap", alreadyAlerted: true } }
+  const notStarted = pick.picked.length - run.swept.length
+  if (notStarted > 0) return { ...base, status: "capped", detail: { ...detail, capReason: "deadline", deferred: notStarted } }
   return { ...base, status: "ok", detail }
 }
 
@@ -89,7 +115,8 @@ async function enrichStep({ sb, rows, deadline }: Ctx): Promise<StepResult> {
 }
 
 async function matchStep({ sb, rows, deadline }: Ctx): Promise<StepResult> {
-  let remaining = CAPS.judgments - tonight(rows, "match")
+  const earlier = tonight(rows, "match")
+  let remaining = CAPS.judgments - earlier
   const { data: crit, error } = await sb.from("client_match_criteria").select("client_profile_id").eq("active", true).order("client_profile_id")
   if (error) throw new Error("client_match_criteria: " + error.message)
   const clients: Record<string, any> = {}
@@ -115,7 +142,8 @@ async function matchStep({ sb, rows, deadline }: Ctx): Promise<StepResult> {
     }
     if (!reachedAll) break
   }
-  const detail = { clients, judgmentsLeftTonight: remaining }
+  // judgedThisRun is this run's share; the cap is per night, across every run.
+  const detail = { clients, judgedThisRun: units, judgedTonight: earlier + units, cap: CAPS.judgments, judgmentsLeftTonight: remaining }
   const base = { units, costUsd: cost }
   if (failed.size) return { ...base, status: "error", detail, error: `matching failed for ${failed.size} client(s)\n${[...failed].map(([id, m]) => `${id}: ${m}`).join("\n")}` }
   if (deferred > 0 && remaining <= 0) return { ...base, status: "capped", detail: { ...detail, capReason: "cap", deferred } }
@@ -145,8 +173,9 @@ export async function runTick(sb: SupabaseClient, opts: { environment: string; s
   const started = Date.now()
   const night = nightOf(opts.now)
   const rows = await nightRows(sb, night)
-  const stale = await closeStale(sb, rows)
-  for (const r of stale) await opts.send(`Job sourcing pipeline: ${r.step} did not finish (${night})`, `${r.step} started at ${r.started_at} and was still running 15 minutes later: the function was killed or timed out. Marked as an error; ${r.step === "enrich" || r.step === "match" ? "the next tick picks up the work left." : "it does not run again tonight."}\nEnvironment: ${opts.environment}`)
+  // Tick steps only: each ATS sweep closes its own (app/api/internal/ingest/run-nightly).
+  const stale = await closeStale(sb, rows, Date.now(), TICK_STEPS)
+  for (const r of stale) await opts.send(`Job sourcing pipeline: ${r.step} was killed at the time limit (${night})`, `${r.step} started at ${r.started_at} and was still running 15 minutes later: the function was killed at its time limit before it could stop itself. ${r.step === "link_check" ? "The link check does not run again tonight." : "This tick continues it from where it stopped."} A kill means the step's own deadline did not hold; worth a look even though nothing is lost.\nEnvironment: ${opts.environment}`)
 
   const next = nextStep(rows)
   const out: TickResult = { night, ran: null, staleClosed: stale.length }

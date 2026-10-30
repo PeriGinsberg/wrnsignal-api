@@ -6,7 +6,7 @@
  * pipeline_runs and reports:
  *   - a step with no row: skipped (its cron never fired, or the ticks ran out)
  *   - a step still running: stuck
- *   - enrich or match stopped at the time limit with work left after the last tick
+ *   - a step stopped at, or killed at, the time limit with work left after its last run
  * Failures and caps are not repeated here; the tick already sent those.
  *
  * DISABLED IS NOT SILENT. Where PIPELINE_ENABLED is not "true" the ticks do
@@ -16,7 +16,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js"
-import { nightOf, nightRows, STEPS, type RunRow } from "./runs"
+import { nightOf, nightRows, resumes, STEPS, type RunRow } from "./runs"
 import { runPaceCheck } from "./cost"
 
 export function watchdogFindings(rows: RunRow[]): string[] {
@@ -26,8 +26,9 @@ export function watchdogFindings(rows: RunRow[]): string[] {
     const last = mine.at(-1)
     if (!last) { out.push(`${step}: skipped, no run recorded tonight`); continue }
     if (last.status === "running") out.push(`${step}: still running since ${last.started_at}`)
-    else if (last.status === "capped" && last.detail?.capReason === "deadline") {
-      out.push(`${step}: ran out of time with work left after ${mine.length} run(s); the rest waits for tomorrow night (${JSON.stringify(last.detail?.deferred ?? last.detail?.dueAfter ?? "")} left)`)
+    else if (resumes(last)) {
+      const how = last.detail?.capReason === "killed" ? "was killed at the time limit" : "ran out of time"
+      out.push(`${step}: ${how} with work left after ${mine.length} run(s); the rest waits for tomorrow night (${JSON.stringify(last.detail?.deferred ?? last.detail?.pairsLeft ?? last.detail?.dueAfter ?? "")} left)`)
     }
   }
   return out

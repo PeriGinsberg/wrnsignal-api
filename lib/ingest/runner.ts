@@ -210,7 +210,17 @@ export async function runSweep(
   pairs: IngestPair[],
   orgs: string[],
   sb: SupabaseClient,
-  opts: { budget?: SearchBudget } = {}
+  opts: {
+    budget?: SearchBudget
+    /**
+     * Epoch ms after which no new pair starts. Pairs not started get no
+     * ingest_runs row, so the caller's next run can take them. A pair already
+     * started runs to the end: its boards are written one by one.
+     */
+    deadline?: number
+    /** Called after each pair, so a caller can record progress a kill would otherwise lose. */
+    onPair?: (pair: IngestPair) => Promise<void>
+  } = {}
 ): Promise<{ pair: IngestPair; outcomes: BoardOutcome[] }[]> {
   const cache: BoardCache | null = adapter.filtering === "local" ? new Map() : null
   // Independent of `cache`: a server-filtering source has no board to reuse but
@@ -219,6 +229,7 @@ export async function runSweep(
   const results: { pair: IngestPair; outcomes: BoardOutcome[] }[] = []
   const { budget } = opts
   for (const pair of pairs) {
+    if (opts.deadline !== undefined && Date.now() >= opts.deadline) break
     // THE CAP STOPS THE RUN. A pair is started only if the budget covers its
     // uncached controls plus one fetch per board, so a control is never paid
     // for without the search that uses it. Pairs not started get no
@@ -233,6 +244,7 @@ export async function runSweep(
       }
     }
     results.push({ pair, outcomes: await runPair(adapter, pair, orgs, sb, cache, controls) })
+    if (opts.onPair) await opts.onPair(pair)
     // A pair cut short mid-pagination already used the last search.
     if (budget?.stopped) break
   }

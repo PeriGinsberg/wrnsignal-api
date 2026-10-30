@@ -5,7 +5,7 @@
 // links that all answer 404/410 mark it likely closed (ranked last, still
 // shown); a bot wall or an error is recorded as unknown and changes nothing.
 //
-// Runs after the ingest sweeps (03:00, 04:30) and before the morning review.
+// Runs after the ingest sweeps (03:00-03:15, 04:00-04:45) and before the morning review.
 
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"

@@ -46,7 +46,7 @@ const usd = (n: number) => `$${n.toFixed(2)}`
 
   // 0. ATS, already run tonight by their own crons
   const today = now.toISOString().slice(0, 10)
-  console.log("0. ATS sweeps (own crons, 03:00 and 04:30 UTC), tonight so far:")
+  console.log("0. ATS sweeps (own crons, 03:00-03:15 and 04:00-04:45 UTC), tonight so far:")
   for (const source of ["grnhse", "smartrecruiters"]) {
     const head = (q: any) => q.then((r: any) => r.count ?? 0)
     const all = await head(sb.from("ingest_runs").select("id", { count: "exact", head: true }).eq("source", source).gte("started_at", today))
