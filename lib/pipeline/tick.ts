@@ -153,7 +153,12 @@ async function matchStep({ sb, rows, deadline }: Ctx): Promise<StepResult> {
 
 async function linkCheckStep({ sb }: Ctx): Promise<StepResult> {
   const s = await runLinkCheck(sb, { top: 30 })
-  return { status: "ok", units: s.links, detail: { clients: s.clients, postings: s.postings, open: s.open, closed: s.closed, likelyClosed: s.likelyClosed, unknown: s.unknown } }
+  const detail = { clients: s.clients, postings: s.postings, open: s.open, closed: s.closed, likelyClosed: s.likelyClosed, unknown: s.unknown, queueErrors: s.queueErrors.length }
+  // Every other client was still checked; failing the step is what sends the email.
+  if (s.queueErrors.length) {
+    return { status: "error", units: s.links, detail, error: `queue unreadable for ${s.queueErrors.length} client(s); their links were not checked\n${s.queueErrors.map((q) => `${q.clientProfileId}: ${q.error}`).join("\n")}` }
+  }
+  return { status: "ok", units: s.links, detail }
 }
 
 const STEP_FN: Record<TickStep, (c: Ctx) => Promise<StepResult>> = {
