@@ -78,12 +78,14 @@ async function googleJobsStep({ sb, rows, deadline, environment }: Ctx): Promise
     priority: pick.picked.filter((p) => p.priority).length, searchesEarlierTonight: spentEarlier, capRemaining: cap,
   }
   if (!pick.picked.length) return { status: "ok", detail }
-  // The cap alert, if the cap stops the run, is runGoogleJobs' own (search_cap); not sent twice.
-  const run = await runGoogleJobs(sb, pick.picked, { cap, maxPages: MAX_PAGES, environment, deadline })
+  // runGoogleJobs' own cap alert is the old ingest-sweep email ("Nightly ingest
+  // sweep tripped"), which reads as a separate sweep outside the pipeline. It is
+  // silenced here; the tick sends the pipeline's cap email instead (capEmail).
+  const run = await runGoogleJobs(sb, pick.picked, { cap, maxPages: MAX_PAGES, environment, deadline, send: async () => {} })
   const outcomes = run.swept.flatMap((s) => s.outcomes.map((o) => ({ pair: s.pair, o })))
   const errors = outcomes.filter((x) => x.o.status === "error")
   Object.assign(detail, {
-    pairsRun: run.swept.length, found: outcomes.reduce((n, x) => n + x.o.foundCount, 0), added: outcomes.reduce((n, x) => n + x.o.addedCount, 0), errors: errors.length,
+    pairsRun: run.swept.length, searchesThisRun: run.budget.spent, searchesTonight: spentEarlier + run.budget.spent, capStopped: run.budget.stopped, found: outcomes.reduce((n, x) => n + x.o.foundCount, 0), added: outcomes.reduce((n, x) => n + x.o.addedCount, 0), errors: errors.length,
   })
   const searches = run.budget.spent
   const base = { units: searches, searches, costUsd: searches * (SEARCHAPI_MONTHLY_FEE_USD / SEARCHAPI_PLAN_SEARCHES) }
@@ -96,7 +98,7 @@ async function googleJobsStep({ sb, rows, deadline, environment }: Ctx): Promise
     ].join("\n")
     return { ...base, status: "error", detail, error: `${errors.length} of ${outcomes.length} searches failed${linkerError ? ", and the linker failed" : ""}\n${msg}` }
   }
-  if (run.budget.stopped) return { ...base, status: "capped", detail: { ...detail, capReason: "cap", alreadyAlerted: true } }
+  if (run.budget.stopped) return { ...base, status: "capped", detail: { ...detail, capReason: "cap" } }
   const notStarted = pick.picked.length - run.swept.length
   if (notStarted > 0) return { ...base, status: "capped", detail: { ...detail, capReason: "deadline", deferred: notStarted } }
   return { ...base, status: "ok", detail }
@@ -174,6 +176,25 @@ export type TickResult = {
   pace?: { sent: string[]; error?: string }
 }
 
+/** The email for a step stopped at its nightly cap. Pure, so the wording is testable. */
+export function capEmail(step: TickStep, night: string, detail: Record<string, any>, environment: string): { subject: string; text: string } {
+  const tail = `\n\nDetail: ${JSON.stringify(detail, null, 1)}\nEnvironment: ${environment}`
+  if (step === "google_jobs") {
+    const left = (detail.pairs ?? 0) - (detail.pairsRun ?? 0)
+    return {
+      subject: `Job sourcing pipeline: google_jobs reached tonight's search cap (${night})`,
+      text: `The nightly pipeline's google_jobs step stopped at tonight's cap of ${CAPS.searches} searches. This is the pipeline itself, not a separate sweep.\n\n` +
+        `Searches tonight: ${detail.searchesTonight} (${detail.searchesEarlierTonight ?? 0} in earlier runs, ${detail.searchesThisRun} in this one, which had ${detail.capRemaining} left).\n` +
+        `Pairs: ${detail.pairsRun} of the ${detail.pairs} picked for this run were searched. ${left > 0 ? `The other ${left} wait` : "The last pair's later pages wait"} for tomorrow night; paging ran deeper than the estimate.\n` +
+        `The pipeline goes on to enrich and match as usual.` + tail,
+    }
+  }
+  return {
+    subject: `Job sourcing pipeline: ${step} hit its nightly cap (${night})`,
+    text: `${step} stopped at its nightly cap with work left; the rest waits for tomorrow night.\n\nCaps: ${JSON.stringify(CAPS)}` + tail,
+  }
+}
+
 export async function runTick(sb: SupabaseClient, opts: { environment: string; send: Send; now?: Date }): Promise<TickResult> {
   const started = Date.now()
   const night = nightOf(opts.now)
@@ -199,8 +220,9 @@ export async function runTick(sb: SupabaseClient, opts: { environment: string; s
 
   if (result.status === "error") {
     await opts.send(`Job sourcing pipeline: ${next.step} failed (${night})`, `${next.step} failed.\n\n${result.error}\n\nDetail: ${JSON.stringify(result.detail ?? {}, null, 1)}\nEnvironment: ${opts.environment}`)
-  } else if (result.status === "capped" && result.detail?.capReason === "cap" && !result.detail?.alreadyAlerted) {
-    await opts.send(`Job sourcing pipeline: ${next.step} hit its nightly cap (${night})`, `${next.step} stopped at its nightly cap with work left; the rest waits for tomorrow night.\n\nCaps: ${JSON.stringify(CAPS)}\nDetail: ${JSON.stringify(result.detail, null, 1)}\nEnvironment: ${opts.environment}`)
+  } else if (result.status === "capped" && result.detail?.capReason === "cap") {
+    const e = capEmail(next.step, night, result.detail, opts.environment)
+    await opts.send(e.subject, e.text)
   }
 
   try {
