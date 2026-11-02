@@ -291,6 +291,9 @@ export default function CoachClientPage() {
     company: searchParams.get("sc_company") || "",
     url: searchParams.get("sc_url") || "",
     laneResult: searchParams.get("lane_result") || null,
+    // From the Job Queue: every copy of the job this client has. Sending the
+    // job marks them all Fit (recommend-job, posting_match_ids).
+    matchIds: (searchParams.get("match") || "").split(",").map((s) => s.trim()).filter(Boolean),
   }))
 
   const initialStatus = searchParams.get("status") as StatusFilter | null
@@ -336,6 +339,7 @@ export default function CoachClientPage() {
   // Set when the job on the Source form arrived from a lane result, so a
   // successful send can mark that row. Null for a hand-pasted job.
   const [laneResultId, setLaneResultId] = useState<string | null>(null)
+  const [jobQueueMatchIds, setJobQueueMatchIds] = useState<string[]>([])
   const [selectedPersona, setSelectedPersona] = useState("")
   const [running, setRunning] = useState(false)
   const [runResult, setRunResult] = useState<any>(null)
@@ -591,12 +595,22 @@ export default function CoachClientPage() {
     setSourceCompany(initialSource.company)
     setSourceUrl(initialSource.url)
     setLaneResultId(initialSource.laneResult)
+    setJobQueueMatchIds(initialSource.matchIds)
+    // The Job Queue holds the posting's own description: fill it so the coach
+    // does not have to paste. Only into an empty box.
+    if (initialSource.matchIds[0]) {
+      authFetch(`/api/coach/job-queue/posting?match_id=${encodeURIComponent(initialSource.matchIds[0])}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => { if (j?.description) setSourceJD((cur) => cur || j.description) })
+        .catch(() => {})
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function clearSourceForm() {
     setSourceUrl(''); setSourceCompany(''); setSourceTitle(''); setSourceJD('')
     setLaneResultId(null)
+    setJobQueueMatchIds([])
     {
       const active = clientPersonas.filter(p => !p.archived_at)
       setSelectedPersona(active.find(p => p.is_default)?.id || active[0]?.id || '')
@@ -671,6 +685,7 @@ export default function CoachClientPage() {
           coaching_note: annNote,
           recommended_action: annAction,
           apply_by_date: annApplyBy || null,
+          ...(jobQueueMatchIds.length ? { posting_match_ids: jobQueueMatchIds } : {}),
         }),
       })
       if (res.ok) {
@@ -1479,6 +1494,13 @@ export default function CoachClientPage() {
         // gave each one about 340px with the rest of the page empty.
         <div>
           <div style={{ ...eyebrow, color: T.INK_EMPHASIS, marginBottom: 16 }}>SOURCE A JOB FOR {clientProfile?.name?.toUpperCase() || "CLIENT"}</div>
+
+          {jobQueueMatchIds.length > 0 && (
+            <div style={{ ...card, padding: "12px 16px", marginBottom: 16, borderColor: T.ORANGE_BORDER, background: T.WARNING_BG, fontSize: TYPE.secondary, color: T.TEXT }}>
+              From the Job Queue: title, company, link and the posting&apos;s description are filled in. Check the description, run the analysis, then send it:
+              the job is marked <strong>Fit</strong> for this client when it reaches their tracker.
+            </div>
+          )}
 
           {laneResultId && (
             <div

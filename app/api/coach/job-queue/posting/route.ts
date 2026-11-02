@@ -28,13 +28,13 @@ export async function GET(req: NextRequest) {
     if (!m) throw new HttpError(404, "match not found")
     await assertFullAccess(sb, coachProfileId, m.client_profile_id)
     const [{ data: p, error: pErr }, { data: f }] = await Promise.all([
-      sb.from("postings").select("source, title, cleaned_title, company, location, apply_url, raw").eq("id", m.posting_id).single(),
+      sb.from("postings").select("source, title, cleaned_title, company, location, apply_url, requirements_summary, raw").eq("id", m.posting_id).single(),
       sb.from("posting_coach_flags").select("apply_url").eq("posting_id", m.posting_id).maybeSingle(),
     ])
     if (pErr || !p) throw new Error(pErr?.message ?? "posting not found")
     return withCorsJson(req, {
       ok: true, client_profile_id: m.client_profile_id, title: p.cleaned_title ?? p.title, company: p.company, location: p.location,
-      apply_url: f?.apply_url ?? m.apply_url ?? p.apply_url, description: postingText(p.source, p.raw),
+      apply_url: f?.apply_url ?? m.apply_url ?? p.apply_url, requirements_summary: p.requirements_summary, description: postingText(p.source, p.raw),
     })
   } catch (err) {
     return fail(req, err)

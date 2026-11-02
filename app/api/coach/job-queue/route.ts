@@ -21,9 +21,18 @@ export async function GET(req: NextRequest) {
   try {
     const { sb, coachProfileId } = await coachCaller(req)
     const [queue, lastVisitAt] = await Promise.all([loadJobQueue(sb, coachProfileId), recordVisit(sb, coachProfileId)])
-    return withCorsJson(req, {
-      ok: true, asOf: new Date().toISOString(), lastVisitAt, minScoreLoaded: LOAD_MIN_SCORE, reasons: MATCH_REASONS, ...queue,
-    })
+    // Kept well under the 4.5 MB function response cap (about 2.5 MB for 9
+    // clients on prod data): a chip names its client by index into clients[],
+    // requirements load when a row is expanded (GET ./posting), and empty
+    // fields are left out.
+    const index = new Map(queue.clients.map((c, i) => [c.id, i]))
+    const jobs = queue.jobs.map(({ req: _req, ...j }) => ({ ...j, m: j.m.map((c) => ({ ...c, c: index.get(c.c) })) }))
+    const body = JSON.stringify(
+      { ok: true, asOf: new Date().toISOString(), lastVisitAt, minScoreLoaded: LOAD_MIN_SCORE, reasons: MATCH_REASONS, clients: queue.clients, jobs },
+      (_k, v) => (v === null || v === false ? undefined : v),
+    )
+    const res = withCorsJson(req, {})
+    return new Response(body, { status: 200, headers: res.headers })
   } catch (err) {
     return fail(req, err)
   }
