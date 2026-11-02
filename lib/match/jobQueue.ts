@@ -1,0 +1,368 @@
+/**
+ * The coach's Job Queue: every client's match queue on one page, one row per
+ * job (copies of a job grouped by linker v2's rules, lib/ingest/linkV2.ts), a
+ * chip per client with that client's best score across the copies.
+ *
+ * DECISIONS go on posting_matches (20261120_job_queue_matches.sql), on EVERY
+ * copy the client has of the job, so linking or unlinking copies later never
+ * brings a decided job back as undecided. At read time a client's chip that
+ * has any decided copy shows that decision (a copy that arrived after the
+ * decision inherits it).
+ *
+ * Reads client_match_queue (undecided and evaluating rows) plus the last 30
+ * days of decided rows. Writes posting_matches and posting_coach_flags only.
+ */
+
+import type { SupabaseClient } from "@supabase/supabase-js"
+import { resolveDelegation } from "@/lib/collab/delegation"
+import { groupCopies, type CopyRow } from "@/lib/ingest/linkV2"
+
+/** The Not a fit reasons the Job Queue offers. Older lane reasons stay valid in the column. */
+export const MATCH_REASONS: ReadonlyArray<{ value: string; label: string; requiresNote?: true }> = [
+  { value: "too_senior", label: "Too senior" },
+  { value: "wrong_function", label: "Wrong function" },
+  { value: "wrong_industry", label: "Wrong industry" },
+  { value: "wrong_location", label: "Wrong location" },
+  { value: "pay_too_low", label: "Pay too low" },
+  { value: "wrong_timing", label: "Wrong timing" },
+  { value: "wrong_major", label: "Wrong major" },
+  { value: "other", label: "Other (note required)", requiresNote: true },
+]
+const REASON_VALUES = new Set(MATCH_REASONS.map((r) => r.value))
+
+export const COACH_FLAGS = ["closed", "bad_link", "not_us"] as const
+export type CoachFlag = (typeof COACH_FLAGS)[number]
+
+/** Rows below this best score are not loaded (the page's lowest filter). */
+export const LOAD_MIN_SCORE = 30
+const DECIDED_DAYS = 30
+const VISIT_PAGE = "job_queue"
+/** A visit within this long of the last one is the same visit (a reload, a double fetch). */
+const SAME_VISIT_MS = 30 * 60e3
+
+export class HttpError extends Error {
+  constructor(public status: number, message: string) { super(message) }
+}
+
+export async function assertCoach(sb: SupabaseClient, profileId: string) {
+  const { data, error } = await sb.from("client_profiles").select("is_coach").eq("id", profileId).single()
+  if (error) throw new Error(`client_profiles: ${error.message}`)
+  if (data?.is_coach !== true) throw new HttpError(403, "Forbidden: caller is not a coach")
+}
+
+export type ClientAccess = { clientProfileId: string; accessLevel: string; coachClientId: string }
+
+/** Active clients the coach (or a coach they act for) has, with the access level. */
+export async function coachClients(sb: SupabaseClient, coachProfileId: string): Promise<ClientAccess[]> {
+  const { actingIds } = await resolveDelegation(sb, coachProfileId)
+  const { data, error } = await sb.from("coach_clients").select("id, client_profile_id, access_level")
+    .in("coach_profile_id", actingIds).eq("status", "active").not("client_profile_id", "is", null)
+  if (error) throw new Error(`coach_clients: ${error.message}`)
+  const seen = new Map<string, ClientAccess>()
+  for (const r of data ?? []) {
+    const prev = seen.get(r.client_profile_id)
+    if (!prev || r.access_level === "full") seen.set(r.client_profile_id, { clientProfileId: r.client_profile_id, accessLevel: r.access_level, coachClientId: r.id })
+  }
+  return [...seen.values()]
+}
+
+export async function assertFullAccess(sb: SupabaseClient, coachProfileId: string, clientProfileId: string) {
+  const c = (await coachClients(sb, coachProfileId)).find((x) => x.clientProfileId === clientProfileId)
+  if (!c || c.accessLevel !== "full") throw new HttpError(403, "Forbidden: full access to this client required")
+}
+
+async function pageAll<T>(q: (a: number, b: number) => any, size = 1000): Promise<T[]> {
+  const out: T[] = []
+  for (let a = 0; ; a += size) {
+    const { data, error } = await q(a, a + size - 1)
+    if (error) throw new Error(error.message)
+    out.push(...(data ?? []))
+    if (!data || data.length < size) break
+  }
+  return out
+}
+
+/** Records this visit; returns the previous one ("new since my last visit"). */
+export async function recordVisit(sb: SupabaseClient, coachProfileId: string): Promise<string | null> {
+  const { data } = await sb.from("coach_page_visits").select("last_visit_at, previous_visit_at")
+    .eq("coach_profile_id", coachProfileId).eq("page", VISIT_PAGE).maybeSingle()
+  const now = new Date()
+  if (data && now.getTime() - new Date(data.last_visit_at).getTime() < SAME_VISIT_MS) return data.previous_visit_at
+  const previous = data?.last_visit_at ?? null
+  const { error } = await sb.from("coach_page_visits").upsert(
+    { coach_profile_id: coachProfileId, page: VISIT_PAGE, last_visit_at: now.toISOString(), previous_visit_at: previous },
+    { onConflict: "coach_profile_id,page" })
+  if (error) throw new Error(`coach_page_visits: ${error.message}`)
+  return previous
+}
+
+const QUEUE_COLS = "match_id, client_profile_id, posting_id, score, judge_reason, rank, first_queued_at, source, raw_title, title, company, location, apply_url, apply_link_kind, market_link, republished_only, link_check_status, likely_closed, years_min, years_max, years_basis, salary_low, salary_high, salary_period, start_label, application_deadline, requirements_summary, first_seen_at, tier_label, campus_signal, action, coach_flag, coach_apply_url, bad_link"
+
+export type QueueRow = {
+  match_id: string; client_profile_id: string; posting_id: string; score: number | null; judge_reason: string | null
+  rank: number | null; first_queued_at: string | null; source: string; raw_title: string; title: string; company: string
+  location: string | null; apply_url: string | null; apply_link_kind: string | null; market_link?: boolean; republished_only: boolean
+  link_check_status: string | null; likely_closed: boolean; years_min: number | null; years_max: number | null; years_basis: string | null
+  salary_low: number | null; salary_high: number | null; salary_period: string | null; start_label: string | null
+  application_deadline: string | null; requirements_summary: string | null; first_seen_at: string | null; tier_label: string | null
+  campus_signal: boolean | null; action: string | null; coach_flag: string | null; coach_apply_url: string | null; bad_link: boolean
+  dismiss_reason?: string | null; note?: string | null; actioned_at?: string | null; jobfit_score?: number | null; jobfit_decision?: string | null
+}
+
+export type Chip = {
+  /** client_profile_id */
+  c: string
+  /** Best judge score across this client's copies. */
+  s: number | null
+  why: string | null
+  /** Earliest first_queued_at across the copies. */
+  q: string | null
+  /** Best (lowest) queue rank. */
+  rk: number | null
+  /** Every copy's score, when there are several. */
+  all?: (number | null)[]
+  /** Every copy's match id: a decision is written to all of them. */
+  ids: string[]
+  status: "evaluating" | "fit" | "not_fit" | null
+  reason: string | null
+  note: string | null
+  jobfitScore: number | null
+  jobfitDecision: string | null
+}
+
+export type Listing = { postingId: string; t: string; co: string; loc: string | null; url: string | null; lk: string | null; closed: boolean; lcs: string | null }
+
+export type Job = {
+  /** The primary posting id. */
+  key: string
+  t: string; co: string; loc: string | null; url: string | null; lk: string | null; rep: boolean
+  ymin: number | null; ymax: number | null; yb: string | null
+  sl: number | null; sh: number | null; sp: string | null
+  st: string | null; dl: string | null; closed: boolean; lcs: string | null
+  seen: string | null; req: string | null; campus: boolean; tier: string | null
+  flag: string | null; badLink: boolean
+  postingIds: string[]
+  m: Chip[]
+  /** The copies, best link first, when there is more than one. */
+  ls?: Listing[]
+}
+
+const STATUS: Record<string, Chip["status"]> = { evaluating: "evaluating", push: "fit", dismiss: "not_fit" }
+
+export async function loadJobQueue(sb: SupabaseClient, coachProfileId: string) {
+  const access = await coachClients(sb, coachProfileId)
+  const ids = access.map((a) => a.clientProfileId)
+  if (!ids.length) return { clients: [], jobs: [] as Job[] }
+
+  const { data: crit, error: cErr } = await sb.from("client_match_criteria").select("client_profile_id").in("client_profile_id", ids).eq("active", true)
+  if (cErr) throw new Error(`client_match_criteria: ${cErr.message}`)
+  const active = (crit ?? []).map((c: any) => c.client_profile_id as string)
+  if (!active.length) return { clients: [], jobs: [] as Job[] }
+  const { data: profs, error: pErr } = await sb.from("client_profiles").select("id, name, email").in("id", active)
+  if (pErr) throw new Error(`client_profiles: ${pErr.message}`)
+
+  // Queue rows, one client at a time: each is a few thousand rows at most.
+  const rows: QueueRow[] = []
+  const sizes = new Map<string, number>()
+  await Promise.all(active.map(async (id) => {
+    const r = await pageAll<QueueRow>((a, b) => sb.from("client_match_queue").select(QUEUE_COLS)
+      .eq("client_profile_id", id).or(`score.gte.${LOAD_MIN_SCORE},action.eq.evaluating`).order("rank").range(a, b))
+    const { count } = await sb.from("client_match_queue").select("match_id", { count: "exact", head: true }).eq("client_profile_id", id)
+    sizes.set(id, count ?? r.length)
+    rows.push(...r)
+  }))
+
+  // Decided in the last 30 days: shown when the coach turns off "hide decided".
+  const since = new Date(Date.now() - DECIDED_DAYS * 864e5).toISOString()
+  const decided = await pageAll<any>((a, b) => sb.from("posting_matches")
+    .select("id, client_profile_id, posting_id, score, judge_reason, first_queued_at, action, dismiss_reason, note, actioned_at, jobfit_score, jobfit_decision, apply_url, apply_link_kind, postings(source, title, cleaned_title, company, location, apply_url, apply_link_kind, link_check_status, years_min, years_max, years_basis, salary_low, salary_high, salary_period, application_deadline, requirements_summary, first_seen_at, campus_signal)")
+    .in("client_profile_id", active).in("action", ["push", "dismiss"]).gte("actioned_at", since).order("id").range(a, b))
+  for (const d of decided) {
+    const p = d.postings
+    if (!p) continue
+    rows.push({
+      match_id: d.id, client_profile_id: d.client_profile_id, posting_id: d.posting_id, score: d.score, judge_reason: d.judge_reason, rank: null,
+      first_queued_at: d.first_queued_at, source: p.source, raw_title: p.title, title: p.cleaned_title ?? p.title, company: p.company, location: p.location,
+      apply_url: d.apply_url ?? p.apply_url, apply_link_kind: d.apply_link_kind ?? p.apply_link_kind, republished_only: false,
+      link_check_status: p.link_check_status, likely_closed: p.link_check_status === "likely_closed", years_min: p.years_min, years_max: p.years_max,
+      years_basis: p.years_basis, salary_low: p.salary_low, salary_high: p.salary_high, salary_period: p.salary_period, start_label: null,
+      application_deadline: p.application_deadline, requirements_summary: p.requirements_summary, first_seen_at: p.first_seen_at, tier_label: null,
+      campus_signal: p.campus_signal, action: d.action, coach_flag: null, coach_apply_url: null, bad_link: false,
+      dismiss_reason: d.dismiss_reason, note: d.note, actioned_at: d.actioned_at, jobfit_score: d.jobfit_score, jobfit_decision: d.jobfit_decision,
+    })
+  }
+  // A few evaluating/decided rows also carry Add Job's JobFit score.
+  const evalIds = rows.filter((r) => r.action === "evaluating").map((r) => r.match_id)
+  for (let i = 0; i < evalIds.length; i += 200) {
+    const { data } = await sb.from("posting_matches").select("id, jobfit_score, jobfit_decision, note").in("id", evalIds.slice(i, i + 200))
+    const by = new Map((data ?? []).map((x: any) => [x.id, x]))
+    for (const r of rows) { const x: any = by.get(r.match_id); if (x) { r.jobfit_score = x.jobfit_score; r.jobfit_decision = x.jobfit_decision; r.note = x.note } }
+  }
+
+  const { data: al } = await sb.from("employer_aliases").select("alias_norm, canonical")
+  const aliases = new Map((al ?? []).map((a: any) => [a.alias_norm as string, a.canonical as string]))
+  return { clients: clientList(profs ?? [], sizes), jobs: buildJobs(rows, aliases) }
+}
+
+function clientList(profs: any[], sizes: Map<string, number>) {
+  return profs.map((p) => {
+    const name = (p.name || p.email || "Client").trim()
+    return { id: p.id as string, name, first: name.split(/\s+/)[0], queueSize: sizes.get(p.id) ?? 0 }
+  }).sort((a, b) => a.name.localeCompare(b.name))
+}
+
+const KIND: Record<string, number> = { employer: 0, board: 1, republisher: 2, other: 3, google: 3 }
+const listingRank = (r: QueueRow) => [KIND[r.apply_link_kind ?? ""] ?? 4, r.link_check_status === "open" ? 0 : r.link_check_status ? 1 : 2, r.likely_closed ? 1 : 0, -new Date(r.first_seen_at ?? 0).getTime()]
+const cmp = (a: number[], b: number[]) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] - b[i]; return 0 }
+
+/** Queue rows (one per client per posting) -> one job per group of copies. Pure. */
+export function buildJobs(rows: QueueRow[], aliases: Map<string, string> = new Map()): Job[] {
+  const byPosting = new Map<string, QueueRow[]>()
+  for (const r of rows) byPosting.set(r.posting_id, [...(byPosting.get(r.posting_id) ?? []), r])
+  const copyRows: (CopyRow & { rs: QueueRow[] })[] = [...byPosting.entries()].map(([id, rs]) => ({
+    id, source: rs[0].source, title: rs[0].raw_title, cleaned_title: rs[0].title, company: rs[0].company, location: rs[0].location,
+    apply_link_kind: rs[0].apply_link_kind, link_check_status: rs[0].link_check_status, first_seen_at: rs[0].first_seen_at, rs,
+  }))
+
+  const jobs: Job[] = []
+  for (const g of groupCopies(copyRows, aliases)) {
+    const listings = g.members.map((m) => m.rs[0]).sort((a, b) => cmp(listingRank(a), listingRank(b)))
+    const p = listings[0]
+    const perClient = new Map<string, QueueRow[]>()
+    for (const m of g.members) for (const r of m.rs) perClient.set(r.client_profile_id, [...(perClient.get(r.client_profile_id) ?? []), r])
+    const chips: Chip[] = [...perClient.entries()].map(([c, rs]) => {
+      rs.sort((a, b) => (b.score ?? -1) - (a.score ?? -1))
+      // A decision on any copy is the client's decision on the job: the
+      // newest one, push over dismiss over evaluating when simultaneous.
+      const decided = rs.filter((r) => r.action === "push" || r.action === "dismiss").sort((a, b) => (b.actioned_at ?? "").localeCompare(a.actioned_at ?? ""))[0]
+      const evaluating = rs.find((r) => r.action === "evaluating")
+      const d = decided ?? evaluating
+      const ranks = rs.map((r) => r.rank).filter((x): x is number => x !== null)
+      return {
+        c, s: rs[0].score, why: rs[0].judge_reason,
+        q: rs.map((r) => r.first_queued_at).filter(Boolean).sort()[0] ?? null,
+        rk: ranks.length ? Math.min(...ranks) : null,
+        all: rs.length > 1 ? rs.map((r) => r.score) : undefined,
+        ids: rs.map((r) => r.match_id),
+        status: d ? STATUS[d.action!] : null,
+        reason: decided?.dismiss_reason ?? null,
+        note: d?.note ?? null,
+        jobfitScore: rs.find((r) => r.jobfit_score != null)?.jobfit_score ?? null,
+        jobfitDecision: rs.find((r) => r.jobfit_decision)?.jobfit_decision ?? null,
+      }
+    }).sort((a, b) => (b.s ?? -1) - (a.s ?? -1))
+    const flagged = g.members.map((m) => m.rs[0]).find((r) => r.coach_flag)
+    jobs.push({
+      key: g.primary.id,
+      t: p.title, co: p.company, loc: p.location, url: p.apply_url, lk: p.apply_link_kind, rep: p.republished_only,
+      ymin: p.years_min, ymax: p.years_max, yb: p.years_basis, sl: p.salary_low, sh: p.salary_high, sp: p.salary_period,
+      st: p.start_label, dl: p.application_deadline, closed: p.likely_closed, lcs: p.link_check_status,
+      seen: listings.map((l) => l.first_seen_at).filter(Boolean).sort()[0] ?? null, req: p.requirements_summary,
+      campus: listings.some((l) => l.campus_signal), tier: p.tier_label,
+      flag: flagged?.coach_flag ?? null, badLink: listings.every((l) => l.bad_link) && listings.some((l) => l.bad_link),
+      postingIds: g.members.map((m) => m.id),
+      m: chips,
+      ls: listings.length > 1 ? listings.map((l) => ({ postingId: l.posting_id, t: l.title, co: l.company, loc: l.location, url: l.apply_url, lk: l.apply_link_kind, closed: l.likely_closed, lcs: l.link_check_status })) : undefined,
+    })
+  }
+  return jobs.sort((a, b) => (b.m[0]?.s ?? -1) - (a.m[0]?.s ?? -1) || b.m.length - a.m.length)
+}
+
+// ---------------------------------------------------------------------------
+// Decisions
+// ---------------------------------------------------------------------------
+export type DecisionInput = {
+  clientProfileId: string
+  matchIds: string[]
+  /** null = undo: back to undecided. */
+  action: "evaluating" | "push" | "dismiss" | null
+  reason?: string | null
+  note?: string | null
+  actorId: string
+  jobfit?: { score: number | null; decision: string | null; runId: string | null; applicationId: string | null }
+}
+
+/**
+ * Writes the decision on every copy. Records the judge score and the queue rank
+ * and size at the moment of deciding (the weekly measure reads them).
+ */
+export async function recordDecision(sb: SupabaseClient, d: DecisionInput): Promise<{ updated: number }> {
+  const matchIds = [...new Set(d.matchIds)].filter(Boolean)
+  if (!matchIds.length) throw new HttpError(400, "match_ids is required")
+  if (matchIds.length > 50) throw new HttpError(400, "too many match_ids")
+  if (d.action === "dismiss") {
+    if (!d.reason || !REASON_VALUES.has(d.reason)) throw new HttpError(400, "A Not a fit reason is required")
+    if (d.reason === "other" && !(d.note ?? "").trim()) throw new HttpError(400, "Other needs a note")
+  }
+  const { data: ms, error } = await sb.from("posting_matches").select("id, client_profile_id, score, action").in("id", matchIds)
+  if (error) throw new Error(`posting_matches: ${error.message}`)
+  if ((ms ?? []).length !== matchIds.length || (ms ?? []).some((m: any) => m.client_profile_id !== d.clientProfileId)) {
+    throw new HttpError(400, "match_ids must all belong to this client")
+  }
+
+  let atAction: Record<string, unknown> = { score_at_action: null, rank_at_action: null, queue_size_at_action: null }
+  if (d.action === "push" || d.action === "dismiss") {
+    const { data: q } = await sb.from("client_match_queue").select("rank").in("match_id", matchIds).order("rank").limit(1)
+    const { count } = await sb.from("client_match_queue").select("match_id", { count: "exact", head: true }).eq("client_profile_id", d.clientProfileId)
+    const best = Math.max(...(ms ?? []).map((m: any) => m.score ?? -1))
+    atAction = { score_at_action: best >= 0 ? best : null, rank_at_action: q?.[0]?.rank ?? null, queue_size_at_action: count ?? null }
+  }
+  const now = new Date().toISOString()
+  const patch: Record<string, unknown> = d.action === null
+    ? { action: null, dismiss_reason: null, actioned_at: null, actioned_by: null, ...atAction }
+    : {
+        action: d.action, dismiss_reason: d.action === "dismiss" ? d.reason : null, actioned_at: now, actioned_by: d.actorId,
+        ...(d.note !== undefined ? { note: d.note?.trim() || null } : {}),
+        ...(d.action === "evaluating" ? {} : atAction),
+      }
+  if (d.jobfit) Object.assign(patch, {
+    jobfit_score: d.jobfit.score, jobfit_decision: d.jobfit.decision, jobfit_run_id: d.jobfit.runId, signal_application_id: d.jobfit.applicationId,
+  })
+  let q = sb.from("posting_matches").update(patch).in("id", matchIds).eq("client_profile_id", d.clientProfileId)
+  // Opening Add Job never downgrades a decision already made.
+  if (d.action === "evaluating") q = q.or("action.is.null,action.eq.evaluating")
+  const { data: up, error: upErr } = await q.select("id")
+  if (upErr) throw new Error(`posting_matches update: ${upErr.message}`)
+  return { updated: up?.length ?? 0 }
+}
+
+// ---------------------------------------------------------------------------
+// Posting flags
+// ---------------------------------------------------------------------------
+/** Any coach with full access to a client queued for the posting may flag it. */
+export async function assertPostingAccess(sb: SupabaseClient, coachProfileId: string, postingIds: string[]) {
+  const full = (await coachClients(sb, coachProfileId)).filter((c) => c.accessLevel === "full").map((c) => c.clientProfileId)
+  if (!full.length) throw new HttpError(403, "Forbidden")
+  const { data, error } = await sb.from("posting_matches").select("posting_id").in("posting_id", postingIds).in("client_profile_id", full)
+  if (error) throw new Error(`posting_matches: ${error.message}`)
+  const ok = new Set((data ?? []).map((r: any) => r.posting_id))
+  if (postingIds.some((id) => !ok.has(id))) throw new HttpError(403, "Forbidden: posting is not in any of your clients' queues")
+}
+
+export async function setPostingFlag(sb: SupabaseClient, input: { postingIds: string[]; flag?: CoachFlag | null; applyUrl?: string | null; actorId: string }) {
+  const now = new Date().toISOString()
+  if (input.applyUrl !== undefined && input.applyUrl !== null && !/^https?:\/\/\S+$/i.test(input.applyUrl)) throw new HttpError(400, "apply_url must be an http(s) link")
+  if (input.flag !== undefined && input.flag !== null && !COACH_FLAGS.includes(input.flag)) throw new HttpError(400, "unknown flag")
+  const { data: existing, error } = await sb.from("posting_coach_flags").select("*").in("posting_id", input.postingIds)
+  if (error) throw new Error(`posting_coach_flags: ${error.message}`)
+  const by = new Map((existing ?? []).map((r: any) => [r.posting_id, r]))
+  const upserts: any[] = []
+  const deletes: string[] = []
+  for (const id of input.postingIds) {
+    const r: any = { ...(by.get(id) ?? { posting_id: id, flag: null, flagged_at: null, flagged_by: null, apply_url: null, url_saved_at: null, url_saved_by: null }) }
+    if (input.flag !== undefined) Object.assign(r, input.flag ? { flag: input.flag, flagged_at: now, flagged_by: input.actorId } : { flag: null, flagged_at: null, flagged_by: null })
+    if (input.applyUrl !== undefined) Object.assign(r, input.applyUrl ? { apply_url: input.applyUrl.trim(), url_saved_at: now, url_saved_by: input.actorId } : { apply_url: null, url_saved_at: null, url_saved_by: null })
+    if (!r.flag && !r.apply_url) { if (by.has(id)) deletes.push(id); continue }
+    delete r.created_at
+    upserts.push({ ...r, updated_at: now })
+  }
+  if (upserts.length) {
+    const { error: e } = await sb.from("posting_coach_flags").upsert(upserts, { onConflict: "posting_id" })
+    if (e) throw new Error(`posting_coach_flags upsert: ${e.message}`)
+  }
+  if (deletes.length) {
+    const { error: e } = await sb.from("posting_coach_flags").delete().in("posting_id", deletes)
+    if (e) throw new Error(`posting_coach_flags delete: ${e.message}`)
+  }
+  return { updated: upserts.length + deletes.length }
+}

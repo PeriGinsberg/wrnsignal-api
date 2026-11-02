@@ -364,6 +364,14 @@ export async function runLinker(sb: SupabaseClient, opts: { triggeredBy: string;
       started_at: startedAt, finished_at: new Date().toISOString(), duration_ms: Date.now() - started,
     }).select("id")
     if (runErr) throw new Error(`posting_link_runs insert: ${runErr.message}`)
+    // Linker v2, report only: logs its own run row and never writes links. Its
+    // failure must not fail v1 or the pipeline step that called it.
+    try {
+      const { runLinkerV2Report } = await import("./linkV2")
+      await runLinkerV2Report(sb, { triggeredBy: opts.triggeredBy })
+    } catch (e: any) {
+      console.error(`linker v2 report failed: ${String(e?.message ?? e).slice(0, 300)}`)
+    }
     return { runId: run?.[0]?.id ?? null, mode, scanned: rows.length, proposal, written, removed }
   } catch (err: any) {
     const message = String(err?.message || err).slice(0, 1000)
