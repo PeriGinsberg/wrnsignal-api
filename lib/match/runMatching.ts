@@ -73,6 +73,8 @@ export function criteriaFromRow(row: any, profile: any): MatchCriteria {
     // The coach's entry, else what the client gave on the intake form.
     majors: row.majors ?? profile.profile_structured?.intakeMeta?.major ?? null,
     background: [profile.resume_text, profile.profile_text].map((t: string | null) => (t ?? "").trim()).find((t: string) => t.length > 200) ?? null,
+    // Only when a snapshot exists: an undefined key leaves criteriaHash as it was.
+    ...(Array.isArray(row.judge_examples) ? { examples: row.judge_examples } : {}),
   }
 }
 
@@ -244,7 +246,9 @@ export async function runMatching(
     .in("lane_id", lanes.map((l) => l.id)).in("action", ["push", "dismiss"]).range(a, b)) : []
   const pastMatch = await pageAll<any>((a, b) => sb.from("posting_matches").select("action, dismiss_reason, note, actioned_at, postings(title, company)")
     .eq("client_profile_id", opts.clientProfileId).in("action", ["push", "dismiss"]).range(a, b))
-  const examples: PastDecision[] = [
+  // Superseded by the weekly snapshot (criteria.examples, in the cached client
+  // block) once the client has one.
+  const examples: PastDecision[] = criteria.examples ? [] : [
     ...pastLane.map((d) => ({ title: d.title, company: d.company, action: d.action, reason: d.reason, note: d.note, at: d.actioned_at })),
     ...pastMatch.map((d) => ({ title: d.postings?.title, company: d.postings?.company, action: d.action, reason: d.dismiss_reason, note: d.note, at: d.actioned_at })),
   ].sort((a, b) => (a.at < b.at ? 1 : -1)).slice(0, EXAMPLES).map(({ at: _at, ...d }) => d as PastDecision)

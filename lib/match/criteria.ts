@@ -243,6 +243,13 @@ export type MatchCriteria = {
   majors: string | null
   /** Judgment only: the client's background, from their resume (read from the profile at match time). */
   background: string | null
+  /**
+   * Judgment only: the weekly snapshot of the coach's Job Queue decisions
+   * (client_match_criteria.judge_examples). Part of criteriaHash when present.
+   * Absent (undefined, so JSON.stringify drops it and no hash changes) until
+   * the first snapshot: the judge then reads the latest decisions as before.
+   */
+  examples?: { title: string; company: string; action: "push" | "dismiss"; reason: string | null; note: string | null }[]
 }
 
 /**

@@ -12,6 +12,7 @@ import { isolatePosting, type IsolatedPosting } from "@/lib/jobs/isolatePosting"
 import { getAuthedUser, getProfileId } from "@/lib/collab/identity"
 import { errorStatus } from "@/app/api/_lib/routeError"
 import { queueCoachJobEmail } from "@/lib/email/sendCoachJobEmails"
+import { recordDecision } from "@/lib/match/jobQueue"
 
 
 export const runtime = "nodejs"
@@ -293,12 +294,34 @@ export async function POST(req: NextRequest) {
       coachClientId: coachClientRow.id,
     })
 
+    // From the Job Queue: the job is now a Fit for this client, on every copy,
+    // with the JobFit result. A failure here must not fail the send: the job
+    // already reached the client, and an error would invite sending it twice.
+    let jobQueueRecorded: boolean | undefined
+    if (Array.isArray(body.posting_match_ids) && body.posting_match_ids.length) {
+      try {
+        await recordDecision(supabase, {
+          clientProfileId, matchIds: body.posting_match_ids.map(String), action: "push", actorId: coachProfileId,
+          jobfit: {
+            score: typeof fullAnalysis.score === "number" ? Math.round(fullAnalysis.score) : null,
+            decision: fullAnalysis.decision ? String(fullAnalysis.decision) : null,
+            runId: jobfitRunId, applicationId: appRow.id,
+          },
+        })
+        jobQueueRecorded = true
+      } catch (e: any) {
+        console.error("[recommend-job] job queue decision not recorded:", e?.message || e)
+        jobQueueRecorded = false
+      }
+    }
+
     return withCorsJson(req, {
       ok: true,
       recommendation: { ...recRow, application_id: appRow.id },
       application: appRow,
       jobfit: fullAnalysis,
       client_email_queued: emailQueued,
+      ...(jobQueueRecorded !== undefined ? { job_queue_recorded: jobQueueRecorded } : {}),
     }, 201)
   } catch (err: any) {
     const msg = err?.message || String(err)

@@ -135,6 +135,7 @@ export function clientBrief(c: MatchCriteria, today = new Date()): string {
     c.excludedIndustries.length && `Industries ruled out: ${c.excludedIndustries.join(", ")}`,
     c.notes && `Coach notes:\n${c.notes}`,
     c.background && `Background (from the client's resume):\n${c.background.slice(0, 4000)}`,
+    c.examples?.length && `Coach's decisions for this client (fits and misses from the last 60 days; follow their pattern):\n${c.examples.map(decisionLine).join("\n")}`,
   ]
   return lines.filter(Boolean).join("\n")
 }

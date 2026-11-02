@@ -1,0 +1,30 @@
+// app/api/coach/job-queue/route.ts
+//
+// GET: the coach's Job Queue. Every active client's match queue in one list,
+// one row per job (copies grouped by linker v2's rules), a chip per client.
+// Records the visit: lastVisitAt is the coach's previous visit, for "new since
+// my last visit". See lib/match/jobQueue.ts.
+import { type NextRequest } from "next/server"
+import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
+import { LOAD_MIN_SCORE, loadJobQueue, MATCH_REASONS, recordVisit } from "@/lib/match/jobQueue"
+import { coachCaller, fail } from "./_shared"
+
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+export const maxDuration = 60
+
+export async function OPTIONS(req: NextRequest) {
+  return corsOptionsResponse(req.headers.get("origin"))
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const { sb, coachProfileId } = await coachCaller(req)
+    const [queue, lastVisitAt] = await Promise.all([loadJobQueue(sb, coachProfileId), recordVisit(sb, coachProfileId)])
+    return withCorsJson(req, {
+      ok: true, asOf: new Date().toISOString(), lastVisitAt, minScoreLoaded: LOAD_MIN_SCORE, reasons: MATCH_REASONS, ...queue,
+    })
+  } catch (err) {
+    return fail(req, err)
+  }
+}
