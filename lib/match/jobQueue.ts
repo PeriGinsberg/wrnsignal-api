@@ -11,10 +11,15 @@
  *
  * Reads client_match_queue (undecided and evaluating rows) plus the last 30
  * days of decided rows. Writes posting_matches and posting_coach_flags only.
+ *
+ * WHO SEES WHAT: a coach reaches only the clients of their own practice (their
+ * own coach_clients links, plus their principal's when they are a delegate,
+ * lib/collab/delegation.ts). The queue, decisions, proposals and flags all go
+ * through that; flags and saved links are stored per practice.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js"
-import { resolveDelegation } from "@/lib/collab/delegation"
+import { owningCoachId, resolveDelegation } from "@/lib/collab/delegation"
 import { normText } from "@/lib/ingest/fingerprint"
 import { employerKey } from "@/lib/ingest/link"
 import { compact, groupCopies, type CopyRow } from "@/lib/ingest/linkV2"
@@ -339,9 +344,41 @@ export async function recordDecision(sb: SupabaseClient, d: DecisionInput): Prom
 }
 
 // ---------------------------------------------------------------------------
-// Posting flags
+// Posting flags: per practice (20261122_posting_coach_flags_by_practice.sql)
 // ---------------------------------------------------------------------------
-/** Any coach with full access to a client queued for the posting may flag it. */
+// A practice is a principal coach plus their active delegates (coach_delegates).
+// A flag or saved link is stored under the flagging coach's practice and
+// reaches only clients of that practice: client_match_queue applies it where
+// the practice is one of the client's coaches or their principal.
+
+/** The practice a coach acts in: their principal, or themselves. */
+export async function practiceOf(sb: SupabaseClient, coachProfileId: string): Promise<string> {
+  try { return owningCoachId(await resolveDelegation(sb, coachProfileId)) }
+  catch (e: any) { throw new HttpError(400, e?.message || "Could not tell which practice this coach acts in") }
+}
+
+/** Every practice that reaches a client: its active coaches and their principals. */
+export async function clientPractices(sb: SupabaseClient, clientProfileId: string): Promise<string[]> {
+  const { data: cc, error } = await sb.from("coach_clients").select("coach_profile_id").eq("client_profile_id", clientProfileId).eq("status", "active")
+  if (error) throw new Error(`coach_clients: ${error.message}`)
+  const coaches = [...new Set((cc ?? []).map((r: any) => r.coach_profile_id as string))]
+  if (!coaches.length) return []
+  const { data: d, error: dErr } = await sb.from("coach_delegates").select("principal_coach_profile_id").in("delegate_coach_profile_id", coaches).eq("status", "active")
+  if (dErr) throw new Error(`coach_delegates: ${dErr.message}`)
+  return [...new Set([...coaches, ...(d ?? []).map((r: any) => r.principal_coach_profile_id as string)])]
+}
+
+/** The newest link a coach of this client's practices saved for the posting. */
+export async function savedLinkFor(sb: SupabaseClient, postingId: string, clientProfileId: string): Promise<string | null> {
+  const practices = await clientPractices(sb, clientProfileId)
+  if (!practices.length) return null
+  const { data, error } = await sb.from("posting_coach_flags").select("apply_url").eq("posting_id", postingId).in("practice_coach_id", practices)
+    .not("apply_url", "is", null).order("url_saved_at", { ascending: false }).limit(1)
+  if (error) throw new Error(`posting_coach_flags: ${error.message}`)
+  return data?.[0]?.apply_url ?? null
+}
+
+/** A coach may flag a posting only when one of their own clients (full access) has it. */
 export async function assertPostingAccess(sb: SupabaseClient, coachProfileId: string, postingIds: string[]) {
   const full = (await coachClients(sb, coachProfileId)).filter((c) => c.accessLevel === "full").map((c) => c.clientProfileId)
   if (!full.length) throw new HttpError(403, "Forbidden")
@@ -355,13 +392,14 @@ export async function setPostingFlag(sb: SupabaseClient, input: { postingIds: st
   const now = new Date().toISOString()
   if (input.applyUrl !== undefined && input.applyUrl !== null && !/^https?:\/\/\S+$/i.test(input.applyUrl)) throw new HttpError(400, "apply_url must be an http(s) link")
   if (input.flag !== undefined && input.flag !== null && !COACH_FLAGS.includes(input.flag)) throw new HttpError(400, "unknown flag")
-  const { data: existing, error } = await sb.from("posting_coach_flags").select("*").in("posting_id", input.postingIds)
+  const practice = await practiceOf(sb, input.actorId)
+  const { data: existing, error } = await sb.from("posting_coach_flags").select("*").in("posting_id", input.postingIds).eq("practice_coach_id", practice)
   if (error) throw new Error(`posting_coach_flags: ${error.message}`)
   const by = new Map((existing ?? []).map((r: any) => [r.posting_id, r]))
   const upserts: any[] = []
   const deletes: string[] = []
   for (const id of input.postingIds) {
-    const r: any = { ...(by.get(id) ?? { posting_id: id, flag: null, flagged_at: null, flagged_by: null, apply_url: null, url_saved_at: null, url_saved_by: null }) }
+    const r: any = { ...(by.get(id) ?? { posting_id: id, practice_coach_id: practice, flag: null, flagged_at: null, flagged_by: null, apply_url: null, url_saved_at: null, url_saved_by: null }) }
     if (input.flag !== undefined) Object.assign(r, input.flag ? { flag: input.flag, flagged_at: now, flagged_by: input.actorId } : { flag: null, flagged_at: null, flagged_by: null })
     if (input.applyUrl !== undefined) Object.assign(r, input.applyUrl ? { apply_url: input.applyUrl.trim(), url_saved_at: now, url_saved_by: input.actorId } : { apply_url: null, url_saved_at: null, url_saved_by: null })
     if (!r.flag && !r.apply_url) { if (by.has(id)) deletes.push(id); continue }
@@ -369,11 +407,11 @@ export async function setPostingFlag(sb: SupabaseClient, input: { postingIds: st
     upserts.push({ ...r, updated_at: now })
   }
   if (upserts.length) {
-    const { error: e } = await sb.from("posting_coach_flags").upsert(upserts, { onConflict: "posting_id" })
+    const { error: e } = await sb.from("posting_coach_flags").upsert(upserts, { onConflict: "posting_id,practice_coach_id" })
     if (e) throw new Error(`posting_coach_flags upsert: ${e.message}`)
   }
   if (deletes.length) {
-    const { error: e } = await sb.from("posting_coach_flags").delete().in("posting_id", deletes)
+    const { error: e } = await sb.from("posting_coach_flags").delete().in("posting_id", deletes).eq("practice_coach_id", practice)
     if (e) throw new Error(`posting_coach_flags delete: ${e.message}`)
   }
   return { updated: upserts.length + deletes.length }

@@ -120,7 +120,7 @@ export function JobQueueRow(p: Props) {
           ) : (
             (["closed", "bad_link", "not_us"] as const).map((f) => (
               <button key={f} type="button" style={small} onClick={() => p.onFlag(j, f)}
-                title={group ? `Applies to all ${j.cities} cities, for every client. Open the cities to flag one.` : "Applies to every client and every listing of this job"}>
+                title={group ? `Applies to all ${j.cities} cities, for all your clients. Open the cities to flag one.` : "Applies to all your clients and every listing of this job (not to other practices)"}>
                 {FLAG_LABEL[f]}{group ? " (all cities)" : ""}
               </button>
             ))
@@ -313,7 +313,7 @@ function SaveUrl(p: { job: QJob; onSaveUrl: Props["onSaveUrl"] }) {
       <a href={google} target="_blank" rel="noopener noreferrer" style={{ ...small, display: "inline-flex", alignItems: "center", textDecoration: "none" }}>Find this job ↗</a>
       <input style={{ ...input, flex: "1 1 280px", maxWidth: 520 }} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Paste a working link (the employer's page if you can find it)" />
       <button type="button" disabled={!valid || busy} style={{ ...small, opacity: valid && !busy ? 1 : 0.5 }}
-        onClick={async () => { setBusy(true); if (await p.onSaveUrl(p.job, url.trim())) setUrl(""); setBusy(false) }}>Save link for every client</button>
+        onClick={async () => { setBusy(true); if (await p.onSaveUrl(p.job, url.trim())) setUrl(""); setBusy(false) }}>Save link for your clients</button>
     </div>
   )
 }

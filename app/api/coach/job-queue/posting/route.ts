@@ -4,11 +4,12 @@
 //                  the Source a Job prefill (the coach no longer pastes it).
 // POST { posting_ids[], flag?, apply_url? }  flag 'closed' | 'bad_link' |
 //                  'not_us' | null, and/or a coach-found apply link ("Save
-//                  URL"), for every copy of the job. Applies to every client.
+//                  URL"), for every copy of the job. Applies to the clients of
+//                  the caller's practice only (posting_coach_flags per practice).
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
 import { postingText } from "@/lib/ingest/enrichPostings"
-import { assertFullAccess, assertPostingAccess, HttpError, setPostingFlag } from "@/lib/match/jobQueue"
+import { assertFullAccess, assertPostingAccess, HttpError, savedLinkFor, setPostingFlag } from "@/lib/match/jobQueue"
 import { coachCaller, fail } from "../_shared"
 
 export const runtime = "nodejs"
@@ -27,14 +28,14 @@ export async function GET(req: NextRequest) {
     if (error) throw new Error(error.message)
     if (!m) throw new HttpError(404, "match not found")
     await assertFullAccess(sb, coachProfileId, m.client_profile_id)
-    const [{ data: p, error: pErr }, { data: f }] = await Promise.all([
+    const [{ data: p, error: pErr }, saved] = await Promise.all([
       sb.from("postings").select("source, title, cleaned_title, company, location, apply_url, requirements_summary, raw").eq("id", m.posting_id).single(),
-      sb.from("posting_coach_flags").select("apply_url").eq("posting_id", m.posting_id).maybeSingle(),
+      savedLinkFor(sb, m.posting_id, m.client_profile_id),
     ])
     if (pErr || !p) throw new Error(pErr?.message ?? "posting not found")
     return withCorsJson(req, {
       ok: true, client_profile_id: m.client_profile_id, title: p.cleaned_title ?? p.title, company: p.company, location: p.location,
-      apply_url: f?.apply_url ?? m.apply_url ?? p.apply_url, requirements_summary: p.requirements_summary, description: postingText(p.source, p.raw),
+      apply_url: saved ?? m.apply_url ?? p.apply_url, requirements_summary: p.requirements_summary, description: postingText(p.source, p.raw),
     })
   } catch (err) {
     return fail(req, err)

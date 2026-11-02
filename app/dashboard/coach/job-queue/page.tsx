@@ -8,7 +8,7 @@
 //                with the job and its description, and marks it Evaluating.
 //                Sending it to the client's tracker there marks it Fit.
 //   Not a fit    a reason (Other needs a note), saved for the client.
-//   Row flags    Closed / Not in the US take the job out of every client's
+//   Row flags    Closed / Not in the US take the job out of your practice's clients'
 //                queue; Bad link ranks it last until a working link is saved.
 //   N cities     one employer's job under one title in several cities shows
 //                as one row (display only: each city stays its own job). The
@@ -302,7 +302,7 @@ export default function JobQueuePage() {
         touchAll(job)
         patchJob(job, (j) => ({ ...j, flag: flag ?? undefined, badLink: flag === "bad_link" ? true : flag === null ? false : j.badLink }))
         const where = job.cities ? ` in all ${job.cities} cities` : ""
-        say(flag ? `Marked ${flag === "not_us" ? "not in the US" : flag.replace("_", " ")}${where} for every client${flag !== "bad_link" ? " and taken out of their queues" : ""}.` : "Flag removed.")
+        say(flag ? `Marked ${flag === "not_us" ? "not in the US" : flag.replace("_", " ")}${where} for your clients${flag !== "bad_link" ? " and taken out of their queues" : ""}.` : "Flag removed.")
       })
       .catch((e) => say(`Not saved: ${e.message}`))
   }
@@ -310,7 +310,7 @@ export default function JobQueuePage() {
     try {
       await call("/api/coach/job-queue/posting", "POST", { posting_ids: job.postingIds, apply_url: url })
       patchJob(job, (j) => ({ ...j, url, lk: "employer", rep: false, badLink: false }))
-      say("Link saved for every client on this job.")
+      say("Link saved for your clients on this job.")
       return true
     } catch (e: any) { say(`Not saved: ${e.message}`); return false }
   }
