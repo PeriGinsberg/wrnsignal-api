@@ -62,6 +62,8 @@ type Props = {
   onFlag: (job: QJob, flag: QJob["flag"] | null) => void
   onSaveUrl: (job: QJob, url: string) => Promise<boolean>
   loadDetails: (job: QJob) => Promise<{ requirements_summary?: string } | null>
+  /** A city group: renders each city's own row (actions there apply to that city only). */
+  renderCities?: () => React.ReactNode
 }
 
 export function JobQueueRow(p: Props) {
@@ -69,6 +71,8 @@ export function JobQueueRow(p: Props) {
   const [chipOpen, setChipOpen] = useState<number | null>(null)
   const [allOpen, setAllOpen] = useState(false)
   const [listsOpen, setListsOpen] = useState(false)
+  const [citiesOpen, setCitiesOpen] = useState(false)
+  const group = !!j.cities
   const [details, setDetails] = useState<{ requirements_summary?: string } | null | "loading">(null)
 
   const openChip = chipOpen === null ? null : j.m.find((m) => m.c === chipOpen) ?? null
@@ -104,16 +108,21 @@ export function JobQueueRow(p: Props) {
             {j.url ? <a href={j.url} target="_blank" rel="noopener noreferrer" style={{ color: T.TEXT, textDecoration: "none" }}>{j.t} <span style={{ color: T.INK_LINK, fontSize: 13 }}>↗</span></a> : j.t}
           </div>
           <div style={{ fontSize: TYPE.secondary, color: T.MUTED }}>
-            {j.co} · {j.loc || "Location not stated"}
+            {j.co} · {group
+              ? <button type="button" onClick={() => setCitiesOpen(!citiesOpen)} aria-expanded={citiesOpen} style={{ ...ghost, minHeight: 0, padding: 0, fontSize: TYPE.secondary, fontWeight: 800 }}>{j.cities} cities {citiesOpen ? "▴" : "▾"}</button>
+              : j.loc || "Location not stated"}
             {j.ls && <> · <button type="button" onClick={() => setListsOpen(!listsOpen)} aria-expanded={listsOpen} style={{ ...ghost, minHeight: 0, padding: 0, fontSize: TYPE.secondary }}>{j.ls.length} listings</button></>}
           </div>
         </div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {j.flag ? (
-            <button type="button" style={small} onClick={() => p.onFlag(j, null)}>Undo “{FLAG_LABEL[j.flag]}”</button>
+            <button type="button" style={small} onClick={() => p.onFlag(j, null)}>Undo “{FLAG_LABEL[j.flag]}”{group ? " in all cities" : ""}</button>
           ) : (
             (["closed", "bad_link", "not_us"] as const).map((f) => (
-              <button key={f} type="button" style={small} title="Applies to every client and every listing of this job" onClick={() => p.onFlag(j, f)}>{FLAG_LABEL[f]}</button>
+              <button key={f} type="button" style={small} onClick={() => p.onFlag(j, f)}
+                title={group ? `Applies to all ${j.cities} cities, for every client. Open the cities to flag one.` : "Applies to every client and every listing of this job"}>
+                {FLAG_LABEL[f]}{group ? " (all cities)" : ""}
+              </button>
             ))
           )}
         </div>
@@ -133,12 +142,13 @@ export function JobQueueRow(p: Props) {
           const on = chipOpen === m.c
           return (
             <button key={m.c} type="button" aria-expanded={on} onClick={() => setChipOpen(on ? null : m.c)}
-              title={m.all ? `Best of ${m.all.length} listings: ${m.all.map((x) => x ?? "–").join(", ")}` : m.why}
+              title={m.n ? `Best of ${m.n} cities${m.split ? ` · ${m.split}` : ""}` : m.all ? `Best of ${m.all.length} listings: ${m.all.map((x) => x ?? "–").join(", ")}` : m.why}
               style={{ display: "inline-flex", alignItems: "center", gap: 6, minHeight: 32, padding: "0 4px 0 10px", borderRadius: 999, cursor: "pointer",
                 background: on ? T.BLUE_BG_ON : b.bg, border: `1px solid ${on ? T.BLUE_BORDER_ON : b.border}`, color: T.TEXT, fontSize: 13, fontWeight: 800 }}>
               {clients[m.c]?.first}
               <span style={{ background: T.NAV_BG, color: b.ink, borderRadius: 999, padding: "2px 8px", fontWeight: 900 }}>{m.s ?? "–"}</span>
               {m.status && <span style={{ color: statusColor(m.status), fontSize: TYPE.micro, fontWeight: 900, paddingRight: 6 }}>{STATUS_LABEL[m.status]}</span>}
+              {!m.status && m.split && <span style={{ color: T.MUTED, fontSize: TYPE.micro, fontWeight: 900, paddingRight: 6 }}>mixed</span>}
             </button>
           )
         })}
@@ -150,9 +160,15 @@ export function JobQueueRow(p: Props) {
         </button>
       </div>
 
-      {(openChip || allOpen || listsOpen) && (
+      {(openChip || allOpen || listsOpen || citiesOpen) && (
         <div style={{ borderTop: `1px solid ${T.BORDER_SOFT}`, paddingTop: 10, display: "flex", flexDirection: "column", gap: 12 }}>
           {listsOpen && j.ls && <Listings job={j} onSaveUrl={p.onSaveUrl} />}
+          {citiesOpen && p.renderCities && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingLeft: 12, borderLeft: `3px solid ${T.BORDER_SOFT}` }}>
+              <div style={{ color: T.MUTED, fontSize: TYPE.secondary }}>Each city is its own job. Actions on a city below apply to that city only.</div>
+              {p.renderCities()}
+            </div>
+          )}
           {openChip && (
             <ClientMatchPanel job={j} m={openChip} client={clients[openChip.c]} reasons={p.reasons} isNew={p.isNew(openChip)}
               onAddJob={() => p.onAddJob(j, openChip)} onUndo={() => p.onUndo(j, openChip)}
@@ -164,7 +180,7 @@ export function JobQueueRow(p: Props) {
               {details && details !== "loading" && details.requirements_summary && (
                 <div style={{ fontSize: TYPE.secondary, color: T.MUTED, maxWidth: "80ch" }}><b style={{ color: T.TEXT }}>Requirements:</b> {details.requirements_summary}</div>
               )}
-              {!j.ls && <SaveUrl job={j} onSaveUrl={p.onSaveUrl} />}
+              {!j.ls && !group && <SaveUrl job={j} onSaveUrl={p.onSaveUrl} />}
               <AllClients job={j} clients={clients} isNew={p.isNew} onOpen={(c) => setChipOpen(c)} />
             </>
           )}
@@ -187,20 +203,26 @@ function ClientMatchPanel(p: { job: QJob; m: QChip; client?: QClient; reasons: Q
         {m.status && <span style={{ color: statusColor(m.status), fontWeight: 900, fontSize: TYPE.secondary }}>{STATUS_LABEL[m.status]}{m.reason ? `: ${p.reasons.find((r) => r.value === m.reason)?.label ?? m.reason}` : ""}{m.note ? ` · ${m.note}` : ""}</span>}
       </div>
       {m.why && <p style={{ margin: 0, maxWidth: "80ch" }}>{m.why}</p>}
-      {m.all && <p style={{ margin: 0, color: T.MUTED, fontSize: TYPE.secondary }}>Best score across {m.all.length} listings of this job ({m.all.map((x) => x ?? "–").join(", ")}). The reason is from the best one.</p>}
+      {m.n ? (
+        <p style={{ margin: 0, color: T.MUTED, fontSize: TYPE.secondary }}>Best score across the {m.n} cities this client has, in {m.bestLoc || "a city not stated"}. The reason is from that one.{m.split ? ` ${m.split}.` : ""}</p>
+      ) : m.all && <p style={{ margin: 0, color: T.MUTED, fontSize: TYPE.secondary }}>Best score across {m.all.length} listings of this job ({m.all.map((x) => x ?? "–").join(", ")}). The reason is from the best one.</p>}
       {m.jobfitScore !== undefined && <p style={{ margin: 0, color: T.MUTED, fontSize: TYPE.secondary }}>JobFit {m.jobfitScore}{m.jobfitDecision ? ` · ${m.jobfitDecision}` : ""}</p>}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button type="button" style={{ ...btnPrimary, minHeight: 34, padding: "0 14px", fontSize: 14 }} onClick={p.onAddJob} title="Opens Source a Job for this client in a new tab, prefilled. Marks the job Evaluating.">Add Job</button>
-        <button type="button" style={small} onClick={() => setPicking(!picking)} aria-expanded={picking}>Not a fit</button>
+        <button type="button" style={{ ...btnPrimary, minHeight: 34, padding: "0 14px", fontSize: 14 }} onClick={p.onAddJob}
+          title={`Opens Source a Job for this client in a new tab, prefilled. Marks the job Evaluating${m.n ? " in that city only" : ""}.`}>
+          {m.n ? `Add Job (${m.bestLoc || "best city"})` : "Add Job"}
+        </button>
+        <button type="button" style={small} onClick={() => setPicking(!picking)} aria-expanded={picking}>{m.n ? `Not a fit (all ${m.n} cities)` : "Not a fit"}</button>
         {/* A Fit put the job in the client's tracker; that is undone there, not here. */}
-        {m.status && m.status !== "fit" && <button type="button" style={ghost} onClick={p.onUndo}>Undo</button>}
+        {m.status && m.status !== "fit" && <button type="button" style={ghost} onClick={p.onUndo}>{m.n ? "Undo in all cities" : "Undo"}</button>}
       </div>
-      {picking && <NotAFitPicker reasons={p.reasons} onCancel={() => setPicking(false)} onSave={p.onNotFit} copies={m.ids.length} />}
+      {m.n && <div style={{ color: T.MUTED, fontSize: TYPE.secondary }}>To add or turn down one city, open “{p.job.cities} cities” above.</div>}
+      {picking && <NotAFitPicker reasons={p.reasons} onCancel={() => setPicking(false)} onSave={p.onNotFit} copies={m.ids.length} cities={m.n} />}
     </div>
   )
 }
 
-export function NotAFitPicker(p: { reasons: QReason[]; copies: number; onCancel: () => void; onSave: (reason: string, note: string) => Promise<boolean> }) {
+export function NotAFitPicker(p: { reasons: QReason[]; copies: number; cities?: number; onCancel: () => void; onSave: (reason: string, note: string) => Promise<boolean> }) {
   const [reason, setReason] = useState<string | null>(null)
   const [note, setNote] = useState("")
   const [busy, setBusy] = useState(false)
@@ -222,7 +244,8 @@ export function NotAFitPicker(p: { reasons: QReason[]; copies: number; onCancel:
         <button type="button" disabled={!can} style={{ ...btnPrimary, minHeight: 34, padding: "0 14px", fontSize: 14, opacity: can ? 1 : 0.5 }}
           onClick={async () => { setBusy(true); const ok = await p.onSave(reason!, note); setBusy(false); if (ok) p.onCancel() }}>Mark not a fit</button>
         <button type="button" style={ghost} onClick={p.onCancel}>Cancel</button>
-        {p.copies > 1 && <span style={{ color: T.MUTED, fontSize: TYPE.secondary }}>Applies to all {p.copies} listings of this job for this client.</span>}
+        {p.cities ? <span style={{ color: T.MUTED, fontSize: TYPE.secondary }}>Applies to all {p.cities} cities of this job for this client.</span>
+          : p.copies > 1 && <span style={{ color: T.MUTED, fontSize: TYPE.secondary }}>Applies to all {p.copies} listings of this job for this client.</span>}
       </div>
     </div>
   )
