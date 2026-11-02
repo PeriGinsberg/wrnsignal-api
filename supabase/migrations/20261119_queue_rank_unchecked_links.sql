@@ -101,5 +101,5 @@ COMMIT;
 
 -- Verify (both true):
 -- SELECT
---   pg_get_viewdef('public.client_match_queue'::regclass) LIKE '%IS NOT DISTINCT FROM ''likely_closed''%' AS likely_closed_never_null,
+--   pg_get_viewdef('public.client_match_queue'::regclass) LIKE '%DISTINCT FROM ''likely_closed''%' AS likely_closed_never_null,  -- Postgres prints IS NOT DISTINCT FROM as NOT (... IS DISTINCT FROM ...)
 --   NOT EXISTS (SELECT 1 FROM public.client_match_queue WHERE likely_closed IS NULL) AS no_null_likely_closed;
