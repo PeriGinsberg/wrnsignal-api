@@ -150,6 +150,8 @@ export type LinkCheckSummary = {
   closedRows: CheckedRow[]
   likelyClosedRows: CheckedRow[]
   unknownRows: CheckedRow[]
+  /** Clients whose queue could not be read; their links were not checked. */
+  queueErrors: { clientProfileId: string; error: string }[]
 }
 type CheckedRow = { postingId: string; title: string; company: string; url: string; evidence: string }
 
@@ -158,23 +160,58 @@ async function pool<T>(items: T[], n: number, fn: (t: T) => Promise<void>) {
   await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => { for (;;) { const i = next++; if (i >= items.length) return; await fn(items[i]) } }))
 }
 
+/** Tries per client's queue read: a second try rides out a one-off slow statement. */
+export const QUEUE_READ_ATTEMPTS = 2
+
+/**
+ * The top `top` of one client's queue. ONE CLIENT PER QUERY: the 2026-11-01
+ * link check asked for every client's top 30 at once, which makes Postgres rank
+ * every client's whole queue in one statement, and it hit the statement
+ * timeout once matching had queued ~4,000 more rows that night. Filtered on
+ * client_profile_id (the window's PARTITION BY), the filter is applied before
+ * the ranking, so each statement sorts one client's queue and no more, however
+ * many clients there are.
+ */
+async function topOfQueue(sb: SupabaseClient, clientProfileId: string, top: number): Promise<any[]> {
+  let last = ""
+  for (let attempt = 1; attempt <= QUEUE_READ_ATTEMPTS; attempt++) {
+    const { data, error } = await sb.from("client_match_queue").select("client_profile_id, posting_id, title, company, apply_url, rank")
+      .eq("client_profile_id", clientProfileId).lte("rank", top)
+    if (!error) return data ?? []
+    last = error.message
+  }
+  throw new Error(last)
+}
+
 /**
  * Check the top `top` of every active client's queue (or one client's).
  * Writes the verdict to postings unless dryRun. A posting in several clients'
  * top 30 is checked once per distinct link; one closed link closes it. When
  * the client's link gives no answer, up to MAX_EXTRA_LINKS of the posting's
  * other apply links are checked as well.
+ *
+ * A client whose queue cannot be read after QUEUE_READ_ATTEMPTS is listed in
+ * queueErrors and the rest are still checked; the caller decides whether that
+ * is a failure (the nightly step reports it as one, so it emails).
  */
 export async function runLinkCheck(
   sb: SupabaseClient,
   opts: { top?: number; clientProfileId?: string; dryRun?: boolean } = {},
 ): Promise<LinkCheckSummary> {
   const top = opts.top ?? 30
-  let q = sb.from("client_match_queue").select("client_profile_id, posting_id, title, company, apply_url, rank").lte("rank", top)
-  if (opts.clientProfileId) q = q.eq("client_profile_id", opts.clientProfileId)
-  const { data, error } = await q
-  if (error) throw new Error(`client_match_queue: ${error.message}`)
-  const rows = (data ?? []).filter((r: any) => r.apply_url)
+  let clientIds: string[]
+  if (opts.clientProfileId) clientIds = [opts.clientProfileId]
+  else {
+    const { data: crit, error } = await sb.from("client_match_criteria").select("client_profile_id").eq("active", true).order("client_profile_id")
+    if (error) throw new Error(`client_match_criteria: ${error.message}`)
+    clientIds = (crit ?? []).map((c: any) => c.client_profile_id)
+  }
+  const queueErrors: { clientProfileId: string; error: string }[] = []
+  const read: any[] = []
+  for (const id of clientIds) {
+    try { read.push(...await topOfQueue(sb, id, top)) } catch (e: any) { queueErrors.push({ clientProfileId: id, error: `client_match_queue: ${String(e?.message ?? e).slice(0, 300)}` }) }
+  }
+  const rows = read.filter((r: any) => r.apply_url)
 
   // One check per (posting, link).
   const work = new Map<string, any>()
@@ -230,5 +267,6 @@ export async function runLinkCheck(
     closedRows: listed("closed"),
     likelyClosedRows: listed("likely_closed"),
     unknownRows: listed("unknown"),
+    queueErrors,
   }
 }
