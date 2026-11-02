@@ -36,16 +36,33 @@ export default function JobQueuePage() {
   const [shown, setShown] = useState(PAGE)
   const [underRows, setUnderRows] = useState<Set<string>>(new Set())
   const [toast, setToast] = useState<string | null>(null)
+  // Jobs acted on during this visit stay on screen with their new status, even
+  // with "Hide jobs I've decided" on: hiding them is what made a Fit look lost.
+  const [touched, setTouched] = useState<Set<string>>(new Set())
+  const touch = (key: string) => setTouched((t) => (t.has(key) ? t : new Set(t).add(key)))
 
   const say = useCallback((msg: string) => { setToast(msg); window.setTimeout(() => setToast((t) => (t === msg ? null : t)), 3200) }, [])
 
-  useEffect(() => {
-    authFetch("/api/coach/job-queue").then(async (r) => {
+  const load = useCallback((quiet = false) => {
+    return authFetch("/api/coach/job-queue").then(async (r) => {
       const j = await r.json().catch(() => null)
       if (!r.ok || !j?.ok) throw new Error(j?.error || `HTTP ${r.status}`)
       setData(j)
-    }).catch((e) => setError(String(e?.message || e)))
+    }).catch((e) => { if (!quiet) setError(String(e?.message || e)) })
   }, [])
+  useEffect(() => { load() }, [load])
+  // Add Job finishes in another tab (Source a Job marks the job Fit there).
+  // Coming back to this tab reloads, so the Fit shows. At most once a minute.
+  useEffect(() => {
+    let last = Date.now()
+    const onVisible = () => {
+      if (document.visibilityState !== "visible" || Date.now() - last < 60e3) return
+      last = Date.now()
+      load(true)
+    }
+    document.addEventListener("visibilitychange", onVisible)
+    return () => document.removeEventListener("visibilitychange", onVisible)
+  }, [load])
 
   const lastVisit = data?.lastVisitAt ?? null
   const isNew = useCallback((m: QChip) => !!lastVisit && !!m.q && m.q > lastVisit, [lastVisit])
@@ -59,7 +76,8 @@ export default function JobQueuePage() {
     const now = Date.now()
     const out: { job: QJob; visible: QChip[]; under: number }[] = []
     for (const j of data.jobs) {
-      if (f.hideDecided && j.flag && j.flag !== "bad_link") continue
+      const keep = touched.has(j.key)
+      if (f.hideDecided && !keep && j.flag && j.flag !== "bad_link") continue
       if (q && !`${j.t} ${j.co}`.toLowerCase().includes(q)) continue
       if (loc && !(j.loc ?? "").toLowerCase().includes(loc)) continue
       if (co && !j.co.toLowerCase().includes(co)) continue
@@ -71,13 +89,13 @@ export default function JobQueuePage() {
       if (f.flag === "deadline" && !j.dl) continue
       if (f.flag === "badlink" && !j.badLink) continue
       if (f.flag === "clean" && (j.closed || j.rep || j.badLink)) continue
-      const eligible = j.m.filter((m) => (clientIdx < 0 || m.c === clientIdx) && (!f.newOnly || isNew(m)) && (!f.hideDecided || !m.status || m.status === "evaluating"))
+      const eligible = j.m.filter((m) => (clientIdx < 0 || m.c === clientIdx) && (!f.newOnly || isNew(m)) && (!f.hideDecided || keep || !m.status || m.status === "evaluating"))
       if (!eligible.length || (eligible[0].s ?? -1) < f.min) continue
       const floor = f.under || underRows.has(j.key) ? 0 : CHIP_FLOOR
       out.push({ job: j, visible: eligible.filter((m) => (m.s ?? -1) >= floor), under: eligible.filter((m) => (m.s ?? -1) < floor).length })
     }
     return out
-  }, [data, f, isNew, underRows])
+  }, [data, f, isNew, underRows, touched])
 
   const sinceStats = useMemo(() => {
     if (!data) return null
@@ -103,6 +121,7 @@ export default function JobQueuePage() {
     const c = clientOf(m)
     const qs = new URLSearchParams({ tab: "source", sc_title: job.t, sc_company: job.co, sc_url: job.url ?? "", match: m.ids.join(",") })
     window.open(`/dashboard/coach/clients/${c.id}?${qs}`, "_blank", "noopener")
+    touch(job.key)
     if (m.status) return
     call("/api/coach/job-queue/match", "PATCH", { client_profile_id: c.id, match_ids: m.ids, action: "evaluating" })
       .then(() => { patchChip(job.key, m.c, (x) => ({ ...x, status: "evaluating" })); say(`${c.first}: Evaluating. Send it to their tracker in the new tab to mark it Fit.`) })
@@ -112,6 +131,7 @@ export default function JobQueuePage() {
     const c = clientOf(m)
     try {
       await call("/api/coach/job-queue/match", "PATCH", { client_profile_id: c.id, match_ids: m.ids, action: "dismiss", reason, note })
+      touch(job.key)
       patchChip(job.key, m.c, (x) => ({ ...x, status: "not_fit", reason, note: note.trim() || undefined }))
       say(`Not a fit for ${c.first}: ${data!.reasons.find((r) => r.value === reason)?.label.replace(" (note required)", "") ?? reason}`)
       return true
@@ -125,6 +145,7 @@ export default function JobQueuePage() {
   const onFlag = (job: QJob, flag: QJob["flag"] | null) => {
     call("/api/coach/job-queue/posting", "POST", { posting_ids: job.postingIds, flag })
       .then(() => {
+        touch(job.key)
         patchJob(job.key, (j) => ({ ...j, flag: flag ?? undefined, badLink: flag === "bad_link" ? true : flag === null ? false : j.badLink }))
         say(flag ? `Marked ${flag === "not_us" ? "not in the US" : flag.replace("_", " ")} for every client${flag !== "bad_link" ? " and taken out of their queues" : ""}.` : "Flag removed.")
       })
