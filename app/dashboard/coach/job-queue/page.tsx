@@ -10,18 +10,92 @@
 //   Not a fit    a reason (Other needs a note), saved for the client.
 //   Row flags    Closed / Not in the US take the job out of every client's
 //                queue; Bad link ranks it last until a working link is saved.
+//   N cities     one employer's job under one title in several cities shows
+//                as one row (display only: each city stays its own job). The
+//                row's actions apply to every city; open it to act on one.
 //
-// API: app/api/coach/job-queue (lib/match/jobQueue.ts).
+// API: app/api/coach/job-queue (lib/match/jobQueue.ts), loaded in pages.
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { T, btnSecondary, card, input, selectDark, selectDarkOption } from "../../../../lib/dashboard-theme"
 import { TYPE } from "../../../../lib/theme/surfaces"
 import { authFetch } from "../_tasks/taskClient"
 import { BackToDashboard } from "../BackToDashboard"
 import { CHIP_FLOOR, JobQueueRow } from "./JobQueueRow"
-import type { QChip, QJob, QueueResponse } from "./types"
+import type { QChip, QJob, QueuePage, QueueResponse } from "./types"
 
 const PAGE = 40
+/** Ids per write: the API takes up to 120. */
+const WRITE_CHUNK = 100
+
+type Row = { job: QJob; eligible: QChip[]; visible: QChip[]; under: number; cities?: Row[] }
+
+const best = (j: QJob) => j.m[0]?.s ?? -1
+/** The server's order (lib/match/jobQueue.ts buildJobs): pages can arrive in any order. */
+const byBest = (a: QJob, b: QJob) => best(b) - best(a) || b.m.length - a.m.length || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0)
+const locKey = (l?: string) => (l ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
+function chunks<T>(xs: T[]): T[][] {
+  const out: T[][] = []
+  for (let i = 0; i < xs.length; i += WRITE_CHUNK) out.push(xs.slice(i, i + WRITE_CHUNK))
+  return out
+}
+const STATUS_WORD: Record<string, string> = { evaluating: "Evaluating", fit: "Fit", not_fit: "Not a fit" }
+
+/** One chip per client across a city group's jobs: best score, every city's match ids. */
+function mergeChips(parts: { job: QJob; chips: QChip[] }[]): QChip[] {
+  const by = new Map<number, { job: QJob; m: QChip }[]>()
+  for (const p of parts) for (const m of p.chips) by.set(m.c, [...(by.get(m.c) ?? []), { job: p.job, m }])
+  return [...by.entries()].map(([c, xs]): QChip => {
+    xs.sort((a, b) => (b.m.s ?? -1) - (a.m.s ?? -1))
+    const top = xs[0]
+    const st = xs.map((x) => x.m.status ?? "open")
+    const same = st.every((x) => x === st[0])
+    let split: string | undefined
+    if (!same) {
+      const n = new Map<string, number>()
+      for (const x of st) if (x !== "open") n.set(x, (n.get(x) ?? 0) + 1)
+      split = [...n.entries()].map(([k, v]) => `${STATUS_WORD[k]} in ${v}`).join(", ") + ` of ${xs.length} cities`
+    }
+    const ranks = xs.map((x) => x.m.rk).filter((r): r is number => r !== undefined)
+    const qs = xs.map((x) => x.m.q).filter((q): q is string => !!q).sort()
+    const fit = xs.find((x) => x.m.jobfitScore !== undefined)?.m
+    return {
+      c, s: top.m.s, why: top.m.why, q: qs[0], rk: ranks.length ? Math.min(...ranks) : undefined,
+      ids: xs.flatMap((x) => x.m.ids),
+      // A city already sent to the tracker (Fit) is never turned down from the group row.
+      actIds: xs.filter((x) => x.m.status !== "fit").flatMap((x) => x.m.ids),
+      status: same ? top.m.status : undefined,
+      reason: same && xs.every((x) => x.m.reason === top.m.reason) ? top.m.reason : undefined,
+      note: same ? top.m.note : undefined,
+      jobfitScore: fit?.jobfitScore, jobfitDecision: fit?.jobfitDecision,
+      n: xs.length, bestKey: top.job.key, bestLoc: top.job.loc, split,
+    }
+  }).sort((a, b) => (b.s ?? -1) - (a.s ?? -1))
+}
+
+/** Rows (best first) of one title at one employer in two or more places -> one row. */
+function cityGroup(ck: string, members: Row[], floorOf: (key: string) => number): Row {
+  const js = members.map((r) => r.job)
+  const b = js[0]
+  const flags = js.map((j) => j.flag)
+  const key = `city:${ck}`
+  const cities = new Set(js.map((j) => locKey(j.loc))).size
+  const job: QJob = {
+    ...b, key, ls: undefined, ck,
+    loc: `${cities} cities`,
+    postingIds: js.flatMap((j) => j.postingIds),
+    m: mergeChips(js.map((j) => ({ job: j, chips: j.m }))),
+    flag: flags.every((x) => x === flags[0]) ? flags[0] : undefined,
+    badLink: js.every((j) => j.badLink) || undefined, closed: js.every((j) => j.closed) || undefined, rep: js.every((j) => j.rep) || undefined,
+    lcs: js.every((j) => j.lcs) ? b.lcs : undefined,
+    seen: js.map((j) => j.seen).filter((x): x is string => !!x).sort()[0],
+    campus: js.some((j) => j.campus) || undefined,
+    members: js.map((j) => j.key), cities,
+  }
+  const eligible = mergeChips(members.map((r) => ({ job: r.job, chips: r.eligible })))
+  const fl = floorOf(key)
+  return { job, eligible, visible: eligible.filter((m) => (m.s ?? -1) >= fl), under: eligible.filter((m) => (m.s ?? -1) < fl).length, cities: members }
+}
 
 type Filters = {
   q: string; client: string; min: number; loc: string; co: string; days: string; flag: string
@@ -32,6 +106,8 @@ const DEFAULTS: Filters = { q: "", client: "", min: 50, loc: "", co: "", days: "
 export default function JobQueuePage() {
   const [data, setData] = useState<QueueResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [progress, setProgress] = useState<{ got: number; of: number } | null>(null)
+  const runRef = useRef(0)
   const [f, setF] = useState<Filters>(DEFAULTS)
   const [shown, setShown] = useState(PAGE)
   const [underRows, setUnderRows] = useState<Set<string>>(new Set())
@@ -43,12 +119,54 @@ export default function JobQueuePage() {
 
   const say = useCallback((msg: string) => { setToast(msg); window.setTimeout(() => setToast((t) => (t === msg ? null : t)), 3200) }, [])
 
-  const load = useCallback((quiet = false) => {
-    return authFetch("/api/coach/job-queue").then(async (r) => {
+  // The list comes in pages (one response is capped at 4.5 MB). Page 0 has
+  // the clients and the first jobs and shows at once; the rest follow in
+  // parallel. A quiet reload (coming back to the tab) swaps in the whole new
+  // list once every page is in.
+  const load = useCallback(async (quiet = false) => {
+    const run = ++runRef.current
+    const fetchPage = async (n: number, snap: string): Promise<QueuePage> => {
+      const r = await authFetch(`/api/coach/job-queue?page=${n}${snap ? `&snap=${encodeURIComponent(snap)}` : ""}`)
       const j = await r.json().catch(() => null)
       if (!r.ok || !j?.ok) throw new Error(j?.error || `HTTP ${r.status}`)
-      setData(j)
-    }).catch((e) => { if (!quiet) setError(String(e?.message || e)) })
+      return j
+    }
+    try {
+      const first = await fetchPage(0, "")
+      if (run !== runRef.current) return
+      const head: QueueResponse = { ok: true, asOf: first.asOf!, lastVisitAt: first.lastVisitAt, minScoreLoaded: first.minScoreLoaded!, reasons: first.reasons!, clients: first.clients!, jobs: first.jobs }
+      const idx = new Map(head.clients.map((c, i) => [c.id, i]))
+      let all = first.jobs
+      if (!quiet) { setData(head); setError(null) }
+      if (first.pages > 1) {
+        let got = 1
+        if (!quiet) setProgress({ got, of: first.pages })
+        await Promise.all(Array.from({ length: first.pages - 1 }, (_, i) => fetchPage(i + 1, first.snap).then((pg) => {
+          if (run !== runRef.current) return
+          // A page that was built again names its clients: map its chips onto page 0's list.
+          const remap = pg.clientIds?.map((id) => idx.get(id))
+          const jobs = remap
+            ? pg.jobs.map((j) => ({ ...j, m: j.m.filter((m) => remap[m.c] !== undefined).map((m) => ({ ...m, c: remap[m.c]! })) }))
+            : pg.jobs
+          all = all.concat(jobs)
+          got++
+          if (!quiet) {
+            setData((d) => { if (!d) return d; const have = new Set(d.jobs.map((j) => j.key)); return { ...d, jobs: d.jobs.concat(jobs.filter((j) => !have.has(j.key))) } })
+            setProgress({ got, of: first.pages })
+          }
+        })))
+      }
+      if (run !== runRef.current) return
+      if (quiet) {
+        const have = new Set<string>()
+        setData({ ...head, jobs: all.filter((j) => { if (have.has(j.key)) return false; have.add(j.key); return true }) })
+      }
+      setProgress(null)
+    } catch (e: any) {
+      if (run !== runRef.current) return
+      setProgress(null)
+      if (!quiet) setError(String(e?.message || e))
+    }
   }, [])
   useEffect(() => { load() }, [load])
   // Add Job finishes in another tab (Source a Job marks the job Fit there).
@@ -69,13 +187,14 @@ export default function JobQueuePage() {
   const set = <K extends keyof Filters>(k: K, v: Filters[K]) => { setF((x) => ({ ...x, [k]: v })); setShown(PAGE) }
 
   // ---- filtering -----------------------------------------------------------
+  const ordered = useMemo(() => (data ? [...data.jobs].sort(byBest) : []), [data])
   const rows = useMemo(() => {
     if (!data) return []
     const clientIdx = f.client === "" ? -1 : Number(f.client)
     const q = f.q.trim().toLowerCase(), loc = f.loc.trim().toLowerCase(), co = f.co.trim().toLowerCase()
     const now = Date.now()
-    const out: { job: QJob; visible: QChip[]; under: number }[] = []
-    for (const j of data.jobs) {
+    const out: Row[] = []
+    for (const j of ordered) {
       const keep = touched.has(j.key)
       if (f.hideDecided && !keep && j.flag && j.flag !== "bad_link") continue
       if (q && !`${j.t} ${j.co}`.toLowerCase().includes(q)) continue
@@ -92,10 +211,25 @@ export default function JobQueuePage() {
       const eligible = j.m.filter((m) => (clientIdx < 0 || m.c === clientIdx) && (!f.newOnly || isNew(m)) && (!f.hideDecided || keep || !m.status || m.status === "evaluating"))
       if (!eligible.length || (eligible[0].s ?? -1) < f.min) continue
       const floor = f.under || underRows.has(j.key) ? 0 : CHIP_FLOOR
-      out.push({ job: j, visible: eligible.filter((m) => (m.s ?? -1) >= floor), under: eligible.filter((m) => (m.s ?? -1) < floor).length })
+      out.push({ job: j, eligible, visible: eligible.filter((m) => (m.s ?? -1) >= floor), under: eligible.filter((m) => (m.s ?? -1) < floor).length })
     }
-    return out
-  }, [data, f, isNew, underRows, touched])
+    // One title at one employer in two or more places: one row, "N cities",
+    // at the place of its best city. Built from the jobs the filters kept.
+    const byCk = new Map<string, Row[]>()
+    for (const r of out) { const k = r.job.ck ?? r.job.key; byCk.set(k, [...(byCk.get(k) ?? []), r]) }
+    const floorOf = (key: string) => (f.under || underRows.has(key) ? 0 : CHIP_FLOOR)
+    const grouped: Row[] = []
+    const done = new Set<string>()
+    for (const r of out) {
+      const k = r.job.ck ?? r.job.key
+      const g = byCk.get(k)!
+      if (g.length < 2 || new Set(g.map((x) => locKey(x.job.loc))).size < 2) { grouped.push(r); continue }
+      if (done.has(k)) continue
+      done.add(k)
+      grouped.push(cityGroup(k, g, floorOf))
+    }
+    return grouped
+  }, [data, ordered, f, isNew, underRows, touched])
 
   const sinceStats = useMemo(() => {
     if (!data) return null
@@ -105,10 +239,20 @@ export default function JobQueuePage() {
   }, [data, isNew])
 
   // ---- writes: call the API, then update the page's copy -------------------
-  const patchJob = (key: string, fn: (j: QJob) => QJob) =>
-    setData((d) => (d ? { ...d, jobs: d.jobs.map((j) => (j.key === key ? fn(j) : j)) } : d))
-  const patchChip = (key: string, c: number, fn: (m: QChip) => QChip) =>
-    patchJob(key, (j) => ({ ...j, m: j.m.map((m) => (m.c === c ? fn(m) : m)) }))
+  // A city group is not in data: its writes go to every member job, and a
+  // chip changes only where it holds one of the match ids written.
+  const keysOf = (job: QJob) => job.members ?? [job.key]
+  const patchJob = (job: QJob, fn: (j: QJob) => QJob) => {
+    const keys = new Set(keysOf(job))
+    setData((d) => (d ? { ...d, jobs: d.jobs.map((j) => (keys.has(j.key) ? fn(j) : j)) } : d))
+  }
+  const patchChip = (job: QJob, c: number, ids: string[], fn: (m: QChip) => QChip) => {
+    const written = new Set(ids)
+    patchJob(job, (j) => ({ ...j, m: j.m.map((m) => (m.c === c && m.ids.some((id) => written.has(id)) ? fn(m) : m)) }))
+  }
+  const touchAll = (job: QJob) => { touch(job.key); keysOf(job).forEach(touch) }
+  const decide = (clientId: string, ids: string[], body: Record<string, unknown>) =>
+    Promise.all(chunks(ids).map((part) => call("/api/coach/job-queue/match", "PATCH", { client_profile_id: clientId, match_ids: part, ...body })))
   const call = async (url: string, method: string, body: unknown) => {
     const r = await authFetch(url, { method, body: JSON.stringify(body) })
     const j = await r.json().catch(() => null)
@@ -118,43 +262,54 @@ export default function JobQueuePage() {
   const clientOf = (m: QChip) => data!.clients[m.c]
 
   const onAddJob = (job: QJob, m: QChip) => {
+    // On a city group: the city where this client scores best.
+    if (job.members) {
+      const city = data!.jobs.find((j) => j.key === m.bestKey)
+      const cm = city?.m.find((x) => x.c === m.c)
+      if (city && cm) { touch(job.key); onAddJob(city, cm) }
+      return
+    }
     const c = clientOf(m)
     const qs = new URLSearchParams({ tab: "source", sc_title: job.t, sc_company: job.co, sc_url: job.url ?? "", match: m.ids.join(",") })
     window.open(`/dashboard/coach/clients/${c.id}?${qs}`, "_blank", "noopener")
     touch(job.key)
     if (m.status) return
-    call("/api/coach/job-queue/match", "PATCH", { client_profile_id: c.id, match_ids: m.ids, action: "evaluating" })
-      .then(() => { patchChip(job.key, m.c, (x) => ({ ...x, status: "evaluating" })); say(`${c.first}: Evaluating. Send it to their tracker in the new tab to mark it Fit.`) })
+    decide(c.id, m.ids, { action: "evaluating" })
+      .then(() => { patchChip(job, m.c, m.ids, (x) => ({ ...x, status: "evaluating" })); say(`${c.first}: Evaluating. Send it to their tracker in the new tab to mark it Fit.`) })
       .catch((e) => say(`Could not mark Evaluating: ${e.message}`))
   }
   const onNotFit = async (job: QJob, m: QChip, reason: string, note: string) => {
     const c = clientOf(m)
     try {
-      await call("/api/coach/job-queue/match", "PATCH", { client_profile_id: c.id, match_ids: m.ids, action: "dismiss", reason, note })
-      touch(job.key)
-      patchChip(job.key, m.c, (x) => ({ ...x, status: "not_fit", reason, note: note.trim() || undefined }))
-      say(`Not a fit for ${c.first}: ${data!.reasons.find((r) => r.value === reason)?.label.replace(" (note required)", "") ?? reason}`)
+      const ids = m.actIds ?? m.ids
+      if (!ids.length) { say(`${c.first} already has this job as a Fit in every city.`); return false }
+      await decide(c.id, ids, { action: "dismiss", reason, note })
+      touchAll(job)
+      patchChip(job, m.c, ids, (x) => ({ ...x, status: "not_fit", reason, note: note.trim() || undefined }))
+      const where = job.cities ? ` in ${m.n ?? job.cities} cities` : ""
+      say(`Not a fit for ${c.first}${where}: ${data!.reasons.find((r) => r.value === reason)?.label.replace(" (note required)", "") ?? reason}`)
       return true
     } catch (e: any) { say(`Not saved: ${e.message}`); return false }
   }
   const onUndo = (job: QJob, m: QChip) => {
-    call("/api/coach/job-queue/match", "PATCH", { client_profile_id: clientOf(m).id, match_ids: m.ids, action: null })
-      .then(() => patchChip(job.key, m.c, (x) => ({ ...x, status: undefined, reason: undefined, note: undefined })))
+    decide(clientOf(m).id, m.ids, { action: null })
+      .then(() => patchChip(job, m.c, m.ids, (x) => ({ ...x, status: undefined, reason: undefined, note: undefined })))
       .catch((e) => say(`Undo failed: ${e.message}`))
   }
   const onFlag = (job: QJob, flag: QJob["flag"] | null) => {
-    call("/api/coach/job-queue/posting", "POST", { posting_ids: job.postingIds, flag })
+    Promise.all(chunks(job.postingIds).map((part) => call("/api/coach/job-queue/posting", "POST", { posting_ids: part, flag })))
       .then(() => {
-        touch(job.key)
-        patchJob(job.key, (j) => ({ ...j, flag: flag ?? undefined, badLink: flag === "bad_link" ? true : flag === null ? false : j.badLink }))
-        say(flag ? `Marked ${flag === "not_us" ? "not in the US" : flag.replace("_", " ")} for every client${flag !== "bad_link" ? " and taken out of their queues" : ""}.` : "Flag removed.")
+        touchAll(job)
+        patchJob(job, (j) => ({ ...j, flag: flag ?? undefined, badLink: flag === "bad_link" ? true : flag === null ? false : j.badLink }))
+        const where = job.cities ? ` in all ${job.cities} cities` : ""
+        say(flag ? `Marked ${flag === "not_us" ? "not in the US" : flag.replace("_", " ")}${where} for every client${flag !== "bad_link" ? " and taken out of their queues" : ""}.` : "Flag removed.")
       })
       .catch((e) => say(`Not saved: ${e.message}`))
   }
   const onSaveUrl = async (job: QJob, url: string) => {
     try {
       await call("/api/coach/job-queue/posting", "POST", { posting_ids: job.postingIds, apply_url: url })
-      patchJob(job.key, (j) => ({ ...j, url, lk: "employer", rep: false, badLink: false }))
+      patchJob(job, (j) => ({ ...j, url, lk: "employer", rep: false, badLink: false }))
       say("Link saved for every client on this job.")
       return true
     } catch (e: any) { say(`Not saved: ${e.message}`); return false }
@@ -178,6 +333,13 @@ export default function JobQueuePage() {
     <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: TYPE.secondary, cursor: "pointer" }}>
       <input type="checkbox" checked={f[k]} onChange={(e) => set(k, e.target.checked)} /> {l}
     </label>
+  )
+  const renderRow = (r: Row): React.ReactNode => (
+    <JobQueueRow key={r.job.key} job={r.job} clients={data!.clients} reasons={data!.reasons} visible={r.visible} under={r.under}
+      showingUnder={f.under || underRows.has(r.job.key)} isNew={isNew}
+      onToggleUnder={() => setUnderRows((s) => { const n = new Set(s); if (n.has(r.job.key)) n.delete(r.job.key); else n.add(r.job.key); return n })}
+      onAddJob={onAddJob} onNotFit={onNotFit} onUndo={onUndo} onFlag={onFlag} onSaveUrl={onSaveUrl} loadDetails={loadDetails}
+      renderCities={r.cities ? () => r.cities!.map(renderRow) : undefined} />
   )
   const clientsInView = new Set<number>()
   rows.forEach((r) => r.visible.forEach((m) => clientsInView.add(m.c)))
@@ -229,18 +391,14 @@ export default function JobQueuePage() {
       {!data && !error && <div style={{ color: T.MUTED }}>Loading every client's queue…</div>}
       {data && (
         <>
+          {progress && <div style={{ color: T.MUTED, fontSize: TYPE.secondary }}>Loading more jobs: part {progress.got} of {progress.of}. The list fills in as they arrive.</div>}
           <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, color: T.MUTED, fontSize: TYPE.secondary }}>
             <span><b style={{ color: T.TEXT }}>{rows.length.toLocaleString()}</b> jobs · <b style={{ color: T.TEXT }}>{rows.reduce((n, r) => n + r.visible.length, 0).toLocaleString()}</b> client matches across <b style={{ color: T.TEXT }}>{clientsInView.size}</b> clients</span>
             <span>Sorted by best client score · jobs any client scored {data.minScoreLoaded}+</span>
           </div>
           {rows.length === 0 && <div style={{ ...card, padding: 24, color: T.MUTED }}>No jobs match these filters. Lower the minimum score or clear the search.</div>}
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {rows.slice(0, shown).map((r) => (
-              <JobQueueRow key={r.job.key} job={r.job} clients={data.clients} reasons={data.reasons} visible={r.visible} under={r.under}
-                showingUnder={f.under || underRows.has(r.job.key)} isNew={isNew}
-                onToggleUnder={() => setUnderRows((s) => { const n = new Set(s); n.has(r.job.key) ? n.delete(r.job.key) : n.add(r.job.key); return n })}
-                onAddJob={onAddJob} onNotFit={onNotFit} onUndo={onUndo} onFlag={onFlag} onSaveUrl={onSaveUrl} loadDetails={loadDetails} />
-            ))}
+            {rows.slice(0, shown).map(renderRow)}
           </div>
           {rows.length > shown && <button type="button" style={{ ...btnSecondary, alignSelf: "center" }} onClick={() => setShown((n) => n + PAGE)}>Show {PAGE} more</button>}
         </>

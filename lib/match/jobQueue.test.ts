@@ -53,6 +53,19 @@ const stores = buildJobs([
 ])
 ok("store numbers keep two stores apart", stores.length === 2)
 
+// City key (the page's "N cities" row): one title at one employer, aliases resolved.
+const jpmAliases = new Map([["chase", "JPMorgan Chase"], ["jpmc candidate experience page", "JPMorgan Chase"]])
+const cities = buildJobs([
+  row("c1", "sami", 60, { company: "JPMorgan Chase & Co.", location: "Miami, FL" }),
+  row("c2", "sami", 55, { company: "JPMC Candidate Experience page", location: "New York, NY" }),
+  row("c3", "gabe", 50, { company: "Chase", location: "Chicago, IL" }),
+  row("c4", "gabe", 50, { company: "Morgan Stanley", location: "Chicago, IL" }),
+], jpmAliases)
+ok("three JPMorgan cities stay three jobs", cities.length === 4)
+ok("JPMorgan cities share a city key, Morgan Stanley does not",
+  new Set(cities.filter((j) => j.key !== "c4").map((j) => j.ck)).size === 1 && cities.find((j) => j.key === "c4")!.ck !== cities[0].ck)
+ok("equal jobs keep one order", buildJobs([row("z2", "gabe", 50), row("z1", "gabe", 50, { location: "Boston, MA" })]).map((j) => j.key).join() === "z1,z2")
+
 // Weekly
 const w = lastWeek(new Date("2026-11-04T15:00:00Z")) // a Wednesday
 ok("last week starts the Monday before last", w.weekOf === "2026-10-26" && w.end.toISOString().startsWith("2026-11-02"))

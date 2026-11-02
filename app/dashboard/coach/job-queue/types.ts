@@ -17,6 +17,16 @@ export type QChip = {
   note?: string
   jobfitScore?: number
   jobfitDecision?: string
+  // Set by the page on a city group's chip (several cities as one row):
+  /** How many of the group's cities this client has. */
+  n?: number
+  /** The city job with this client's best score: Add Job opens it. */
+  bestKey?: string
+  bestLoc?: string
+  /** The ids a group's Not a fit writes: every city but those already Fit. */
+  actIds?: string[]
+  /** Decisions differ across the cities, e.g. "Not a fit in 2 of 5 cities". */
+  split?: string
 }
 
 export type QListing = { postingId: string; t: string; co: string; loc?: string; url?: string; lk?: string; closed?: boolean; lcs?: string }
@@ -32,6 +42,12 @@ export type QJob = {
   postingIds: string[]
   m: QChip[]
   ls?: QListing[]
+  /** Title + employer key: jobs sharing it in several cities show as one row. */
+  ck?: string
+  // Set by the page on a city group (display only, never sent back):
+  /** The member jobs' keys, best first. */
+  members?: string[]
+  cities?: number
 }
 
 export type QReason = { value: string; label: string; requiresNote?: true }
@@ -39,4 +55,12 @@ export type QReason = { value: string; label: string; requiresNote?: true }
 export type QueueResponse = {
   ok: true; asOf: string; lastVisitAt?: string; minScoreLoaded: number
   reasons: QReason[]; clients: QClient[]; jobs: QJob[]
+}
+
+/** One page of GET /api/coach/job-queue?page=N. Page 0 carries the head. */
+export type QueuePage = {
+  ok: true; snap: string; page: number; pages: number; total: number; jobs: QJob[]
+  asOf?: string; lastVisitAt?: string; minScoreLoaded?: number; reasons?: QReason[]; clients?: QClient[]
+  /** Later pages: the clients their chip indices refer to. */
+  clientIds?: string[]
 }

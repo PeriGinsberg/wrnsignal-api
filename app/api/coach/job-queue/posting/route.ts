@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     const b = await req.json().catch(() => null)
     if (!b || typeof b !== "object") throw new HttpError(400, "Invalid JSON body")
     const ids: string[] = Array.isArray(b.posting_ids) ? [...new Set<string>(b.posting_ids.map(String))] : []
-    if (!ids.length || ids.length > 50) throw new HttpError(400, "posting_ids: 1 to 50 ids")
+    if (!ids.length || ids.length > 120) throw new HttpError(400, "posting_ids: 1 to 120 ids")
     if (!("flag" in b) && !("apply_url" in b)) throw new HttpError(400, "flag or apply_url is required")
     await assertPostingAccess(sb, coachProfileId, ids)
     const r = await setPostingFlag(sb, {

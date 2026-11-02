@@ -15,7 +15,9 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { resolveDelegation } from "@/lib/collab/delegation"
-import { groupCopies, type CopyRow } from "@/lib/ingest/linkV2"
+import { normText } from "@/lib/ingest/fingerprint"
+import { employerKey } from "@/lib/ingest/link"
+import { compact, groupCopies, type CopyRow } from "@/lib/ingest/linkV2"
 
 /** The Not a fit reasons the Job Queue offers. Older lane reasons stay valid in the column. */
 export const MATCH_REASONS: ReadonlyArray<{ value: string; label: string; requiresNote?: true }> = [
@@ -145,6 +147,12 @@ export type Job = {
   m: Chip[]
   /** The copies, best link first, when there is more than one. */
   ls?: Listing[]
+  /**
+   * Title + employer (aliases resolved), compacted: the page shows jobs that
+   * share it in several cities as one row (display only, lib/match/jobQueue.ts
+   * keeps them separate jobs).
+   */
+  ck: string
 }
 
 const STATUS: Record<string, Chip["status"]> = { evaluating: "evaluating", push: "fit", dismiss: "not_fit" }
@@ -263,9 +271,12 @@ export function buildJobs(rows: QueueRow[], aliases: Map<string, string> = new M
       postingIds: g.members.map((m) => m.id),
       m: chips,
       ls: listings.length > 1 ? listings.map((l) => ({ postingId: l.posting_id, t: l.title, co: l.company, loc: l.location, url: l.apply_url, lk: l.apply_link_kind, closed: l.likely_closed, lcs: l.link_check_status })) : undefined,
+      ck: `${compact(normText(p.title))}||${compact(employerKey(p.company, aliases))}`,
     })
   }
-  return jobs.sort((a, b) => (b.m[0]?.s ?? -1) - (a.m[0]?.s ?? -1) || b.m.length - a.m.length)
+  // Fully ordered (key last): the route pages through this list, and every
+  // page request rebuilds it, so equal jobs must not swap places between pages.
+  return jobs.sort((a, b) => (b.m[0]?.s ?? -1) - (a.m[0]?.s ?? -1) || b.m.length - a.m.length || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
 }
 
 // ---------------------------------------------------------------------------
@@ -289,7 +300,8 @@ export type DecisionInput = {
 export async function recordDecision(sb: SupabaseClient, d: DecisionInput): Promise<{ updated: number }> {
   const matchIds = [...new Set(d.matchIds)].filter(Boolean)
   if (!matchIds.length) throw new HttpError(400, "match_ids is required")
-  if (matchIds.length > 50) throw new HttpError(400, "too many match_ids")
+  // A job shown in several cities is decided for all of them at once.
+  if (matchIds.length > 120) throw new HttpError(400, "too many match_ids")
   if (d.action === "dismiss") {
     if (!d.reason || !REASON_VALUES.has(d.reason)) throw new HttpError(400, "A Not a fit reason is required")
     if (d.reason === "other" && !(d.note ?? "").trim()) throw new HttpError(400, "Other needs a note")
