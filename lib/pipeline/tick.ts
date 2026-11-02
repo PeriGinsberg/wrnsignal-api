@@ -38,16 +38,6 @@ export const CAPS = {
   /** Judge calls a night, all clients (~$0.00017 each). */
   judgments: num(process.env.PIPELINE_JUDGE_CAP, 4000),
 }
-/**
- * One-night judgment caps, by night (UTC date). Each lapses by itself: the
- * next night is back on CAPS.judgments with nothing to undo.
- */
-export const JUDGE_CAP_BY_NIGHT: Record<string, number> = {
-  // 2026-11-01 stopped at the cap with 4,179 judgments deferred (Daniel 2,268,
-  // Sami 1,292, Lindsey 619). One night at 9,000 clears them; back to 4,000 on 11-03.
-  "2026-11-02": 9000,
-}
-export const judgeCapFor = (night: string) => JUDGE_CAP_BY_NIGHT[night] ?? CAPS.judgments
 export const MAX_PAGES = 3
 export const SEARCHAPI_PLAN_SEARCHES = num(process.env.SEARCHAPI_PLAN_SEARCHES, 10000)
 /** How long a tick's step may take: the function limit is 800s, and scans, writes and the pace check need the rest. */
@@ -55,7 +45,7 @@ export const TICK_BUDGET_MS = 640_000
 export const TRIGGERED_BY = "nightly:pipeline"
 
 export type Send = (subject: string, text: string) => Promise<void>
-type Ctx = { sb: SupabaseClient; rows: RunRow[]; deadline: number; environment: string; night: string }
+type Ctx = { sb: SupabaseClient; rows: RunRow[]; deadline: number; environment: string }
 
 const tonight = (rows: RunRow[], step: TickStep) => rows.filter((r) => r.step === step).reduce((n, r) => n + r.units, 0)
 
@@ -124,10 +114,9 @@ async function enrichStep({ sb, rows, deadline }: Ctx): Promise<StepResult> {
   return { ...base, status: "ok", detail }
 }
 
-async function matchStep({ sb, rows, deadline, night }: Ctx): Promise<StepResult> {
+async function matchStep({ sb, rows, deadline }: Ctx): Promise<StepResult> {
   const earlier = tonight(rows, "match")
-  const cap = judgeCapFor(night)
-  let remaining = cap - earlier
+  let remaining = CAPS.judgments - earlier
   const { data: crit, error } = await sb.from("client_match_criteria").select("client_profile_id").eq("active", true).order("client_profile_id")
   if (error) throw new Error("client_match_criteria: " + error.message)
   const clients: Record<string, any> = {}
@@ -154,7 +143,7 @@ async function matchStep({ sb, rows, deadline, night }: Ctx): Promise<StepResult
     if (!reachedAll) break
   }
   // judgedThisRun is this run's share; the cap is per night, across every run.
-  const detail = { clients, judgedThisRun: units, judgedTonight: earlier + units, cap, judgmentsLeftTonight: remaining }
+  const detail = { clients, judgedThisRun: units, judgedTonight: earlier + units, cap: CAPS.judgments, judgmentsLeftTonight: remaining }
   const base = { units, costUsd: cost }
   if (failed.size) return { ...base, status: "error", detail, error: `matching failed for ${failed.size} client(s)\n${[...failed].map(([id, m]) => `${id}: ${m}`).join("\n")}` }
   if (deferred > 0 && remaining <= 0) return { ...base, status: "capped", detail: { ...detail, capReason: "cap", deferred } }
@@ -201,7 +190,7 @@ export async function runTick(sb: SupabaseClient, opts: { environment: string; s
   const id = await startStep(sb, next.step, TRIGGERED_BY, night)
   let result: StepResult
   try {
-    result = await STEP_FN[next.step]({ sb, rows, deadline: started + TICK_BUDGET_MS, environment: opts.environment, night })
+    result = await STEP_FN[next.step]({ sb, rows, deadline: started + TICK_BUDGET_MS, environment: opts.environment })
   } catch (e: any) {
     result = { status: "error", error: String(e?.message ?? e) }
   }
@@ -211,7 +200,7 @@ export async function runTick(sb: SupabaseClient, opts: { environment: string; s
   if (result.status === "error") {
     await opts.send(`Job sourcing pipeline: ${next.step} failed (${night})`, `${next.step} failed.\n\n${result.error}\n\nDetail: ${JSON.stringify(result.detail ?? {}, null, 1)}\nEnvironment: ${opts.environment}`)
   } else if (result.status === "capped" && result.detail?.capReason === "cap" && !result.detail?.alreadyAlerted) {
-    await opts.send(`Job sourcing pipeline: ${next.step} hit its nightly cap (${night})`, `${next.step} stopped at its nightly cap with work left; the rest waits for tomorrow night.\n\nCaps: ${JSON.stringify({ ...CAPS, judgments: judgeCapFor(night) })}\nDetail: ${JSON.stringify(result.detail, null, 1)}\nEnvironment: ${opts.environment}`)
+    await opts.send(`Job sourcing pipeline: ${next.step} hit its nightly cap (${night})`, `${next.step} stopped at its nightly cap with work left; the rest waits for tomorrow night.\n\nCaps: ${JSON.stringify(CAPS)}\nDetail: ${JSON.stringify(result.detail, null, 1)}\nEnvironment: ${opts.environment}`)
   }
 
   try {
