@@ -68,6 +68,7 @@ function mergeChips(parts: { job: QJob; chips: QChip[] }[]): QChip[] {
       reason: same && xs.every((x) => x.m.reason === top.m.reason) ? top.m.reason : undefined,
       note: same ? top.m.note : undefined,
       jobfitScore: fit?.jobfitScore, jobfitDecision: fit?.jobfitDecision,
+      alreadyAdded: same && xs.every((x) => x.m.alreadyAdded) ? true : undefined,
       n: xs.length, bestKey: top.job.key, bestLoc: top.job.loc, split,
     }
   }).sort((a, b) => (b.s ?? -1) - (a.s ?? -1))
@@ -305,9 +306,27 @@ export default function JobQueuePage() {
       return true
     } catch (e: any) { say(`Not saved: ${e.message}`); return false }
   }
+  // Already added: it is in the client's tracker already, so a Fit with nothing
+  // added and no JobFit. On a city group, the city where this client scores best.
+  const onAlreadyAdded = (job: QJob, m: QChip) => {
+    if (job.members) {
+      const city = data!.jobs.find((j) => j.key === m.bestKey)
+      const cm = city?.m.find((x) => x.c === m.c)
+      if (city && cm) { touch(job.key); onAlreadyAdded(city, cm) }
+      return
+    }
+    const c = clientOf(m)
+    decide(c.id, m.ids, { action: "push", already_added: true })
+      .then(() => {
+        touch(job.key)
+        patchChip(job, m.c, m.ids, (x) => ({ ...x, status: "fit", alreadyAdded: true, reason: undefined }))
+        say(`${c.first}: Fit, already in their tracker.`)
+      })
+      .catch((e) => say(`Not saved: ${e.message}`))
+  }
   const onUndo = (job: QJob, m: QChip) => {
     decide(clientOf(m).id, m.ids, { action: null })
-      .then(() => patchChip(job, m.c, m.ids, (x) => ({ ...x, status: undefined, reason: undefined, note: undefined })))
+      .then(() => patchChip(job, m.c, m.ids, (x) => ({ ...x, status: undefined, reason: undefined, note: undefined, alreadyAdded: undefined })))
       .catch((e) => say(`Undo failed: ${e.message}`))
   }
   const onFlag = (job: QJob, flag: QJob["flag"] | null) => {
@@ -352,7 +371,7 @@ export default function JobQueuePage() {
     <JobQueueRow key={r.job.key} job={r.job} clients={data!.clients} reasons={data!.reasons} visible={r.visible} under={r.under}
       showingUnder={f.under || underRows.has(r.job.key)} isNew={isNew}
       onToggleUnder={() => setUnderRows((s) => { const n = new Set(s); if (n.has(r.job.key)) n.delete(r.job.key); else n.add(r.job.key); return n })}
-      onAddJob={onAddJob} onNotFit={onNotFit} onUndo={onUndo} onFlag={onFlag} onSaveUrl={onSaveUrl} loadDetails={loadDetails}
+      onAddJob={onAddJob} onNotFit={onNotFit} onUndo={onUndo} onAlreadyAdded={onAlreadyAdded} onFlag={onFlag} onSaveUrl={onSaveUrl} loadDetails={loadDetails}
       renderCities={r.cities ? () => r.cities!.map(renderRow) : undefined} />
   )
   const clientsInView = new Set<number>()

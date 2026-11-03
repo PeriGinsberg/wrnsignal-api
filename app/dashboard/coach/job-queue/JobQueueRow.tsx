@@ -26,6 +26,8 @@ export function band(s?: number) {
   if (s >= 50) return { bg: T.BLUE_BG, border: T.BLUE_BORDER, ink: T.WRN_BLUE }
   return { bg: T.GLASS, border: T.BORDER_SOFT, ink: T.MUTED }
 }
+/** "Fit · already added" when the Fit was marked Already added. */
+const statusText = (m: QChip) => (m.status ? STATUS_LABEL[m.status] + (m.status === "fit" && m.alreadyAdded ? " · already added" : "") : "")
 const statusColor = (s?: QChip["status"]) =>
   s === "fit" ? T.SUCCESS : s === "not_fit" ? T.ERROR : s === "evaluating" ? T.WRN_ORANGE : T.MUTED
 
@@ -59,6 +61,7 @@ type Props = {
   onAddJob: (job: QJob, m: QChip) => void
   onNotFit: (job: QJob, m: QChip, reason: string, note: string) => Promise<boolean>
   onUndo: (job: QJob, m: QChip) => void
+  onAlreadyAdded: (job: QJob, m: QChip) => void
   onFlag: (job: QJob, flag: QJob["flag"] | null) => void
   onSaveUrl: (job: QJob, url: string) => Promise<boolean>
   loadDetails: (job: QJob) => Promise<{ requirements_summary?: string } | null>
@@ -147,7 +150,7 @@ export function JobQueueRow(p: Props) {
                 background: on ? T.BLUE_BG_ON : b.bg, border: `1px solid ${on ? T.BLUE_BORDER_ON : b.border}`, color: T.TEXT, fontSize: 13, fontWeight: 800 }}>
               {clients[m.c]?.first}
               <span style={{ background: T.NAV_BG, color: b.ink, borderRadius: 999, padding: "2px 8px", fontWeight: 900 }}>{m.s ?? "–"}</span>
-              {m.status && <span style={{ color: statusColor(m.status), fontSize: TYPE.micro, fontWeight: 900, paddingRight: 6 }}>{STATUS_LABEL[m.status]}</span>}
+              {m.status && <span style={{ color: statusColor(m.status), fontSize: TYPE.micro, fontWeight: 900, paddingRight: 6 }}>{statusText(m)}</span>}
               {!m.status && m.split && <span style={{ color: T.MUTED, fontSize: TYPE.micro, fontWeight: 900, paddingRight: 6 }}>mixed</span>}
             </button>
           )
@@ -171,7 +174,7 @@ export function JobQueueRow(p: Props) {
           )}
           {openChip && (
             <ClientMatchPanel job={j} m={openChip} client={clients[openChip.c]} reasons={p.reasons} isNew={p.isNew(openChip)}
-              onAddJob={() => p.onAddJob(j, openChip)} onUndo={() => p.onUndo(j, openChip)}
+              onAddJob={() => p.onAddJob(j, openChip)} onUndo={() => p.onUndo(j, openChip)} onAlreadyAdded={() => p.onAlreadyAdded(j, openChip)}
               onNotFit={async (r, n) => { const ok = await p.onNotFit(j, openChip, r, n); if (ok) setChipOpen(null); return ok }} />
           )}
           {allOpen && (
@@ -190,7 +193,7 @@ export function JobQueueRow(p: Props) {
   )
 }
 
-function ClientMatchPanel(p: { job: QJob; m: QChip; client?: QClient; reasons: QReason[]; isNew: boolean; onAddJob: () => void; onUndo: () => void; onNotFit: (reason: string, note: string) => Promise<boolean> }) {
+function ClientMatchPanel(p: { job: QJob; m: QChip; client?: QClient; reasons: QReason[]; isNew: boolean; onAddJob: () => void; onUndo: () => void; onAlreadyAdded: () => void; onNotFit: (reason: string, note: string) => Promise<boolean> }) {
   const { m } = p
   const [picking, setPicking] = useState(false)
   const b = band(m.s)
@@ -199,8 +202,8 @@ function ClientMatchPanel(p: { job: QJob; m: QChip; client?: QClient; reasons: Q
       <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
         <b style={{ fontSize: TYPE.body }}>{p.client?.name}</b>
         <span style={{ color: b.ink, fontWeight: 900 }}>score {m.s ?? "–"}</span>
-        {m.rk !== undefined && <span style={{ color: T.MUTED, fontSize: TYPE.secondary }}>rank {m.rk} of {p.client?.queueSize ?? "?"} in their queue{p.isNew ? " · new" : ""}</span>}
-        {m.status && <span style={{ color: statusColor(m.status), fontWeight: 900, fontSize: TYPE.secondary }}>{STATUS_LABEL[m.status]}{m.reason ? `: ${p.reasons.find((r) => r.value === m.reason)?.label ?? m.reason}` : ""}{m.note ? ` · ${m.note}` : ""}</span>}
+        {m.rk !== undefined && <span style={{ color: T.MUTED, fontSize: TYPE.secondary }}>rank {m.rk} of {p.client?.queueSize ?? "?"} loaded for them{p.isNew ? " · new" : ""}</span>}
+        {m.status && <span style={{ color: statusColor(m.status), fontWeight: 900, fontSize: TYPE.secondary }}>{statusText(m)}{m.reason ? `: ${p.reasons.find((r) => r.value === m.reason)?.label ?? m.reason}` : ""}{m.note ? ` · ${m.note}` : ""}</span>}
       </div>
       {m.why && <p style={{ margin: 0, maxWidth: "80ch" }}>{m.why}</p>}
       {m.n ? (
@@ -213,8 +216,15 @@ function ClientMatchPanel(p: { job: QJob; m: QChip; client?: QClient; reasons: Q
           {m.n ? `Add Job (${m.bestLoc || "best city"})` : "Add Job"}
         </button>
         <button type="button" style={small} onClick={() => setPicking(!picking)} aria-expanded={picking}>{m.n ? `Not a fit (all ${m.n} cities)` : "Not a fit"}</button>
-        {/* A Fit put the job in the client's tracker; that is undone there, not here. */}
-        {m.status && m.status !== "fit" && <button type="button" style={ghost} onClick={p.onUndo}>{m.n ? "Undo in all cities" : "Undo"}</button>}
+        {m.status !== "fit" && (
+          <button type="button" style={small} onClick={p.onAlreadyAdded}
+            title="It is already in this client's tracker: marks it a Fit without adding it again or running JobFit.">
+            {m.n ? `Already added (${m.bestLoc || "best city"})` : "Already added"}
+          </button>
+        )}
+        {/* An Add Job Fit put the job in the client's tracker; that is undone there,
+            not here. An Already added Fit added nothing, so it can be undone here. */}
+        {m.status && (m.status !== "fit" || m.alreadyAdded) && <button type="button" style={ghost} onClick={p.onUndo}>{m.n ? "Undo in all cities" : "Undo"}</button>}
       </div>
       {m.n && <div style={{ color: T.MUTED, fontSize: TYPE.secondary }}>To add or turn down one city, open “{p.job.cities} cities” above.</div>}
       {picking && <NotAFitPicker reasons={p.reasons} onCancel={() => setPicking(false)} onSave={p.onNotFit} copies={m.ids.length} cities={m.n} />}
@@ -265,7 +275,7 @@ function AllClients(p: { job: QJob; clients: QClient[]; isNew: (m: QChip) => boo
               <td style={{ ...td, color: band(m.s).ink, fontWeight: 900 }}>{m.s ?? "–"}{m.all && <div style={{ color: T.MUTED, fontWeight: 400 }}>of {m.all.map((x) => x ?? "–").join(", ")}</div>}</td>
               <td style={td}>{m.rk ?? "–"}</td>
               <td style={{ ...td, maxWidth: 520 }}>{m.why}</td>
-              <td style={{ ...td, color: statusColor(m.status), fontWeight: 800 }}>{m.status ? STATUS_LABEL[m.status] : "Open"}</td>
+              <td style={{ ...td, color: statusColor(m.status), fontWeight: 800 }}>{m.status ? statusText(m) : "Open"}</td>
               <td style={td}><button type="button" style={small} onClick={() => p.onOpen(m.c)}>Open</button></td>
             </tr>
           ))}

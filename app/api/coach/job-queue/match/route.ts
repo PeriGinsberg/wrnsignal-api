@@ -3,9 +3,12 @@
 // PATCH { client_profile_id, match_ids[], action, reason?, note? }
 //   action 'evaluating'  Add Job opened (never downgrades a decision)
 //   action 'dismiss'     Not a fit; reason required, 'other' needs a note
+//   action 'push' with already_added: true
+//                        Already added: a Fit because the job is already in the
+//                        client's tracker; nothing is added, no JobFit runs
 //   action null          undo: back to undecided
-// 'push' (Fit) is written by /api/coach/recommend-job when the job is added to
-// the client's tracker, with the JobFit result; not here.
+// Any other 'push' (Fit) is written by /api/coach/recommend-job when the job is
+// added to the client's tracker, with the JobFit result; not here.
 // match_ids are every copy of the job this client has: all get the decision.
 import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../_lib/cors"
@@ -27,11 +30,14 @@ export async function PATCH(req: NextRequest) {
     const clientProfileId = String(b.client_profile_id ?? "").trim()
     if (!clientProfileId) throw new HttpError(400, "client_profile_id is required")
     if (!Array.isArray(b.match_ids)) throw new HttpError(400, "match_ids must be an array")
-    if (!(b.action === null || b.action === "evaluating" || b.action === "dismiss")) throw new HttpError(400, "action must be evaluating, dismiss or null")
+    const alreadyAdded = b.action === "push" && b.already_added === true
+    if (!(b.action === null || b.action === "evaluating" || b.action === "dismiss" || alreadyAdded)) {
+      throw new HttpError(400, "action must be evaluating, dismiss, push with already_added: true, or null")
+    }
     await assertFullAccess(sb, coachProfileId, clientProfileId)
     const r = await recordDecision(sb, {
       clientProfileId, matchIds: b.match_ids.map(String), action: b.action,
-      reason: b.reason ?? null, note: typeof b.note === "string" ? b.note : undefined, actorId: coachProfileId,
+      reason: b.reason ?? null, note: typeof b.note === "string" ? b.note : undefined, actorId: coachProfileId, alreadyAdded,
     })
     return withCorsJson(req, { ok: true, ...r })
   } catch (err) {
