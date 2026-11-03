@@ -103,19 +103,6 @@ export async function recordVisit(sb: SupabaseClient, coachProfileId: string): P
   return previous
 }
 
-const QUEUE_COLS = "match_id, client_profile_id, posting_id, score, judge_reason, rank, first_queued_at, source, raw_title, title, company, location, apply_url, apply_link_kind, market_link, republished_only, link_check_status, likely_closed, years_min, years_max, years_basis, salary_low, salary_high, salary_period, start_label, application_deadline, requirements_summary, first_seen_at, tier_label, campus_signal, action, coach_flag, coach_apply_url, bad_link"
-
-export type QueueRow = {
-  match_id: string; client_profile_id: string; posting_id: string; score: number | null; judge_reason: string | null
-  rank: number | null; first_queued_at: string | null; source: string; raw_title: string; title: string; company: string
-  location: string | null; apply_url: string | null; apply_link_kind: string | null; market_link?: boolean; republished_only: boolean
-  link_check_status: string | null; likely_closed: boolean; years_min: number | null; years_max: number | null; years_basis: string | null
-  salary_low: number | null; salary_high: number | null; salary_period: string | null; start_label: string | null
-  application_deadline: string | null; requirements_summary: string | null; first_seen_at: string | null; tier_label: string | null
-  campus_signal: boolean | null; action: string | null; coach_flag: string | null; coach_apply_url: string | null; bad_link: boolean
-  dismiss_reason?: string | null; note?: string | null; actioned_at?: string | null; jobfit_score?: number | null; jobfit_decision?: string | null
-}
-
 export type Chip = {
   /** client_profile_id */
   c: string
@@ -162,59 +149,218 @@ export type Job = {
 
 const STATUS: Record<string, Chip["status"]> = { evaluating: "evaluating", push: "fit", dismiss: "not_fit" }
 
-export async function loadJobQueue(sb: SupabaseClient, coachProfileId: string) {
+export type QueueRow = {
+  match_id: string; client_profile_id: string; posting_id: string; score: number | null; judge_reason: string | null
+  rank: number | null; first_queued_at: string | null; source: string; raw_title: string; title: string; company: string
+  location: string | null; apply_url: string | null; apply_link_kind: string | null; republished_only: boolean
+  link_check_status: string | null; likely_closed: boolean; years_min: number | null; years_max: number | null; years_basis: string | null
+  salary_low: number | null; salary_high: number | null; salary_period: string | null; start_label: string | null
+  application_deadline: string | null; requirements_summary: string | null; first_seen_at: string | null; tier_label: string | null
+  campus_signal: boolean | null; action: string | null; coach_flag: string | null; coach_apply_url: string | null; bad_link: boolean
+  dismiss_reason?: string | null; note?: string | null; actioned_at?: string | null; jobfit_score?: number | null; jobfit_decision?: string | null
+  /** Ranking keys (client_match_queue's order), for rank among the loaded rows. */
+  tier?: number; preferred_market?: boolean
+}
+
+/** What the page asks for. Every filter here is applied in the database. */
+export type QueueFilters = {
+  /** Best client score shown (the page's filter): rows at or above it, plus other clients' rows at LOAD_MIN_SCORE+ on the same jobs. */
+  minScore?: number
+  /** One client, or every client the coach reaches. */
+  clientId?: string | null
+  /** Load decisions of the last 30 days ("Hide jobs I've decided" off). */
+  decided?: boolean
+  /** Always load decisions made since this time (the coach's own, this visit). */
+  decidedSince?: string | null
+  /** Also load matches the judge has not scored (one client only: thousands of rows). */
+  unscored?: boolean
+}
+
+const MATCH_COLS = "id, client_profile_id, posting_id, score, judge_reason, first_queued_at, action, apply_url, apply_link_kind, preferred_market, dismiss_reason, note, actioned_at, jobfit_score, jobfit_decision"
+const POSTING_COLS = "id, source, title, cleaned_title, company, location, apply_url, apply_link_kind, link_check_status, years_min, years_max, years_basis, salary_low, salary_high, salary_period, application_deadline, requirements_summary, first_seen_at, last_seen_at, closed_at, campus_signal, start_type, start_date, start_season, start_year"
+/** Ids per .in() filter: keeps the request URL short. */
+const IN_CHUNK = 150
+const STALE_DAYS = 14
+
+const chunk = <T,>(xs: T[], n = IN_CHUNK) => Array.from({ length: Math.ceil(xs.length / n) }, (_, i) => xs.slice(i * n, (i + 1) * n))
+
+/**
+ * The Job Queue, without client_match_queue: that view ranks a client's whole
+ * queue (every judged and unjudged match) before any filter applies, which
+ * timed out on prod. Here each filter is a WHERE on posting_matches (index
+ * posting_matches_jobqueue_idx, 20261123), postings are read by id for the rows
+ * kept, and the view's columns (tier, start label, link kind, practice flags,
+ * staleness) are computed from the same inputs. rank is the row's place among
+ * the client's LOADED rows in the view's order, not the whole queue.
+ */
+export async function loadJobQueue(sb: SupabaseClient, coachProfileId: string, f: QueueFilters = {}) {
+  const min = Math.max(LOAD_MIN_SCORE, Math.floor(f.minScore ?? LOAD_MIN_SCORE))
+  // JOBQUEUE_TIMING=1 logs each step's time (tests/jobqueue timing scripts).
+  const t0 = Date.now(), lap = (what: string) => { if (process.env.JOBQUEUE_TIMING) console.log(`  [loader] ${what}: ${Date.now() - t0}ms`) }
   const access = await coachClients(sb, coachProfileId)
   const ids = access.map((a) => a.clientProfileId)
-  if (!ids.length) return { clients: [], jobs: [] as Job[] }
+  if (f.clientId && !ids.includes(f.clientId)) throw new HttpError(403, "Forbidden: not your client")
+  if (f.unscored && !f.clientId) throw new HttpError(400, "Unscored jobs load for one client at a time")
+  if (!ids.length) return { clients: [], jobs: [] as Job[], minScore: min }
 
-  const { data: crit, error: cErr } = await sb.from("client_match_criteria").select("client_profile_id").in("client_profile_id", ids).eq("active", true)
+  const { data: crit, error: cErr } = await sb.from("client_match_criteria").select("client_profile_id, available_from").in("client_profile_id", ids).eq("active", true)
   if (cErr) throw new Error(`client_match_criteria: ${cErr.message}`)
-  const active = (crit ?? []).map((c: any) => c.client_profile_id as string)
-  if (!active.length) return { clients: [], jobs: [] as Job[] }
-  const { data: profs, error: pErr } = await sb.from("client_profiles").select("id, name, email").in("id", active)
+  const availableFrom = new Map((crit ?? []).map((c: any) => [c.client_profile_id as string, c.available_from as string | null]))
+  const all = [...availableFrom.keys()]
+  if (!all.length) return { clients: [], jobs: [] as Job[], minScore: min }
+  // Every client stays in the list (the page's Client filter); rows load for the chosen one.
+  const { data: profs, error: pErr } = await sb.from("client_profiles").select("id, name, email").in("id", all)
   if (pErr) throw new Error(`client_profiles: ${pErr.message}`)
+  const active = f.clientId ? all.filter((c) => c === f.clientId) : all
+  if (!active.length) return { clients: clientList(profs ?? [], new Map()), jobs: [] as Job[], minScore: min }
 
-  // Queue rows, one client at a time: each is a few thousand rows at most.
+  // 1. Matches, filtered in the database. Undecided = no action or evaluating.
+  // One read per client, in parallel: each is a short range of the index.
+  const undecided = (ids: string[] = active) => sb.from("posting_matches").select(MATCH_COLS).in("client_profile_id", ids).eq("rule_failures", "{}")
+  const reads: Promise<any[]>[] = [
+    ...active.map((c) => pageAll<any>((a, b) => undecided([c]).is("action", null).gte("score", min).order("score", { ascending: false }).order("id").range(a, b))),
+    pageAll<any>((a, b) => undecided().eq("action", "evaluating").order("id").range(a, b)),
+  ]
+  if (f.unscored) reads.push(pageAll<any>((a, b) => undecided().is("action", null).is("score", null).order("id").range(a, b)))
+  const since = f.decided ? new Date(Date.now() - DECIDED_DAYS * 864e5).toISOString() : f.decidedSince ?? null
+  if (since) reads.push(pageAll<any>((a, b) => sb.from("posting_matches").select(MATCH_COLS).in("client_profile_id", active)
+    .in("action", ["push", "dismiss"]).gte("actioned_at", since).order("id").range(a, b)))
+  const matches = (await Promise.all(reads)).flat()
+  lap(`matches ${matches.length}`)
+
+  // Other clients' chips on the same jobs (the page's "+N under 50"): undecided
+  // rows at LOAD_MIN_SCORE+ but under the filter, only on postings already kept.
+  if (min > LOAD_MIN_SCORE && active.length > 1) {
+    const hot = [...new Set(matches.map((m) => m.posting_id as string))]
+    const more = await Promise.all(chunk(hot).map((part) => pageAll<any>((a, b) => undecided().is("action", null)
+      .in("posting_id", part).gte("score", LOAD_MIN_SCORE).lt("score", min).order("id").range(a, b))))
+    matches.push(...more.flat())
+  }
+  lap(`with other clients' chips ${matches.length}`)
+  const seenMatch = new Set<string>()
+  const rowsIn = matches.filter((m) => !seenMatch.has(m.id) && seenMatch.add(m.id))
+
+  // 2. Postings by id, practice flags, and linked secondaries for the rows kept.
+  const postingIds = [...new Set(rowsIn.map((m) => m.posting_id as string))]
+  const [postings, flags, secondaries, practices] = await Promise.all([
+    Promise.all(chunk(postingIds).map(async (part) => {
+      const { data, error } = await sb.from("postings").select(POSTING_COLS).in("id", part)
+      if (error) throw new Error(`postings: ${error.message}`)
+      return data ?? []
+    })).then((xs) => new Map(xs.flat().map((p: any) => [p.id as string, p]))),
+    Promise.all(chunk(postingIds).map(async (part) => {
+      const { data, error } = await sb.from("posting_coach_flags").select("posting_id, practice_coach_id, flag, apply_url, url_saved_at").in("posting_id", part)
+      if (error) throw new Error(`posting_coach_flags: ${error.message}`)
+      return data ?? []
+    })).then((xs) => xs.flat()),
+    Promise.all(chunk(postingIds).map(async (part) => {
+      const { data, error } = await sb.from("posting_links").select("secondary_id").in("secondary_id", part)
+      if (error) throw new Error(`posting_links: ${error.message}`)
+      return (data ?? []).map((r: any) => r.secondary_id as string)
+    })).then((xs) => new Set(xs.flat())),
+    practicesByClient(sb, active),
+  ])
+
+  lap(`postings ${postings.size}, flags ${flags.length}`)
+  // 3. The view's columns, from the same inputs.
+  const staleBefore = Date.now() - STALE_DAYS * 864e5
   const rows: QueueRow[] = []
-  const sizes = new Map<string, number>()
-  await Promise.all(active.map(async (id) => {
-    const r = await pageAll<QueueRow>((a, b) => sb.from("client_match_queue").select(QUEUE_COLS)
-      .eq("client_profile_id", id).or(`score.gte.${LOAD_MIN_SCORE},action.eq.evaluating`).order("rank").range(a, b))
-    const { count } = await sb.from("client_match_queue").select("match_id", { count: "exact", head: true }).eq("client_profile_id", id)
-    sizes.set(id, count ?? r.length)
-    rows.push(...r)
-  }))
-
-  // Decided in the last 30 days: shown when the coach turns off "hide decided".
-  const since = new Date(Date.now() - DECIDED_DAYS * 864e5).toISOString()
-  const decided = await pageAll<any>((a, b) => sb.from("posting_matches")
-    .select("id, client_profile_id, posting_id, score, judge_reason, first_queued_at, action, dismiss_reason, note, actioned_at, jobfit_score, jobfit_decision, apply_url, apply_link_kind, postings(source, title, cleaned_title, company, location, apply_url, apply_link_kind, link_check_status, years_min, years_max, years_basis, salary_low, salary_high, salary_period, application_deadline, requirements_summary, first_seen_at, campus_signal)")
-    .in("client_profile_id", active).in("action", ["push", "dismiss"]).gte("actioned_at", since).order("id").range(a, b))
-  for (const d of decided) {
-    const p = d.postings
-    if (!p) continue
+  for (const m of rowsIn) {
+    const p: any = postings.get(m.posting_id)
+    if (!p || secondaries.has(p.id)) continue
+    const decidedRow = m.action === "push" || m.action === "dismiss"
+    const fl = folded(flags.filter((x: any) => x.posting_id === p.id && practices.get(m.client_profile_id)?.has(x.practice_coach_id)))
+    if (!decidedRow) {
+      if (p.closed_at || !p.last_seen_at || new Date(p.last_seen_at).getTime() <= staleBefore) continue
+      if (fl.flag === "closed" || fl.flag === "not_us") continue
+    }
+    const kind = fl.applyUrl ? "employer" : m.apply_link_kind ?? p.apply_link_kind
+    const t = tierOf(availableFrom.get(m.client_profile_id) ?? null, p, m.score)
     rows.push({
-      match_id: d.id, client_profile_id: d.client_profile_id, posting_id: d.posting_id, score: d.score, judge_reason: d.judge_reason, rank: null,
-      first_queued_at: d.first_queued_at, source: p.source, raw_title: p.title, title: p.cleaned_title ?? p.title, company: p.company, location: p.location,
-      apply_url: d.apply_url ?? p.apply_url, apply_link_kind: d.apply_link_kind ?? p.apply_link_kind, republished_only: false,
-      link_check_status: p.link_check_status, likely_closed: p.link_check_status === "likely_closed", years_min: p.years_min, years_max: p.years_max,
-      years_basis: p.years_basis, salary_low: p.salary_low, salary_high: p.salary_high, salary_period: p.salary_period, start_label: null,
-      application_deadline: p.application_deadline, requirements_summary: p.requirements_summary, first_seen_at: p.first_seen_at, tier_label: null,
-      campus_signal: p.campus_signal, action: d.action, coach_flag: null, coach_apply_url: null, bad_link: false,
-      dismiss_reason: d.dismiss_reason, note: d.note, actioned_at: d.actioned_at, jobfit_score: d.jobfit_score, jobfit_decision: d.jobfit_decision,
+      match_id: m.id, client_profile_id: m.client_profile_id, posting_id: p.id, score: m.score, judge_reason: m.judge_reason, rank: null,
+      first_queued_at: m.first_queued_at, source: p.source, raw_title: p.title, title: p.cleaned_title ?? p.title, company: p.company, location: p.location,
+      apply_url: fl.applyUrl ?? m.apply_url ?? p.apply_url, apply_link_kind: kind,
+      republished_only: !fl.applyUrl && ["republisher", "other", "google"].includes(kind ?? ""),
+      link_check_status: p.link_check_status, likely_closed: p.link_check_status === "likely_closed",
+      years_min: p.years_min, years_max: p.years_max, years_basis: p.years_basis, salary_low: p.salary_low, salary_high: p.salary_high, salary_period: p.salary_period,
+      start_label: startLabel(p), application_deadline: p.application_deadline, requirements_summary: p.requirements_summary, first_seen_at: p.first_seen_at,
+      tier_label: decidedRow ? null : t.label, campus_signal: p.campus_signal, action: m.action,
+      coach_flag: decidedRow ? null : fl.flag, coach_apply_url: fl.applyUrl, bad_link: !decidedRow && fl.flag === "bad_link" && !fl.applyUrl,
+      dismiss_reason: m.dismiss_reason, note: m.note, actioned_at: m.actioned_at, jobfit_score: m.jobfit_score, jobfit_decision: m.jobfit_decision,
+      tier: t.tier, preferred_market: !!m.preferred_market,
     })
   }
-  // A few evaluating/decided rows also carry Add Job's JobFit score.
-  const evalIds = rows.filter((r) => r.action === "evaluating").map((r) => r.match_id)
-  for (let i = 0; i < evalIds.length; i += 200) {
-    const { data } = await sb.from("posting_matches").select("id, jobfit_score, jobfit_decision, note").in("id", evalIds.slice(i, i + 200))
-    const by = new Map((data ?? []).map((x: any) => [x.id, x]))
-    for (const r of rows) { const x: any = by.get(r.match_id); if (x) { r.jobfit_score = x.jobfit_score; r.jobfit_decision = x.jobfit_decision; r.note = x.note } }
+
+  // Rank among each client's loaded undecided rows, in client_match_queue's order.
+  const byClient = new Map<string, QueueRow[]>()
+  for (const r of rows) if (r.action !== "push" && r.action !== "dismiss") byClient.set(r.client_profile_id, [...(byClient.get(r.client_profile_id) ?? []), r])
+  const sizes = new Map<string, number>()
+  for (const [c, rs] of byClient) {
+    rs.sort(queueOrder).forEach((r, i) => { r.rank = i + 1 })
+    sizes.set(c, rs.length)
   }
 
   const { data: al } = await sb.from("employer_aliases").select("alias_norm, canonical")
   const aliases = new Map((al ?? []).map((a: any) => [a.alias_norm as string, a.canonical as string]))
-  return { clients: clientList(profs ?? [], sizes), jobs: buildJobs(rows, aliases) }
+  const jobs = buildJobs(rows, aliases)
+  lap(`built ${jobs.length} jobs from ${rows.length} rows`)
+  return { clients: clientList(profs ?? [], sizes), jobs, minScore: min }
+}
+
+/** client_match_queue's ORDER BY: likely_closed, bad_link, tier, score desc (unscored last), preferred market first, republished last, newest. */
+export function queueOrder(a: QueueRow, b: QueueRow): number {
+  const k = (r: QueueRow) => [r.likely_closed ? 1 : 0, r.bad_link ? 1 : 0, r.tier ?? 1, r.score === null ? Infinity : -r.score, r.preferred_market ? 0 : 1, r.republished_only ? 1 : 0]
+  const x = k(a), y = k(b)
+  for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return x[i] - y[i]
+  return (b.first_queued_at ?? "").localeCompare(a.first_queued_at ?? "")
+}
+
+/** client_match_queue's tier and tier_label (20261106, 20261107). */
+export function tierOf(availableFrom: string | null, p: any, score: number | null, today = new Date()): { tier: number; label: string } {
+  const d = today.toISOString().slice(0, 10)
+  if (availableFrom && availableFrom > d) return p.campus_signal && (score ?? -1) >= 40 ? { tier: 1, label: "campus" } : { tier: 2, label: "timing unknown" }
+  const start = statedStart(p)
+  const in3 = new Date(today); in3.setMonth(in3.getMonth() + 3)
+  return start && start > in3.toISOString().slice(0, 10) ? { tier: 2, label: "starts in 3+ months" } : { tier: 1, label: "now or not stated" }
+}
+function statedStart(p: any): string | null {
+  if (p.start_type === "date") return p.start_date ?? null
+  if (p.start_type === "season" && p.start_year) {
+    const mo = ({ spring: "03", summer: "06", fall: "09" } as Record<string, string>)[p.start_season] ?? "01"
+    return `${p.start_year}-${mo}-01`
+  }
+  return null
+}
+export function startLabel(p: any): string {
+  if (p.start_type === "date" && p.start_date) return `starts ${String(p.start_date).slice(0, 10)}`
+  if (p.start_type === "season") return `starts ${p.start_season} ${p.start_year}`
+  if (p.start_type === "immediate") return "starts immediately"
+  return "start not stated"
+}
+/** A client's practices' flags on one posting, folded as the view does: closed, not_us, bad_link; newest saved link. */
+function folded(fs: any[]): { flag: string | null; applyUrl: string | null } {
+  const order: Record<string, number> = { closed: 0, not_us: 1, bad_link: 2 }
+  const flag = fs.map((x) => x.flag).filter(Boolean).sort((a, b) => (order[a] ?? 3) - (order[b] ?? 3))[0] ?? null
+  const link = fs.filter((x) => x.apply_url).sort((a, b) => String(b.url_saved_at).localeCompare(String(a.url_saved_at)))[0]?.apply_url ?? null
+  return { flag, applyUrl: link }
+}
+/** client -> the practices that reach it: its active coaches and their principals. */
+async function practicesByClient(sb: SupabaseClient, clientIds: string[]): Promise<Map<string, Set<string>>> {
+  const { data: cc, error } = await sb.from("coach_clients").select("client_profile_id, coach_profile_id").in("client_profile_id", clientIds).eq("status", "active")
+  if (error) throw new Error(`coach_clients: ${error.message}`)
+  const coaches = [...new Set((cc ?? []).map((r: any) => r.coach_profile_id as string))]
+  const { data: d, error: dErr } = coaches.length
+    ? await sb.from("coach_delegates").select("delegate_coach_profile_id, principal_coach_profile_id").in("delegate_coach_profile_id", coaches).eq("status", "active")
+    : { data: [], error: null }
+  if (dErr) throw new Error(`coach_delegates: ${dErr.message}`)
+  const out = new Map<string, Set<string>>()
+  for (const r of cc ?? []) {
+    const s = out.get(r.client_profile_id) ?? new Set<string>()
+    s.add(r.coach_profile_id)
+    for (const x of d ?? []) if (x.delegate_coach_profile_id === r.coach_profile_id) s.add(x.principal_coach_profile_id)
+    out.set(r.client_profile_id, s)
+  }
+  return out
 }
 
 function clientList(profs: any[], sizes: Map<string, number>) {
@@ -319,7 +465,10 @@ export async function recordDecision(sb: SupabaseClient, d: DecisionInput): Prom
 
   let atAction: Record<string, unknown> = { score_at_action: null, rank_at_action: null, queue_size_at_action: null }
   if (d.action === "push" || d.action === "dismiss") {
-    const { data: q } = await sb.from("client_match_queue").select("rank").in("match_id", matchIds).order("rank").limit(1)
+    // Filtered by client first: the view's ranking is per client, so this ranks
+    // one client's queue, not every client's (a match_id filter alone cannot be
+    // pushed below the window function).
+    const { data: q } = await sb.from("client_match_queue").select("rank").eq("client_profile_id", d.clientProfileId).in("match_id", matchIds).order("rank").limit(1)
     const { count } = await sb.from("client_match_queue").select("match_id", { count: "exact", head: true }).eq("client_profile_id", d.clientProfileId)
     const best = Math.max(...(ms ?? []).map((m: any) => m.score ?? -1))
     atAction = { score_at_action: best >= 0 ? best : null, rank_at_action: q?.[0]?.rank ?? null, queue_size_at_action: count ?? null }

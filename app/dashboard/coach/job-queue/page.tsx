@@ -99,9 +99,9 @@ function cityGroup(ck: string, members: Row[], floorOf: (key: string) => number)
 
 type Filters = {
   q: string; client: string; min: number; loc: string; co: string; days: string; flag: string
-  newOnly: boolean; campus: boolean; hideDecided: boolean; under: boolean
+  newOnly: boolean; campus: boolean; hideDecided: boolean; under: boolean; unscored: boolean
 }
-const DEFAULTS: Filters = { q: "", client: "", min: 50, loc: "", co: "", days: "any", flag: "any", newOnly: false, campus: false, hideDecided: true, under: false }
+const DEFAULTS: Filters = { q: "", client: "", min: 50, loc: "", co: "", days: "any", flag: "any", newOnly: false, campus: false, hideDecided: true, under: false, unscored: false }
 
 export default function JobQueuePage() {
   const [data, setData] = useState<QueueResponse | null>(null)
@@ -119,6 +119,20 @@ export default function JobQueuePage() {
 
   const say = useCallback((msg: string) => { setToast(msg); window.setTimeout(() => setToast((t) => (t === msg ? null : t)), 3200) }, [])
 
+  // Filters the database applies (app/api/coach/job-queue): changing one loads
+  // again. Decisions made since this visit began always load, so a job acted
+  // on here keeps its new status with "Hide jobs I've decided" on.
+  const visitStart = useRef(new Date().toISOString())
+  const clientId = f.client !== "" ? data?.clients[Number(f.client)]?.id ?? "" : ""
+  const query = new URLSearchParams({
+    min: String(f.min), since: visitStart.current,
+    ...(clientId ? { client: clientId } : {}),
+    ...(f.hideDecided ? {} : { decided: "1" }),
+    ...(f.unscored && clientId ? { unscored: "1" } : {}),
+  }).toString()
+  const queryRef = useRef(query)
+  queryRef.current = query
+
   // The list comes in pages (one response is capped at 4.5 MB). Page 0 has
   // the clients and the first jobs and shows at once; the rest follow in
   // parallel. A quiet reload (coming back to the tab) swaps in the whole new
@@ -126,7 +140,7 @@ export default function JobQueuePage() {
   const load = useCallback(async (quiet = false) => {
     const run = ++runRef.current
     const fetchPage = async (n: number, snap: string): Promise<QueuePage> => {
-      const r = await authFetch(`/api/coach/job-queue?page=${n}${snap ? `&snap=${encodeURIComponent(snap)}` : ""}`)
+      const r = await authFetch(`/api/coach/job-queue?page=${n}&${queryRef.current}${snap ? `&snap=${encodeURIComponent(snap)}` : ""}`)
       const j = await r.json().catch(() => null)
       if (!r.ok || !j?.ok) throw new Error(j?.error || `HTTP ${r.status}`)
       return j
@@ -168,7 +182,7 @@ export default function JobQueuePage() {
       if (!quiet) setError(String(e?.message || e))
     }
   }, [])
-  useEffect(() => { load() }, [load])
+  useEffect(() => { load() }, [load, query])
   // Add Job finishes in another tab (Source a Job marks the job Fit there).
   // Coming back to this tab reloads, so the Fit shows. At most once a minute.
   useEffect(() => {
@@ -209,7 +223,7 @@ export default function JobQueuePage() {
       if (f.flag === "badlink" && !j.badLink) continue
       if (f.flag === "clean" && (j.closed || j.rep || j.badLink)) continue
       const eligible = j.m.filter((m) => (clientIdx < 0 || m.c === clientIdx) && (!f.newOnly || isNew(m)) && (!f.hideDecided || keep || !m.status || m.status === "evaluating"))
-      if (!eligible.length || (eligible[0].s ?? -1) < f.min) continue
+      if (!eligible.length || ((eligible[0].s ?? -1) < f.min && !(f.unscored && eligible[0].s === undefined))) continue
       const floor = f.under || underRows.has(j.key) ? 0 : CHIP_FLOOR
       out.push({ job: j, eligible, visible: eligible.filter((m) => (m.s ?? -1) >= floor), under: eligible.filter((m) => (m.s ?? -1) < floor).length })
     }
@@ -329,9 +343,9 @@ export default function JobQueuePage() {
   const fld = (l: string, el: React.ReactNode, wide = false) => (
     <label style={{ display: "flex", flexDirection: "column", gap: 4, gridColumn: wide ? "span 2" : undefined, minWidth: 0 }}><span style={label}>{l}</span>{el}</label>
   )
-  const check = (l: string, k: "newOnly" | "campus" | "hideDecided" | "under") => (
-    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: TYPE.secondary, cursor: "pointer" }}>
-      <input type="checkbox" checked={f[k]} onChange={(e) => set(k, e.target.checked)} /> {l}
+  const check = (l: string, k: "newOnly" | "campus" | "hideDecided" | "under" | "unscored", disabled = false, title?: string) => (
+    <label title={title} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: TYPE.secondary, cursor: disabled ? "default" : "pointer", opacity: disabled ? 0.5 : 1 }}>
+      <input type="checkbox" disabled={disabled} checked={f[k] && !disabled} onChange={(e) => set(k, e.target.checked)} /> {l}
     </label>
   )
   const renderRow = (r: Row): React.ReactNode => (
@@ -384,6 +398,7 @@ export default function JobQueuePage() {
           {check("Campus only", "campus")}
           {check("Hide jobs I've decided", "hideDecided")}
           {check(`Show clients under ${CHIP_FLOOR}`, "under")}
+          {check("Include jobs not yet scored", "unscored", !clientId, clientId ? "Jobs the matcher has not judged yet: often thousands" : "Pick one client first")}
         </div>
       </div>
 
