@@ -284,7 +284,11 @@ async function readRows(sb: SupabaseClient, r: ReadArgs): Promise<Read> {
   })
   if (error) {
     // PGRST202: the function is not there yet (migration not applied).
-    if (error.code === "PGRST202") return readRowsByRequests(sb, r)
+    // 57014: it hit the statement timeout; the batched reads still work.
+    if (error.code === "PGRST202" || error.code === "57014") {
+      if (error.code === "57014") console.error("[job-queue] job_queue_rows timed out; loading through API requests")
+      return { ...(await readRowsByRequests(sb, r)), via: error.code === "57014" ? "api requests (job_queue_rows timed out)" : "api requests" }
+    }
     throw new Error(`job_queue_rows: ${error.message}`)
   }
   const postings = new Map<string, any>()
