@@ -122,6 +122,8 @@ export type Chip = {
   note: string | null
   jobfitScore: number | null
   jobfitDecision: string | null
+  /** Fit because it was already in the client's tracker ("Already added"). */
+  alreadyAdded?: true
 }
 
 export type Listing = { postingId: string; t: string; co: string; loc: string | null; url: string | null; lk: string | null; closed: boolean; lcs: string | null }
@@ -158,6 +160,8 @@ export type QueueRow = {
   application_deadline: string | null; requirements_summary: string | null; first_seen_at: string | null; tier_label: string | null
   campus_signal: boolean | null; action: string | null; coach_flag: string | null; coach_apply_url: string | null; bad_link: boolean
   dismiss_reason?: string | null; note?: string | null; actioned_at?: string | null; jobfit_score?: number | null; jobfit_decision?: string | null
+  /** A Fit marked "Already added": it was in the tracker before (20261126). */
+  already_added?: boolean
   /** Ranking keys (client_match_queue's order), for rank among the loaded rows. */
   tier?: number; preferred_market?: boolean
 }
@@ -176,7 +180,7 @@ export type QueueFilters = {
   unscored?: boolean
 }
 
-const MATCH_COLS = "id, client_profile_id, posting_id, score, judge_reason, first_queued_at, action, apply_url, apply_link_kind, preferred_market, dismiss_reason, note, actioned_at, jobfit_score, jobfit_decision"
+const MATCH_COLS = "id, client_profile_id, posting_id, score, judge_reason, first_queued_at, action, apply_url, apply_link_kind, preferred_market, dismiss_reason, note, actioned_at, jobfit_score, jobfit_decision, already_added"
 const POSTING_COLS = "id, source, title, cleaned_title, company, location, apply_url, apply_link_kind, link_check_status, years_min, years_max, years_basis, salary_low, salary_high, salary_period, application_deadline, requirements_summary, first_seen_at, last_seen_at, closed_at, campus_signal, start_type, start_date, start_season, start_year"
 /** Ids per .in() filter: keeps the request URL short. */
 const IN_CHUNK = 150
@@ -250,7 +254,7 @@ export async function loadJobQueue(sb: SupabaseClient, coachProfileId: string, f
       tier_label: decidedRow ? null : t.label, campus_signal: p.campus_signal, action: m.action,
       coach_flag: decidedRow ? null : fl.flag, coach_apply_url: fl.applyUrl, bad_link: !decidedRow && fl.flag === "bad_link" && !fl.applyUrl,
       dismiss_reason: m.dismiss_reason, note: m.note, actioned_at: m.actioned_at, jobfit_score: m.jobfit_score, jobfit_decision: m.jobfit_decision,
-      tier: t.tier, preferred_market: !!m.preferred_market,
+      already_added: !!m.already_added, tier: t.tier, preferred_market: !!m.preferred_market,
     })
   }
 
@@ -447,6 +451,7 @@ export function buildJobs(rows: QueueRow[], aliases: Map<string, string> = new M
         note: d?.note ?? null,
         jobfitScore: rs.find((r) => r.jobfit_score != null)?.jobfit_score ?? null,
         jobfitDecision: rs.find((r) => r.jobfit_decision)?.jobfit_decision ?? null,
+        ...(decided?.action === "push" && decided.already_added ? { alreadyAdded: true as const } : {}),
       }
     }).sort((a, b) => (b.s ?? -1) - (a.s ?? -1))
     const flagged = g.members.map((m) => m.rs[0]).find((r) => r.coach_flag)
@@ -481,6 +486,8 @@ export type DecisionInput = {
   note?: string | null
   actorId: string
   jobfit?: { score: number | null; decision: string | null; runId: string | null; applicationId: string | null }
+  /** A Fit marked "Already added" (in the tracker before): no JobFit, nothing added. */
+  alreadyAdded?: boolean
 }
 
 /**
@@ -520,6 +527,8 @@ export async function recordDecision(sb: SupabaseClient, d: DecisionInput): Prom
         ...(d.note !== undefined ? { note: d.note?.trim() || null } : {}),
         ...(d.action === "evaluating" ? {} : atAction),
       }
+  // Only a Fit can be "already added" (posting_matches_already_added_is_fit).
+  patch.already_added = d.action === "push" && !!d.alreadyAdded
   if (d.jobfit) Object.assign(patch, {
     jobfit_score: d.jobfit.score, jobfit_decision: d.jobfit.decision, jobfit_run_id: d.jobfit.runId, signal_application_id: d.jobfit.applicationId,
   })

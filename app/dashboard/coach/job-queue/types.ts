@@ -17,6 +17,8 @@ export type QChip = {
   note?: string
   jobfitScore?: number
   jobfitDecision?: string
+  /** A Fit marked "Already added": it was in the tracker before. */
+  alreadyAdded?: boolean
   // Set by the page on a city group's chip (several cities as one row):
   /** How many of the group's cities this client has. */
   n?: number
