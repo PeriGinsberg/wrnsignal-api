@@ -203,65 +203,28 @@ export async function loadJobQueue(sb: SupabaseClient, coachProfileId: string, f
   if (f.unscored && !f.clientId) throw new HttpError(400, "Unscored jobs load for one client at a time")
   if (!ids.length) return { clients: [], jobs: [] as Job[], minScore: min }
 
-  const { data: crit, error: cErr } = await sb.from("client_match_criteria").select("client_profile_id, available_from").in("client_profile_id", ids).eq("active", true)
+  const [{ data: crit, error: cErr }, { data: profsAll, error: pErr }] = await Promise.all([
+    sb.from("client_match_criteria").select("client_profile_id, available_from").in("client_profile_id", ids).eq("active", true),
+    sb.from("client_profiles").select("id, name, email").in("id", ids),
+  ])
   if (cErr) throw new Error(`client_match_criteria: ${cErr.message}`)
+  if (pErr) throw new Error(`client_profiles: ${pErr.message}`)
   const availableFrom = new Map((crit ?? []).map((c: any) => [c.client_profile_id as string, c.available_from as string | null]))
   const all = [...availableFrom.keys()]
   if (!all.length) return { clients: [], jobs: [] as Job[], minScore: min }
   // Every client stays in the list (the page's Client filter); rows load for the chosen one.
-  const { data: profs, error: pErr } = await sb.from("client_profiles").select("id, name, email").in("id", all)
-  if (pErr) throw new Error(`client_profiles: ${pErr.message}`)
+  const profs = (profsAll ?? []).filter((p: any) => availableFrom.has(p.id))
   const active = f.clientId ? all.filter((c) => c === f.clientId) : all
-  if (!active.length) return { clients: clientList(profs ?? [], new Map()), jobs: [] as Job[], minScore: min }
-
-  // 1. Matches, filtered in the database. Undecided = no action or evaluating.
-  // One read per client, in parallel: each is a short range of the index.
-  const undecided = (ids: string[] = active) => sb.from("posting_matches").select(MATCH_COLS).in("client_profile_id", ids).eq("rule_failures", "{}")
-  const reads: Promise<any[]>[] = [
-    ...active.map((c) => pageAll<any>((a, b) => undecided([c]).is("action", null).gte("score", min).order("score", { ascending: false }).order("id").range(a, b))),
-    pageAll<any>((a, b) => undecided().eq("action", "evaluating").order("id").range(a, b)),
-  ]
-  if (f.unscored) reads.push(pageAll<any>((a, b) => undecided().is("action", null).is("score", null).order("id").range(a, b)))
+  if (!active.length) return { clients: clientList(profs, new Map()), jobs: [] as Job[], minScore: min }
   const since = f.decided ? new Date(Date.now() - DECIDED_DAYS * 864e5).toISOString() : f.decidedSince ?? null
-  if (since) reads.push(pageAll<any>((a, b) => sb.from("posting_matches").select(MATCH_COLS).in("client_profile_id", active)
-    .in("action", ["push", "dismiss"]).gte("actioned_at", since).order("id").range(a, b)))
-  const matches = (await Promise.all(reads)).flat()
-  lap(`matches ${matches.length}`)
 
-  // Other clients' chips on the same jobs (the page's "+N under 50"): undecided
-  // rows at LOAD_MIN_SCORE+ but under the filter, only on postings already kept.
-  if (min > LOAD_MIN_SCORE && active.length > 1) {
-    const hot = [...new Set(matches.map((m) => m.posting_id as string))]
-    const more = await Promise.all(chunk(hot).map((part) => pageAll<any>((a, b) => undecided().is("action", null)
-      .in("posting_id", part).gte("score", LOAD_MIN_SCORE).lt("score", min).order("id").range(a, b))))
-    matches.push(...more.flat())
-  }
-  lap(`with other clients' chips ${matches.length}`)
-  const seenMatch = new Set<string>()
-  const rowsIn = matches.filter((m) => !seenMatch.has(m.id) && seenMatch.add(m.id))
-
-  // 2. Postings by id, practice flags, and linked secondaries for the rows kept.
-  const postingIds = [...new Set(rowsIn.map((m) => m.posting_id as string))]
-  const [postings, flags, secondaries, practices] = await Promise.all([
-    Promise.all(chunk(postingIds).map(async (part) => {
-      const { data, error } = await sb.from("postings").select(POSTING_COLS).in("id", part)
-      if (error) throw new Error(`postings: ${error.message}`)
-      return data ?? []
-    })).then((xs) => new Map(xs.flat().map((p: any) => [p.id as string, p]))),
-    Promise.all(chunk(postingIds).map(async (part) => {
-      const { data, error } = await sb.from("posting_coach_flags").select("posting_id, practice_coach_id, flag, apply_url, url_saved_at").in("posting_id", part)
-      if (error) throw new Error(`posting_coach_flags: ${error.message}`)
-      return data ?? []
-    })).then((xs) => xs.flat()),
-    Promise.all(chunk(postingIds).map(async (part) => {
-      const { data, error } = await sb.from("posting_links").select("secondary_id").in("secondary_id", part)
-      if (error) throw new Error(`posting_links: ${error.message}`)
-      return (data ?? []).map((r: any) => r.secondary_id as string)
-    })).then((xs) => new Set(xs.flat())),
+  const [read, practices, aliases] = await Promise.all([
+    readRows(sb, { clients: active, min, unscored: !!f.unscored, since }),
     practicesByClient(sb, active),
+    sb.from("employer_aliases").select("alias_norm, canonical").then(({ data }) => new Map((data ?? []).map((x: any) => [x.alias_norm as string, x.canonical as string]))),
   ])
-
-  lap(`postings ${postings.size}, flags ${flags.length}`)
+  const { rowsIn, postings, flags, secondaries } = read
+  lap(`${read.via}: ${rowsIn.length} match rows, ${postings.size} postings, ${flags.length} flags`)
   // 3. The view's columns, from the same inputs.
   const staleBefore = Date.now() - STALE_DAYS * 864e5
   const rows: QueueRow[] = []
@@ -300,11 +263,83 @@ export async function loadJobQueue(sb: SupabaseClient, coachProfileId: string, f
     sizes.set(c, rs.length)
   }
 
-  const { data: al } = await sb.from("employer_aliases").select("alias_norm, canonical")
-  const aliases = new Map((al ?? []).map((a: any) => [a.alias_norm as string, a.canonical as string]))
   const jobs = buildJobs(rows, aliases)
   lap(`built ${jobs.length} jobs from ${rows.length} rows`)
-  return { clients: clientList(profs ?? [], sizes), jobs, minScore: min }
+  return { clients: clientList(profs, sizes), jobs, minScore: min }
+}
+
+type ReadArgs = { clients: string[]; min: number; unscored: boolean; since: string | null }
+type Read = { via: string; rowsIn: any[]; postings: Map<string, any>; flags: any[]; secondaries: Set<string> }
+
+/**
+ * The rows the Job Queue shows, in ONE database call: job_queue_rows()
+ * (20261124) filters posting_matches, joins postings and the posting's flags,
+ * and leaves out linked secondaries. Before that function exists, the same
+ * reads go through the API in batches (much slower on prod: every batch is a
+ * round trip).
+ */
+async function readRows(sb: SupabaseClient, r: ReadArgs): Promise<Read> {
+  const { data, error } = await sb.rpc("job_queue_rows", {
+    p_clients: r.clients, p_min_score: r.min, p_floor: LOAD_MIN_SCORE, p_unscored: r.unscored, p_decided_since: r.since,
+  })
+  if (error) {
+    // PGRST202: the function is not there yet (migration not applied).
+    if (error.code === "PGRST202") return readRowsByRequests(sb, r)
+    throw new Error(`job_queue_rows: ${error.message}`)
+  }
+  const postings = new Map<string, any>()
+  const flags: any[] = []
+  const rowsIn = (data as any[] ?? []).map((x) => {
+    if (!postings.has(x.posting_id)) {
+      postings.set(x.posting_id, {
+        id: x.posting_id, source: x.p_source, title: x.p_title, cleaned_title: x.p_cleaned_title, company: x.p_company, location: x.p_location,
+        apply_url: x.p_apply_url, apply_link_kind: x.p_apply_link_kind, link_check_status: x.p_link_check_status,
+        years_min: x.p_years_min, years_max: x.p_years_max, years_basis: x.p_years_basis,
+        salary_low: x.p_salary_low, salary_high: x.p_salary_high, salary_period: x.p_salary_period,
+        application_deadline: x.p_application_deadline, requirements_summary: x.p_requirements_summary,
+        first_seen_at: x.p_first_seen_at, last_seen_at: x.p_last_seen_at, closed_at: x.p_closed_at, campus_signal: x.p_campus_signal,
+        start_type: x.p_start_type, start_date: x.p_start_date, start_season: x.p_start_season, start_year: x.p_start_year,
+      })
+      for (const fl of x.flags ?? []) flags.push({ ...fl, posting_id: x.posting_id })
+    }
+    return x
+  })
+  return { via: "job_queue_rows", rowsIn, postings, flags, secondaries: new Set() }
+}
+
+/** The same rows through the API: matches per client, then postings, flags and links by id. */
+async function readRowsByRequests(sb: SupabaseClient, r: ReadArgs): Promise<Read> {
+  const { clients: active, min } = r
+  const undecided = (ids: string[] = active) => sb.from("posting_matches").select(MATCH_COLS).in("client_profile_id", ids).eq("rule_failures", "{}")
+  const reads: Promise<any[]>[] = [
+    ...active.map((c) => pageAll<any>((a, b) => undecided([c]).is("action", null).gte("score", min).order("score", { ascending: false }).order("id").range(a, b))),
+    pageAll<any>((a, b) => undecided().eq("action", "evaluating").order("id").range(a, b)),
+  ]
+  if (r.unscored) reads.push(pageAll<any>((a, b) => undecided().is("action", null).is("score", null).order("id").range(a, b)))
+  if (r.since) reads.push(pageAll<any>((a, b) => sb.from("posting_matches").select(MATCH_COLS).in("client_profile_id", active)
+    .in("action", ["push", "dismiss"]).gte("actioned_at", r.since!).order("id").range(a, b)))
+  const matches = (await Promise.all(reads)).flat()
+  // Other clients' chips on the same jobs (the page's "+N under 50").
+  if (min > LOAD_MIN_SCORE && active.length > 1) {
+    const hot = [...new Set(matches.map((m) => m.posting_id as string))]
+    const more = await Promise.all(chunk(hot).map((part) => pageAll<any>((a, b) => undecided().is("action", null)
+      .in("posting_id", part).gte("score", LOAD_MIN_SCORE).lt("score", min).order("id").range(a, b))))
+    matches.push(...more.flat())
+  }
+  const seenMatch = new Set<string>()
+  const rowsIn = matches.filter((m) => !seenMatch.has(m.id) && seenMatch.add(m.id))
+  const postingIds = [...new Set(rowsIn.map((m) => m.posting_id as string))]
+  const byIds = async (table: string, cols: string, col: string) => (await Promise.all(chunk(postingIds).map(async (part) => {
+    const { data, error } = await sb.from(table).select(cols).in(col, part)
+    if (error) throw new Error(`${table}: ${error.message}`)
+    return (data ?? []) as any[]
+  }))).flat()
+  const [ps, flags, links] = await Promise.all([
+    byIds("postings", POSTING_COLS, "id"),
+    byIds("posting_coach_flags", "posting_id, practice_coach_id, flag, apply_url, url_saved_at", "posting_id"),
+    byIds("posting_links", "secondary_id", "secondary_id"),
+  ])
+  return { via: "api requests", rowsIn, postings: new Map(ps.map((p) => [p.id as string, p])), flags, secondaries: new Set(links.map((l) => l.secondary_id as string)) }
 }
 
 /** client_match_queue's ORDER BY: likely_closed, bad_link, tier, score desc (unscored last), preferred market first, republished last, newest. */
