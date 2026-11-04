@@ -782,10 +782,15 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     jobPhrases: [
       "prospect",
       "prospecting",
-      "pipeline",
+      // "overseeing story pipeline, content workflow" is an editorial calendar.
+      { phrase: "pipeline", negativeContext: ["editorial", "story pipeline", "content pipeline"] },
       "cold call",
       "cold calling",
-      "outreach",
+      // Bare "outreach" is also communications / community work ("promotional
+      // messaging and outreach initiatives", "outreach campaigns"): it is
+      // prospecting only with a sales object on the line (Gillian Faski,
+      // Junior Communications Coordinator, 2026-11-04).
+      { phrase: "outreach", requiresNearby: ["prospect", "prospects", "prospective", "leads", "sales", "pipeline", "outbound", "cold", "new business", "new clients", "new customers", "potential clients", "potential customers", "new accounts", "quota", "book meetings", "crm"] },
       "lead generation",
       // Stage 2b lever 2: insurance "issuing new business and renewal policies"
       // is policy issuance, NOT sales pipeline. Suppress sales prospecting when
