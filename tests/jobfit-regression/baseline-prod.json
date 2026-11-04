@@ -12147,8 +12147,8 @@
     "schema_version": 2,
     "id": "prod-095f8aa7-7cb2-4e73-a99c-1b38d75c5893",
     "label": "prod 095f8aa7 — Social Media & Content Production Intern/Part-Time @ TrueTigerLLC (2026-04-27)",
-    "decision": "Apply",
-    "score": 89,
+    "decision": "Priority Apply",
+    "score": 97,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -12166,14 +12166,6 @@
         "kind": "function",
         "strength": 10,
         "label": "brand partnerships and sponsorship work",
-        "requiredness": "core"
-      },
-      {
-        "id": "deac1063865f93b4",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 10,
-        "label": "prospecting, outreach, and pipeline management",
         "requiredness": "core"
       },
       {
@@ -12842,13 +12834,7 @@
         "match_key": "partnerships_sponsorships"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": -7.800000000000001
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -12863,8 +12849,7 @@
         "flaggableTools": [],
         "function_tags": [
           "brand_marketing",
-          "content_social",
-          "sales_bd"
+          "content_social"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -12891,7 +12876,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": false,
@@ -12979,26 +12964,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -8,
-          "note": "7.800000000000001"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 89,
-      "clamped_score": 89
+      "raw_score": 97,
+      "clamped_score": 97
     }
   },
   "prod-09aa50eb-774d-4d1f-aea6-3f5384d55173": {
@@ -22106,7 +22091,7 @@
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 104,
         "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
+        "match_key": "operations_execution"
       }
     ],
     "risk_codes": [
@@ -27030,14 +27015,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "d5c5753279c12b19",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 6,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "core"
-      },
-      {
         "id": "de4de42957a56742",
         "key": "word",
         "kind": "tool",
@@ -27856,42 +27833,6 @@
       },
       {
         "match_strength": "direct",
-        "weight": 105,
-        "coverageScore": 85,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "3072f66afb699a1a"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 105,
-        "coverageScore": 85,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "4d5880557f8e7c88"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 102,
-        "coverageScore": 82,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "c4c4f8e9ff452aa5"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 105,
-        "coverageScore": 85,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "da8ae919402692f4"
-      },
-      {
-        "match_strength": "direct",
         "weight": 60,
         "coverageScore": 79,
         "match_kind": "tool",
@@ -27924,12 +27865,6 @@
         "weight": 103,
         "match_strength": "direct",
         "match_key": "drafting_documentation"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 105,
-        "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
       }
     ],
     "risk_codes": [],
@@ -27952,8 +27887,7 @@
         "function_tags": [
           "brand_marketing",
           "communications_pr",
-          "content_social",
-          "sales_bd"
+          "content_social"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -27987,7 +27921,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": 0,
         "bachelorRequired": false,
@@ -28640,8 +28574,8 @@
     "schema_version": 2,
     "id": "prod-1292ddbd-bcdc-4b5f-bc24-b37b5088fd47",
     "label": "prod 1292ddbd — Summer Intern @ Get Engaged Media (2026-04-14)",
-    "decision": "Apply",
-    "score": 95,
+    "decision": "Priority Apply",
+    "score": 97,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -28667,14 +28601,6 @@
         "kind": "function",
         "strength": 7,
         "label": "visual communication and design execution",
-        "requiredness": "supporting"
-      },
-      {
-        "id": "7897dca1a5ee94b0",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 10,
-        "label": "prospecting, outreach, and pipeline management",
         "requiredness": "supporting"
       },
       {
@@ -29555,13 +29481,7 @@
         "match_key": "photoshop"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
-        "weight": 0
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -29592,7 +29512,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
-        "isSalesHeavy": true,
+        "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "execution",
@@ -29716,7 +29636,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
@@ -29725,7 +29645,7 @@
         }
       ],
       "raw_score": 97,
-      "clamped_score": 95
+      "clamped_score": 97
     }
   },
   "prod-13428c0e-c928-4ca4-8532-a5b192d8dbb5": {
@@ -30092,14 +30012,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "5759f758c81b3ef4",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 4,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
-      },
-      {
         "id": "7f1ecdc332c7319d",
         "key": "shopify",
         "kind": "tool",
@@ -30462,8 +30374,7 @@
         "function_tags": [
           "brand_marketing",
           "content_social",
-          "data_analytics_bi",
-          "sales_bd"
+          "data_analytics_bi"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": true,
@@ -30496,7 +30407,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": false,
@@ -31372,7 +31283,7 @@
     "id": "prod-14a43934-96da-4759-9095-8e2d23a1a3fb",
     "label": "prod 14a43934 — Communication Specialist @ The Fund for Public Health in New York City (FPHNYC) (2026-05-12)",
     "decision": "Apply",
-    "score": 81,
+    "score": 89,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -31406,14 +31317,6 @@
         "kind": "execution",
         "strength": 10,
         "label": "event planning, coordination, and bookings",
-        "requiredness": "core"
-      },
-      {
-        "id": "53ec9a17fa9a3eef",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 8,
-        "label": "prospecting, outreach, and pipeline management",
         "requiredness": "core"
       },
       {
@@ -31766,11 +31669,6 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
-        "weight": -7.800000000000001
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
         "weight": -8.399999999999999
       }
     ],
@@ -31792,8 +31690,7 @@
           "communications_pr",
           "content_social",
           "creative_design",
-          "operations_general",
-          "sales_bd"
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": true,
@@ -31825,7 +31722,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": false,
@@ -31907,12 +31804,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -16,
-          "note": "16.2"
+          "points": -8,
+          "note": "8.399999999999999"
         }
       ],
-      "raw_score": 81,
-      "clamped_score": 81
+      "raw_score": 89,
+      "clamped_score": 89
     }
   },
   "prod-16d335dd-6053-44d7-a1e1-de2cc2777d3c": {
@@ -41761,14 +41658,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "2620ceb28cb8fe82",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 6,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
-      },
-      {
         "id": "5d6e40145b85562b",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -42292,24 +42181,6 @@
         "match_kind": "function",
         "match_key": "partnerships_sponsorships",
         "job_unit_key": "partnerships_sponsorships",
-        "profile_unit_id": "c2013c5f83793913"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 76,
-        "coverageScore": 54,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "323aee407a32bebb"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 77,
-        "coverageScore": 55,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
         "profile_unit_id": "c2013c5f83793913"
       }
     ],
@@ -55322,18 +55193,10 @@
     "id": "prod-28f3a1a9-c15b-437d-a0b8-5e6d0737cbf3",
     "label": "prod 28f3a1a9 — Public Relations @ Skadden (2026-04-11)",
     "decision": "Pass",
-    "score": 54,
+    "score": 45,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
-      {
-        "id": "09db2ccc0c1ee007",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 8,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "core"
-      },
       {
         "id": "20e790c044820ad8",
         "key": "powerpoint",
@@ -55688,15 +55551,6 @@
         "match_key": "powerpoint",
         "job_unit_key": "powerpoint",
         "profile_unit_id": "47dd30e1e05ab63b"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 104,
-        "coverageScore": 83,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "5b05a84c07d3035f"
       }
     ],
     "why_codes": [],
@@ -55739,8 +55593,7 @@
         "function_tags": [
           "communications_pr",
           "finance_corp",
-          "operations_general",
-          "sales_bd"
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -55770,7 +55623,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": 5,
         "bachelorRequired": false,
@@ -55857,8 +55710,8 @@
           "note": "22.4"
         }
       ],
-      "raw_score": 54,
-      "clamped_score": 54
+      "raw_score": 45,
+      "clamped_score": 45
     }
   },
   "prod-294bdaa1-7036-4d78-9335-edf1c7e6733b": {
@@ -58628,14 +58481,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "6c3d8da7aa569e26",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 6,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
-      },
-      {
         "id": "a7b12949dc8be701",
         "key": "excel",
         "kind": "tool",
@@ -59345,42 +59190,6 @@
       },
       {
         "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "3072f66afb699a1a"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "70792b964c8364c1"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 96,
-        "coverageScore": 78,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "c4c4f8e9ff452aa5"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "da8ae919402692f4"
-      },
-      {
-        "match_strength": "direct",
         "weight": 60,
         "coverageScore": 79,
         "match_kind": "tool",
@@ -59407,12 +59216,6 @@
         "weight": 99,
         "match_strength": "direct",
         "match_key": "content_execution"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 99,
-        "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
       }
     ],
     "risk_codes": [],
@@ -59432,8 +59235,7 @@
           "brand_marketing",
           "communications_pr",
           "content_social",
-          "data_analytics_bi",
-          "sales_bd"
+          "data_analytics_bi"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -59464,7 +59266,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": false,
@@ -59908,7 +59710,7 @@
     "id": "prod-2c3e280c-777f-478a-9a8a-22b2986d4a21",
     "label": "prod 2c3e280c — Events and Special Projects Coordinator @ Best Food Forward Foundation (2026-06-25)",
     "decision": "Pass",
-    "score": 55,
+    "score": 53,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -59958,14 +59760,6 @@
         "kind": "function",
         "strength": 10,
         "label": "accounting and financial operations work",
-        "requiredness": "core"
-      },
-      {
-        "id": "ae87515323f4a198",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 8,
-        "label": "prospecting, outreach, and pipeline management",
         "requiredness": "core"
       },
       {
@@ -60451,42 +60245,6 @@
         "match_key": "excel",
         "job_unit_key": "excel",
         "profile_unit_id": "dc5bb3f0e883f9fd"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 84,
-        "coverageScore": 59,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "0fda095481cbca70"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 85,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "3fa5aac5a57abcf9"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 85,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "ce9dd4b7f6773478"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 85,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "d9195304de6cfe5f"
       }
     ],
     "why_codes": [
@@ -60513,12 +60271,6 @@
         "weight": 105,
         "match_strength": "direct",
         "match_key": "event_coordination"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 106,
-        "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
       },
       {
         "code": "WHY_TOOL_PROOF",
@@ -60587,7 +60339,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
-        "isSalesHeavy": true,
+        "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
@@ -60685,12 +60437,12 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Pass"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Pass"
         },
         {
           "label": "decision_final",
@@ -60703,8 +60455,8 @@
           "note": "22.8"
         }
       ],
-      "raw_score": 62,
-      "clamped_score": 55
+      "raw_score": 53,
+      "clamped_score": 53
     }
   },
   "prod-2c642267-a226-4f28-9930-4f08ebbbc9c3": {
@@ -61096,14 +60848,6 @@
     "traceMissing": false,
     "requirement_units": [
       {
-        "id": "51dcebc8b0bfd3d2",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 8,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
-      },
-      {
         "id": "6d9b2a392f915742",
         "key": "software_engineering",
         "kind": "function",
@@ -61195,11 +60939,6 @@
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "high",
         "weight": 0
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -61216,7 +60955,6 @@
         "flaggableTools": [],
         "function_tags": [
           "engineering_technical",
-          "sales_bd",
           "software_it"
         ],
         "gradYearHint": null,
@@ -61244,7 +60982,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": 2,
         "bachelorRequired": false,
@@ -67935,7 +67673,7 @@
     "id": "prod-3142ce30-8828-4f1f-bb02-f4fa04191cdf",
     "label": "prod 3142ce30 — Digital Communications Specialist @ HiringCafe: Job Search Engine (2026-05-28)",
     "decision": "Review",
-    "score": 73,
+    "score": 65,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -67945,14 +67683,6 @@
         "kind": "function",
         "strength": 5,
         "label": "communications, writing, and messaging work",
-        "requiredness": "supporting"
-      },
-      {
-        "id": "49876cf99ce9f4d0",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 4,
-        "label": "prospecting, outreach, and pipeline management",
         "requiredness": "supporting"
       },
       {
@@ -68564,42 +68294,6 @@
         "match_key": "policy_regulatory_research",
         "job_unit_key": "policy_regulatory_research",
         "profile_unit_id": "e81222544c7176d6"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "3072f66afb699a1a"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "4d5880557f8e7c88"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 95,
-        "coverageScore": 78,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "c4c4f8e9ff452aa5"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "da8ae919402692f4"
       }
     ],
     "why_codes": [
@@ -68620,12 +68314,6 @@
         "weight": 99,
         "match_strength": "direct",
         "match_key": "content_execution"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 98,
-        "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
       }
     ],
     "risk_codes": [
@@ -68650,8 +68338,7 @@
         "function_tags": [
           "communications_pr",
           "content_social",
-          "legal_regulatory",
-          "sales_bd"
+          "legal_regulatory"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -68678,7 +68365,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": 1,
         "bachelorRequired": false,
@@ -68764,8 +68451,8 @@
           "note": "0"
         }
       ],
-      "raw_score": 73,
-      "clamped_score": 73
+      "raw_score": 65,
+      "clamped_score": 65
     }
   },
   "prod-3148a834-ca0d-478c-83fb-5a997f0e77f1": {
@@ -69100,7 +68787,7 @@
     "id": "prod-316b48c8-f6f5-45be-90cd-42099f6a49b3",
     "label": "prod 316b48c8 — Healthcare Associate @ GLG (2026-06-04)",
     "decision": "Apply",
-    "score": 91,
+    "score": 82,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -69119,14 +68806,6 @@
         "strength": 8,
         "label": "operations, process, and workflow execution",
         "requiredness": "core"
-      },
-      {
-        "id": "60940d0bfe3d6d07",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 4,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
       },
       {
         "id": "6e8db5129fcf08b6",
@@ -69379,42 +69058,9 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "e1d2056e97efd639"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "647d1e139742e5fa"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 96,
-        "coverageScore": 79,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "c126abe1d6520e9e"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "d676fdd61ea32a95"
       }
     ],
     "why_codes": [
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 98,
-        "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
-      },
       {
         "code": "WHY_EXECUTION_PROOF",
         "weight": 77,
@@ -69600,8 +69246,8 @@
           "note": "0"
         }
       ],
-      "raw_score": 91,
-      "clamped_score": 91
+      "raw_score": 82,
+      "clamped_score": 82
     }
   },
   "prod-3224afc3-c494-471a-bc5c-0edf5119c4c0": {
@@ -71646,14 +71292,6 @@
         "requiredness": "core"
       },
       {
-        "id": "49be35009f290a29",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 8,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "core"
-      },
-      {
         "id": "8d1d0a0e14ace31c",
         "key": "brand_messaging",
         "kind": "function",
@@ -71829,33 +71467,6 @@
         "match_key": "brand_messaging",
         "job_unit_key": "brand_messaging",
         "profile_unit_id": "7229a45225df9760"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 85,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "4e64fde9053c8ad8"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 85,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "4e9fed1dc8a0a2eb"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 104,
-        "coverageScore": 83,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "fe3255412492df55"
       }
     ],
     "why_codes": [
@@ -71864,12 +71475,6 @@
         "weight": 86,
         "match_strength": "adjacent",
         "match_key": "brand_messaging"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 106,
-        "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
       }
     ],
     "risk_codes": [
@@ -71877,6 +71482,11 @@
         "code": "RISK_EXPERIENCE",
         "severity": "high",
         "weight": -11
+      },
+      {
+        "code": "RISK_LIMITED_MATCH_EVIDENCE",
+        "severity": "medium",
+        "weight": 0
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -71932,7 +71542,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
-        "isSalesHeavy": true,
+        "isSalesHeavy": false,
         "isSeniorRole": true,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
@@ -72028,12 +71638,12 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Pass"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Pass"
         },
         {
           "label": "decision_final",
@@ -72046,7 +71656,7 @@
           "note": "15"
         }
       ],
-      "raw_score": 64,
+      "raw_score": 55,
       "clamped_score": 55
     }
   },
@@ -78256,14 +77866,6 @@
     "traceMissing": false,
     "requirement_units": [
       {
-        "id": "7e4dc06e07e87d5e",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 6,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
-      },
-      {
         "id": "94b0a0a76018ce78",
         "key": "account_management",
         "kind": "stakeholder",
@@ -78286,6 +77888,14 @@
         "strength": 6,
         "label": "customer service, guest experience, and issue resolution",
         "requiredness": "supporting"
+      },
+      {
+        "id": "ed4bcbc609ca0e85",
+        "key": "prospecting_pipeline_management",
+        "kind": "execution",
+        "strength": 8,
+        "label": "prospecting, outreach, and pipeline management",
+        "requiredness": "core"
       }
     ],
     "profile_evidence_units": [
@@ -78612,8 +78222,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
+        "weight": 106,
+        "coverageScore": 85,
         "match_kind": "execution",
         "match_key": "prospecting_pipeline_management",
         "job_unit_key": "prospecting_pipeline_management",
@@ -78621,8 +78231,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 80,
+        "weight": 105,
+        "coverageScore": 84,
         "match_kind": "execution",
         "match_key": "prospecting_pipeline_management",
         "job_unit_key": "prospecting_pipeline_management",
@@ -78630,8 +78240,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 80,
+        "weight": 105,
+        "coverageScore": 84,
         "match_kind": "execution",
         "match_key": "prospecting_pipeline_management",
         "job_unit_key": "prospecting_pipeline_management",
@@ -78639,8 +78249,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 80,
+        "weight": 105,
+        "coverageScore": 84,
         "match_kind": "execution",
         "match_key": "prospecting_pipeline_management",
         "job_unit_key": "prospecting_pipeline_management",
@@ -78648,8 +78258,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 96,
-        "coverageScore": 78,
+        "weight": 103,
+        "coverageScore": 82,
         "match_kind": "execution",
         "match_key": "prospecting_pipeline_management",
         "job_unit_key": "prospecting_pipeline_management",
@@ -78657,8 +78267,8 @@
       },
       {
         "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 80,
+        "weight": 105,
+        "coverageScore": 84,
         "match_kind": "execution",
         "match_key": "prospecting_pipeline_management",
         "job_unit_key": "prospecting_pipeline_management",
@@ -78674,7 +78284,7 @@
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 99,
+        "weight": 106,
         "match_strength": "direct",
         "match_key": "prospecting_pipeline_management"
       },
@@ -92309,14 +91919,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "84d7a78036960176",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 6,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
-      },
-      {
         "id": "9bcb7a52c591ad22",
         "key": "clinical_stakeholder_fluency",
         "kind": "stakeholder",
@@ -92450,8 +92052,7 @@
         "financeSubFamily": null,
         "flaggableTools": [],
         "function_tags": [
-          "premed_clinical",
-          "sales_bd"
+          "premed_clinical"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -92478,7 +92079,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": false,
@@ -116067,7 +115668,7 @@
     "id": "prod-5379c2ed-322b-4c6d-9e8f-07613e007ed7",
     "label": "prod 5379c2ed — Account Executive @ Billion Dollar Boy (2026-05-07)",
     "decision": "Review",
-    "score": 71,
+    "score": 62,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -116085,14 +115686,6 @@
         "kind": "stakeholder",
         "strength": 6,
         "label": "account support and account management",
-        "requiredness": "supporting"
-      },
-      {
-        "id": "9b913a248406d6fe",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 4,
-        "label": "prospecting, outreach, and pipeline management",
         "requiredness": "supporting"
       },
       {
@@ -116534,42 +116127,6 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "ddae8710587c409b"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "3072f66afb699a1a"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "70792b964c8364c1"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 95,
-        "coverageScore": 78,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "c4c4f8e9ff452aa5"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "da8ae919402692f4"
       }
     ],
     "why_codes": [
@@ -116578,12 +116135,6 @@
         "weight": 99,
         "match_strength": "direct",
         "match_key": "content_execution"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 98,
-        "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
       },
       {
         "code": "WHY_EXECUTION_PROOF",
@@ -116627,7 +116178,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
-        "isSalesHeavy": true,
+        "isSalesHeavy": false,
         "isSeniorRole": true,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
@@ -116736,8 +116287,8 @@
           "note": "18"
         }
       ],
-      "raw_score": 71,
-      "clamped_score": 71
+      "raw_score": 62,
+      "clamped_score": 62
     }
   },
   "prod-53a7237d-cb88-4eca-84e2-f31a7891a127": {
@@ -118233,7 +117784,7 @@
     "id": "prod-556d81aa-be33-4c0e-852f-7995ca427f26",
     "label": "prod 556d81aa — Client Associate / Team Client Relationship Specialist @ UBS (2026-05-07)",
     "decision": "Apply",
-    "score": 87,
+    "score": 89,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -118244,14 +117795,6 @@
         "strength": 10,
         "label": "analysis, reporting, and measurement work",
         "requiredness": "core"
-      },
-      {
-        "id": "17fe2a726bb20015",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 6,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
       },
       {
         "id": "2d2a6e1e1fc83308",
@@ -118708,15 +118251,6 @@
       },
       {
         "match_strength": "direct",
-        "weight": 97,
-        "coverageScore": 79,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "d0fd64b187de5bc8"
-      },
-      {
-        "match_strength": "direct",
         "weight": 60,
         "coverageScore": 78,
         "match_kind": "tool",
@@ -118742,6 +118276,12 @@
         "match_key": "brand_messaging"
       },
       {
+        "code": "WHY_ADJACENT_EXPERIENCE_PROOF",
+        "weight": 78,
+        "match_strength": "adjacent",
+        "match_key": "communications_writing"
+      },
+      {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 105,
         "match_strength": "direct",
@@ -118752,12 +118292,6 @@
         "weight": 99,
         "match_strength": "direct",
         "match_key": "financial_analysis"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 97,
-        "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
       },
       {
         "code": "WHY_TOOL_PROOF",
@@ -118795,8 +118329,7 @@
           "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
-          "finance_corp",
-          "sales_bd"
+          "finance_corp"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -118827,7 +118360,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": false,
@@ -118916,8 +118449,8 @@
           "note": "0"
         }
       ],
-      "raw_score": 87,
-      "clamped_score": 87
+      "raw_score": 89,
+      "clamped_score": 89
     }
   },
   "prod-55fb7fe1-8e43-4ded-9e0d-d08b04ee1f5e": {
@@ -129858,7 +129391,7 @@
     "id": "prod-5bdfdc5e-a575-4593-aa42-6a38bddb8e14",
     "label": "prod 5bdfdc5e — Senior Product Manager, Service Delivery @ LawnStarter (2026-06-19)",
     "decision": "Pass",
-    "score": 55,
+    "score": 53,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -129876,14 +129409,6 @@
         "kind": "function",
         "strength": 5,
         "label": "brand messaging and campaign work",
-        "requiredness": "supporting"
-      },
-      {
-        "id": "ded0e11310acea19",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 8,
-        "label": "prospecting, outreach, and pipeline management",
         "requiredness": "supporting"
       },
       {
@@ -129990,15 +129515,6 @@
         "match_key": "product_training_enablement",
         "job_unit_key": "product_training_enablement",
         "profile_unit_id": "420bc57b5110ae55"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 79,
-        "coverageScore": 56,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "e2851b3e15901d72"
       }
     ],
     "why_codes": [
@@ -130007,12 +129523,6 @@
         "weight": 100,
         "match_strength": "direct",
         "match_key": "product_training_enablement"
-      },
-      {
-        "code": "WHY_EXECUTION_PROOF",
-        "weight": 79,
-        "match_strength": "adjacent",
-        "match_key": "prospecting_pipeline_management"
       }
     ],
     "risk_codes": [
@@ -130022,7 +129532,7 @@
         "weight": -12
       },
       {
-        "code": "RISK_MISSING_PROOF",
+        "code": "RISK_LIMITED_MATCH_EVIDENCE",
         "severity": "medium",
         "weight": 0
       }
@@ -130049,7 +129559,7 @@
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
-        "isSalesHeavy": true,
+        "isSalesHeavy": false,
         "isSeniorRole": true,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
@@ -130143,8 +129653,8 @@
           "note": "0"
         }
       ],
-      "raw_score": 55,
-      "clamped_score": 55
+      "raw_score": 53,
+      "clamped_score": 53
     }
   },
   "prod-5cc38a75-e863-4571-8e8c-f4f06ed601e0": {
@@ -131033,14 +130543,6 @@
     "traceMissing": false,
     "requirement_units": [
       {
-        "id": "11d34c26dc55f154",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 6,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
-      },
-      {
         "id": "15f26e14ab5ff479",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -131495,8 +130997,7 @@
         "flaggableTools": [],
         "function_tags": [
           "content_social",
-          "data_analytics_bi",
-          "sales_bd"
+          "data_analytics_bi"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -131507,7 +131008,7 @@
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
-        "jobFamily": "Sales",
+        "jobFamily": "Analytics",
         "jobIndustry": "luxury/fashion",
         "jobTitle": "Social Media Intern",
         "location": {
@@ -131523,7 +131024,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": false,
@@ -145080,14 +144581,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "5759f758c81b3ef4",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 4,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
-      },
-      {
         "id": "7f1ecdc332c7319d",
         "key": "shopify",
         "kind": "tool",
@@ -145907,15 +145400,6 @@
       },
       {
         "match_strength": "direct",
-        "weight": 96,
-        "coverageScore": 79,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "112cdd12e8995d35"
-      },
-      {
-        "match_strength": "direct",
         "weight": 94,
         "coverageScore": 80,
         "match_kind": "tool",
@@ -145971,12 +145455,6 @@
         "match_key": "content_execution"
       },
       {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 96,
-        "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
-      },
-      {
         "code": "WHY_TOOL_PROOF",
         "weight": 94,
         "match_strength": "direct",
@@ -146016,8 +145494,7 @@
         "function_tags": [
           "brand_marketing",
           "content_social",
-          "data_analytics_bi",
-          "sales_bd"
+          "data_analytics_bi"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": true,
@@ -146050,7 +145527,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": false,
@@ -151435,14 +150912,6 @@
         "requiredness": "core"
       },
       {
-        "id": "be5982d1582a1808",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 6,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
-      },
-      {
         "id": "c1c53476f01f50cf",
         "key": "brand_messaging",
         "kind": "function",
@@ -152175,8 +151644,7 @@
           "communications_pr",
           "content_social",
           "data_analytics_bi",
-          "operations_general",
-          "sales_bd"
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": true,
@@ -152203,7 +151671,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": 1,
         "bachelorRequired": false,
@@ -164840,14 +164308,6 @@
         "strength": 5,
         "label": "content and channel execution",
         "requiredness": "supporting"
-      },
-      {
-        "id": "d1d3a3e1c29d9ca5",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 8,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
       }
     ],
     "profile_evidence_units": [
@@ -165480,13 +164940,7 @@
         "match_key": "drafting_documentation"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
-        "weight": 0
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -165501,8 +164955,7 @@
         "flaggableTools": [],
         "function_tags": [
           "communications_pr",
-          "content_social",
-          "sales_bd"
+          "content_social"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -165529,7 +164982,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": false,
@@ -167915,14 +167368,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "ad9bbb28864ee426",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 4,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
-      },
-      {
         "id": "bde21a563f9b94bf",
         "key": "canva",
         "kind": "tool",
@@ -168322,8 +167767,7 @@
           "communications_pr",
           "content_social",
           "creative_design",
-          "data_analytics_bi",
-          "sales_bd"
+          "data_analytics_bi"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": true,
@@ -168354,7 +167798,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": 1,
         "bachelorRequired": false,
@@ -182412,8 +181856,8 @@
     "schema_version": 2,
     "id": "prod-84a70f2a-bfb5-484f-b677-2bff2c74837c",
     "label": "prod 84a70f2a — Digital Marketing Coordinator - Arcade1UP @ Basic Fun! (2026-05-28)",
-    "decision": "Apply",
-    "score": 89,
+    "decision": "Priority Apply",
+    "score": 97,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -182439,14 +181883,6 @@
         "kind": "deliverable",
         "strength": 8,
         "label": "drafting, documentation, and written deliverables",
-        "requiredness": "core"
-      },
-      {
-        "id": "6fa2ed613466ac31",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 8,
-        "label": "prospecting, outreach, and pipeline management",
         "requiredness": "core"
       },
       {
@@ -183255,13 +182691,7 @@
         "match_key": "drafting_documentation"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": -7.800000000000001
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -183278,8 +182708,7 @@
           "brand_marketing",
           "communications_pr",
           "content_social",
-          "data_analytics_bi",
-          "sales_bd"
+          "data_analytics_bi"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": true,
@@ -183310,7 +182739,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": 1,
         "bachelorRequired": false,
@@ -183385,26 +182814,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -8,
-          "note": "7.800000000000001"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 89,
-      "clamped_score": 89
+      "raw_score": 97,
+      "clamped_score": 97
     }
   },
   "prod-84d0dd21-3732-4f54-b8ac-7e28d264ab1f": {
@@ -195837,19 +195266,11 @@
     "schema_version": 2,
     "id": "prod-8dc76d1b-b50e-4482-91d4-a1a10cb0a3d3",
     "label": "prod 8dc76d1b — Marketing Assistant @ Boost Company (2026-05-16)",
-    "decision": "Apply",
-    "score": 89,
+    "decision": "Priority Apply",
+    "score": 97,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
-      {
-        "id": "019028856f9ce4bc",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 8,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "core"
-      },
       {
         "id": "b3b97e70b332609b",
         "key": "content_execution",
@@ -196182,13 +195603,7 @@
         "match_key": "content_execution"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": -7.800000000000001
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -196204,8 +195619,7 @@
         "function_tags": [
           "brand_marketing",
           "communications_pr",
-          "content_social",
-          "sales_bd"
+          "content_social"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -196232,7 +195646,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": false,
@@ -196300,26 +195714,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -8,
-          "note": "7.800000000000001"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 89,
-      "clamped_score": 89
+      "raw_score": 97,
+      "clamped_score": 97
     }
   },
   "prod-8dfcaa4a-75d0-407a-b849-0526788b262b": {
@@ -201332,7 +200746,7 @@
     "id": "prod-91ce7a84-6847-4637-b992-c20a363d015a",
     "label": "prod 91ce7a84 — Assistant Campaign Manager @ Blue Hour Studios (2026-06-05)",
     "decision": "Pass",
-    "score": 21,
+    "score": 13,
     "gateType": "force_pass",
     "traceMissing": false,
     "requirement_units": [
@@ -201361,19 +200775,19 @@
         "requiredness": "supporting"
       },
       {
+        "id": "889285d4fd11a518",
+        "key": "prospecting_pipeline_management",
+        "kind": "execution",
+        "strength": 8,
+        "label": "prospecting, outreach, and pipeline management",
+        "requiredness": "core"
+      },
+      {
         "id": "88f731617479b85c",
         "key": "analysis_reporting",
         "kind": "execution",
         "strength": 6,
         "label": "analysis, reporting, and measurement work",
-        "requiredness": "supporting"
-      },
-      {
-        "id": "94c81e8716bd9775",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 4,
-        "label": "prospecting, outreach, and pipeline management",
         "requiredness": "supporting"
       },
       {
@@ -201683,6 +201097,11 @@
       {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
+        "weight": -7.800000000000001
+      },
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
         "weight": 0
       },
       {
@@ -201830,12 +201249,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -26,
-          "note": "26"
+          "points": -34,
+          "note": "33.8"
         }
       ],
-      "raw_score": 21,
-      "clamped_score": 21
+      "raw_score": 13,
+      "clamped_score": 13
     }
   },
   "prod-91cffad3-85b8-426c-9209-eeb7b3a17ebf": {
@@ -211929,14 +211348,6 @@
         "requiredness": "core"
       },
       {
-        "id": "f25acb8890977206",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 8,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
-      },
-      {
         "id": "f99a8abd291f3fa3",
         "key": "analysis_reporting",
         "kind": "execution",
@@ -212139,11 +211550,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -8.399999999999999
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "medium",
-        "weight": 0
       }
     ],
     "scalars": {
@@ -212161,15 +211567,14 @@
         "function_tags": [
           "communications_pr",
           "data_analytics_bi",
-          "operations_general",
-          "sales_bd"
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
-        "isSalesHeavy": true,
+        "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
@@ -212189,7 +211594,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": false,
@@ -218063,19 +217468,11 @@
     "schema_version": 2,
     "id": "prod-9d926376-6c65-4a22-a38c-e6504c5a9b31",
     "label": "prod 9d926376 — Public Relations Assistant @ Alphabe Insight Inc (2026-06-05)",
-    "decision": "Apply",
-    "score": 80,
+    "decision": "Review",
+    "score": 71,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
-      {
-        "id": "08220c7f66cd1cf8",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 8,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "core"
-      },
       {
         "id": "2cfffebf341cf830",
         "key": "communications_writing",
@@ -218497,42 +217894,6 @@
         "match_key": "communications_writing",
         "job_unit_key": "communications_writing",
         "profile_unit_id": "f0d39d87ba31f27d"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 85,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "3072f66afb699a1a"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 85,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "4d5880557f8e7c88"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 103,
-        "coverageScore": 82,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "c4c4f8e9ff452aa5"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 85,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "da8ae919402692f4"
       }
     ],
     "why_codes": [
@@ -218541,15 +217902,15 @@
         "weight": 99,
         "match_strength": "direct",
         "match_key": "communications_writing"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 106,
-        "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
       }
     ],
-    "risk_codes": [],
+    "risk_codes": [
+      {
+        "code": "RISK_LIMITED_MATCH_EVIDENCE",
+        "severity": "medium",
+        "weight": 0
+      }
+    ],
     "scalars": {
       "job": {
         "analytics": {
@@ -218563,8 +217924,7 @@
         "financeSubFamily": null,
         "flaggableTools": [],
         "function_tags": [
-          "communications_pr",
-          "sales_bd"
+          "communications_pr"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -218575,7 +217935,7 @@
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
-        "jobFamily": "Sales",
+        "jobFamily": "Other",
         "jobIndustry": null,
         "jobTitle": "Public Relations Assistant",
         "location": {
@@ -218591,7 +217951,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": false,
@@ -218659,17 +218019,17 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -218677,8 +218037,8 @@
           "note": "0"
         }
       ],
-      "raw_score": 80,
-      "clamped_score": 80
+      "raw_score": 71,
+      "clamped_score": 71
     }
   },
   "prod-9e08e402-386f-468f-b101-26c1bde48f4a": {
@@ -221288,14 +220648,6 @@
     "traceMissing": false,
     "requirement_units": [
       {
-        "id": "099867010b87c069",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 6,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
-      },
-      {
         "id": "4c05bc65a08b304e",
         "key": "brand_messaging",
         "kind": "function",
@@ -222046,42 +221398,6 @@
         "profile_unit_id": "e81222544c7176d6"
       },
       {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "3072f66afb699a1a"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "4d5880557f8e7c88"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 96,
-        "coverageScore": 78,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "c4c4f8e9ff452aa5"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "da8ae919402692f4"
-      },
-      {
         "match_strength": "adjacent",
         "weight": 83,
         "coverageScore": 59,
@@ -222174,12 +221490,6 @@
         "match_key": "drafting_documentation"
       },
       {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 99,
-        "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
-      },
-      {
         "code": "WHY_EXECUTION_PROOF",
         "weight": 77,
         "match_strength": "adjacent",
@@ -222220,15 +221530,14 @@
           "brand_marketing",
           "communications_pr",
           "data_analytics_bi",
-          "operations_general",
-          "sales_bd"
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
-        "isSalesHeavy": true,
+        "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
@@ -222248,7 +221557,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": 2,
         "bachelorRequired": false,
@@ -236390,7 +235699,7 @@
     "id": "prod-acdceea2-1770-4c9d-a98f-fef4e1b75d53",
     "label": "prod acdceea2 — Manager, Strategy and Operations @ Southern Auto Finance Company, LLC (2026-05-11)",
     "decision": "Review",
-    "score": 72,
+    "score": 70,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -236401,14 +235710,6 @@
         "strength": 10,
         "label": "analysis, reporting, and measurement work",
         "requiredness": "core"
-      },
-      {
-        "id": "9c1e0b25cb181559",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 6,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
       },
       {
         "id": "cc2d3effcd56e480",
@@ -236858,42 +236159,6 @@
         "match_key": "operations_execution",
         "job_unit_key": "operations_execution",
         "profile_unit_id": "f2ece3a0f60c427a"
-      },
-      {
-        "match_strength": "adjacent",
-        "weight": 77,
-        "coverageScore": 55,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "0fda095481cbca70"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "3fa5aac5a57abcf9"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "ce9dd4b7f6773478"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "d9195304de6cfe5f"
       }
     ],
     "why_codes": [
@@ -236937,8 +236202,7 @@
         "flaggableTools": [],
         "function_tags": [
           "data_analytics_bi",
-          "operations_general",
-          "sales_bd"
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -236965,7 +236229,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": true,
@@ -237058,8 +236322,8 @@
           "note": "18"
         }
       ],
-      "raw_score": 72,
-      "clamped_score": 72
+      "raw_score": 70,
+      "clamped_score": 70
     }
   },
   "prod-ad53617c-9613-4767-8c1b-1d44cf4475fe": {
@@ -238643,14 +237907,6 @@
     "traceMissing": false,
     "requirement_units": [
       {
-        "id": "02447dab1a7fdb0c",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 6,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
-      },
-      {
         "id": "0956092b8f24a309",
         "key": "communications_writing",
         "kind": "function",
@@ -239233,8 +238489,7 @@
         "function_tags": [
           "communications_pr",
           "content_social",
-          "operations_general",
-          "sales_bd"
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": true,
@@ -239264,7 +238519,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": false,
@@ -244898,10 +244153,10 @@
         "requiredness": "core"
       },
       {
-        "id": "ab02c23c4a7341c6",
+        "id": "78a824d486ad3e7f",
         "key": "prospecting_pipeline_management",
         "kind": "execution",
-        "strength": 4,
+        "strength": 10,
         "label": "prospecting, outreach, and pipeline management",
         "requiredness": "core"
       },
@@ -245419,7 +244674,7 @@
       },
       {
         "match_strength": "direct",
-        "weight": 104,
+        "weight": 107,
         "coverageScore": 85,
         "match_kind": "execution",
         "match_key": "prospecting_pipeline_management",
@@ -245428,7 +244683,7 @@
       },
       {
         "match_strength": "direct",
-        "weight": 104,
+        "weight": 107,
         "coverageScore": 85,
         "match_kind": "execution",
         "match_key": "prospecting_pipeline_management",
@@ -245437,7 +244692,7 @@
       },
       {
         "match_strength": "direct",
-        "weight": 101,
+        "weight": 104,
         "coverageScore": 82,
         "match_kind": "execution",
         "match_key": "prospecting_pipeline_management",
@@ -245446,7 +244701,7 @@
       },
       {
         "match_strength": "direct",
-        "weight": 104,
+        "weight": 107,
         "coverageScore": 85,
         "match_kind": "execution",
         "match_key": "prospecting_pipeline_management",
@@ -245469,7 +244724,7 @@
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 104,
+        "weight": 107,
         "match_strength": "direct",
         "match_key": "prospecting_pipeline_management"
       }
@@ -245912,7 +245167,7 @@
     "id": "prod-b3e99f67-b91f-4722-ad54-2c9eace0064b",
     "label": "prod b3e99f67 — Consumer Growth Marketing Associate @ Via (2026-06-15)",
     "decision": "Apply",
-    "score": 85,
+    "score": 93,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -245955,14 +245210,6 @@
         "strength": 10,
         "label": "consumer, market, or user research",
         "requiredness": "supporting"
-      },
-      {
-        "id": "e3c70e9a57aa50b0",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 10,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "core"
       }
     ],
     "profile_evidence_units": [
@@ -246280,11 +245527,6 @@
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": -3.9199999999999995
-      },
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": -7.800000000000001
       }
     ],
     "scalars": {
@@ -246304,8 +245546,7 @@
           "communications_pr",
           "consumer_insights_research",
           "data_analytics_bi",
-          "growth_performance",
-          "sales_bd"
+          "growth_performance"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -246332,7 +245573,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": 0,
         "bachelorRequired": false,
@@ -246414,12 +245655,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -12,
-          "note": "11.72"
+          "points": -4,
+          "note": "3.9199999999999995"
         }
       ],
-      "raw_score": 85,
-      "clamped_score": 85
+      "raw_score": 93,
+      "clamped_score": 93
     }
   },
   "prod-b474000b-79e6-4534-906d-c0f1f576aac5": {
@@ -263597,14 +262838,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "d21d3d2e8dfcb1b3",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 4,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
-      },
-      {
         "id": "fc2105260e2edfa9",
         "key": "content_execution",
         "kind": "function",
@@ -263861,8 +263094,7 @@
         "function_tags": [
           "communications_pr",
           "content_social",
-          "operations_general",
-          "sales_bd"
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -263889,7 +263121,7 @@
         "requiresDomainIndustryExperience": true,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": 3,
         "bachelorRequired": false,
@@ -268362,14 +267594,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "5989f1f6a76cc190",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 6,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
-      },
-      {
         "id": "f485135f23ceaad4",
         "key": "drafting_documentation",
         "kind": "deliverable",
@@ -268475,8 +267699,7 @@
         "flaggableTools": [],
         "function_tags": [
           "communications_pr",
-          "operations_general",
-          "sales_bd"
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -268487,7 +267710,7 @@
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
-        "jobFamily": "Sales",
+        "jobFamily": "Operations",
         "jobIndustry": null,
         "jobTitle": "Police Department Internship - Service Population Advocate Assistant",
         "location": {
@@ -268503,7 +267726,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": false,
@@ -271120,8 +270343,8 @@
     "schema_version": 2,
     "id": "prod-c4f0850b-fbd9-4304-8fe6-4ee2e26e5e98",
     "label": "prod c4f0850b — Digital Marketing Coordinator - Arcade1UP @ Basic Fun! (2026-05-28)",
-    "decision": "Apply",
-    "score": 89,
+    "decision": "Priority Apply",
+    "score": 97,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -271147,14 +270370,6 @@
         "kind": "deliverable",
         "strength": 8,
         "label": "drafting, documentation, and written deliverables",
-        "requiredness": "core"
-      },
-      {
-        "id": "6fa2ed613466ac31",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 8,
-        "label": "prospecting, outreach, and pipeline management",
         "requiredness": "core"
       },
       {
@@ -271963,13 +271178,7 @@
         "match_key": "drafting_documentation"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": -7.800000000000001
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -271986,8 +271195,7 @@
           "brand_marketing",
           "communications_pr",
           "content_social",
-          "data_analytics_bi",
-          "sales_bd"
+          "data_analytics_bi"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": true,
@@ -272018,7 +271226,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": 1,
         "bachelorRequired": false,
@@ -272093,26 +271301,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -8,
-          "note": "7.800000000000001"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 89,
-      "clamped_score": 89
+      "raw_score": 97,
+      "clamped_score": 97
     }
   },
   "prod-c509e144-6ac9-4451-98f8-a2769f333270": {
@@ -273196,14 +272404,6 @@
     "traceMissing": false,
     "requirement_units": [
       {
-        "id": "099867010b87c069",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 6,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
-      },
-      {
         "id": "4c05bc65a08b304e",
         "key": "brand_messaging",
         "kind": "function",
@@ -274052,42 +273252,6 @@
         "profile_unit_id": "e81222544c7176d6"
       },
       {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "3072f66afb699a1a"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "4d5880557f8e7c88"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 96,
-        "coverageScore": 78,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "c4c4f8e9ff452aa5"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "da8ae919402692f4"
-      },
-      {
         "match_strength": "adjacent",
         "weight": 77,
         "coverageScore": 55,
@@ -274186,10 +273350,10 @@
         "match_key": "drafting_documentation"
       },
       {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 99,
-        "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 77,
+        "match_strength": "adjacent",
+        "match_key": "client_commercial_work"
       },
       {
         "code": "WHY_EXECUTION_PROOF",
@@ -274222,15 +273386,14 @@
           "communications_pr",
           "content_social",
           "data_analytics_bi",
-          "operations_general",
-          "sales_bd"
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
-        "isSalesHeavy": true,
+        "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
@@ -274250,7 +273413,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": 2,
         "bachelorRequired": false,
@@ -288602,19 +287765,11 @@
     "schema_version": 2,
     "id": "prod-d21ffd34-9492-4b0f-8177-a66a9346e9ce",
     "label": "prod d21ffd34 — Research Analyst @ The Office of the New York State Attorney General (2026-04-10)",
-    "decision": "Apply",
-    "score": 78,
+    "decision": "Review",
+    "score": 69,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
-      {
-        "id": "07ea227c39c17c3b",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 4,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
-      },
       {
         "id": "12fa414a560aed5f",
         "key": "excel",
@@ -288978,15 +288133,6 @@
         "match_key": "powerpoint",
         "job_unit_key": "powerpoint",
         "profile_unit_id": "47dd30e1e05ab63b"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 96,
-        "coverageScore": 79,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "5b05a84c07d3035f"
       }
     ],
     "why_codes": [
@@ -289001,12 +288147,6 @@
         "weight": 99,
         "match_strength": "direct",
         "match_key": "policy_regulatory_research"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 96,
-        "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
       },
       {
         "code": "WHY_EXECUTION_PROOF",
@@ -289040,8 +288180,7 @@
           "communications_pr",
           "content_social",
           "data_analytics_bi",
-          "legal_regulatory",
-          "sales_bd"
+          "legal_regulatory"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -289071,7 +288210,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": false,
@@ -289140,17 +288279,17 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -289158,8 +288297,8 @@
           "note": "0"
         }
       ],
-      "raw_score": 78,
-      "clamped_score": 78
+      "raw_score": 69,
+      "clamped_score": 69
     }
   },
   "prod-d30252f7-75ee-4db8-a6fd-3995b8394bef": {
@@ -294611,14 +293750,6 @@
     "traceMissing": false,
     "requirement_units": [
       {
-        "id": "099867010b87c069",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 6,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
-      },
-      {
         "id": "27e7670e71509808",
         "key": "client_commercial_work",
         "kind": "stakeholder",
@@ -295511,42 +294642,6 @@
         "profile_unit_id": "ddae8710587c409b"
       },
       {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "3072f66afb699a1a"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "4d5880557f8e7c88"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 96,
-        "coverageScore": 78,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "c4c4f8e9ff452aa5"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 99,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "da8ae919402692f4"
-      },
-      {
         "match_strength": "adjacent",
         "weight": 77,
         "coverageScore": 55,
@@ -295645,16 +294740,16 @@
         "match_key": "drafting_documentation"
       },
       {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 99,
-        "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
-      },
-      {
         "code": "WHY_EXECUTION_PROOF",
         "weight": 86,
         "match_strength": "adjacent",
         "match_key": "operations_execution"
+      },
+      {
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 79,
+        "match_strength": "adjacent",
+        "match_key": "stakeholder_coordination"
       }
     ],
     "risk_codes": [
@@ -295681,15 +294776,14 @@
           "communications_pr",
           "content_social",
           "data_analytics_bi",
-          "operations_general",
-          "sales_bd"
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
         "isContract": false,
         "isGovernment": false,
         "isHourly": false,
-        "isSalesHeavy": true,
+        "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
@@ -295709,7 +294803,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": 2,
         "bachelorRequired": false,
@@ -309629,8 +308723,8 @@
     "schema_version": 2,
     "id": "prod-decf5997-6f79-4e40-8bfe-02447eab449f",
     "label": "prod decf5997 — Digital Marketing Coordinator - Arcade1UP @ Basic Fun! (2026-05-29)",
-    "decision": "Apply",
-    "score": 89,
+    "decision": "Priority Apply",
+    "score": 97,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -309656,14 +308750,6 @@
         "kind": "deliverable",
         "strength": 8,
         "label": "drafting, documentation, and written deliverables",
-        "requiredness": "core"
-      },
-      {
-        "id": "6fa2ed613466ac31",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 8,
-        "label": "prospecting, outreach, and pipeline management",
         "requiredness": "core"
       },
       {
@@ -310472,13 +309558,7 @@
         "match_key": "drafting_documentation"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": -7.800000000000001
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -310495,8 +309575,7 @@
           "brand_marketing",
           "communications_pr",
           "content_social",
-          "data_analytics_bi",
-          "sales_bd"
+          "data_analytics_bi"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": true,
@@ -310527,7 +309606,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": 1,
         "bachelorRequired": false,
@@ -310602,26 +309681,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -8,
-          "note": "7.800000000000001"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 89,
-      "clamped_score": 89
+      "raw_score": 97,
+      "clamped_score": 97
     }
   },
   "prod-def34aa7-2e3b-437b-8b25-e5a543f62e01": {
@@ -311739,8 +310818,8 @@
     "schema_version": 2,
     "id": "prod-def991cf-9afb-46c6-a3f1-42b9323772b7",
     "label": "prod def991cf — Digital Marketing Coordinator - Arcade1UP @ Basic Fun! (2026-05-28)",
-    "decision": "Apply",
-    "score": 89,
+    "decision": "Priority Apply",
+    "score": 97,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -311766,14 +310845,6 @@
         "kind": "deliverable",
         "strength": 8,
         "label": "drafting, documentation, and written deliverables",
-        "requiredness": "core"
-      },
-      {
-        "id": "6fa2ed613466ac31",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 8,
-        "label": "prospecting, outreach, and pipeline management",
         "requiredness": "core"
       },
       {
@@ -312582,13 +311653,7 @@
         "match_key": "drafting_documentation"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_MISSING_PROOF",
-        "severity": "high",
-        "weight": -7.800000000000001
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -312605,8 +311670,7 @@
           "brand_marketing",
           "communications_pr",
           "content_social",
-          "data_analytics_bi",
-          "sales_bd"
+          "data_analytics_bi"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": true,
@@ -312637,7 +311701,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": 1,
         "bachelorRequired": false,
@@ -312712,26 +311776,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -8,
-          "note": "7.800000000000001"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 89,
-      "clamped_score": 89
+      "raw_score": 97,
+      "clamped_score": 97
     }
   },
   "prod-df65eac8-dcda-4f60-bf1e-05b1d16030fa": {
@@ -317459,14 +316523,6 @@
         "strength": 6,
         "label": "event planning, coordination, and bookings",
         "requiredness": "core"
-      },
-      {
-        "id": "f1edf291fc9de0a0",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 10,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "core"
       }
     ],
     "profile_evidence_units": [
@@ -318241,42 +317297,6 @@
         "match_key": "event_coordination",
         "job_unit_key": "event_coordination",
         "profile_unit_id": "ddae8710587c409b"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 107,
-        "coverageScore": 85,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "3072f66afb699a1a"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 107,
-        "coverageScore": 85,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "4d5880557f8e7c88"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 104,
-        "coverageScore": 82,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "c4c4f8e9ff452aa5"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 107,
-        "coverageScore": 85,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "da8ae919402692f4"
       }
     ],
     "why_codes": [
@@ -318309,12 +317329,6 @@
         "weight": 105,
         "match_strength": "direct",
         "match_key": "event_coordination"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 107,
-        "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
       }
     ],
     "risk_codes": [
@@ -318340,8 +317354,7 @@
           "brand_marketing",
           "communications_pr",
           "content_social",
-          "operations_general",
-          "sales_bd"
+          "operations_general"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -318368,7 +317381,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": 2,
         "bachelorRequired": false,
@@ -320840,14 +319853,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "d747b3db66ef7435",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 8,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "core"
-      },
-      {
         "id": "e055c7f619acfb42",
         "key": "canva",
         "kind": "tool",
@@ -321636,42 +320641,6 @@
         "match_key": "drafting_documentation",
         "job_unit_key": "drafting_documentation",
         "profile_unit_id": "e81222544c7176d6"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 85,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "3072f66afb699a1a"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 85,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "4d5880557f8e7c88"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 103,
-        "coverageScore": 82,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "c4c4f8e9ff452aa5"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 106,
-        "coverageScore": 85,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "da8ae919402692f4"
       }
     ],
     "why_codes": [
@@ -321700,12 +320669,6 @@
         "match_key": "drafting_documentation"
       },
       {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 106,
-        "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
-      },
-      {
         "code": "WHY_TOOL_PROOF",
         "weight": 95,
         "match_strength": "direct",
@@ -321730,8 +320693,7 @@
         "function_tags": [
           "brand_marketing",
           "communications_pr",
-          "content_social",
-          "sales_bd"
+          "content_social"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -321760,7 +320722,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": false,
@@ -333487,7 +332449,7 @@
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
         "weight": 104,
         "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
+        "match_key": "operations_execution"
       }
     ],
     "risk_codes": [
@@ -351706,14 +350668,6 @@
         "requiredness": "core"
       },
       {
-        "id": "bd3938efba16f260",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 4,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "supporting"
-      },
-      {
         "id": "cbcfa9902f4d5417",
         "key": "operations_execution",
         "kind": "execution",
@@ -352559,42 +351513,6 @@
       },
       {
         "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "3072f66afb699a1a"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "4d5880557f8e7c88"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 95,
-        "coverageScore": 78,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "c4c4f8e9ff452aa5"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 98,
-        "coverageScore": 81,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "da8ae919402692f4"
-      },
-      {
-        "match_strength": "direct",
         "weight": 60,
         "coverageScore": 79,
         "match_kind": "tool",
@@ -352635,10 +351553,10 @@
         "match_key": "event_coordination"
       },
       {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 98,
-        "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
+        "code": "WHY_EXECUTION_PROOF",
+        "weight": 79,
+        "match_strength": "adjacent",
+        "match_key": "operations_execution"
       }
     ],
     "risk_codes": [
@@ -352665,15 +351583,14 @@
           "content_social",
           "data_analytics_bi",
           "operations_general",
-          "product_marketing",
-          "sales_bd"
+          "product_marketing"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
         "isContract": false,
         "isGovernment": false,
         "isHourly": true,
-        "isSalesHeavy": true,
+        "isSalesHeavy": false,
         "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
@@ -352697,7 +351614,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": true,

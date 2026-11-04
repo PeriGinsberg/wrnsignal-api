@@ -3616,14 +3616,6 @@
         "requiredness": "supporting"
       },
       {
-        "id": "d5c5753279c12b19",
-        "key": "prospecting_pipeline_management",
-        "kind": "execution",
-        "strength": 6,
-        "label": "prospecting, outreach, and pipeline management",
-        "requiredness": "core"
-      },
-      {
         "id": "de4de42957a56742",
         "key": "word",
         "kind": "tool",
@@ -4332,24 +4324,6 @@
       },
       {
         "match_strength": "direct",
-        "weight": 105,
-        "coverageScore": 85,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "1184de56e9d46e05"
-      },
-      {
-        "match_strength": "direct",
-        "weight": 104,
-        "coverageScore": 84,
-        "match_kind": "execution",
-        "match_key": "prospecting_pipeline_management",
-        "job_unit_key": "prospecting_pipeline_management",
-        "profile_unit_id": "6754ef47d627088b"
-      },
-      {
-        "match_strength": "direct",
         "weight": 60,
         "coverageScore": 80,
         "match_kind": "tool",
@@ -4376,12 +4350,6 @@
         "weight": 106,
         "match_strength": "direct",
         "match_key": "content_execution"
-      },
-      {
-        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
-        "weight": 105,
-        "match_strength": "direct",
-        "match_key": "prospecting_pipeline_management"
       },
       {
         "code": "WHY_EXECUTION_PROOF",
@@ -4416,8 +4384,7 @@
         "function_tags": [
           "brand_marketing",
           "communications_pr",
-          "content_social",
-          "sales_bd"
+          "content_social"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -4451,7 +4418,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": "other_sales",
+        "salesSubFamily": null,
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": false,
