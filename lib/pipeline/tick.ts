@@ -75,7 +75,7 @@ async function googleJobsStep({ sb, rows, deadline, environment }: Ctx): Promise
   const pick = await loadAndPickPairs(sb, { cap: Math.max(cap, 0), maxPages: MAX_PAGES })
   const detail: Record<string, any> = {
     pairs: pick.picked.length, pairsActive: pick.total, waiting: pick.waiting, recent: pick.recent, estimate: pick.estimate,
-    priority: pick.picked.filter((p) => p.priority).length, searchesEarlierTonight: spentEarlier, capRemaining: cap,
+    priority: pick.picked.filter((p) => p.priority).length, floorPerClient: pick.floorPerClient, floorPairs: pick.picked.filter((p) => p.floor).length, searchesEarlierTonight: spentEarlier, capRemaining: cap,
   }
   if (!pick.picked.length) return { status: "ok", detail }
   // runGoogleJobs' own cap alert is the old ingest-sweep email ("Nightly ingest
