@@ -95,3 +95,28 @@ export async function clientTeamCoachIds(
   if (dErr) throw new Error(`Delegation lookup failed: ${dErr.message}`)
   return Array.from(new Set([...coaches, ...(dels ?? []).map((d) => d.delegate_coach_profile_id as string)]))
 }
+
+/**
+ * Whether a coach on the client's team added this tracker job, and the
+ * recommendation rows linked to it. A job is coach-added when a team coach's
+ * recommendation links to it, or when the job itself says a team coach added it
+ * (added_by_role 'coach', added_by_profile_id). Job Queue Add Job and Source a
+ * Job both write the column, so a job never depends on the recommendation link
+ * alone to be deletable (2026-11-05).
+ */
+export async function teamAddedJob(
+  supabase: SupabaseClient,
+  app: { id: string; profile_id: string; added_by_role?: string | null; added_by_profile_id?: string | null },
+): Promise<{ coachAdded: boolean; recIds: string[] }> {
+  const team = await clientTeamCoachIds(supabase, app.profile_id)
+  const { data: recs, error } = await supabase
+    .from("coach_job_recommendations")
+    .select("id")
+    .eq("application_id", app.id)
+    .eq("client_profile_id", app.profile_id)
+    .in("coach_profile_id", team)
+  if (error) throw new Error(`Recommendation lookup failed: ${error.message}`)
+  const recIds = (recs ?? []).map((r) => r.id as string)
+  const byColumn = app.added_by_role === "coach" && !!app.added_by_profile_id && team.includes(app.added_by_profile_id)
+  return { coachAdded: recIds.length > 0 || byColumn, recIds }
+}

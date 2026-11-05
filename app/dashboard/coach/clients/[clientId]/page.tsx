@@ -49,7 +49,7 @@ import { LibraryTab } from "./LibraryTab"
 import { HistoryTab } from "./HistoryTab"
 import { CommunicationsTab } from "./CommunicationsTab"
 import { WorkbooksTab } from "./WorkbooksTab"
-import { JobDetailPanel, type PanelSection } from "./JobDetailPanel"
+import { DeleteJob, JobDetailPanel, type PanelSection } from "./JobDetailPanel"
 import { LinkCompanyControl } from "./LinkCompanyControl"
 import { describeClientStatus } from "@/lib/coachRecommendations"
 import { PracticeTab } from "./PracticeTab"
@@ -1243,6 +1243,9 @@ export default function CoachClientPage() {
                         {app.added_by_role === "supporter" && (
                           <span style={{ fontSize: TYPE.secondary, color: T.DIM }}>Added by {app.added_by_name ?? "a supporter"}</span>
                         )}
+                        {app.added_by_role === "coach" && (
+                          <span style={{ fontSize: TYPE.secondary, color: T.DIM }}>Added by coach</span>
+                        )}
                         <ApplicationStatusEditPill
                           value={app.application_status}
                           getToken={getToken}
@@ -1475,6 +1478,20 @@ export default function CoachClientPage() {
                                 </button>
                               </div>
                             </div>
+                          )}
+                          {/* A job a coach added (Job Queue Add Job, Source a Job)
+                              can be deleted from the row itself; the DELETE
+                              route checks team and full access. */}
+                          {app.added_by_role === "coach" && (
+                            <DeleteJob
+                              onDelete={async () => {
+                                const res = await authFetch(`/api/coach/clients/${clientId}/applications/${app.id}`, { method: "DELETE" })
+                                const j = await res.json().catch(() => ({}))
+                                if (!res.ok || !j?.ok) return j?.error || `Couldn't delete the job (${res.status})`
+                                void loadAll({ silent: true })
+                                return null
+                              }}
+                            />
                           )}
                         </div>
                       )}

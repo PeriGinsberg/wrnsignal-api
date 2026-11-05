@@ -223,35 +223,10 @@ export async function POST(req: NextRequest) {
 
     const jobfitRunId = runRow?.id || null
 
-    // Create coach_job_recommendations row with full analysis
-    const { data: recRow, error: recErr } = await supabase
-      .from("coach_job_recommendations")
-      .insert({
-        coach_client_id: coachClientRow.id,
-        coach_profile_id: coachProfileId,
-        client_profile_id: clientProfileId,
-        job_title: jobTitle,
-        company_name: companyName,
-        job_description: jobDescription,
-        job_url: body.job_url || null,
-        persona_id: persona?.id || null,
-        persona_name: persona?.name || null,
-        signal_decision: fullAnalysis.decision,
-        signal_score: fullAnalysis.score,
-        jobfit_run_id: jobfitRunId,
-        full_analysis: fullAnalysis,
-        coaching_note: body.coaching_note || null,
-        priority: body.priority || "this_week",
-        recommended_action: body.recommended_action || "apply",
-        apply_by_date: body.apply_by_date || null,
-        client_status: "new",
-      })
-      .select("*")
-      .single()
-
-    if (recErr) throw new Error(`Failed to create recommendation: ${recErr.message}`)
-
-    // Create signal_applications row owned by the client
+    // The tracker job first, then the recommendation already linked to it. The
+    // other order left a recommendation with no job when the job insert failed
+    // (prod, 2026-11-04: three of them), and a separate unchecked link update
+    // that could leave the job without its recommendation.
     const { data: appRow, error: appErr } = await supabase
       .from("signal_applications")
       .insert({
@@ -275,15 +250,42 @@ export async function POST(req: NextRequest) {
 
     if (appErr) throw new Error(`Failed to create application: ${appErr.message}`)
 
+    // Create coach_job_recommendations row with full analysis
+    const { data: recRow, error: recErr } = await supabase
+      .from("coach_job_recommendations")
+      .insert({
+        application_id: appRow.id,
+        coach_client_id: coachClientRow.id,
+        coach_profile_id: coachProfileId,
+        client_profile_id: clientProfileId,
+        job_title: jobTitle,
+        company_name: companyName,
+        job_description: jobDescription,
+        job_url: body.job_url || null,
+        persona_id: persona?.id || null,
+        persona_name: persona?.name || null,
+        signal_decision: fullAnalysis.decision,
+        signal_score: fullAnalysis.score,
+        jobfit_run_id: jobfitRunId,
+        full_analysis: fullAnalysis,
+        coaching_note: body.coaching_note || null,
+        priority: body.priority || "this_week",
+        recommended_action: body.recommended_action || "apply",
+        apply_by_date: body.apply_by_date || null,
+        client_status: "new",
+      })
+      .select("*")
+      .single()
+
+    if (recErr) {
+      // No half-sent job: take the tracker job back out, then report.
+      await supabase.from("signal_applications").delete().eq("id", appRow.id)
+      throw new Error(`Failed to create recommendation: ${recErr.message}`)
+    }
+
     // Status history: log initial 'saved' state. changed_by is the COACH
     // (the actor that materially created the row), not the client.
     await logStatusChange(supabase, appRow.id, null, "saved", coachProfileId)
-
-    // Link recommendation back to application
-    await supabase
-      .from("coach_job_recommendations")
-      .update({ application_id: appRow.id })
-      .eq("id", recRow.id)
 
     // The client hears about it by email, batched: several jobs this coach
     // adds within 10 minutes go out as one (lib/email/sendCoachJobEmails.ts).
