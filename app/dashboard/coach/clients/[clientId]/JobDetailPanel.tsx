@@ -60,7 +60,7 @@ async function authFetch(url: string, opts: RequestInit = {}): Promise<Response>
 // Delete, for a job a coach added. Two steps in place rather than a browser
 // confirm dialog: the panel is already a focused surface, and the second step
 // says exactly what goes.
-function DeleteJob({ onDelete }: { onDelete: () => Promise<string | null> }) {
+export function DeleteJob({ onDelete }: { onDelete: () => Promise<string | null> }) {
   const [confirming, setConfirming] = useState(false)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)

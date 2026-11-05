@@ -1,9 +1,11 @@
 // app/api/coach/clients/[clientId]/applications/[applicationId]/route.ts
 //
 // DELETE — a coach removes a job from a client's Job Tracker. Only a job a
-// coach put there: one created by Recommend a Job, which leaves a
-// coach_job_recommendations row pointing at the application. A job the client
-// added is theirs, and only the client can delete it (/api/applications/[id]).
+// coach put there (Job Queue Add Job, Source a Job): a team coach's
+// coach_job_recommendations row points at it, or the job's own added_by_role /
+// added_by_profile_id say a team coach added it (lib/collab/delegation
+// teamAddedJob). A job the client added is theirs, and only the client can
+// delete it (/api/applications/[id]).
 //
 // SECURITY: the same shape as ./detail. Authority comes from the application's
 // own owner, never the URL clientId; the coach needs FULL access to that owner;
@@ -21,7 +23,7 @@ import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../../../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { verifyCoachAccess } from "@/lib/collab/access"
-import { clientTeamCoachIds } from "@/lib/collab/delegation"
+import { teamAddedJob } from "@/lib/collab/delegation"
 import { logCoachClientEvent } from "../../../../../_lib/coachClientEvents"
 
 export const runtime = "nodejs"
@@ -45,7 +47,7 @@ export async function DELETE(
 
     const { data: app, error: appErr } = await supabase
       .from("signal_applications")
-      .select("id, profile_id, company_name, job_title")
+      .select("id, profile_id, company_name, job_title, added_by_role, added_by_profile_id")
       .eq("id", applicationId)
       .maybeSingle()
     if (appErr) throw new Error(`Application lookup failed: ${appErr.message}`)
@@ -60,23 +62,18 @@ export async function DELETE(
       return withCorsJson(req, { ok: false, error: "Forbidden: deleting a job needs full access to this client" }, 403)
     }
 
-    const team = await clientTeamCoachIds(supabase, ownerClientId)
-    const { data: recs, error: recErr } = await supabase
-      .from("coach_job_recommendations")
-      .select("id")
-      .eq("application_id", applicationId)
-      .eq("client_profile_id", ownerClientId)
-      .in("coach_profile_id", team)
-    if (recErr) throw new Error(`Recommendation lookup failed: ${recErr.message}`)
-    if (!recs?.length) {
+    const { coachAdded, recIds } = await teamAddedJob(supabase, { ...app, profile_id: ownerClientId })
+    if (!coachAdded) {
       return withCorsJson(req, { ok: false, error: "Only a job a coach added can be deleted. The client added this one." }, 403)
     }
 
-    const { error: delRecErr } = await supabase
-      .from("coach_job_recommendations")
-      .delete()
-      .in("id", recs.map((r) => r.id))
-    if (delRecErr) throw new Error(`Recommendation delete failed: ${delRecErr.message}`)
+    if (recIds.length) {
+      const { error: delRecErr } = await supabase
+        .from("coach_job_recommendations")
+        .delete()
+        .in("id", recIds)
+      if (delRecErr) throw new Error(`Recommendation delete failed: ${delRecErr.message}`)
+    }
 
     const { error: delAppErr } = await supabase
       .from("signal_applications")

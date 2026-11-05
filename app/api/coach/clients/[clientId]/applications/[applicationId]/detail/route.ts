@@ -20,7 +20,7 @@ import { type NextRequest } from "next/server"
 import { corsOptionsResponse, withCorsJson } from "../../../../../../_lib/cors"
 import { getSupabaseAdmin, resolveCaller } from "@/lib/collab/identity"
 import { verifyCoachAccess } from "@/lib/collab/access"
-import { clientTeamCoachIds } from "@/lib/collab/delegation"
+import { teamAddedJob } from "@/lib/collab/delegation"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -49,7 +49,7 @@ export async function GET(
     // 3. Load the application by id ONLY — do not trust the URL clientId yet.
     const { data: app, error: appErr } = await supabase
       .from("signal_applications")
-      .select("id, profile_id, jobfit_run_id")
+      .select("id, profile_id, jobfit_run_id, added_by_role, added_by_profile_id")
       .eq("id", applicationId)
       .maybeSingle()
     if (appErr) throw new Error(`Application lookup failed: ${appErr.message}`)
@@ -119,20 +119,12 @@ export async function GET(
       positioningBy = pos?.created_by_role ?? null
     }
 
-    // Offer Delete only on a job a coach on this client's team added through
-    // Recommend a Job, and only with full access. The DELETE route checks the
-    // same thing again; this only decides the button.
+    // Offer Delete only on a job a coach on this client's team added (Job Queue
+    // Add Job, Source a Job), and only with full access. The DELETE route checks
+    // the same thing again; this only decides the button.
     let canDelete = false
     if (access.access_level === "full") {
-      const team = await clientTeamCoachIds(supabase, ownerClientId)
-      const { data: rec } = await supabase
-        .from("coach_job_recommendations")
-        .select("id")
-        .eq("application_id", app.id)
-        .eq("client_profile_id", ownerClientId)
-        .in("coach_profile_id", team)
-        .limit(1)
-      canDelete = (rec?.length ?? 0) > 0
+      canDelete = (await teamAddedJob(supabase, { ...app, profile_id: ownerClientId })).coachAdded
     }
 
     return withCorsJson(
