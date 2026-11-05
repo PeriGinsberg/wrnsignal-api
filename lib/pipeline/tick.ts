@@ -116,6 +116,15 @@ async function enrichStep({ sb, rows, deadline }: Ctx): Promise<StepResult> {
   return { ...base, status: "ok", detail }
 }
 
+/**
+ * A client's judgments in the match step's first pass: an even split of what is
+ * left among it and the clients after it. What a client does not use rolls on
+ * to the clients after it.
+ */
+export function shareLimit(remaining: number, clientsLeft: number): number {
+  return clientsLeft > 0 ? Math.max(Math.floor(remaining / clientsLeft), 0) : 0
+}
+
 async function matchStep({ sb, rows, deadline }: Ctx): Promise<StepResult> {
   const earlier = tonight(rows, "match")
   let remaining = CAPS.judgments - earlier
@@ -124,16 +133,24 @@ async function matchStep({ sb, rows, deadline }: Ctx): Promise<StepResult> {
   const clients: Record<string, any> = {}
   let units = 0, cost = 0, deferred = 0, reachedAll = true
   const failed = new Map<string, string>()
-  // Two passes: new postings for every client first, then re-judging (criteria
-  // or description changed). A capped night then leaves the backlog, not the
-  // new jobs of whichever clients sort last. Only the second pass's deferred
-  // count is kept: it covers everything still unjudged.
-  for (const pass of ["new", "all"] as const) {
-    for (const { client_profile_id: id } of crit ?? []) {
+  // Three passes:
+  //   share: new postings, each client at most a fair share of what is left
+  //          (shareLimit), so every client gets judgments every night.
+  //          2026-11-05: in client id order, one new client's backlog (1,636)
+  //          took the rest of the cap and four clients after it got none.
+  //   new:   the rest of everyone's new postings, in order.
+  //   all:   re-judging (criteria or description changed).
+  // A capped night then leaves the backlog, not the new jobs of whichever
+  // clients sort last. Only the last pass's deferred count is kept: it covers
+  // everything still unjudged.
+  const list = crit ?? []
+  for (const pass of ["share", "new", "all"] as const) {
+    for (const [i, { client_profile_id: id }] of list.entries()) {
       if (failed.has(id)) continue
       if (Date.now() >= deadline) { reachedAll = false; break }
+      const judgeLimit = pass === "share" ? shareLimit(remaining, list.length - i) : Math.max(remaining, 0)
       try {
-        const s = await runMatching(sb, { clientProfileId: id, judgeLimit: Math.max(remaining, 0), deadline, triggeredBy: TRIGGERED_BY, newOnly: pass === "new" })
+        const s = await runMatching(sb, { clientProfileId: id, judgeLimit, deadline, triggeredBy: TRIGGERED_BY, newOnly: pass !== "all" })
         units += s.apiCalls; cost += s.costUsd; remaining -= s.apiCalls
         if (pass === "all") deferred += s.deferred
         const prev = clients[id] ?? { judged: 0, judgeErrors: 0, newlyQueued: 0 }
