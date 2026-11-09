@@ -8,10 +8,9 @@
 // live through Supabase realtime (RLS decides who receives what) and are
 // read-only here. Coach-only: the client never sees these tables.
 //
-// Used by the interview workbooks (workbook_coach_notes) and the Resume
-// Workshop (resume_workshop_coach_notes). Both APIs answer the same shape at
-// <base>/notes and <base>/notes/<id>: { notes (with section_id), authors, me,
-// realtime_filter }, and take { section_id, body } / { body }.
+// Used by the Resume Workshop (resume_workshop_coach_notes). The API answers
+// at <base>/notes and <base>/notes/<id>: { notes (with section_id), authors,
+// me, realtime_filter }, and takes { section_id, body } / { body }.
 
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import { TYPE } from "../../lib/theme/surfaces"
@@ -42,12 +41,12 @@ export type CoachNotesApi = {
 
 type Source = {
   /** The table realtime watches. */
-  table: "workbook_coach_notes" | "resume_workshop_coach_notes"
+  table: "resume_workshop_coach_notes"
   /** The column that holds the section in realtime rows (the API already maps it to section_id). */
   sectionColumn?: string
 }
 
-/** Every coach's notes on one workbook or workshop, kept live. One subscription per page. */
+/** Every coach's notes for one client's workshop, kept live. One subscription per page. */
 export function useCoachNotes(base: string, source: Source): CoachNotesApi {
   const { table, sectionColumn = "section_id" } = source
   const [notes, setNotes] = useState<CoachNote[]>([])

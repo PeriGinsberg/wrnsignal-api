@@ -8,12 +8,26 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { coachClientIdsForClient } from "@/app/api/_lib/coachClientIds"
-import { authorNames, NOTE_MAX } from "@/lib/workbook/notes"
+import { getSupabaseAdmin } from "@/lib/collab/identity"
 import { TABS } from "./model"
 
 const TABLE = "resume_workshop_coach_notes"
 const COLUMNS = "id, coach_client_id, tab, coach_profile_id, body, created_at, updated_at"
 const NOTE_TABS = new Set<string>([...TABS, "general"])
+
+export const NOTE_MAX = 20000
+
+/**
+ * Display names for note authors. Only ids the caller already reached through
+ * the workshop's access check; the service role reads the names.
+ */
+async function authorNames(ids: string[]): Promise<Record<string, string>> {
+  const unique = [...new Set(ids)]
+  if (!unique.length) return {}
+  const { data, error } = await getSupabaseAdmin().from("client_profiles").select("id, name, email").in("id", unique)
+  if (error) throw new Error(`read note authors: ${error.message}`)
+  return Object.fromEntries((data ?? []).map((r: any) => [r.id, (r.name as string | null)?.trim() || r.email || "Coach"]))
+}
 
 type Row = { id: string; coach_client_id: string; tab: string; coach_profile_id: string; body: string; created_at: string; updated_at: string }
 /** The shape the shared Coach Notes panel reads (section_id = the tab). */

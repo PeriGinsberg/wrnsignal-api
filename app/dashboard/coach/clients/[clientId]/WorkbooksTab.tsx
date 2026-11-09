@@ -7,8 +7,6 @@
 // The coach sees the full workbook, live, every time (no diff view in v1).
 // Comments, suggested edits and answers are DRAFTS until "Send back", which
 // releases them all at once. "Reviewed" is the coach's own marker only.
-// Coach notes (right column) are coach-only, one row per note, shared live
-// with every coach on the client.
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { SPACE, TYPE } from "../../../../../lib/theme/surfaces"
@@ -21,7 +19,6 @@ import { SectionBlocks, SectionHeader, type FieldApi } from "@/components/workbo
 import { Summary, type InterviewRow } from "@/components/workbook/Summary"
 import { PracticeResults } from "@/components/workbook/PracticeResults"
 import { CoachCommandCenter } from "@/components/workbook/CoachCommandCenter"
-import { CoachNotesPanel, useCoachNotes } from "@/components/workbook/CoachNotes"
 import { PerformancePackage } from "@/components/academy/PerformancePackage"
 import { wbFetch, fmtWhen, type Comment, type Send } from "@/components/workbook/api"
 import { AddWorkbookModal } from "./AddWorkbookModal"
@@ -174,8 +171,6 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
     setD(body)
   }, [base])
   useEffect(() => { void load() }, [load])
-  // Every coach's notes on this workbook, live (one subscription for all sections).
-  const coachNotes = useCoachNotes(base, { table: "workbook_coach_notes" })
 
   const c = d?.workbook.content
   const first = c?.client.first_name ?? "the client"
@@ -411,7 +406,6 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
                 isPick={!!anchor.fieldKey && isPickKey(c, anchor.fieldKey)}
                 onChange={load} />
             : <div className="wb-card-soft"><span className="wb-muted" style={{ fontSize: TYPE.body }}>Choose Comment or Suggest an edit on an answer to write feedback for {first}.</span></div>}
-          {section && <CoachNotesPanel key={section.id} api={coachNotes} sectionId={section.id} />}
         </aside>
       </div>
     </WorkbookFrame>
