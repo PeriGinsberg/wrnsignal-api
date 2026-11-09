@@ -10,6 +10,9 @@
 --     stated application deadline is within 7 days enters even under the
 --     floor and goes ahead of the rest; it counts against the limit,
 --   * the rest in client_match_queue's rank order.
+-- Unscored matches (no description, score NULL) are not released: they show in
+-- the unscored view as before, outside the floor, the limit and expiry, and
+-- are not counted below the floor (Peri, 2026-11-09).
 -- A match not released within p_expire_nights nights (PIPELINE_QUEUE_EXPIRE_NIGHTS,
 -- 7; its arrival night counts as the first) expires: queue_expired_at is set
 -- and it is never shown. Nights are UTC dates, as in pipeline_runs.night.
@@ -23,15 +26,18 @@
 -- client_match_candidates  every match client_match_queue used to show (live,
 --                          not closed, not flagged), released or not; what
 --                          release_queue() picks from. No rank.
--- client_match_queue       now released rows (and Add Job in progress) only,
+-- client_match_queue       now released rows, unscored rows and Add Job in
+--                          progress only,
 --                          ranked among themselves. Same columns as before
 --                          plus the three above, before rank.
--- job_queue_rows()         undecided rows only when released; the body is
---                          20261126's with that filter added.
+-- job_queue_rows()         undecided scored rows only when released (unscored
+--                          rows as before); the body is 20261126's with that
+--                          filter added.
 --
 -- BACKFILL: undecided matches already in the queue at 60+ are released, so no
 -- job a coach can see at 60+ disappears. Undecided matches under 60 are not:
 -- they leave the queue now (the floor). Decided rows are marked released.
+-- Unscored rows need no backfill: they show without release.
 --
 -- Same file for dev and prod. Safe to run again. Run BEFORE deploying the code
 -- that calls release_queue() and filters on released_at.
@@ -195,7 +201,7 @@ WITH (security_invoker = true) AS
       ORDER BY q.likely_closed, q.bad_link, q.tier, q.score DESC NULLS LAST, q.preferred_market DESC, q.republished_only, q.first_queued_at DESC
     ) AS rank
   FROM public.client_match_candidates q
-  WHERE q.action = 'evaluating' OR q.released_at IS NOT NULL;
+  WHERE q.action = 'evaluating' OR q.released_at IS NOT NULL OR q.score IS NULL;
 
 REVOKE ALL ON public.client_match_queue FROM anon, authenticated;
 COMMENT ON VIEW public.client_match_queue IS
@@ -270,7 +276,7 @@ BEGIN
   FROM (
     SELECT m.client_profile_id, count(*) AS n FROM posting_matches m
     WHERE m.released_at IS NULL AND m.queue_expired_at IS NULL AND m.action IS NULL AND m.rule_failures = '{}'::text[]
-      AND m.first_queued_at > p_since AND (m.score IS NULL OR m.score < p_floor)
+      AND m.first_queued_at > p_since AND m.score < p_floor
     GROUP BY 1
   ) x;
 
@@ -316,7 +322,7 @@ BEGIN
   IF p_unscored THEN
     EXECUTE $q$
       SELECT coalesce(array_agg(id), '{}') FROM posting_matches
-      WHERE client_profile_id = ANY ($1) AND rule_failures = '{}'::text[] AND action IS NULL AND released_at IS NOT NULL AND score IS NULL
+      WHERE client_profile_id = ANY ($1) AND rule_failures = '{}'::text[] AND action IS NULL AND score IS NULL
     $q$ INTO v_more USING p_clients;
     v_ids := v_ids || v_more;
   END IF;

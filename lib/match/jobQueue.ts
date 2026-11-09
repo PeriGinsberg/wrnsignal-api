@@ -319,13 +319,13 @@ async function readRows(sb: SupabaseClient, r: ReadArgs): Promise<Read> {
 async function readRowsByRequests(sb: SupabaseClient, r: ReadArgs): Promise<Read> {
   const { clients: active, min } = r
   const undecided = (ids: string[] = active) => sb.from("posting_matches").select(MATCH_COLS).in("client_profile_id", ids).eq("rule_failures", "{}")
-  // Undecided rows show only once released (20261127); Add Job in progress always shows.
+  // Undecided scored rows show only once released (20261127); unscored rows and Add Job in progress always show.
   const released = (ids: string[] = active) => undecided(ids).not("released_at", "is", null)
   const reads: Promise<any[]>[] = [
     ...active.map((c) => pageAll<any>((a, b) => released([c]).is("action", null).gte("score", min).order("score", { ascending: false }).order("id").range(a, b))),
     pageAll<any>((a, b) => undecided().eq("action", "evaluating").order("id").range(a, b)),
   ]
-  if (r.unscored) reads.push(pageAll<any>((a, b) => released().is("action", null).is("score", null).order("id").range(a, b)))
+  if (r.unscored) reads.push(pageAll<any>((a, b) => undecided(active).is("action", null).is("score", null).order("id").range(a, b)))
   if (r.since) reads.push(pageAll<any>((a, b) => sb.from("posting_matches").select(MATCH_COLS).in("client_profile_id", active)
     .in("action", ["push", "dismiss"]).gte("actioned_at", r.since!).order("id").range(a, b)))
   const matches = (await Promise.all(reads)).flat()
