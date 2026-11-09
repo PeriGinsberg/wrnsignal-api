@@ -11,6 +11,10 @@
 // or the consultation. Every field autosaves (AutoField). Export Workshop Notes
 // saves anything pending, then downloads the Markdown the server builds.
 //
+// Coach Notes (under each tab and General notes): one row per note per coach,
+// live for every coach on the client, editable only by the author. Several
+// coaches can type at once without overwriting each other.
+//
 // Keyboard: Alt+1 to Alt+9 switch tabs, Alt+0 general notes, Alt+Q jumps to
 // Quick Capture.
 
@@ -20,6 +24,12 @@ import { T, btnPrimary, btnSecondary } from "../../../../../lib/dashboard-theme"
 import { TABS, TAB_LABEL, TITLE_PLACEHOLDER, GUIDES, type WorkshopTab } from "@/lib/resumeWorkshop/model"
 import { SEARCH_GOAL_LABEL, SERVICE_LABEL, MATERIAL_STATE_LABEL } from "@/lib/prospects/model"
 import { AutoField, type FieldStatus, type Registry, type SaveResult } from "./AutoField"
+import { CoachNotesPanel, useCoachNotes, type NotesLook } from "@/components/workbook/CoachNotes"
+
+const RW_NOTES_LOOK: NotesLook = {
+  card: "rw-notes", eyebrow: "rw-notes-eyebrow", muted: "rw-muted", input: "rw-note-input",
+  button: "rw-btn", link: "rw-link", saved: "rw-muted", warn: "rw-danger",
+}
 
 async function authFetch(url: string, opts: RequestInit = {}): Promise<Response> {
   const { data: { session } } = await getSupabaseBrowser().auth.getSession()
@@ -54,6 +64,8 @@ const STATUS_TEXT: Record<"saving" | "saved" | "error" | "pending", string> = {
 export default function ResumeWorkshopPage({ params }: { params: Promise<{ coachClientId: string }> }) {
   const { coachClientId } = use(params)
   const api = `/api/coach/coach-clients/${encodeURIComponent(coachClientId)}/resume-workshop`
+  // Every coach's notes for this client, live (one subscription for all tabs).
+  const coachNotes = useCoachNotes(api, { table: "resume_workshop_coach_notes", sectionColumn: "tab" })
 
   const [bundle, setBundle] = useState<Bundle | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -295,6 +307,7 @@ export default function ResumeWorkshopPage({ params }: { params: Promise<{ coach
                 </div>
               ))}
           </div>
+          <CoachNotesPanel key={view} api={coachNotes} sectionId={view} look={RW_NOTES_LOOK} />
         </main>
 
         {/* Side panel */}
@@ -687,6 +700,15 @@ const CSS = `
 .rw-link { background: none; border: none; padding: 0; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 800; color: ${T.MUTED}; text-decoration: underline; }
 .rw-link:disabled { opacity: 0.45; cursor: default; }
 .rw-danger { color: ${T.ERROR}; }
+.rw-notes { margin-top: 22px; padding: 14px; border-radius: 14px; border: 1px solid ${T.BORDER_SOFT}; background: ${T.CARD}; display: flex; flex-direction: column; gap: 10px; }
+.rw-notes-eyebrow { font-size: 13px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; color: ${T.MUTED}; }
+.rw-muted { color: ${T.MUTED}; }
+.rw-note-input { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 15px; line-height: 1.5; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid ${T.BORDER}; background: ${T.CARD}; color: ${T.TEXT}; resize: vertical; }
+.rw-note-input:focus { outline: none; border-color: #009BFF; }
+.rw-btn { font-family: inherit; font-size: 14px; font-weight: 800; padding: 8px 14px; border-radius: 10px; border: 1px solid ${T.BORDER};
+  background: ${T.GLASS}; color: ${T.TEXT}; cursor: pointer; }
+.rw-btn:disabled { opacity: 0.5; cursor: default; }
 @media (max-width: 1100px) {
   .rw-grid, .rw-grid-closed { grid-template-columns: minmax(0, 1fr); }
   .rw-side { position: static; max-height: none; }
