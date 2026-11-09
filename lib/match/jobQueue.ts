@@ -319,18 +319,20 @@ async function readRows(sb: SupabaseClient, r: ReadArgs): Promise<Read> {
 async function readRowsByRequests(sb: SupabaseClient, r: ReadArgs): Promise<Read> {
   const { clients: active, min } = r
   const undecided = (ids: string[] = active) => sb.from("posting_matches").select(MATCH_COLS).in("client_profile_id", ids).eq("rule_failures", "{}")
+  // Undecided rows show only once released (20261127); Add Job in progress always shows.
+  const released = (ids: string[] = active) => undecided(ids).not("released_at", "is", null)
   const reads: Promise<any[]>[] = [
-    ...active.map((c) => pageAll<any>((a, b) => undecided([c]).is("action", null).gte("score", min).order("score", { ascending: false }).order("id").range(a, b))),
+    ...active.map((c) => pageAll<any>((a, b) => released([c]).is("action", null).gte("score", min).order("score", { ascending: false }).order("id").range(a, b))),
     pageAll<any>((a, b) => undecided().eq("action", "evaluating").order("id").range(a, b)),
   ]
-  if (r.unscored) reads.push(pageAll<any>((a, b) => undecided().is("action", null).is("score", null).order("id").range(a, b)))
+  if (r.unscored) reads.push(pageAll<any>((a, b) => released().is("action", null).is("score", null).order("id").range(a, b)))
   if (r.since) reads.push(pageAll<any>((a, b) => sb.from("posting_matches").select(MATCH_COLS).in("client_profile_id", active)
     .in("action", ["push", "dismiss"]).gte("actioned_at", r.since!).order("id").range(a, b)))
   const matches = (await Promise.all(reads)).flat()
   // Other clients' chips on the same jobs (the page's "+N under 50").
   if (min > LOAD_MIN_SCORE && active.length > 1) {
     const hot = [...new Set(matches.map((m) => m.posting_id as string))]
-    const more = await Promise.all(chunk(hot).map((part) => pageAll<any>((a, b) => undecided().is("action", null)
+    const more = await Promise.all(chunk(hot).map((part) => pageAll<any>((a, b) => released().is("action", null)
       .in("posting_id", part).gte("score", LOAD_MIN_SCORE).lt("score", min).order("id").range(a, b))))
     matches.push(...more.flat())
   }

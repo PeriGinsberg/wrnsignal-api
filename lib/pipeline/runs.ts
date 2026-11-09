@@ -12,10 +12,10 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-export const STEPS = ["ats_grnhse", "ats_smartrecruiters", "google_jobs", "enrich", "match", "link_check"] as const
+export const STEPS = ["ats_grnhse", "ats_smartrecruiters", "google_jobs", "enrich", "match", "queue_release", "link_check"] as const
 export type Step = (typeof STEPS)[number]
 /** The steps the tick runs, in order. The ATS sweeps keep their own crons and only record here. */
-export const TICK_STEPS = ["google_jobs", "enrich", "match", "link_check"] as const
+export const TICK_STEPS = ["google_jobs", "enrich", "match", "queue_release", "link_check"] as const
 export type TickStep = (typeof TICK_STEPS)[number]
 export type StepStatus = "running" | "ok" | "capped" | "error"
 
@@ -98,7 +98,7 @@ const latest = (rows: RunRow[], step: Step) => rows.filter((r) => r.step === ste
  * The next tick step for tonight. Stale running rows must already have been
  * closed (closeStale). A step is finished when its latest row is ok, error or
  * capped at the cap; stopped at the deadline or killed means run it again, up
- * to MAX_CONTINUATIONS. The link check runs once. Google Jobs continues too: a
+ * to MAX_CONTINUATIONS. The queue release and the link check run once. Google Jobs continues too: a
  * continuation searches only pairs not searched in the last 20 hours, under
  * what is left of the night's search cap (tick.ts), so it never pays twice.
  *
@@ -112,7 +112,7 @@ export function nextStep(rows: RunRow[]): Next {
     const last = latest(rows, step)
     if (!last) return { kind: "run", step, continuation: false }
     const runs = rows.filter((r) => r.step === step).length
-    if (step !== "link_check" && resumes(last) && runs <= MAX_CONTINUATIONS) {
+    if (step !== "link_check" && step !== "queue_release" && resumes(last) && runs <= MAX_CONTINUATIONS) {
       return { kind: "run", step, continuation: true }
     }
   }
