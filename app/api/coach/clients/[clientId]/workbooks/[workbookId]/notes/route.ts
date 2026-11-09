@@ -31,7 +31,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ clie
     if (!(await readWorkbook(supabase, workbookId, scope.subjectId))) return withCorsJson(req, { ok: false, error: "Workbook not found" }, 404)
     const notes = await loadNotes(supabase, workbookId)
     const authors = await authorNames([scope.actorId, ...notes.map((n) => n.coach_profile_id)])
-    return withCorsJson(req, { ok: true, notes, authors, me: scope.actorId }, 200)
+    return withCorsJson(req, { ok: true, notes, authors, me: scope.actorId, realtime_filter: `workbook_id=eq.${workbookId}` }, 200)
   } catch (err) {
     return workbookError(req, err)
   }

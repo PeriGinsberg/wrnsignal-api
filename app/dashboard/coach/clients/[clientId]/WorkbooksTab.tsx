@@ -175,7 +175,7 @@ function Review({ clientId, workbookId, onBack }: { clientId: string; workbookId
   }, [base])
   useEffect(() => { void load() }, [load])
   // Every coach's notes on this workbook, live (one subscription for all sections).
-  const coachNotes = useCoachNotes(base, workbookId)
+  const coachNotes = useCoachNotes(base, { table: "workbook_coach_notes" })
 
   const c = d?.workbook.content
   const first = c?.client.first_name ?? "the client"
