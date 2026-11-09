@@ -3,10 +3,11 @@
 // Nightly pipeline, offline: which pairs run first, which step runs next, what
 // the watchdog reports, and the cost pace arithmetic and its once-per-period rule.
 
-import { pickPairs, type LastSearch, type PairRow } from "./pairs"
+import { pickPairs, projectLongestWaits, type ClientRoles, type LastSearch, type PairRow } from "./pairs"
+import { byClient, queueSettings } from "./queueRelease"
 import { closeStale, nextStep, MAX_CONTINUATIONS, STALE_RUNNING_MS, TICK_STEPS, type RunRow } from "./runs"
 import { watchdogFindings } from "./watchdog"
-import { coverageRows, lastWeek, monthWindow, paceAlerts, projectSearches, projectSpend, runPaceCheck, weeklyReportText, type StepTotals } from "./cost"
+import { coverageRows, lastWeek, monthWindow, paceAlerts, projectSearches, projectSpend, queueRows, runPaceCheck, weeklyReportText, type StepTotals } from "./cost"
 
 let failures = 0
 function ok(label: string, cond: boolean) {
@@ -14,63 +15,68 @@ function ok(label: string, cond: boolean) {
   else console.log(`  ok    ${label}`)
 }
 
-// ---- pairs
+// ---- pairs: the per-client fair share
 const NOW = new Date("2026-10-30T05:00:00Z")
 const P = (id: string, title: string, location: string | null = "New York, NY"): PairRow => ({ id, title, location, campus: false })
-const pairs = [P("a", "analyst"), P("b", "associate"), P("c", "front desk agent", "Miami, FL"), P("d", "concierge", "Miami, FL"), P("e", "coordinator")]
-const last = new Map<string, LastSearch>([
-  ["a", { at: "2026-10-26T16:00:00Z", pages: 2 }],
-  ["b", { at: "2026-10-25T16:00:00Z", pages: 1 }],
-  ["c", { at: "2026-10-27T16:00:00Z", pages: 3 }],
-  ["d", { at: "2026-10-29T20:00:00Z", pages: 1 }],
-])
-const cole = { clientProfileId: "cole0000", targetRoles: ["Front Desk Agent", "concierge"], changedAt: "2026-10-29T22:00:00Z" }
-const big = pickPairs(pairs, last, [cole], { cap: 100, maxPages: 3, now: NOW, floor: 0 })
-const order = big.picked.map((p) => p.id).join("")
-ok("never searched first, then a changed client's pairs, then oldest search first", order === "ecdba")
-ok("a changed client's pair is priority even if searched this morning (d, 9h ago, before the change)", big.picked.some((p) => p.id === "d" && p.priority?.includes("cole0000")))
-ok("priority reasons: never searched / criteria changed", big.picked[0].priority === "never searched" && big.picked.filter((p) => p.priority).length === 3)
-const quiet = pickPairs(pairs, last, [], { cap: 100, maxPages: 3, now: NOW })
-ok("without a changed client, a pair searched in the last 20h waits", !quiet.picked.some((p) => p.id === "d") && quiet.recent === 1)
-ok("estimate: own pages, else maxPages, plus one control per location", big.picked.find((p) => p.id === "e")!.estimate === 4 && big.picked.find((p) => p.id === "a")!.estimate === 2)
-const tight = pickPairs(pairs, last, [cole], { cap: 9, maxPages: 3, now: NOW, floor: 0 })
-ok("the cap ends the list in order; the rest wait", tight.estimate <= 9 && tight.waiting === pairs.length - tight.picked.length && tight.picked[0].id === "e")
-ok("case and spacing in target roles do not matter", pickPairs([P("x", " Concierge ")], new Map([["x", { at: "2026-10-01T00:00:00Z", pages: 1 }]]), [cole], { cap: 10, maxPages: 3, now: NOW }).picked[0].priority !== null)
-ok("a client changed BEFORE the last search is not priority", pickPairs([P("c", "front desk agent")], new Map([["c", { at: "2026-10-29T23:00:00Z", pages: 1 }]]), [cole], { cap: 10, maxPages: 3, now: NOW }).recent === 1)
-
-// ---- every client, every night: the floor
-// One client (sami) owns many pairs searched long ago; two small clients own pairs searched more recently.
-const F = (id: string, title: string, at: string, location = "New York, NY"): [PairRow, [string, LastSearch]] => [P(id, title, location), [id, { at, pages: 2 }]]
-const fl = [
-  F("s1", "business analyst", "2026-10-20T05:00:00Z"), F("s2", "consulting analyst", "2026-10-20T06:00:00Z"), F("s3", "workforce analyst", "2026-10-20T07:00:00Z"),
-  F("s4", "marketing analyst", "2026-10-20T08:00:00Z"), F("s5", "compensation analyst", "2026-10-20T09:00:00Z"), F("s6", "human capital analyst", "2026-10-20T10:00:00Z"),
-  F("g1", "project coordinator", "2026-10-27T05:00:00Z", "Philadelphia, PA"), F("g2", "project manager", "2026-10-27T06:00:00Z", "Philadelphia, PA"), F("g3", "sustainability analyst", "2026-10-27T07:00:00Z", "Philadelphia, PA"),
-  F("c1", "concierge", "2026-10-28T05:00:00Z", "Miami, FL"),
-  F("o1", "attorney", "2026-10-19T05:00:00Z", null as any),
-]
-const flPairs = fl.map((x) => x[0]), flLast = new Map(fl.map((x) => x[1]))
-const at = "2026-10-01T00:00:00Z"
-const flClients = [
-  { clientProfileId: "sami0000", targetRoles: ["business analyst", "consulting analyst", "workforce analyst", "marketing analyst", "compensation analyst", "human capital analyst"], changedAt: at },
-  { clientProfileId: "gabe0000", targetRoles: ["project coordinator", "project manager", "sustainability analyst"], changedAt: at },
-  { clientProfileId: "cole0000", targetRoles: ["concierge"], changedAt: at },
-]
+const L = (at: string, pages = 2): LastSearch => ({ at, pages })
+const C = (id: string, ...roles: string[]): ClientRoles => ({ clientProfileId: id, targetRoles: roles })
 const ids = (pk: { picked: { id: string }[] }) => pk.picked.map((p) => p.id).join(",")
-// Cap 15: without the floor, the oldest five (o1 and sami's) fill it and gabe and cole get nothing.
-const noFloor = pickPairs(flPairs, flLast, flClients, { cap: 15, maxPages: 3, now: NOW, floor: 0 })
-ok("without the floor, one big client can take the whole night", !noFloor.picked.some((p) => p.id.startsWith("g") || p.id.startsWith("c")))
-const withFloor = pickPairs(flPairs, flLast, flClients, { cap: 30, maxPages: 3, now: NOW })
-ok("floor: every client gets pairs tonight, 2 each where they have 2", ["s", "g", "c"].every((c) => withFloor.picked.some((p) => p.id.startsWith(c))) && withFloor.floorPerClient === 2)
-ok("floor: each client's longest-waiting pairs, round by round, clients in order of their oldest pair", ids(withFloor).startsWith("s1,g1,c1,s2,g2"))
-ok("floor: then everything else oldest first, including pairs no client owns", ids(withFloor).split(",").slice(5).join(",").startsWith("o1,s3"))
-ok("floor pairs are marked", withFloor.picked.filter((p) => p.floor).map((p) => p.id).join(",") === "s1,g1,c1,s2,g2")
-const shared = pickPairs([P("x", "marketing analyst"), P("y", "brand manager")], new Map([["x", { at: "2026-10-20T00:00:00Z", pages: 1 }], ["y", { at: "2026-10-21T00:00:00Z", pages: 1 }]]),
-  [{ clientProfileId: "a", targetRoles: ["marketing analyst"], changedAt: at }, { clientProfileId: "b", targetRoles: ["marketing analyst", "brand manager"], changedAt: at }], { cap: 100, maxPages: 3, now: NOW, floor: 1 })
-ok("a shared pair counts for every client that owns it", shared.picked.filter((p) => p.floor).map((p) => p.id).join() === "x")
-const small = pickPairs(flPairs, flLast, flClients, { cap: 16, maxPages: 3, now: NOW })
-ok("floor over half the cap drops to 1 a client", small.floorPerClient === 1 && small.picked.filter((p) => p.floor).map((p) => p.id).join() === "s1,g1,c1")
-const newClient = pickPairs([...flPairs, P("n1", "trademark associate", "Boston, MA")], flLast, [...flClients, { clientProfileId: "mal00000", targetRoles: ["trademark associate"], changedAt: at }], { cap: 40, maxPages: 3, now: NOW })
-ok("a new client's never-searched pair is in the floor, first", newClient.picked[0].id === "n1" && newClient.picked[0].floor)
+{
+  const pairs = [P("a", "analyst"), P("b", "associate"), P("c", "front desk agent", "Miami, FL"), P("d", "concierge", "Miami, FL"), P("e", "coordinator"), P("z", "attorney")]
+  const last = new Map([["a", L("2026-10-26T16:00:00Z", 2)], ["b", L("2026-10-25T16:00:00Z", 1)], ["c", L("2026-10-27T16:00:00Z", 3)], ["d", L("2026-10-29T20:00:00Z", 1)]])
+  const one = pickPairs(pairs, last, [C("x", "Analyst", " associate ", "front desk agent", "concierge", "coordinator")], { cap: 100, maxPages: 3, now: NOW })
+  ok("one client: never searched first, then longest since its last search", ids(one) === "e,b,a,c")
+  ok("a pair searched in the last 20h waits", !one.picked.some((p) => p.id === "d") && one.recent === 1)
+  ok("a pair no active client owns is not searched, and counted", !one.picked.some((p) => p.id === "z") && one.unowned === 1)
+  ok("estimate: own pages, else maxPages, plus one control per location", one.picked.find((p) => p.id === "e")!.estimate === 4 && one.picked.find((p) => p.id === "a")!.estimate === 2)
+  const tight = pickPairs(pairs, last, [C("x", "analyst", "associate", "coordinator")], { cap: 6, maxPages: 3, now: NOW })
+  ok("the cap ends the list in order; the rest wait", ids(tight) === "e,b" && tight.estimate === 5 && tight.waiting === 1)
+}
+{
+  // Sami owns six old pairs; Gabe two newer, Cole one newest. Cap 15, three clients: 5 each.
+  const pairs = [
+    P("s1", "business analyst"), P("s2", "consulting analyst"), P("s3", "workforce analyst"), P("s4", "marketing analyst"), P("s5", "pricing analyst"), P("s6", "hr analyst"),
+    P("g1", "project coordinator", "Philadelphia, PA"), P("g2", "project manager", "Philadelphia, PA"), P("c1", "concierge", "Miami, FL"),
+  ]
+  const last = new Map([
+    ...["s1", "s2", "s3", "s4", "s5", "s6"].map((id, i) => [id, L(`2026-10-20T0${i}:00:00Z`)] as [string, LastSearch]),
+    ["g1", L("2026-10-27T05:00:00Z")], ["g2", L("2026-10-27T06:00:00Z")], ["c1", L("2026-10-28T05:00:00Z")],
+  ])
+  const clients = [C("sami", "business analyst", "consulting analyst", "workforce analyst", "marketing analyst", "pricing analyst", "hr analyst"), C("gabe", "project coordinator", "project manager"), C("cole", "concierge")]
+  const r = pickPairs(pairs, last, clients, { cap: 15, maxPages: 3, now: NOW })
+  ok("share: cap divided equally across active clients", r.share === 5 && r.clients === 3)
+  ok("every client is searched tonight, however few its pairs", ["s", "g", "c"].every((c) => r.picked.some((p) => p.id.startsWith(c))))
+  ok("within a share, a client's longest-waiting pairs first", r.picked.filter((p) => p.id.startsWith("s"))[0].id === "s1")
+  ok("never over the cap", r.estimate <= 15)
+  ok("cole cannot use all its share: the rest goes to the client furthest behind (sami), marked spare", r.picked.some((p) => p.spare && p.id.startsWith("s")) && r.spare.cole === 0)
+  ok("charges: no client is charged more than its share", Object.values(r.charged).every((v) => v <= 5 + 1e-9))
+  const two = pickPairs(pairs, last, [...clients, C("new", "trademark associate")], { cap: 16, maxPages: 3, now: NOW })
+  ok("a client with no pairs still counts for the share; its share goes to spare", two.share === 4 && two.charged.new === 0)
+}
+{
+  const pairs = [P("x", "marketing analyst"), P("y", "brand manager")]
+  const last = new Map([["x", L("2026-10-20T00:00:00Z", 1)], ["y", L("2026-10-21T00:00:00Z", 1)]])
+  const r = pickPairs(pairs, last, [C("a", "marketing analyst"), C("b", "marketing analyst", "brand manager")], { cap: 4, maxPages: 3, now: NOW })
+  ok("a shared pair is searched once and its cost split among its owners", r.picked.filter((p) => p.id === "x").length === 1 && Math.abs(r.charged.a - 1) < 1e-9 && r.picked.find((p) => p.id === "x")!.owners.length === 2)
+  ok("b's own pair follows within its share", ids(r) === "x,y" && Math.abs(r.charged.b - 2) < 1e-9)
+  const co = pickPairs([P("x", "marketing analyst")], new Map([["x", L("2026-10-20T00:00:00Z", 1)]]), [C("a", "marketing analyst"), C("b", "marketing analyst")], { cap: 4, maxPages: 3, now: NOW, spentTonight: new Map([["b", 2]]), spentEarlier: 2 })
+  ok("an owner whose share is spent pays nothing; the picker covers the rest", co.picked.length === 1 && Math.abs(co.charged.a - 2) < 1e-9 && co.charged.b === 2)
+}
+{
+  const pairs = [P("p1", "analyst"), P("p2", "associate"), P("q1", "concierge", "Miami, FL")]
+  const last = new Map([["p1", L("2026-10-20T00:00:00Z", 1)], ["p2", L("2026-10-21T00:00:00Z", 1)], ["q1", L("2026-10-22T00:00:00Z", 1)]])
+  const cont = pickPairs(pairs, last, [C("a", "analyst", "associate"), C("b", "concierge")], { cap: 6, maxPages: 3, now: NOW, spentTonight: new Map([["a", 3]]), spentEarlier: 3 })
+  ok("a continuation: earlier searches come off the client's share and the night's cap", cont.estimate <= 3 && cont.picked.some((p) => p.id === "q1") && Math.abs(cont.charged.a - 3) < 1e-9)
+}
+{
+  const pairs = Array.from({ length: 10 }, (_, i) => P(`b${i}`, `big role ${i}`)).concat([P("s0", "small role", "Miami, FL")])
+  const last = new Map(pairs.map((p, i) => [p.id, L(`2026-10-29T04:${10 + i}:00Z`, 1)]))
+  const clients = [C("big", ...Array.from({ length: 10 }, (_, i) => `big role ${i}`)), C("small", "small role")]
+  const w = projectLongestWaits(pairs, last, clients, { cap: 6, maxPages: 3, from: NOW, nights: 14 })
+  ok("projection: a client with few pairs waits about a night", w.get("small")! <= 1.05)
+  ok("projection: a client with many pairs waits longer", w.get("big")! > 2)
+  ok("projection: a pair never searched before or during the run is null", projectLongestWaits([P("n", "never")], new Map(), [C("x", "never")], { cap: 0, maxPages: 3, from: NOW, nights: 3 }).get("x") === null)
+}
 
 // ---- next step
 let n = 0
@@ -83,14 +89,17 @@ ok("Google Jobs at its cap or failed is done for the night: enrich next", ns([ro
 ok("Google Jobs out of time: Google Jobs again", ns([row("google_jobs", "capped", { capReason: "deadline", deferred: 27 })]) === "google_jobs+")
 ok("Google Jobs killed: Google Jobs again", ns([row("google_jobs", "capped", { capReason: "killed" })]) === "google_jobs+")
 ok("match killed: match again", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "capped", { capReason: "killed" })]) === "match+")
-ok("link check killed: not run again", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "ok"), row("link_check", "capped", { capReason: "killed" })]) === "done")
+ok("match done: the queue release next", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "ok")]) === "queue_release")
+ok("queue release failed: not run again, link check next", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "ok"), row("queue_release", "error")]) === "link_check")
+ok("queue release killed: not run again, link check next", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "ok"), row("queue_release", "capped", { capReason: "killed" })]) === "link_check")
+ok("link check killed: not run again", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "ok"), row("queue_release", "ok"), row("link_check", "capped", { capReason: "killed" })]) === "done")
 ok("a running ATS sweep does not hold up the ticks", ns([row("ats_smartrecruiters", "running")]) === "google_jobs")
 ok("enrich out of time: enrich again", ns([row("google_jobs", "ok"), row("enrich", "capped", { capReason: "deadline" })]) === "enrich+")
 ok("enrich at its cap: match next", ns([row("google_jobs", "ok"), row("enrich", "capped", { capReason: "cap" })]) === "match")
 ok("a running row: busy", ns([row("google_jobs", "ok"), row("enrich", "running")]) === "busy")
 const many = [row("google_jobs", "ok"), ...Array.from({ length: MAX_CONTINUATIONS + 1 }, () => row("enrich", "capped", { capReason: "deadline" }))]
 ok("continuations stop after MAX_CONTINUATIONS: match next", ns(many) === "match")
-ok("all four done: done", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "ok"), row("link_check", "ok")]) === "done")
+ok("all five done: done", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "ok"), row("queue_release", "ok"), row("link_check", "ok")]) === "done")
 
 // ---- closing a killed run
 {
@@ -113,8 +122,8 @@ const w = watchdogFindings([row("ats_grnhse", "ok"), row("google_jobs", "error")
 ok("watchdog: a missing step is skipped", w.some((f) => f.startsWith("ats_smartrecruiters: skipped")))
 ok("watchdog: out of time with work left is reported", w.some((f) => f.startsWith("match: ran out of time") && f.includes("812")))
 ok("watchdog: still running is reported", w.some((f) => f.startsWith("link_check: still running")))
-ok("watchdog: a failure is not repeated (the tick sent it)", !w.some((f) => f.startsWith("google_jobs")) && w.length === 3)
-const w2 = watchdogFindings([row("ats_grnhse", "ok"), row("ats_smartrecruiters", "capped", { capReason: "deadline", pairsLeft: 4 }), row("google_jobs", "capped", { capReason: "killed" }), row("enrich", "ok"), row("match", "ok"), row("link_check", "ok")])
+ok("watchdog: a failure is not repeated (the tick sent it); a missing queue release is skipped", !w.some((f) => f.startsWith("google_jobs")) && w.some((f) => f.startsWith("queue_release: skipped")) && w.length === 4)
+const w2 = watchdogFindings([row("ats_grnhse", "ok"), row("ats_smartrecruiters", "capped", { capReason: "deadline", pairsLeft: 4 }), row("google_jobs", "capped", { capReason: "killed" }), row("enrich", "ok"), row("match", "ok"), row("queue_release", "ok"), row("link_check", "ok")])
 ok("watchdog: an ATS sweep with pairs left is reported", w2.some((f) => f.startsWith("ats_smartrecruiters: ran out of time") && f.includes("4")))
 ok("watchdog: a killed step left that way is reported as killed", w2.some((f) => f.startsWith("google_jobs: was killed at the time limit")))
 
@@ -139,7 +148,7 @@ ok("last week, sent Monday Nov 2: Oct 26 to Nov 1", lw.fromNight === "2026-10-26
 
 const steps = { ats_grnhse: { cost: 0, units: 14630, searches: 0, runs: 7 }, ats_smartrecruiters: { cost: 0, units: 4300, searches: 0, runs: 7 },
   google_jobs: { cost: 4.76, units: 1190, searches: 1190, runs: 7 }, enrich: { cost: 3.45, units: 3000, searches: 0, runs: 9 },
-  match: { cost: 0.51, units: 3000, searches: 0, runs: 8 }, link_check: { cost: 0, units: 1680, searches: 0, runs: 7 } } as StepTotals
+  match: { cost: 0.51, units: 3000, searches: 0, runs: 8 }, queue_release: { cost: 0, units: 96, searches: 0, runs: 7 }, link_check: { cost: 0, units: 1680, searches: 0, runs: 7 } } as StepTotals
 const text = weeklyReportText({ weekFrom: "2026-10-26", weekTo: "2026-11-01", steps, weekAi: { enrichNightly: 3.45, matchNightly: 0.51, enrichManual: 1.2, matchManual: 0.4, total: 5.56 },
   mtd: 61.2, projected: 101.4, budget: 110, fee: 40, month: "2026-11", account: acct, searchesProjected: 9600, searchError: null })
 ok("weekly email: every step, manual runs, MTD, projection and searches", ["Google Jobs", "Enrichment", "Matching", "Link check", "Greenhouse sweep", "Manual runs", "$1.60",
@@ -149,7 +158,7 @@ ok("weekly email: no OVER flag under the limits", !text.includes("OVER"))
 // ---- weekly coverage by client
 const wkFrom = new Date("2026-10-26T04:00:00Z"), wkTo = new Date("2026-11-02T05:00:00Z")
 const cvRows = coverageRows(
-  [{ name: "Sami", targetRoles: ["Business Analyst", "consulting analyst"] }, { name: "Cole", targetRoles: ["concierge"] }, { name: "New", targetRoles: ["paralegal"] }],
+  [{ id: "sami", name: "Sami", targetRoles: ["Business Analyst", "consulting analyst"] }, { id: "cole", name: "Cole", targetRoles: ["concierge"] }, { id: "new", name: "New", targetRoles: ["paralegal"] }],
   [{ id: "p1", title: "business analyst" }, { id: "p2", title: "consulting analyst" }, { id: "p3", title: "concierge" }],
   [
     { pair_id: "p1", started_at: "2026-10-28T03:30:00Z" }, // night of Oct 27 ET
@@ -157,7 +166,7 @@ const cvRows = coverageRows(
     { pair_id: "p1", started_at: "2026-10-29T05:10:00Z" }, // Oct 29 ET, same night
     { pair_id: "p1", started_at: "2026-10-31T03:00:00Z" }, // Oct 30 ET
     { pair_id: "p3", started_at: "2026-10-20T04:00:00Z" }, // before the week
-  ], wkFrom, wkTo)
+  ], wkFrom, wkTo, new Map<string, number | null>([["sami", 3], ["cole", null], ["new", 0]]))
 const samiRow = cvRows.find((r) => r.name === "Sami")!, coleRow = cvRows.find((r) => r.name === "Cole")!, newRow = cvRows.find((r) => r.name === "New")!
 ok("coverage: searches and distinct ET nights in the week", samiRow.searches === 4 && samiRow.nightsSearched === 3 && samiRow.pairs === 2)
 ok("coverage: longest wait is the stalest pair at week end", Math.abs(samiRow.longestWaitDays! - (wkTo.getTime() - new Date("2026-10-29T04:30:00Z").getTime()) / 86400e3) < 1e-9)
@@ -165,8 +174,23 @@ ok("coverage: a client not searched all week: 0 nights, wait from the earlier se
 ok("coverage: a client whose roles have no pairs", newRow.pairs === 0 && newRow.searches === 0)
 const cvText = weeklyReportText({ weekFrom: "2026-10-26", weekTo: "2026-11-01", steps, weekAi: { enrichNightly: 3.45, matchNightly: 0.51, enrichManual: 1.2, matchManual: 0.4, total: 5.56 },
   mtd: 61.2, projected: 101.4, budget: 110, fee: 40, month: "2026-11", account: acct, searchesProjected: 9600, searchError: null,
-  coverage: { rows: cvRows, floorPerClient: 1, nights: 7 } })
-ok("weekly email: coverage section, misses, no pairs and a reduced guarantee flagged", ["Search coverage by client", "MISSED 7 nights", "NO PAIRS", "REDUCED", "searched 3 of 7 nights"].every((x) => cvText.includes(x)))
+  coverage: { rows: cvRows, cap: 300, clients: 12, nights: 7 },
+  queue: { rows: queueRows([
+    { clients: { sami: { released: 8, deadline: 1, expired: 3, belowFloor: 40 }, cole: { released: 2, deadline: 0, expired: 0, belowFloor: 5 } } },
+    { clients: { sami: { released: 8, deadline: 0, expired: 4, belowFloor: 35 }, gone: { released: 8, deadline: 0, expired: 0, belowFloor: 1 } } },
+  ], [{ id: "sami", name: "Sami" }, { id: "cole", name: "Cole" }, { id: "new", name: "New" }]), settings: queueSettings({}), nightsRun: 2, nights: 7 } })
+ok("weekly email: coverage section with the share, misses, no pairs, projected waits", ["Search coverage by client", "Each client's share each night: 25.0 searches (cap 300 across 12 active clients)", "MISSED 7 nights", "NO PAIRS", "searched 3 of 7 nights", "projected longest wait 3.0 days", "projected: a pair never searched"].every((x) => cvText.includes(x)))
+ok("weekly email: queue section per client: shown, expired, below floor, with totals", ["Job Queue by client (2 of 7 nightly releases ran; floor 60, 8 a night, expire after 7 nights, deadline rule at 50+)",
+  "Sami                   shown  16, expired    7, below floor    75  (1 shown early for a deadline)", "New                    shown   0, expired    0, below floor     0",
+  "All clients            shown  18, expired    7, below floor    80"].every((x) => cvText.includes(x)))
+ok("weekly email: a client no longer active is left out of the queue section", !cvText.includes("gone"))
+ok("weekly email: no queue section when none is given", !text.includes("Job Queue by client"))
+
+// ---- queue release
+ok("queue settings: defaults 60 / 8 / 7 / 50", JSON.stringify(queueSettings({})) === JSON.stringify({ floor: 60, limit: 8, expireNights: 7, deadlineMin: 50 }))
+ok("queue settings: from the environment; junk falls back", JSON.stringify(queueSettings({ PIPELINE_QUEUE_FLOOR: "55", PIPELINE_QUEUE_LIMIT: "10", PIPELINE_QUEUE_EXPIRE_NIGHTS: "x", PIPELINE_QUEUE_DEADLINE_MIN: "0" })) === JSON.stringify({ floor: 55, limit: 10, expireNights: 7, deadlineMin: 50 }))
+const bc = byClient({ released: { a: { released: 8, deadline: 2 } }, expired: { a: 3, b: 1 }, below_floor: { c: 40 } })
+ok("release result per client: every client that had anything, zeros filled", bc.a.released === 8 && bc.a.deadline === 2 && bc.a.expired === 3 && bc.b.released === 0 && bc.b.expired === 1 && bc.c.belowFloor === 40)
 ok("weekly email: no coverage section when none is given", !text.includes("Search coverage"))
 
 // ---- once per period, against an in-memory stand-in for the two tables runPaceCheck touches

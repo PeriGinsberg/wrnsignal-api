@@ -56,11 +56,11 @@ const usd = (n: number) => `$${n.toFixed(2)}`
 
   // 1. Google Jobs
   const pick = await loadAndPickPairs(sb, { cap: CAPS.searches, maxPages: MAX_PAGES, now })
-  const pri = pick.picked.filter((p) => p.priority)
-  console.log(`\n1. Google Jobs: ${pick.picked.length} of ${pick.total} active pairs, estimated ${pick.estimate} of ${CAPS.searches} searches (~${usd(pick.estimate * SEARCHAPI_MONTHLY_FEE_USD / SEARCHAPI_PLAN_SEARCHES)} of the plan)`)
-  console.log(`   ${pri.length} priority (never searched, or a client's criteria changed since), ${pick.waiting} waiting for a later night, ${pick.recent} searched in the last 20h`)
+  console.log(`
+1. Google Jobs: ${pick.picked.length} of ${pick.total} active pairs, estimated ${pick.estimate} of ${CAPS.searches} searches (~${usd(pick.estimate * SEARCHAPI_MONTHLY_FEE_USD / SEARCHAPI_PLAN_SEARCHES)} of the plan)`)
+  console.log(`   share ${pick.share.toFixed(1)} each across ${pick.clients} clients; ${pick.picked.filter((p) => p.spare).length} pairs from spare; ${pick.waiting} waiting for a later night, ${pick.recent} searched in the last 20h, ${pick.unowned} owned by no active client`)
   const show = Number(arg("pairs") ?? 40)
-  pick.picked.slice(0, show).forEach((p, i) => console.log(`   ${String(i + 1).padStart(3)}. est ${p.estimate}  ${p.title} | ${p.location ?? "nationwide"}${p.campus ? " [campus]" : ""}  last ${p.lastSearchedAt?.slice(0, 16) ?? "never"}${p.priority ? "  PRIORITY: " + p.priority : ""}`))
+  pick.picked.slice(0, show).forEach((p, i) => console.log(`   ${String(i + 1).padStart(3)}. est ${p.estimate}  ${p.title} | ${p.location ?? "nationwide"}${p.campus ? " [campus]" : ""}  last ${p.lastSearchedAt?.slice(0, 16) ?? "never"}${p.spare ? "  SPARE" : ""}`))
   if (pick.picked.length > show) console.log(`   ... ${pick.picked.length - show} more`)
   const nextUp = pick.picked.at(-1)
   if (nextUp) console.log(`   last in tonight's list: ${nextUp.title} | ${nextUp.location ?? "nationwide"}`)

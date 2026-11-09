@@ -1,7 +1,7 @@
 /**
  * One tick of the nightly pipeline: run the next step tonight still needs.
  *
- * ORDER: Google Jobs -> enrich -> match -> link check, after the ATS sweeps
+ * ORDER: Google Jobs -> enrich -> match -> queue release -> link check, after the ATS sweeps
  * (03:00-03:15, 04:00-04:45), which keep their own crons and only record here. The cron
  * fires every 15 minutes from 05:00 to 07:45 UTC; each tick does one step (or
  * one stretch of a long one) inside the function's time limit, so a step that
@@ -25,14 +25,15 @@ import { countWorklist, runEnrichment } from "../ingest/enrichPostings"
 import { runMatching } from "../match/runMatching"
 import { runLinkCheck } from "../match/linkCheck"
 import { closeStale, finishStep, nextStep, nightOf, nightRows, startStep, TICK_STEPS, type RunRow, type StepResult, type TickStep } from "./runs"
-import { loadAndPickPairs } from "./pairs"
+import { loadAndPickPairs, searchCapFromEnv } from "./pairs"
+import { queueReleaseStep } from "./queueRelease"
 import { runPaceCheck, SEARCHAPI_MONTHLY_FEE_USD } from "./cost"
 
 const num = (v: string | undefined, d: number) => (Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : d)
 
 export const CAPS = {
-  /** Google Jobs searches a night. 229 pairs at ~2.2 searches is ~500 a pass, so each pair every ~3 nights; ~5,300 a month of the 10,000 plan. */
-  searches: num(process.env.PIPELINE_SEARCH_CAP, 170),
+  /** Google Jobs searches a night (PIPELINE_SEARCH_CAP), shared equally among active clients (pairs.ts). */
+  searches: searchCapFromEnv(),
   /** Postings enriched a night (~$0.00115 each). */
   enrich: num(process.env.PIPELINE_ENRICH_CAP, 1500),
   /** Judge calls a night, all clients (~$0.00017 each). */
@@ -66,16 +67,18 @@ export async function searchesSince(sb: SupabaseClient, since: string): Promise<
 }
 
 async function googleJobsStep({ sb, rows, deadline, environment }: Ctx): Promise<StepResult> {
-  // A continuation: what earlier runs tonight spent comes off the cap, and
-  // pairs they searched are "recent" (searched in the last 20 hours), so only
-  // the rest are picked.
+  // A continuation: what earlier runs tonight spent comes off the cap and off
+  // each client's share (split as the pick splits it), and pairs they searched
+  // are "recent" (searched in the last 20 hours), so only the rest are picked.
   const first = rows.find((r) => r.step === "google_jobs")
   const spentEarlier = first ? await searchesSince(sb, first.started_at) : 0
   const cap = CAPS.searches - spentEarlier
-  const pick = await loadAndPickPairs(sb, { cap: Math.max(cap, 0), maxPages: MAX_PAGES })
+  const pick = await loadAndPickPairs(sb, { cap: CAPS.searches, maxPages: MAX_PAGES, since: first?.started_at, spentEarlier })
+  const round = (o: Record<string, number>) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, Math.round(v * 10) / 10]))
   const detail: Record<string, any> = {
-    pairs: pick.picked.length, pairsActive: pick.total, waiting: pick.waiting, recent: pick.recent, estimate: pick.estimate,
-    priority: pick.picked.filter((p) => p.priority).length, floorPerClient: pick.floorPerClient, floorPairs: pick.picked.filter((p) => p.floor).length, searchesEarlierTonight: spentEarlier, capRemaining: cap,
+    pairs: pick.picked.length, pairsActive: pick.total, waiting: pick.waiting, recent: pick.recent, unowned: pick.unowned, estimate: pick.estimate,
+    clients: pick.clients, sharePerClient: Math.round(pick.share * 10) / 10, sparePairs: pick.picked.filter((p) => p.spare).length,
+    chargedByClient: round(pick.charged), spareByClient: round(pick.spare), searchesEarlierTonight: spentEarlier, capRemaining: cap,
   }
   if (!pick.picked.length) return { status: "ok", detail }
   // runGoogleJobs' own cap alert is the old ingest-sweep email ("Nightly ingest
@@ -164,7 +167,7 @@ async function linkCheckStep({ sb }: Ctx): Promise<StepResult> {
 }
 
 const STEP_FN: Record<TickStep, (c: Ctx) => Promise<StepResult>> = {
-  google_jobs: googleJobsStep, enrich: enrichStep, match: matchStep, link_check: linkCheckStep,
+  google_jobs: googleJobsStep, enrich: enrichStep, match: matchStep, queue_release: ({ sb }) => queueReleaseStep(sb), link_check: linkCheckStep,
 }
 
 export type TickResult = {

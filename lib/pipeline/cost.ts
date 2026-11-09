@@ -16,6 +16,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { STEPS, type Step } from "./runs"
 import { GOOGLE_JOBS_SOURCES } from "../ingest/googleJobs"
+import { loadPickInputs, projectLongestWaits, searchCapFromEnv } from "./pairs"
+import { queueSettings, type ClientRelease, type QueueSettings } from "./queueRelease"
 
 export const MONTHLY_BUDGET_USD = Number(process.env.JOB_SOURCING_MONTHLY_BUDGET_USD ?? 110)
 export const SEARCHAPI_MONTHLY_FEE_USD = Number(process.env.SEARCHAPI_MONTHLY_FEE_USD ?? 40)
@@ -149,11 +151,11 @@ export async function runPaceCheck(
 
 const STEP_LABEL: Record<Step, string> = {
   ats_grnhse: "Greenhouse sweep", ats_smartrecruiters: "SmartRecruiters sweep", google_jobs: "Google Jobs",
-  enrich: "Enrichment", match: "Matching", link_check: "Link check",
+  enrich: "Enrichment", match: "Matching", queue_release: "Queue release", link_check: "Link check",
 }
 const UNIT_LABEL: Record<Step, string> = {
   ats_grnhse: "board runs", ats_smartrecruiters: "board runs", google_jobs: "searches",
-  enrich: "postings", match: "judgments", link_check: "links",
+  enrich: "postings", match: "judgments", queue_release: "jobs released", link_check: "links",
 }
 
 export type WeeklyInput = {
@@ -169,12 +171,20 @@ export type WeeklyInput = {
   account: SearchApiAccount | null
   searchesProjected: number | null
   searchError: string | null
-  /** Google Jobs coverage per client for the week (pairs.ts FLOOR_PER_CLIENT). Absent: no section. */
-  coverage?: { rows: CoverageRow[]; floorPerClient: number | null; nights: number }
+  /** Google Jobs coverage per client for the week, with the fair share (pairs.ts). Absent: no section. */
+  coverage?: { rows: CoverageRow[]; cap: number; clients: number; nights: number }
+  /** The Job Queue release per client for the week (queueRelease.ts). Absent: no section. */
+  queue?: { rows: QueueRow[]; settings: QueueSettings; nightsRun: number; nights: number }
 }
 
-/** One client's Google Jobs week: their pairs are the ones whose title is a target role. */
-export type CoverageRow = { name: string; pairs: number; searches: number; nightsSearched: number; longestWaitDays: number | null }
+/**
+ * One client's Google Jobs week: their pairs are the ones whose title is a
+ * target role. projectedWaitDays: the longest any of their pairs would wait
+ * over the next 28 nights under the fair share (null: one would never be searched).
+ */
+export type CoverageRow = { name: string; pairs: number; searches: number; nightsSearched: number; longestWaitDays: number | null; projectedWaitDays?: number | null }
+/** One client's Job Queue week: released (shown), expired unreleased, and arrived under the floor. */
+export type QueueRow = { name: string; shown: number; expired: number; belowFloor: number; deadline: number }
 
 /** ET calendar date of a timestamp, so a night's run that crosses midnight UTC stays one night. */
 const etDate = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/New_York" })
@@ -185,11 +195,12 @@ const etDate = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { time
  * (null: a pair with no search in the runs given, so longer than they cover).
  */
 export function coverageRows(
-  clients: { name: string; targetRoles: string[] }[],
+  clients: { id?: string; name: string; targetRoles: string[] }[],
   pairs: { id: string; title: string }[],
   runs: { pair_id: string; started_at: string }[],
   from: Date,
   to: Date,
+  projected?: Map<string, number | null>,
 ): CoverageRow[] {
   const key = (t: string) => t.trim().toLowerCase()
   const lastAt = new Map<string, number>()
@@ -207,21 +218,32 @@ export function coverageRows(
       name: c.name, pairs: ids.size, searches: week.length,
       nightsSearched: new Set(week.map((r) => etDate(r.started_at))).size,
       longestWaitDays: !ids.size ? 0 : waits.includes(null) ? null : Math.max(...(waits as number[])),
+      ...(projected && c.id && projected.has(c.id) ? { projectedWaitDays: !ids.size ? 0 : projected.get(c.id)! } : {}),
     }
   }).sort((a, b) => a.nightsSearched - b.nightsSearched || a.name.localeCompare(b.name))
 }
 
 function coverageText(cv: NonNullable<WeeklyInput["coverage"]>): string[] {
   const lines = ["", `Search coverage by client (Google Jobs, ${cv.nights} nights):`]
-  if (cv.floorPerClient !== null) {
-    lines.push(`  Guaranteed each client each night: ${cv.floorPerClient} pair${cv.floorPerClient === 1 ? "" : "s"}${cv.floorPerClient < 2 ? "  REDUCED: 2 per client would take over half the search cap; raise PIPELINE_SEARCH_CAP" : ""}`)
-  }
+  if (cv.clients) lines.push(`  Each client's share each night: ${(cv.cap / cv.clients).toFixed(1)} searches (cap ${cv.cap} across ${cv.clients} active clients); unused share goes to the clients furthest behind`)
   for (const r of cv.rows) {
     const missed = cv.nights - r.nightsSearched
     const wait = r.longestWaitDays === null ? "a pair not searched in 30 days" : `longest wait ${r.longestWaitDays.toFixed(1)} days`
+    const proj = r.projectedWaitDays === undefined ? "" : r.projectedWaitDays === null ? ", projected: a pair never searched" : `, projected longest wait ${r.projectedWaitDays.toFixed(1)} days`
     const flag = !r.pairs ? "  NO PAIRS" : missed > 0 ? `  MISSED ${missed} night${missed === 1 ? "" : "s"}` : ""
-    lines.push(`  ${r.name.padEnd(22)} ${String(r.searches).padStart(3)} searches of ${r.pairs} pairs, searched ${r.nightsSearched} of ${cv.nights} nights, ${wait}${flag}`)
+    lines.push(`  ${r.name.padEnd(22)} ${String(r.searches).padStart(3)} searches of ${r.pairs} pairs, searched ${r.nightsSearched} of ${cv.nights} nights, ${wait}${proj}${flag}`)
   }
+  return lines
+}
+
+function queueText(q: NonNullable<WeeklyInput["queue"]>): string[] {
+  const s = q.settings
+  const lines = ["", `Job Queue by client (${q.nightsRun} of ${q.nights} nightly releases ran; floor ${s.floor}, ${s.limit} a night, expire after ${s.expireNights} nights, deadline rule at ${s.deadlineMin}+):`]
+  for (const r of q.rows) {
+    lines.push(`  ${r.name.padEnd(22)} shown ${String(r.shown).padStart(3)}, expired ${String(r.expired).padStart(4)}, below floor ${String(r.belowFloor).padStart(5)}${r.deadline ? `  (${r.deadline} shown early for a deadline)` : ""}`)
+  }
+  const sum = (k: "shown" | "expired" | "belowFloor") => q.rows.reduce((n, r) => n + r[k], 0)
+  lines.push(`  ${"All clients".padEnd(22)} shown ${String(sum("shown")).padStart(3)}, expired ${String(sum("expired")).padStart(4)}, below floor ${String(sum("belowFloor")).padStart(5)}`)
   return lines
 }
 
@@ -246,6 +268,7 @@ export function weeklyReportText(x: WeeklyInput): string {
     lines.push(`SearchApi usage unavailable: ${x.searchError}`)
   }
   if (x.coverage) lines.push(...coverageText(x.coverage))
+  if (x.queue) lines.push(...queueText(x.queue))
   return lines.join("\n")
 }
 
@@ -258,20 +281,52 @@ export function lastWeek(now: Date): { from: Date; to: Date; fromNight: string; 
   return { from, to, fromNight: from.toISOString().slice(0, 10), toNight: new Date(to.getTime() - DAY).toISOString().slice(0, 10) }
 }
 
-/** The week's coverage: active clients' criteria, active Google Jobs pairs, their runs from 30 days before `to`, and the last floor the pick used. */
-export async function searchCoverage(sb: SupabaseClient, wk: { from: Date; to: Date; fromNight: string; toNight: string }): Promise<NonNullable<WeeklyInput["coverage"]>> {
-  const crit = await pageAll<any>((a, b) => sb.from("client_match_criteria").select("client_profile_id, target_roles").eq("active", true).range(a, b))
-  const ids = crit.map((c) => c.client_profile_id)
-  const names = new Map((await pageAll<any>((a, b) => sb.from("client_profiles").select("id, name").in("id", ids).range(a, b))).map((p) => [p.id, p.name]))
-  const pairs = await pageAll<any>((a, b) => sb.from("ingest_pairs").select("id, title").eq("active", true).overlaps("sources", [...GOOGLE_JOBS_SOURCES]).order("id").range(a, b))
+/**
+ * The week's coverage: active clients' criteria, active Google Jobs pairs, their
+ * runs from 30 days before `to`, and each client's projected longest wait from
+ * today's state under the fair share at the current cap.
+ */
+export async function searchCoverage(sb: SupabaseClient, wk: { from: Date; to: Date; fromNight: string; toNight: string }, now = new Date()): Promise<NonNullable<WeeklyInput["coverage"]>> {
+  const inputs = await loadPickInputs(sb)
+  const ids = inputs.clients.map((c) => c.clientProfileId)
+  const names = await clientNames(sb, ids)
   const runs = await pageAll<any>((a, b) => sb.from("ingest_runs").select("pair_id, started_at").in("source", [...GOOGLE_JOBS_SOURCES]).not("pair_id", "is", null)
     .gte("started_at", new Date(wk.to.getTime() - 30 * DAY).toISOString()).lt("started_at", wk.to.toISOString()).order("started_at").range(a, b))
-  const { data: g } = await sb.from("pipeline_runs").select("detail").eq("step", "google_jobs")
-    .gte("night", wk.fromNight).lte("night", wk.toNight).order("started_at", { ascending: false }).limit(1)
-  const floor = g?.[0]?.detail?.floorPerClient
+  const cap = searchCapFromEnv()
+  const projected = projectLongestWaits(inputs.pairs, inputs.last, inputs.clients, { cap, maxPages: 3, from: now })
   return {
-    rows: coverageRows(crit.map((c) => ({ name: names.get(c.client_profile_id) ?? c.client_profile_id.slice(0, 8), targetRoles: c.target_roles ?? [] })), pairs, runs, wk.from, wk.to),
-    floorPerClient: typeof floor === "number" ? floor : null,
+    rows: coverageRows(inputs.clients.map((c) => ({ id: c.clientProfileId, name: names.get(c.clientProfileId) ?? c.clientProfileId.slice(0, 8), targetRoles: c.targetRoles })), inputs.pairs, runs, wk.from, wk.to, projected),
+    cap, clients: ids.length,
+    nights: Math.round((wk.to.getTime() - wk.from.getTime()) / DAY),
+  }
+}
+
+async function clientNames(sb: SupabaseClient, ids: string[]): Promise<Map<string, string>> {
+  if (!ids.length) return new Map()
+  return new Map((await pageAll<any>((a, b) => sb.from("client_profiles").select("id, name").in("id", ids).range(a, b))).map((p) => [p.id, p.name]))
+}
+
+/** Pure. Sums the week's queue_release details per client; every active client gets a row. */
+export function queueRows(details: { clients?: Record<string, ClientRelease> }[], clients: { id: string; name: string }[]): QueueRow[] {
+  const sum = new Map(clients.map((c) => [c.id, { name: c.name, shown: 0, expired: 0, belowFloor: 0, deadline: 0 }]))
+  for (const d of details) for (const [id, c] of Object.entries(d.clients ?? {})) {
+    const r = sum.get(id)
+    if (!r) continue
+    r.shown += c.released; r.expired += c.expired; r.belowFloor += c.belowFloor; r.deadline += c.deadline
+  }
+  return [...sum.values()].sort((a, b) => a.name.localeCompare(b.name))
+}
+
+/** The week's Job Queue release, from pipeline_runs (queue_release rows over the week's nights). */
+export async function queueWeek(sb: SupabaseClient, wk: { fromNight: string; toNight: string; from: Date; to: Date }): Promise<NonNullable<WeeklyInput["queue"]>> {
+  const runs = await pageAll<any>((a, b) => sb.from("pipeline_runs").select("detail").eq("step", "queue_release").eq("status", "ok")
+    .gte("night", wk.fromNight).lte("night", wk.toNight).order("started_at").range(a, b))
+  const crit = await pageAll<any>((a, b) => sb.from("client_match_criteria").select("client_profile_id").eq("active", true).range(a, b))
+  const names = await clientNames(sb, crit.map((c) => c.client_profile_id))
+  return {
+    rows: queueRows(runs.map((r) => r.detail ?? {}), crit.map((c) => ({ id: c.client_profile_id, name: names.get(c.client_profile_id) ?? c.client_profile_id.slice(0, 8) }))),
+    settings: runs.at(-1)?.detail?.settings ?? queueSettings(),
+    nightsRun: runs.length,
     nights: Math.round((wk.to.getTime() - wk.from.getTime()) / DAY),
   }
 }
@@ -283,11 +338,11 @@ export async function runWeeklyReport(
 ): Promise<{ subject: string; text: string }> {
   const now = opts.now ?? new Date()
   const wk = lastWeek(now)
-  const [steps, weekAi, pos, coverage] = await Promise.all([stepTotals(sb, wk.fromNight, wk.toNight), aiSpend(sb, wk.from, wk.to), costPosition(sb, now, opts.apiKey), searchCoverage(sb, wk)])
+  const [steps, weekAi, pos, coverage, queue] = await Promise.all([stepTotals(sb, wk.fromNight, wk.toNight), aiSpend(sb, wk.from, wk.to), costPosition(sb, now, opts.apiKey), searchCoverage(sb, wk, now), queueWeek(sb, wk)])
   const text = weeklyReportText({
     weekFrom: wk.fromNight, weekTo: wk.toNight, steps, weekAi, mtd: pos.mtd, projected: pos.projected,
     budget: MONTHLY_BUDGET_USD, fee: SEARCHAPI_MONTHLY_FEE_USD, month: pos.window.label,
-    account: pos.account, searchesProjected: pos.pace.searches?.projected ?? null, searchError: pos.searchError, coverage,
+    account: pos.account, searchesProjected: pos.pace.searches?.projected ?? null, searchError: pos.searchError, coverage, queue,
   })
   const subject = `Job sourcing cost: week of ${wk.fromNight}, $${pos.mtd.toFixed(2)} month to date`
   if (opts.send) await opts.send(subject, text)
