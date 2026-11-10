@@ -1,6 +1,7 @@
 // app/api/internal/pipeline/tick/route.ts
 //
-// The nightly pipeline, one step per call: Google Jobs, enrich, match, link
+// The nightly pipeline, one step per call (matching that ends early takes the
+// queue release with it): Google Jobs, enrich, match, queue release, link
 // check (lib/pipeline/tick.ts). Cron every 15 minutes, 05:00-07:45 UTC, after
 // the ATS sweeps. A call with nothing left to do returns done.
 //

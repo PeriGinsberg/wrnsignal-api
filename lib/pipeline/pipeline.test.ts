@@ -5,7 +5,8 @@
 
 import { pickPairs, projectLongestWaits, type ClientRoles, type LastSearch, type PairRow } from "./pairs"
 import { byClient, queueSettings } from "./queueRelease"
-import { closeStale, nextStep, MAX_CONTINUATIONS, STALE_RUNNING_MS, TICK_STEPS, type RunRow } from "./runs"
+import { closeStale, nextStep, MAX_CONTINUATIONS, MAX_RETRIES, STALE_RUNNING_MS, TICK_STEPS, type RunRow } from "./runs"
+import { failureEmail } from "./tick"
 import { watchdogFindings } from "./watchdog"
 import { coverageRows, lastWeek, monthWindow, paceAlerts, projectSearches, projectSpend, queueRows, runPaceCheck, weeklyReportText, type StepTotals } from "./cost"
 
@@ -82,17 +83,50 @@ const ids = (pk: { picked: { id: string }[] }) => pk.picked.map((p) => p.id).joi
 let n = 0
 const row = (step: RunRow["step"], status: RunRow["status"], detail: Record<string, any> = {}): RunRow =>
   ({ id: String(n++), night: "2026-10-30", step, status, started_at: `2026-10-30T05:${String(n).padStart(2, "0")}:00Z`, finished_at: null, units: 0, cost_usd: 0, searches: 0, detail, error: status === "error" ? "x" : null })
-const ns = (rows: RunRow[]) => { const x = nextStep(rows); return x.kind === "run" ? `${x.step}${x.continuation ? "+" : ""}` : x.kind }
+// 05:30 UTC unless given: before the reserved stretch.
+const at = (hhmm: string) => new Date(`2026-10-30T${hhmm}:00Z`)
+const ns = (rows: RunRow[], now = at("05:30")) => { const x = nextStep(rows, now); return x.kind === "run" ? `${x.step}${x.retry ? `!${x.retry}` : x.continuation ? "+" : ""}` : x.kind }
 ok("nothing yet: Google Jobs", ns([]) === "google_jobs")
 ok("ATS rows do not count as tick steps", ns([row("ats_grnhse", "ok"), row("ats_smartrecruiters", "ok")]) === "google_jobs")
-ok("Google Jobs at its cap or failed is done for the night: enrich next", ns([row("google_jobs", "capped", { capReason: "cap" })]) === "enrich" && ns([row("google_jobs", "error")]) === "enrich")
+ok("Google Jobs at its cap is done for the night: enrich next", ns([row("google_jobs", "capped", { capReason: "cap" })]) === "enrich")
 ok("Google Jobs out of time: Google Jobs again", ns([row("google_jobs", "capped", { capReason: "deadline", deferred: 27 })]) === "google_jobs+")
 ok("Google Jobs killed: Google Jobs again", ns([row("google_jobs", "capped", { capReason: "killed" })]) === "google_jobs+")
 ok("match killed: match again", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "capped", { capReason: "killed" })]) === "match+")
 ok("match done: the queue release next", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "ok")]) === "queue_release")
-ok("queue release failed: not run again, link check next", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "ok"), row("queue_release", "error")]) === "link_check")
-ok("queue release killed: not run again, link check next", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "ok"), row("queue_release", "capped", { capReason: "killed" })]) === "link_check")
-ok("link check killed: not run again", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "ok"), row("queue_release", "ok"), row("link_check", "capped", { capReason: "killed" })]) === "done")
+const upToRelease = () => [row("google_jobs", "ok"), row("enrich", "ok"), row("match", "ok")]
+// ---- retries (Peri, 2026-11-10)
+ok("retry: queue release failed, retried on the next tick", ns([...upToRelease(), row("queue_release", "error")]) === "queue_release!1")
+ok("retry: queue release killed counts as a failure, retried", ns([...upToRelease(), row("queue_release", "capped", { capReason: "killed" })]) === "queue_release!1")
+ok("retry: a second failure, retry 2", ns([...upToRelease(), row("queue_release", "error"), row("queue_release", "error")]) === "queue_release!2")
+ok(`retry: after ${MAX_RETRIES} retries it gives up and the link check runs`, ns([...upToRelease(), ...Array.from({ length: MAX_RETRIES + 1 }, () => row("queue_release", "error"))]) === "link_check")
+ok("retry: a retry that succeeds ends it", ns([...upToRelease(), row("queue_release", "error"), row("queue_release", "ok")]) === "link_check")
+ok("retry: link check killed, retried", ns([...upToRelease(), row("queue_release", "ok"), row("link_check", "capped", { capReason: "killed" })]) === "link_check!1")
+ok("retry: Google Jobs failed, retried before enrich", ns([row("google_jobs", "error")]) === "google_jobs!1")
+ok("retry: Google Jobs out of retries, enrich next", ns(Array.from({ length: MAX_RETRIES + 1 }, () => row("google_jobs", "error"))) === "enrich")
+ok("retry: match failed after continuations, retried", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "capped", { capReason: "deadline" }), row("match", "error")]) === "match!1")
+ok("retry: a killed match is a continuation, not a failure", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "capped", { capReason: "killed" })]) === "match+")
+// ---- the reserved stretch from 07:00
+ok("reserved: at 07:00 a match continuation waits, the release runs", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "capped", { capReason: "deadline" })], at("07:00")) === "queue_release")
+ok("reserved: at 06:45 the match continuation still runs", ns([row("google_jobs", "ok"), row("enrich", "ok"), row("match", "capped", { capReason: "deadline" })], at("06:45")) === "match+")
+ok("reserved: enrich never reached, the release still runs at 07:15", ns([row("google_jobs", "capped", { capReason: "deadline" })], at("07:15")) === "queue_release")
+ok("reserved: nothing ran all night, the release and link check still get their ticks", ns([], at("07:30")) === "queue_release")
+ok("reserved: a failed early step is not retried there", ns([row("google_jobs", "ok"), row("enrich", "error")], at("07:00")) === "queue_release")
+ok("reserved: the release retried there", ns([...upToRelease(), row("queue_release", "error")], at("07:15")) === "queue_release!1")
+ok("reserved: release done, link check next", ns([...upToRelease(), row("queue_release", "ok")], at("07:45")) === "link_check")
+ok("reserved: all done", ns([...upToRelease(), row("queue_release", "ok"), row("link_check", "ok")], at("07:45")) === "done")
+
+// ---- the failure email says whether a retry comes
+{
+  const fail = { status: "error" as const, error: "release_queue: canceling statement due to statement timeout" }
+  const e1 = failureEmail("queue_release", "2026-10-30", fail, [...upToRelease(), row("queue_release", "error")], at("06:30"), "test")
+  ok("failure email: retrying, in the subject and the text", e1.subject.includes("failed, retrying") && e1.text.includes("retry 1 of 2") && e1.text.includes("statement timeout"))
+  const e2 = failureEmail("queue_release", "2026-10-30", fail, [...upToRelease(), row("queue_release", "error")], at("07:45"), "test")
+  ok("failure email: the last tick, no retry tonight", !e2.subject.includes("retrying") && e2.text.includes("No tick is left"))
+  const e3 = failureEmail("queue_release", "2026-10-30", fail, [...upToRelease(), ...Array.from({ length: 3 }, () => row("queue_release", "error"))], at("06:30"), "test")
+  ok("failure email: out of retries", !e3.subject.includes("retrying") && e3.text.includes("failed 3 times"))
+  const e4 = failureEmail("enrich", "2026-10-30", fail, [row("google_jobs", "ok"), row("enrich", "error")], at("06:45"), "test")
+  ok("failure email: an early step failing at 06:45 is not retried in the reserved stretch", !e4.subject.includes("retrying"))
+}
 ok("a running ATS sweep does not hold up the ticks", ns([row("ats_smartrecruiters", "running")]) === "google_jobs")
 ok("enrich out of time: enrich again", ns([row("google_jobs", "ok"), row("enrich", "capped", { capReason: "deadline" })]) === "enrich+")
 ok("enrich at its cap: match next", ns([row("google_jobs", "ok"), row("enrich", "capped", { capReason: "cap" })]) === "match")

@@ -50,6 +50,23 @@ export type RunRow = {
 export const STALE_RUNNING_MS = 15 * 60_000
 /** Continuations of one step in a night, past the first run. Twelve ticks a night; this leaves room for the rest. */
 export const MAX_CONTINUATIONS = 4
+/** Retries of a failed step in a night, after the first attempt. Every step is safe to run again. */
+export const MAX_RETRIES = 2
+/**
+ * The ticks run every 15 minutes, 05:00-07:45 UTC (vercel.json). From 07:00 the
+ * last four are kept for the queue release and the link check (and a retry of
+ * each): searching, enriching and matching stop starting there, and what they
+ * left waits for tomorrow night.
+ */
+export const RESERVED_FROM_MIN = 7 * 60
+export const LAST_TICK_MIN = 7 * 60 + 45
+export const TICK_EVERY_MIN = 15
+const EARLY_STEPS: readonly TickStep[] = ["google_jobs", "enrich", "match"]
+const utcMin = (d: Date) => d.getUTCHours() * 60 + d.getUTCMinutes()
+/** Inside the reserved stretch at the end of the night. */
+export const reserved = (now: Date) => utcMin(now) >= RESERVED_FROM_MIN
+/** Another tick comes tonight after this one. */
+export const tickLeftAfter = (now: Date) => utcMin(now) + TICK_EVERY_MIN <= LAST_TICK_MIN
 
 export const nightOf = (d: Date = new Date()) => d.toISOString().slice(0, 10)
 
@@ -88,33 +105,53 @@ export async function finishStep(sb: SupabaseClient, id: string, r: StepResult):
 }
 
 export type Next =
-  | { kind: "run"; step: TickStep; continuation: boolean }
+  | { kind: "run"; step: TickStep; continuation: boolean; retry?: number }
   | { kind: "busy"; step: Step; since: string }
   | { kind: "done" }
 
 const latest = (rows: RunRow[], step: Step) => rows.filter((r) => r.step === step).at(-1)
 
 /**
+ * A run that failed: an error, or, for the queue release and the link check
+ * (which run once and do not continue), a kill at the time limit.
+ */
+export const failedRun = (r: Pick<RunRow, "step" | "status" | "detail">) =>
+  r.status === "error" || (!(EARLY_STEPS as readonly string[]).includes(r.step) && r.status === "capped" && r.detail?.capReason === "killed")
+
+/**
  * The next tick step for tonight. Stale running rows must already have been
- * closed (closeStale). A step is finished when its latest row is ok, error or
- * capped at the cap; stopped at the deadline or killed means run it again, up
- * to MAX_CONTINUATIONS. The queue release and the link check run once. Google Jobs continues too: a
- * continuation searches only pairs not searched in the last 20 hours, under
- * what is left of the night's search cap (tick.ts), so it never pays twice.
+ * closed (closeStale).
+ *
+ * In order, a step runs when it has no row yet; again when its last run
+ * failed, up to MAX_RETRIES retries (failedRun); again when it stopped at the
+ * deadline or was killed with work left, up to MAX_CONTINUATIONS (searching,
+ * enriching and matching only). Otherwise it is finished: ok, capped at the
+ * cap, or out of retries. Google Jobs continues and retries without paying
+ * twice: it searches only pairs not searched in the last 20 hours, under what
+ * is left of the night's cap (tick.ts).
+ *
+ * From RESERVED_FROM_MIN only the queue release and the link check run, so
+ * a long night cannot crowd them out (Peri, 2026-11-10).
  *
  * Only tick steps make a tick wait. The ATS sweeps run on their own crons
  * beside the ticks and keep their own order (app/api/internal/ingest/run-nightly).
  */
-export function nextStep(rows: RunRow[]): Next {
+export function nextStep(rows: RunRow[], now: Date = new Date()): Next {
   const running = rows.find((r) => r.status === "running" && (TICK_STEPS as readonly string[]).includes(r.step))
   if (running) return { kind: "busy", step: running.step, since: running.started_at }
+  const late = reserved(now)
   for (const step of TICK_STEPS) {
-    const last = latest(rows, step)
+    const early = EARLY_STEPS.includes(step)
+    if (late && early) continue
+    const mine = rows.filter((r) => r.step === step)
+    const last = mine.at(-1)
     if (!last) return { kind: "run", step, continuation: false }
-    const runs = rows.filter((r) => r.step === step).length
-    if (step !== "link_check" && step !== "queue_release" && resumes(last) && runs <= MAX_CONTINUATIONS) {
-      return { kind: "run", step, continuation: true }
+    if (failedRun(last)) {
+      const failures = mine.filter(failedRun).length
+      if (failures <= MAX_RETRIES) return { kind: "run", step, continuation: true, retry: failures }
+      continue
     }
+    if (early && resumes(last) && mine.length <= MAX_CONTINUATIONS) return { kind: "run", step, continuation: true }
   }
   return { kind: "done" }
 }
