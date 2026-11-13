@@ -1183,6 +1183,42 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     adjacentKeys: ["communications_writing", "drafting_documentation", "analysis_reporting"],
   },
   {
+    // Trademark / copyright / patent practice (C013). Without it an IP
+    // associate posting extracts only generic legal research, and a résumé of
+    // trademark filings and copyright litigation counts for nothing specific.
+    key: "ip_trademark_copyright",
+    label: "intellectual property, trademark, and copyright work",
+    kind: "function",
+    functionTag: "legal_regulatory",
+    // Coursework and memberships are interest, not practice.
+    profilePhrases: [
+      "trademark", "trademarks", "copyright", "copyrights", "intellectual property",
+      "uspto", "ttab", "office action", "office actions", "patent prosecution",
+      "patent application", "patent applications", "infringement", "anti-counterfeiting",
+    ].map((phrase) => ({ phrase, negativeContext: ["coursework", "course", "society", "membership", "memberships"] })),
+    // Footer and legal boilerplate mention these words without any IP work.
+    // Bare "intellectual property" is also a consultancy's reusable assets
+    // (IQVIA), a media company's properties (Brooklyn Sports) or a discipline
+    // in a firm blurb (BRG), so it needs a legal word on the line.
+    jobPhrases: [
+      "trademark", "trademarks", "copyright", "copyrights",
+      { phrase: "intellectual property", requiresNearby: [
+        "trademark", "trademarks", "copyright", "copyrights", "patent", "patents", "law", "legal",
+        "counsel", "attorney", "attorneys", "paralegal", "litigation", "infringement",
+        "prosecution", "protection", "uspto", "filings",
+      ] },
+      "uspto", "ttab", "patent prosecution", "patent litigation", "ip litigation",
+      "infringement", "anti-counterfeiting",
+    ].map((spec) => ({
+      ...(typeof spec === "string" ? { phrase: spec } : spec),
+      negativeContext: [
+        "©", "all rights reserved", "registered trademark", "trademarks of", "trademark of",
+        "respective owners", "invention assignment", "assign all", "confidentiality",
+      ],
+    })),
+    adjacentKeys: ["policy_regulatory_research", "drafting_documentation"],
+  },
+  {
     key: "financial_analysis",
     label: "financial analysis and investment work",
     kind: "function",
