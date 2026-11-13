@@ -62,6 +62,7 @@ type ClientProfileRow = {
   target_roles: string | null
   target_locations: string | null
   profile_version: number | null
+  grad_date: string | null
 }
 
 type PersonaRow = {
@@ -176,7 +177,7 @@ export function computeJobFitFingerprint(params: {
 // ── Profile assembly ──────────────────────────────────────────────────
 
 const PROFILE_SELECT =
-  "id,profile_text,resume_text,profile_structured,target_roles,target_locations,profile_version"
+  "id,profile_text,resume_text,profile_structured,target_roles,target_locations,profile_version,grad_date"
 
 /**
  * Loads client_profiles (+ optional persona) and assembles the combined
@@ -269,6 +270,7 @@ export async function assembleProfileForScoring(params: {
     profileStructured: clientProfile.profile_structured,
     targetRoles: clientProfile.target_roles,
     preferredLocations: clientProfile.target_locations,
+    gradDate: clientProfile.grad_date,
   })
 
   // profileVersionAtRun is only populated when a persona was explicitly

@@ -25477,6 +25477,13 @@
         "label": "content and channel execution"
       },
       {
+        "id": "80b5419cf60e5c27",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 10,
+        "label": "intellectual property, trademark, and copyright work"
+      },
+      {
         "id": "8568b3e449d9df0e",
         "key": "clinical_patient_work",
         "kind": "function",
@@ -25510,6 +25517,13 @@
         "kind": "deliverable",
         "strength": 6,
         "label": "drafting, documentation, and written deliverables"
+      },
+      {
+        "id": "ce8de6d0373efb27",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 7,
+        "label": "intellectual property, trademark, and copyright work"
       },
       {
         "id": "d8d5a432ef9b370a",
@@ -105516,8 +105530,8 @@
     "schema_version": 2,
     "id": "prod-4c0572d3-3113-4728-b397-b2c009658bdd",
     "label": "prod 4c0572d3 — Paralegal @ David Yurman (2026-06-02)",
-    "decision": "Apply",
-    "score": 92,
+    "decision": "Priority Apply",
+    "score": 97,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -105543,6 +105557,14 @@
         "kind": "function",
         "strength": 5,
         "label": "legal, policy, and regulatory research",
+        "requiredness": "supporting"
+      },
+      {
+        "id": "928eab900db2413a",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 5,
+        "label": "intellectual property, trademark, and copyright work",
         "requiredness": "supporting"
       }
     ],
@@ -105618,6 +105640,13 @@
         "label": "content and channel execution"
       },
       {
+        "id": "80b5419cf60e5c27",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 10,
+        "label": "intellectual property, trademark, and copyright work"
+      },
+      {
         "id": "8568b3e449d9df0e",
         "key": "clinical_patient_work",
         "kind": "function",
@@ -105651,6 +105680,13 @@
         "kind": "deliverable",
         "strength": 6,
         "label": "drafting, documentation, and written deliverables"
+      },
+      {
+        "id": "ce8de6d0373efb27",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 7,
+        "label": "intellectual property, trademark, and copyright work"
       },
       {
         "id": "d8d5a432ef9b370a",
@@ -105775,6 +105811,24 @@
         "profile_unit_id": "f7d71348a2a6940e"
       },
       {
+        "match_strength": "direct",
+        "weight": 99,
+        "coverageScore": 81,
+        "match_kind": "function",
+        "match_key": "ip_trademark_copyright",
+        "job_unit_key": "ip_trademark_copyright",
+        "profile_unit_id": "80b5419cf60e5c27"
+      },
+      {
+        "match_strength": "direct",
+        "weight": 98,
+        "coverageScore": 79,
+        "match_kind": "function",
+        "match_key": "ip_trademark_copyright",
+        "job_unit_key": "ip_trademark_copyright",
+        "profile_unit_id": "ce8de6d0373efb27"
+      },
+      {
         "match_strength": "adjacent",
         "weight": 77,
         "coverageScore": 54,
@@ -105886,6 +105940,12 @@
         "weight": 100,
         "match_strength": "direct",
         "match_key": "content_execution"
+      },
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 99,
+        "match_strength": "direct",
+        "match_key": "ip_trademark_copyright"
       },
       {
         "code": "WHY_DIRECT_EXPERIENCE_PROOF",
@@ -106004,17 +106064,17 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
@@ -106022,8 +106082,8 @@
           "note": "0"
         }
       ],
-      "raw_score": 92,
-      "clamped_score": 92
+      "raw_score": 97,
+      "clamped_score": 97
     }
   },
   "prod-4c5f4b26-f9a1-4b61-824a-6fd5a520c1ba": {
@@ -156831,6 +156891,13 @@
         "label": "content and channel execution"
       },
       {
+        "id": "80b5419cf60e5c27",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 10,
+        "label": "intellectual property, trademark, and copyright work"
+      },
+      {
         "id": "8568b3e449d9df0e",
         "key": "clinical_patient_work",
         "kind": "function",
@@ -156864,6 +156931,13 @@
         "kind": "deliverable",
         "strength": 6,
         "label": "drafting, documentation, and written deliverables"
+      },
+      {
+        "id": "ce8de6d0373efb27",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 7,
+        "label": "intellectual property, trademark, and copyright work"
       },
       {
         "id": "d8d5a432ef9b370a",
@@ -210438,6 +210512,13 @@
         "label": "content and channel execution"
       },
       {
+        "id": "80b5419cf60e5c27",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 10,
+        "label": "intellectual property, trademark, and copyright work"
+      },
+      {
         "id": "8568b3e449d9df0e",
         "key": "clinical_patient_work",
         "kind": "function",
@@ -210471,6 +210552,13 @@
         "kind": "deliverable",
         "strength": 6,
         "label": "drafting, documentation, and written deliverables"
+      },
+      {
+        "id": "ce8de6d0373efb27",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 7,
+        "label": "intellectual property, trademark, and copyright work"
       },
       {
         "id": "d8d5a432ef9b370a",
@@ -241353,6 +241441,13 @@
         "label": "content and channel execution"
       },
       {
+        "id": "80b5419cf60e5c27",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 10,
+        "label": "intellectual property, trademark, and copyright work"
+      },
+      {
         "id": "8568b3e449d9df0e",
         "key": "clinical_patient_work",
         "kind": "function",
@@ -241386,6 +241481,13 @@
         "kind": "deliverable",
         "strength": 6,
         "label": "drafting, documentation, and written deliverables"
+      },
+      {
+        "id": "ce8de6d0373efb27",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 7,
+        "label": "intellectual property, trademark, and copyright work"
       },
       {
         "id": "d8d5a432ef9b370a",
@@ -248686,6 +248788,13 @@
         "label": "content and channel execution"
       },
       {
+        "id": "80b5419cf60e5c27",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 10,
+        "label": "intellectual property, trademark, and copyright work"
+      },
+      {
         "id": "8568b3e449d9df0e",
         "key": "clinical_patient_work",
         "kind": "function",
@@ -248719,6 +248828,13 @@
         "kind": "deliverable",
         "strength": 6,
         "label": "drafting, documentation, and written deliverables"
+      },
+      {
+        "id": "ce8de6d0373efb27",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 7,
+        "label": "intellectual property, trademark, and copyright work"
       },
       {
         "id": "d8d5a432ef9b370a",
@@ -257343,6 +257459,13 @@
         "label": "content and channel execution"
       },
       {
+        "id": "80b5419cf60e5c27",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 10,
+        "label": "intellectual property, trademark, and copyright work"
+      },
+      {
         "id": "8568b3e449d9df0e",
         "key": "clinical_patient_work",
         "kind": "function",
@@ -257376,6 +257499,13 @@
         "kind": "deliverable",
         "strength": 6,
         "label": "drafting, documentation, and written deliverables"
+      },
+      {
+        "id": "ce8de6d0373efb27",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 7,
+        "label": "intellectual property, trademark, and copyright work"
       },
       {
         "id": "d8d5a432ef9b370a",
@@ -283439,11 +283569,20 @@
     "schema_version": 2,
     "id": "prod-cf2ece01-dec7-4bc0-af59-6f8bff83a78d",
     "label": "prod cf2ece01 — Trademark Paralegal @ Authentic Brands Group (2026-06-02)",
-    "decision": "Review",
-    "score": 60,
+    "decision": "Apply",
+    "score": 75,
     "gateType": "none",
     "traceMissing": false,
-    "requirement_units": [],
+    "requirement_units": [
+      {
+        "id": "8e1b6f0fae87f8c1",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 5,
+        "label": "intellectual property, trademark, and copyright work",
+        "requiredness": "supporting"
+      }
+    ],
     "profile_evidence_units": [
       {
         "id": "0ef2d3016da5e4db",
@@ -283516,6 +283655,13 @@
         "label": "content and channel execution"
       },
       {
+        "id": "80b5419cf60e5c27",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 10,
+        "label": "intellectual property, trademark, and copyright work"
+      },
+      {
         "id": "8568b3e449d9df0e",
         "key": "clinical_patient_work",
         "kind": "function",
@@ -283551,6 +283697,13 @@
         "label": "drafting, documentation, and written deliverables"
       },
       {
+        "id": "ce8de6d0373efb27",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 7,
+        "label": "intellectual property, trademark, and copyright work"
+      },
+      {
         "id": "d8d5a432ef9b370a",
         "key": "prospecting_pipeline_management",
         "kind": "execution",
@@ -283572,12 +283725,38 @@
         "label": "content and channel execution"
       }
     ],
-    "matches": [],
-    "why_codes": [],
+    "matches": [
+      {
+        "match_strength": "direct",
+        "weight": 99,
+        "coverageScore": 81,
+        "match_kind": "function",
+        "match_key": "ip_trademark_copyright",
+        "job_unit_key": "ip_trademark_copyright",
+        "profile_unit_id": "80b5419cf60e5c27"
+      },
+      {
+        "match_strength": "direct",
+        "weight": 98,
+        "coverageScore": 79,
+        "match_kind": "function",
+        "match_key": "ip_trademark_copyright",
+        "job_unit_key": "ip_trademark_copyright",
+        "profile_unit_id": "ce8de6d0373efb27"
+      }
+    ],
+    "why_codes": [
+      {
+        "code": "WHY_DIRECT_EXPERIENCE_PROOF",
+        "weight": 99,
+        "match_strength": "direct",
+        "match_key": "ip_trademark_copyright"
+      }
+    ],
     "risk_codes": [
       {
         "code": "RISK_LIMITED_MATCH_EVIDENCE",
-        "severity": "high",
+        "severity": "medium",
         "weight": 0
       }
     ],
@@ -283688,17 +283867,17 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
@@ -283706,8 +283885,8 @@
           "note": "0"
         }
       ],
-      "raw_score": 66,
-      "clamped_score": 60
+      "raw_score": 75,
+      "clamped_score": 75
     }
   },
   "prod-cf6d294d-0794-4a25-8e9a-88325dc85902": {
@@ -347771,6 +347950,13 @@
         "label": "content and channel execution"
       },
       {
+        "id": "80b5419cf60e5c27",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 10,
+        "label": "intellectual property, trademark, and copyright work"
+      },
+      {
         "id": "8568b3e449d9df0e",
         "key": "clinical_patient_work",
         "kind": "function",
@@ -347804,6 +347990,13 @@
         "kind": "deliverable",
         "strength": 6,
         "label": "drafting, documentation, and written deliverables"
+      },
+      {
+        "id": "ce8de6d0373efb27",
+        "key": "ip_trademark_copyright",
+        "kind": "function",
+        "strength": 7,
+        "label": "intellectual property, trademark, and copyright work"
       },
       {
         "id": "d8d5a432ef9b370a",

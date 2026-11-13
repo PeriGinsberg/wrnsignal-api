@@ -1183,6 +1183,42 @@ const CAPABILITY_RULES: CapabilityRule[] = [
     adjacentKeys: ["communications_writing", "drafting_documentation", "analysis_reporting"],
   },
   {
+    // Trademark / copyright / patent practice (C013). Without it an IP
+    // associate posting extracts only generic legal research, and a résumé of
+    // trademark filings and copyright litigation counts for nothing specific.
+    key: "ip_trademark_copyright",
+    label: "intellectual property, trademark, and copyright work",
+    kind: "function",
+    functionTag: "legal_regulatory",
+    // Coursework and memberships are interest, not practice.
+    profilePhrases: [
+      "trademark", "trademarks", "copyright", "copyrights", "intellectual property",
+      "uspto", "ttab", "office action", "office actions", "patent prosecution",
+      "patent application", "patent applications", "infringement", "anti-counterfeiting",
+    ].map((phrase) => ({ phrase, negativeContext: ["coursework", "course", "society", "membership", "memberships"] })),
+    // Footer and legal boilerplate mention these words without any IP work.
+    // Bare "intellectual property" is also a consultancy's reusable assets
+    // (IQVIA), a media company's properties (Brooklyn Sports) or a discipline
+    // in a firm blurb (BRG), so it needs a legal word on the line.
+    jobPhrases: [
+      "trademark", "trademarks", "copyright", "copyrights",
+      { phrase: "intellectual property", requiresNearby: [
+        "trademark", "trademarks", "copyright", "copyrights", "patent", "patents", "law", "legal",
+        "counsel", "attorney", "attorneys", "paralegal", "litigation", "infringement",
+        "prosecution", "protection", "uspto", "filings",
+      ] },
+      "uspto", "ttab", "patent prosecution", "patent litigation", "ip litigation",
+      "infringement", "anti-counterfeiting",
+    ].map((spec) => ({
+      ...(typeof spec === "string" ? { phrase: spec } : spec),
+      negativeContext: [
+        "©", "all rights reserved", "registered trademark", "trademarks of", "trademark of",
+        "respective owners", "invention assignment", "assign all", "confidentiality",
+      ],
+    })),
+    adjacentKeys: ["policy_regulatory_research", "drafting_documentation"],
+  },
+  {
     key: "financial_analysis",
     label: "financial analysis and investment work",
     kind: "function",
@@ -3475,14 +3511,21 @@ function detectInternshipSignals(textRaw: string) {
 function inferProfileGradYear(text: string): number | null {
   if (!text) return null
 
-  // Pattern A: "class of 2025", "graduated 2019", "expected graduation 2026"
-  const grad = text.match(
-    /\b(class of|graduat(?:e|ed|ing|ion)|expected graduation|anticipated graduation)\b[^\n\d]{0,30}(20\d{2})\b/i
-  )
-  if (grad?.[2]) {
-    const y = parseInt(grad[2], 10)
-    if (Number.isFinite(y) && y >= 2000 && y <= 2035) return y
-  }
+  // Pattern A: "class of 2025", "graduated 2019", "expected graduation 2026",
+  // "Expected May 2027" / "Anticipated 2026". Takes the LATEST year across
+  // all matches: a grad student lists a completed earlier degree too, and the
+  // in-progress one is the year a posting screens on (C013 / DEF-037).
+  const gradYears = [
+    ...text.matchAll(
+      /\b(?:class of|graduat(?:e|ed|ing|ion)|expected graduation|anticipated graduation)\b[^\n\d]{0,30}(20\d{2})\b/gi
+    ),
+    ...text.matchAll(
+      /\b(?:expected|anticipated)\b[:\s]*(?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?,?\s+)?(20\d{2})\b/gi
+    ),
+  ]
+    .map((m) => parseInt(m[1], 10))
+    .filter((y) => Number.isFinite(y) && y >= 2000 && y <= 2035)
+  if (gradYears.length > 0) return Math.max(...gradYears)
 
   // Pattern B: "B.S., Marketing, 2024" or "Bachelor of Science 2022" —
   // a degree keyword followed by a year on the same line, within a short
@@ -3534,6 +3577,19 @@ function inferCandidateDegreeStatus(
 ): "has_degree" | "in_progress" | "no_degree" | "unknown" {
   // Completed degree: gradYear in the past
   if (gradYear && gradYear < currentYear) return "has_degree"
+
+  // A future gradYear can belong to a later degree (a JD or MBA candidate who
+  // already holds a bachelor's). degreeStatus is read as "has a bachelor's"
+  // (scoring.ts bachelor-required risks), so a bachelor's line whose last
+  // year is already past keeps has_degree (C013 / DEF-037).
+  if (gradYear && gradYear > currentYear) {
+    for (const rawLine of profileText.split(/\r?\n/)) {
+      if (!/\b(bachelor'?s?|b\.\s*[as]\.|ba|bs)\b/i.test(rawLine)) continue
+      if (/\b(expected|anticipated|candidate|pursuing|in progress)\b/i.test(rawLine)) continue
+      const years = rawLine.match(/\b20\d{2}\b/g)
+      if (years && parseInt(years[years.length - 1], 10) < currentYear) return "has_degree"
+    }
+  }
 
   // Degree keywords in profile
   const hasDegreeKeyword =
