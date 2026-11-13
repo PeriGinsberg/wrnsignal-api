@@ -526,6 +526,10 @@ export function mapClientProfileToOverrides(args: {
   profileStructured: AnyObj | null
   targetRoles?: string | null
   preferredLocations?: string | null
+  // client_profiles.grad_date (YYYY-MM-DD), entered by the client or coach.
+  // Beats anything read from résumé text: a grad student's résumé also
+  // carries an earlier, completed degree year (C013 / DEF-037).
+  gradDate?: string | null
 }): Partial<StructuredProfileSignals> {
   const ps = (args.profileStructured || {}) as AnyObj
 
@@ -556,7 +560,9 @@ export function mapClientProfileToOverrides(args: {
     allowedCities,
   }
 
+  const storedGradYear = Number(String(args.gradDate ?? "").slice(0, 4))
   const gradYear =
+    (storedGradYear >= 2000 && storedGradYear <= 2100 ? storedGradYear : null) ||
     (Number.isFinite(ps?.gradYear) ? Number(ps.gradYear) : null) ||
     parseGradYear(args.profileText)
 
