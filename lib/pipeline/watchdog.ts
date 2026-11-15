@@ -4,7 +4,9 @@
  * The ticks email about what they did: failures and caps. Only something
  * outside them can see what did not happen at all, so this reads tonight's
  * pipeline_runs and reports:
- *   - a step with no row: skipped (its cron never fired, or the ticks ran out)
+ *   - a step with no row: skipped (its cron never fired, the ticks ran out, or
+ *     searching/enriching/matching reached the stretch kept from 07:00 for the
+ *     release and the link check)
  *   - a step still running: stuck
  *   - a step stopped at, or killed at, the time limit with work left after its last run
  * Failures and caps are not repeated here; the tick already sent those.

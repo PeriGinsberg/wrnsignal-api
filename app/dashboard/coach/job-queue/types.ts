@@ -9,6 +9,8 @@ export type QChip = {
   s?: number
   why?: string
   q?: string
+  /** When it entered the queue (released_at; first_queued_at when never released). "New since last visit" reads this. */
+  r?: string
   rk?: number
   all?: (number | null)[]
   ids: string[]

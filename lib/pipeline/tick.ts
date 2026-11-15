@@ -9,6 +9,11 @@
  * is killed anyway, the next tick closes its row as "killed" and continues it
  * the same way (runs.ts closeStale).
  *
+ * A FAILED STEP IS RETRIED on the next tick, up to MAX_RETRIES times a night
+ * (runs.ts nextStep). From 07:00 the ticks are kept for the queue release and
+ * the link check. When matching finishes with time to spare, the release
+ * (seconds) runs in the same tick.
+ *
  * CAPS ARE PER NIGHT: searches, postings enriched and judgments, summed over
  * every run of the step tonight. Hitting one stops that step for the night and
  * emails. Running out of time is not a cap: the next tick continues, and only
@@ -24,7 +29,7 @@ import { runLinker } from "../ingest/link"
 import { countWorklist, runEnrichment } from "../ingest/enrichPostings"
 import { runMatching } from "../match/runMatching"
 import { runLinkCheck } from "../match/linkCheck"
-import { closeStale, finishStep, nextStep, nightOf, nightRows, startStep, TICK_STEPS, type RunRow, type StepResult, type TickStep } from "./runs"
+import { closeStale, failedRun, finishStep, MAX_RETRIES, nextStep, nightOf, nightRows, startStep, tickLeftAfter, TICK_EVERY_MIN, TICK_STEPS, type RunRow, type StepResult, type TickStep } from "./runs"
 import { loadAndPickPairs, searchCapFromEnv } from "./pairs"
 import { queueReleaseStep } from "./queueRelease"
 import { runPaceCheck, SEARCHAPI_MONTHLY_FEE_USD } from "./cost"
@@ -43,6 +48,8 @@ export const MAX_PAGES = 3
 export const SEARCHAPI_PLAN_SEARCHES = num(process.env.SEARCHAPI_PLAN_SEARCHES, 10000)
 /** How long a tick's step may take: the function limit is 800s, and scans, writes and the pace check need the rest. */
 export const TICK_BUDGET_MS = 640_000
+/** The release runs in the same tick as matching only with this much of the budget left. */
+export const CHAIN_MIN_MS = 120_000
 export const TRIGGERED_BY = "nightly:pipeline"
 
 export type Send = (subject: string, text: string) => Promise<void>
@@ -187,13 +194,39 @@ const STEP_FN: Record<TickStep, (c: Ctx) => Promise<StepResult>> = {
   google_jobs: googleJobsStep, enrich: enrichStep, match: matchStep, queue_release: ({ sb }) => queueReleaseStep(sb), link_check: linkCheckStep,
 }
 
+type Ran = { step: TickStep; continuation: boolean; retry?: number; result: StepResult }
 export type TickResult = {
   night: string
-  ran: { step: TickStep; continuation: boolean; result: StepResult } | null
+  ran: Ran | null
+  /** The queue release, run in the same tick after matching finished early. */
+  chained?: Ran
   busy?: string
   done?: boolean
   staleClosed: number
   pace?: { sent: string[]; error?: string }
+}
+
+/**
+ * The email for a failed step: whether the next tick retries it. Pure.
+ * `after` is tonight's rows including the failed one; `now` is when it failed.
+ */
+export function failureEmail(step: TickStep, night: string, result: StepResult, after: RunRow[], now: Date, environment: string): { subject: string; text: string } {
+  const failures = after.filter((r) => r.step === step && failedRun(r)).length
+  const next = tickLeftAfter(now) ? nextStep(after, new Date(now.getTime() + TICK_EVERY_MIN * 60_000)) : null
+  const retries = next?.kind === "run" && next.step === step
+  const what = retries
+    ? `The next tick retries it (retry ${failures} of ${MAX_RETRIES}).`
+    : failures > MAX_RETRIES ? `It failed ${failures} times tonight; no more retries. It runs again tomorrow night.`
+    : `No tick is left for it tonight; it runs again tomorrow night.`
+  return {
+    subject: `Job sourcing pipeline: ${step} failed${retries ? ", retrying" : ""} (${night})`,
+    text: `${step} failed. ${what}
+
+${result.error}
+
+Detail: ${JSON.stringify(result.detail ?? {}, null, 1)}
+Environment: ${environment}`,
+  }
 }
 
 /** The email for a step stopped at its nightly cap. Pure, so the wording is testable. */
@@ -221,28 +254,38 @@ export async function runTick(sb: SupabaseClient, opts: { environment: string; s
   const rows = await nightRows(sb, night)
   // Tick steps only: each ATS sweep closes its own (app/api/internal/ingest/run-nightly).
   const stale = await closeStale(sb, rows, Date.now(), TICK_STEPS)
-  for (const r of stale) await opts.send(`Job sourcing pipeline: ${r.step} was killed at the time limit (${night})`, `${r.step} started at ${r.started_at} and was still running 15 minutes later: the function was killed at its time limit before it could stop itself. ${r.step === "link_check" ? "The link check does not run again tonight." : "This tick continues it from where it stopped."} A kill means the step's own deadline did not hold; worth a look even though nothing is lost.\nEnvironment: ${opts.environment}`)
+  for (const r of stale) await opts.send(`Job sourcing pipeline: ${r.step} was killed at the time limit (${night})`, `${r.step} started at ${r.started_at} and was still running 15 minutes later: the function was killed at its time limit before it could stop itself. This tick runs it again from where it stopped${r.step === "link_check" || r.step === "queue_release" ? `, as a retry (at most ${MAX_RETRIES} a night)` : ""}. A kill means the step's own deadline did not hold; worth a look even though nothing is lost.\nEnvironment: ${opts.environment}`)
 
-  const next = nextStep(rows)
+  const next = nextStep(rows, opts.now ?? new Date())
   const out: TickResult = { night, ran: null, staleClosed: stale.length }
   if (next.kind === "busy") return { ...out, busy: `${next.step} since ${next.since}` }
   if (next.kind === "done") return { ...out, done: true }
 
-  const id = await startStep(sb, next.step, TRIGGERED_BY, night)
-  let result: StepResult
-  try {
-    result = await STEP_FN[next.step]({ sb, rows, deadline: started + TICK_BUDGET_MS, environment: opts.environment })
-  } catch (e: any) {
-    result = { status: "error", error: String(e?.message ?? e) }
+  const runOne = async (step: TickStep, tonight: RunRow[], continuation: boolean, retry?: number): Promise<Ran> => {
+    const id = await startStep(sb, step, TRIGGERED_BY, night)
+    let result: StepResult
+    try {
+      result = await STEP_FN[step]({ sb, rows: tonight, deadline: started + TICK_BUDGET_MS, environment: opts.environment })
+    } catch (e: any) {
+      result = { status: "error", error: String(e?.message ?? e) }
+    }
+    await finishStep(sb, id, result)
+    if (result.status === "error") {
+      const e = failureEmail(step, night, result, await nightRows(sb, night), opts.now ?? new Date(), opts.environment)
+      await opts.send(e.subject, e.text)
+    } else if (result.status === "capped" && result.detail?.capReason === "cap") {
+      const e = capEmail(step, night, result.detail, opts.environment)
+      await opts.send(e.subject, e.text)
+    }
+    return { step, continuation, ...(retry ? { retry } : {}), result }
   }
-  await finishStep(sb, id, result)
-  out.ran = { step: next.step, continuation: next.continuation, result }
 
-  if (result.status === "error") {
-    await opts.send(`Job sourcing pipeline: ${next.step} failed (${night})`, `${next.step} failed.\n\n${result.error}\n\nDetail: ${JSON.stringify(result.detail ?? {}, null, 1)}\nEnvironment: ${opts.environment}`)
-  } else if (result.status === "capped" && result.detail?.capReason === "cap") {
-    const e = capEmail(next.step, night, result.detail, opts.environment)
-    await opts.send(e.subject, e.text)
+  out.ran = await runOne(next.step, rows, next.continuation, next.retry)
+  // Matching finished with time to spare: the release now, not a tick later.
+  if (out.ran.step === "match" && out.ran.result.status !== "error" && Date.now() < started + TICK_BUDGET_MS - CHAIN_MIN_MS) {
+    const after = await nightRows(sb, night)
+    const then = nextStep(after, opts.now ?? new Date())
+    if (then.kind === "run" && then.step === "queue_release") out.chained = await runOne("queue_release", after, then.continuation, then.retry)
   }
 
   try {

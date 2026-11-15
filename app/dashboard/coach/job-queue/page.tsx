@@ -58,9 +58,10 @@ function mergeChips(parts: { job: QJob; chips: QChip[] }[]): QChip[] {
     }
     const ranks = xs.map((x) => x.m.rk).filter((r): r is number => r !== undefined)
     const qs = xs.map((x) => x.m.q).filter((q): q is string => !!q).sort()
+    const rs = xs.map((x) => x.m.r).filter((r): r is string => !!r).sort()
     const fit = xs.find((x) => x.m.jobfitScore !== undefined)?.m
     return {
-      c, s: top.m.s, why: top.m.why, q: qs[0], rk: ranks.length ? Math.min(...ranks) : undefined,
+      c, s: top.m.s, why: top.m.why, q: qs[0], r: rs.at(-1), rk: ranks.length ? Math.min(...ranks) : undefined,
       ids: xs.flatMap((x) => x.m.ids),
       // A city already sent to the tracker (Fit) is never turned down from the group row.
       actIds: xs.filter((x) => x.m.status !== "fit").flatMap((x) => x.m.ids),
@@ -198,7 +199,8 @@ export default function JobQueuePage() {
   }, [load])
 
   const lastVisit = data?.lastVisitAt ?? null
-  const isNew = useCallback((m: QChip) => !!lastVisit && !!m.q && m.q > lastVisit, [lastVisit])
+  // New = entered the queue (released) since the last visit; a match can wait days before release.
+  const isNew = useCallback((m: QChip) => !!lastVisit && !!m.r && m.r > lastVisit, [lastVisit])
   const set = <K extends keyof Filters>(k: K, v: Filters[K]) => { setF((x) => ({ ...x, [k]: v })); setShown(PAGE) }
 
   // ---- filtering -----------------------------------------------------------

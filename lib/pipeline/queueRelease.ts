@@ -5,7 +5,9 @@
  *   PIPELINE_QUEUE_FLOOR          60  a match under this never enters the queue
  *   PIPELINE_QUEUE_LIMIT           8  released per client per night
  *   PIPELINE_QUEUE_EXPIRE_NIGHTS   7  a match not released within this many
- *                                     nights (its arrival night the first) expires
+ *                                     release nights expires: nights the release
+ *                                     succeeded, from its arrival night on (20261202);
+ *                                     a failed night costs no match a chance
  *   PIPELINE_QUEUE_DEADLINE_MIN   50  a match at this score or more with a stated
  *                                     deadline within 7 days enters even under the
  *                                     floor and goes first; it counts against the limit
