@@ -13862,6 +13862,13 @@
         "label": "prospecting, outreach, and pipeline management"
       },
       {
+        "id": "6c77cd421d891b2d",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "74cec92d85f5ba7f",
         "key": "event_coordination",
         "kind": "execution",
@@ -13918,11 +13925,25 @@
         "label": "hospital, operating room, or procedural environment exposure"
       },
       {
+        "id": "ae1f4450f84d75ef",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 8,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "b24128167d3cf770",
         "key": "hospital_or_environment",
         "kind": "function",
         "strength": 7,
         "label": "hospital, operating room, or procedural environment exposure"
+      },
+      {
+        "id": "b3943b936c550a93",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 8,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "b910335902acdd68",
@@ -19610,6 +19631,13 @@
         "kind": "function",
         "strength": 1,
         "label": "content and channel execution"
+      },
+      {
+        "id": "a3da7d7db5ab2b3c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 10,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "b0e9c498293583f9",
@@ -31614,6 +31642,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "b646c7d5f2990fd4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 9,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "b8d829f4e289cfd4",
         "key": "prospecting_pipeline_management",
         "kind": "execution",
@@ -31668,6 +31703,13 @@
         "kind": "function",
         "strength": 1,
         "label": "financial analysis and investment work"
+      },
+      {
+        "id": "ee3305ee64f7d60a",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 9,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "fd28be9e30c20d07",
@@ -41450,6 +41492,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5c206aeeb2fe3daa",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 8,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5e04d5443c5176de",
         "key": "crm",
         "kind": "tool",
@@ -41525,6 +41574,13 @@
         "kind": "function",
         "strength": 8,
         "label": "strategy, synthesis, and problem-solving work"
+      },
+      {
+        "id": "900deac8d3393247",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 8,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "9a96240dcb6f7441",

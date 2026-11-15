@@ -56,6 +56,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -117,6 +124,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -4833,6 +4847,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -4894,6 +4915,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -6567,6 +6595,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -6628,6 +6663,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -7120,6 +7162,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "excel tool usage"
+      },
+      {
+        "id": "40e7e2bb3fdc0fb4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "40e8ca5a40155856",
@@ -18232,6 +18281,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -18293,6 +18349,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -22358,6 +22421,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -22419,6 +22489,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -24265,6 +24342,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -24326,6 +24410,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -25871,6 +25962,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -25932,6 +26030,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -30608,6 +30713,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -30669,6 +30781,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -31079,6 +31198,27 @@
         "kind": "function",
         "strength": 5,
         "label": "content and channel execution"
+      },
+      {
+        "id": "635303e8d0c8003d",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "63c498badafd3508",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 10,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "6dad860bfebc44ba",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "7229a45225df9760",
@@ -35140,6 +35280,13 @@
         "kind": "stakeholder",
         "strength": 4,
         "label": "customer service, guest experience, and issue resolution"
+      },
+      {
+        "id": "4965ae668154fde9",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 8,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "61f0bae6e74d5011",
@@ -46045,6 +46192,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "40e7e2bb3fdc0fb4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "40e8ca5a40155856",
         "key": "content_execution",
         "kind": "function",
@@ -48455,6 +48609,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -48516,6 +48677,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -51133,6 +51301,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -51194,6 +51369,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -51844,6 +52026,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -51905,6 +52094,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -53210,6 +53406,27 @@
         "label": "content and channel execution"
       },
       {
+        "id": "635303e8d0c8003d",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "63c498badafd3508",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 10,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "6dad860bfebc44ba",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "7229a45225df9760",
         "key": "content_execution",
         "kind": "function",
@@ -54051,6 +54268,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -54112,6 +54336,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -54736,6 +54967,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "excel tool usage"
+      },
+      {
+        "id": "40e7e2bb3fdc0fb4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "40e8ca5a40155856",
@@ -57030,6 +57268,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -57091,6 +57336,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -58138,6 +58390,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -58199,6 +58458,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -61448,6 +61714,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -61509,6 +61782,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -71405,6 +71685,27 @@
         "label": "content and channel execution"
       },
       {
+        "id": "635303e8d0c8003d",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "63c498badafd3508",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 10,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "6dad860bfebc44ba",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "7229a45225df9760",
         "key": "content_execution",
         "kind": "function",
@@ -73997,6 +74298,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -74058,6 +74366,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -77968,6 +78283,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "excel tool usage"
+      },
+      {
+        "id": "40e7e2bb3fdc0fb4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "40e8ca5a40155856",
@@ -84599,6 +84921,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -84660,6 +84989,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -90625,6 +90961,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -90686,6 +91029,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -94647,6 +94997,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "40e7e2bb3fdc0fb4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "40e8ca5a40155856",
         "key": "content_execution",
         "kind": "function",
@@ -95190,6 +95547,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -95251,6 +95615,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -96393,6 +96764,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "excel tool usage"
+      },
+      {
+        "id": "40e7e2bb3fdc0fb4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "40e8ca5a40155856",
@@ -103246,6 +103624,14 @@
         "requiredness": "supporting"
       },
       {
+        "id": "996237a71bc623c7",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses",
+        "requiredness": "supporting"
+      },
+      {
         "id": "b497f96b73f7a903",
         "key": "financial_analysis",
         "kind": "function",
@@ -103598,7 +103984,8 @@
         "financeSubFamily": "other_finance",
         "flaggableTools": [],
         "function_tags": [
-          "finance_corp"
+          "finance_corp",
+          "sales_bd"
         ],
         "gradYearHint": null,
         "isContentExecutionHeavy": false,
@@ -103625,7 +104012,7 @@
         "requiresDomainIndustryExperience": false,
         "requiresFinancialModeling": false,
         "requiresSoftCredential": false,
-        "salesSubFamily": null,
+        "salesSubFamily": "financial_services",
         "softCredentialDetail": null,
         "yearsRequired": null,
         "bachelorRequired": false,
@@ -106143,6 +106530,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -106204,6 +106598,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -117399,6 +117800,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -117460,6 +117868,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -119884,6 +120299,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -119945,6 +120367,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -121223,6 +121652,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "excel tool usage"
+      },
+      {
+        "id": "40e7e2bb3fdc0fb4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "40e8ca5a40155856",
@@ -127457,6 +127893,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -127518,6 +127961,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -132103,6 +132553,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -132164,6 +132621,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -135575,6 +136039,27 @@
         "label": "content and channel execution"
       },
       {
+        "id": "635303e8d0c8003d",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "63c498badafd3508",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 10,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "6dad860bfebc44ba",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "7229a45225df9760",
         "key": "content_execution",
         "kind": "function",
@@ -135975,6 +136460,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -136036,6 +136528,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -152724,6 +153223,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -152785,6 +153291,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -155092,6 +155605,27 @@
         "label": "content and channel execution"
       },
       {
+        "id": "635303e8d0c8003d",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "63c498badafd3508",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 10,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "6dad860bfebc44ba",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "7229a45225df9760",
         "key": "content_execution",
         "kind": "function",
@@ -156279,6 +156813,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -156340,6 +156881,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -159801,6 +160349,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "excel tool usage"
+      },
+      {
+        "id": "40e7e2bb3fdc0fb4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "40e8ca5a40155856",
@@ -177455,6 +178010,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -177516,6 +178078,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -179395,6 +179964,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -179456,6 +180032,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -182991,6 +183574,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -183052,6 +183642,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -186317,6 +186914,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "40e7e2bb3fdc0fb4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "40e8ca5a40155856",
         "key": "content_execution",
         "kind": "function",
@@ -188643,6 +189247,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -188704,6 +189315,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -189068,6 +189686,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -189129,6 +189754,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -189391,6 +190023,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -189452,6 +190091,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -191542,6 +192188,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -191603,6 +192256,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -194895,6 +195555,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -194956,6 +195623,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -200150,6 +200824,27 @@
         "kind": "function",
         "strength": 5,
         "label": "content and channel execution"
+      },
+      {
+        "id": "635303e8d0c8003d",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "63c498badafd3508",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 10,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "6dad860bfebc44ba",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "7229a45225df9760",
@@ -206293,6 +206988,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "40e7e2bb3fdc0fb4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "40e8ca5a40155856",
         "key": "content_execution",
         "kind": "function",
@@ -211201,6 +211903,27 @@
         "label": "content and channel execution"
       },
       {
+        "id": "635303e8d0c8003d",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "63c498badafd3508",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 10,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "6dad860bfebc44ba",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "7229a45225df9760",
         "key": "content_execution",
         "kind": "function",
@@ -211870,6 +212593,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "excel tool usage"
+      },
+      {
+        "id": "40e7e2bb3fdc0fb4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "40e8ca5a40155856",
@@ -222675,6 +223405,27 @@
         "label": "content and channel execution"
       },
       {
+        "id": "635303e8d0c8003d",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "63c498badafd3508",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 10,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "6dad860bfebc44ba",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "7229a45225df9760",
         "key": "content_execution",
         "kind": "function",
@@ -224784,6 +225535,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -224845,6 +225603,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -227167,6 +227932,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -227228,6 +228000,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -229618,6 +230397,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -229679,6 +230465,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -232449,6 +233242,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -232510,6 +233310,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -240206,6 +241013,13 @@
         "label": "drafting, documentation, and written deliverables"
       },
       {
+        "id": "98709f06ab36e9d5",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 8,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "ee734166724c6de6",
         "key": "event_coordination",
         "kind": "execution",
@@ -240339,7 +241153,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "communications_pr",
-          "operations_general"
+          "operations_general",
+          "sales_bd"
         ],
         "gradYear": 2027,
         "languagesShown": [],
@@ -243759,6 +244574,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "40e7e2bb3fdc0fb4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "40e8ca5a40155856",
         "key": "content_execution",
         "kind": "function",
@@ -246138,6 +246960,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -246199,6 +247028,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -250824,6 +251660,27 @@
         "label": "content and channel execution"
       },
       {
+        "id": "635303e8d0c8003d",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "63c498badafd3508",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 10,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "6dad860bfebc44ba",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "7229a45225df9760",
         "key": "content_execution",
         "kind": "function",
@@ -254997,6 +255854,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -255058,6 +255922,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -259252,6 +260123,27 @@
         "label": "content and channel execution"
       },
       {
+        "id": "635303e8d0c8003d",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "63c498badafd3508",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 10,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
+        "id": "6dad860bfebc44ba",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "7229a45225df9760",
         "key": "content_execution",
         "kind": "function",
@@ -261972,6 +262864,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -262033,6 +262932,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -267755,6 +268661,13 @@
         "label": "drafting, documentation, and written deliverables"
       },
       {
+        "id": "98709f06ab36e9d5",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 8,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "ee734166724c6de6",
         "key": "event_coordination",
         "kind": "execution",
@@ -267878,7 +268791,8 @@
         "financeSubFamily": null,
         "function_tags": [
           "communications_pr",
-          "operations_general"
+          "operations_general",
+          "sales_bd"
         ],
         "gradYear": 2027,
         "languagesShown": [],
@@ -268372,6 +269286,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "excel tool usage"
+      },
+      {
+        "id": "40e7e2bb3fdc0fb4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "40e8ca5a40155856",
@@ -274827,6 +275748,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -274888,6 +275816,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -275735,6 +276670,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -275796,6 +276738,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -277226,6 +278175,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "excel tool usage"
+      },
+      {
+        "id": "40e7e2bb3fdc0fb4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "40e8ca5a40155856",
@@ -290261,6 +291217,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -290322,6 +291285,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -291938,6 +292908,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "excel tool usage"
+      },
+      {
+        "id": "40e7e2bb3fdc0fb4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "40e8ca5a40155856",
@@ -296318,6 +297295,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -296379,6 +297363,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -301523,6 +302514,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -301584,6 +302582,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -306076,6 +307081,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "excel tool usage"
+      },
+      {
+        "id": "40e7e2bb3fdc0fb4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "40e8ca5a40155856",
@@ -313435,6 +314447,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -313496,6 +314515,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -314477,6 +315503,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "excel tool usage"
+      },
+      {
+        "id": "40e7e2bb3fdc0fb4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "40e8ca5a40155856",
@@ -317763,6 +318796,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -317824,6 +318864,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -318917,6 +319964,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -318978,6 +320032,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -322424,6 +323485,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -322485,6 +323553,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -322943,6 +324018,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -323004,6 +324086,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -333198,6 +334287,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -333259,6 +334355,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -345774,6 +346877,13 @@
         "label": "excel tool usage"
       },
       {
+        "id": "40e7e2bb3fdc0fb4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "40e8ca5a40155856",
         "key": "content_execution",
         "kind": "function",
@@ -351970,6 +353080,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -352031,6 +353148,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -352725,6 +353849,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -352786,6 +353917,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",
@@ -353194,6 +354332,13 @@
         "kind": "tool",
         "strength": 7,
         "label": "excel tool usage"
+      },
+      {
+        "id": "40e7e2bb3fdc0fb4",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "40e8ca5a40155856",
@@ -358406,6 +359551,13 @@
         "label": "financial analysis and investment work"
       },
       {
+        "id": "5939310364d4c71c",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
+      },
+      {
         "id": "5b447fd6e5740f00",
         "key": "r",
         "kind": "tool",
@@ -358467,6 +359619,13 @@
         "kind": "tool",
         "strength": 5,
         "label": "r tool usage"
+      },
+      {
+        "id": "99cd3d700d2885f8",
+        "key": "consumer_sales",
+        "kind": "function",
+        "strength": 7,
+        "label": "direct sales to consumers and small businesses"
       },
       {
         "id": "ab37535ffe4dea39",

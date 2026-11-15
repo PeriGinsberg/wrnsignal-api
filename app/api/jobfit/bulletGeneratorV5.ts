@@ -590,6 +590,19 @@ export async function generateBulletsV5(out: EvalOutput): Promise<V5Output> {
   const jobText = String((out as any).job_text || (out as any).jobText || "")
   const riskBullets = groundRiskBullets(parsed.risk_bullets ?? [], riskIds, jobText)
 
+  // The result page shows risk bullets, not risk_flags. When the only risk is
+  // the skipped limited-match note, a Pass would show no reason at all
+  // (C014 / DEF-042), so its engine wording is shown as is.
+  const limitedMatch = (out.risk_codes ?? []).find((c: any) => c?.code === "RISK_LIMITED_MATCH_EVIDENCE") as any
+  if (riskBullets.length === 0 && limitedMatch?.risk) {
+    riskBullets.push({
+      keyword: "LIMITED MATCH EVIDENCE",
+      gap: String(limitedMatch.risk),
+      adjacent_evidence: "",
+      severity: limitedMatch.severity === "high" || limitedMatch.severity === "low" ? limitedMatch.severity : "medium",
+    })
+  }
+
   // Strategy field guards. Belt-and-suspenders against model ignoring the
   // Pass-skip rule: force null for all three on Pass regardless of model
   // output. For non-Pass decisions, validate shape; missing or malformed →

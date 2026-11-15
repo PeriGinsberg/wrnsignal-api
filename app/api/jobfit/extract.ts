@@ -517,6 +517,8 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "players, parents, and coaches",
       "players and coaches",
       "i9 sports experience",
+      // Entry-level sales trait: comfort with strangers is customer-facing work (C014).
+      "meeting new people",
     ],
     adjacentKeys: ["stakeholder_coordination", "operations_execution"],
   },
@@ -1181,6 +1183,34 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "regulatory filings",
     ],
     adjacentKeys: ["communications_writing", "drafting_documentation", "analysis_reporting"],
+  },
+  {
+    // Selling to consumers and small businesses: insurance agents, commission
+    // sales (C014 / DEF-040). prospecting_pipeline_management only knows SDR
+    // and pharma vocabulary. Underwriting / claims lines stay out (Zurich).
+    key: "consumer_sales",
+    label: "direct sales to consumers and small businesses",
+    kind: "function",
+    functionTag: "sales_bd",
+    // Not sales work: coursework ("Professional Selling"), computing
+    // commissions (accounting), and intake answers that rule sales OUT
+    // ("Hard constraints: no commission roles", "roles you DO NOT want").
+    profilePhrases: [
+      "sold", "selling", "upsold", "upsell", "upselling", "commission", "commissions", "quota",
+      "sales associate", "sales representative", "retail sales", "door-to-door", "insurance sales",
+      "closed deals",
+    ].map((phrase) => ({ phrase, negativeContext: [
+      "coursework", "course", "professional selling", "sold out", "sold-out", "calculated",
+      "hard constraints", "do not want", "d o n o t", "no commission", "no 100%", "no full sales", "commission based",
+    ] })),
+    // No commission phrases (pay lines are not duties) and no "sales goals"
+    // (B2B, medtech clinical support and wealth management all say it).
+    jobPhrases: [
+      "sales systems", "close sales", "closing sales",
+      "insurance sales", "sell insurance", "selling insurance",
+      "meet with families", "meet with business owners",
+    ].map((phrase) => ({ phrase, negativeContext: ["underwriting", "underwriter", "claims"] })),
+    adjacentKeys: ["customer_service_guest_experience", "prospecting_pipeline_management", "account_management"],
   },
   {
     // Trademark / copyright / patent practice (C013). Without it an IP
@@ -1941,7 +1971,8 @@ const FALLBACK_JOB_RULES: Array<{
     functionTag: "operations_general",
     requiredness: "supporting",
     phrases: [
-      "schedule",
+      // "you control your income, your schedule" is a perk, not a duty (C014 / DEF-041).
+      { phrase: "schedule", negativeContext: ["your schedule", "own schedule", "flexible schedule", "control your"] },
       "weekends",
       "evenings",
       "self-starter",
@@ -4489,7 +4520,7 @@ export function extractJobSignals(
   // to invent a core financial_analysis requirement below.
   const actualTitleIsFinance = FINANCE_TITLE_RX.test(userTitleNorm || norm(jobTitle || ""))
   const jobTitleIsSales =
-    /\b(sales intern|account executive|account manager|business development|territory manager|sales representative|sales associate)\b/i.test(jobTitleSlice)
+    /\b(sales intern|account executive|account manager|business development|territory manager|sales representative|sales associate|insurance agent|insurance sales|sales agent|sales consultant)\b/i.test(jobTitleSlice)
 
   // Marketing title detection — prevents BD-support language in marketing roles
   // from triggering sales classification
