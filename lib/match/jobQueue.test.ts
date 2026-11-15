@@ -38,6 +38,19 @@ ok("Sami's chip: best score 58, both scores kept, both match ids", sami.s === 58
 ok("chips best first", jp.m[0].c === "sami" && jp.m[1].c === "gabe")
 ok("jobs sorted by best score", jobs[0].co === "Acme")
 
+// "New since last visit" reads r: when the job entered the queue (latest
+// released_at across copies), not when it was first queued.
+{
+  const [late] = buildJobs([
+    row("pR1", "cole", 75, { title: "Ops Analyst", raw_title: "Ops Analyst", company: "Late Co", first_queued_at: "2026-11-08T06:00:00Z", released_at: "2026-11-15T19:40:00Z" }),
+    row("pR2", "cole", 72, { title: "Ops Analyst", raw_title: "Ops Analyst", company: "Late Co", first_queued_at: "2026-11-07T06:00:00Z", released_at: "2026-11-12T06:10:00Z" }),
+  ])
+  const c = late.m[0]
+  ok("r is the latest release across copies; q stays the earliest arrival", c.r === "2026-11-15T19:40:00Z" && c.q === "2026-11-07T06:00:00Z")
+  const [uns] = buildJobs([row("pU", "cole", null, { company: "Unscored Co", first_queued_at: "2026-11-14T06:00:00Z", released_at: null })])
+  ok("never released (unscored): r falls back to first_queued_at", uns.m[0].r === "2026-11-14T06:00:00Z")
+}
+
 const decided = buildJobs([
   row("pA", "sami", 58),
   row("pB", "sami", 38, { action: "dismiss", dismiss_reason: "wrong_function", actioned_at: "2026-10-30T00:00:00Z" }),

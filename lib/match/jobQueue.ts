@@ -111,6 +111,13 @@ export type Chip = {
   why: string | null
   /** Earliest first_queued_at across the copies. */
   q: string | null
+  /**
+   * When this client's job entered the queue: the latest released_at across
+   * the copies (20261127). Unscored and Add Job rows are never released; they
+   * use first_queued_at. "New since last visit" reads this, not q: a match can
+   * wait days before it is released.
+   */
+  r: string | null
   /** Best (lowest) queue rank. */
   rk: number | null
   /** Every copy's score, when there are several. */
@@ -164,6 +171,8 @@ export type QueueRow = {
   already_added?: boolean
   /** Ranking keys (client_match_queue's order), for rank among the loaded rows. */
   tier?: number; preferred_market?: boolean
+  /** When it entered the queue (20261127); NULL when unscored or Add Job in progress. */
+  released_at?: string | null
 }
 
 /** What the page asks for. Every filter here is applied in the database. */
@@ -180,7 +189,7 @@ export type QueueFilters = {
   unscored?: boolean
 }
 
-const MATCH_COLS = "id, client_profile_id, posting_id, score, judge_reason, first_queued_at, action, apply_url, apply_link_kind, preferred_market, dismiss_reason, note, actioned_at, jobfit_score, jobfit_decision, already_added"
+const MATCH_COLS = "id, client_profile_id, posting_id, score, judge_reason, first_queued_at, released_at, action, apply_url, apply_link_kind, preferred_market, dismiss_reason, note, actioned_at, jobfit_score, jobfit_decision, already_added"
 const POSTING_COLS = "id, source, title, cleaned_title, company, location, apply_url, apply_link_kind, link_check_status, years_min, years_max, years_basis, salary_low, salary_high, salary_period, application_deadline, requirements_summary, first_seen_at, last_seen_at, closed_at, campus_signal, start_type, start_date, start_season, start_year"
 /** Ids per .in() filter: keeps the request URL short. */
 const IN_CHUNK = 150
@@ -254,7 +263,7 @@ export async function loadJobQueue(sb: SupabaseClient, coachProfileId: string, f
       tier_label: decidedRow ? null : t.label, campus_signal: p.campus_signal, action: m.action,
       coach_flag: decidedRow ? null : fl.flag, coach_apply_url: fl.applyUrl, bad_link: !decidedRow && fl.flag === "bad_link" && !fl.applyUrl,
       dismiss_reason: m.dismiss_reason, note: m.note, actioned_at: m.actioned_at, jobfit_score: m.jobfit_score, jobfit_decision: m.jobfit_decision,
-      already_added: !!m.already_added, tier: t.tier, preferred_market: !!m.preferred_market,
+      already_added: !!m.already_added, tier: t.tier, preferred_market: !!m.preferred_market, released_at: m.released_at ?? null,
     })
   }
 
@@ -445,6 +454,7 @@ export function buildJobs(rows: QueueRow[], aliases: Map<string, string> = new M
       return {
         c, s: rs[0].score, why: rs[0].judge_reason,
         q: rs.map((r) => r.first_queued_at).filter(Boolean).sort()[0] ?? null,
+        r: rs.map((r) => r.released_at ?? r.first_queued_at).filter(Boolean).sort().at(-1) ?? null,
         rk: ranks.length ? Math.min(...ranks) : null,
         all: rs.length > 1 ? rs.map((r) => r.score) : undefined,
         ids: rs.map((r) => r.match_id),
