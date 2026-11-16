@@ -442,7 +442,25 @@ export default function CoachClientPage() {
       setCapture((profileData.capture as Capture | null) ?? null)
       setInvitedAt((profileData.capture as Capture | null)?.invited_at ?? null)
       setClientApps(trackerData.applications || [])
-      setCoachRecs(trackerData.recommendations || [])
+      // The tracker returns raw coach_job_recommendations rows, whose columns are
+      // company_name / job_title / signal_decision / apply_by_date. The cards read
+      // company / title / verdict / apply_by, so without this they showed only the
+      // note: no company, title, verdict or apply-by date.
+      setCoachRecs(
+        (trackerData.recommendations || []).map((r: Partial<CoachRec> & {
+          id: string
+          company_name?: string | null
+          job_title?: string | null
+          signal_decision?: string | null
+          apply_by_date?: string | null
+        }) => ({
+          ...r,
+          company: r.company ?? r.company_name ?? "",
+          title: r.title ?? r.job_title ?? "",
+          verdict: r.verdict ?? r.signal_decision ?? null,
+          apply_by: r.apply_by ?? r.apply_by_date ?? null,
+        })),
+      )
       setSupporterSuggestions(trackerData.supporter_suggestions || [])
 
       // Default to first ACTIVE persona for the Source-a-Job selector.
@@ -712,6 +730,234 @@ export default function CoachClientPage() {
       }
     } catch { setRunError("Network error.") }
     setSending(false)
+  }
+
+  // A tracker job's expanded detail: panel links, company link, posting URL,
+  // job description, coach notes, add-note form and Delete. Their Applications
+  // rows and From You cards both open this, so a sourced job shows the same
+  // details wherever it sits.
+  function renderAppDetails(app: ClientApplication) {
+    const isAnnotating = annotatingAppId === app.id
+    return (
+                        <div style={{ marginTop: 14, borderTop: `1px solid ${T.BORDER_SOFT}`, paddingTop: 14 }}>
+                          {/* Per-job detail links — open the side panel focused on the
+                              clicked section. With a JobFit run, Positioning and Cover
+                              Letter always show: the panel is where a coach runs them.
+                              Without one, Cover Letter shows only when one was run. */}
+                          {(app.has_jobfit || app.has_cover_letter) && (
+                            <div style={{ display: "flex", gap: 16, marginBottom: 12 }}>
+                              {app.has_jobfit && (
+                                <button
+                                  onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("jobfit"); setJobPanelOpen(true) }}
+                                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: TYPE.secondary, fontWeight: 700, color: T.INK_LINK, textDecoration: "underline" }}
+                                >
+                                  Full Jobfit
+                                </button>
+                              )}
+                              {app.has_jobfit && (
+                                <button
+                                  onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("positioning"); setJobPanelOpen(true) }}
+                                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: TYPE.secondary, fontWeight: 700, color: T.WRN_TEAL, textDecoration: "underline" }}
+                                >
+                                  Positioning
+                                </button>
+                              )}
+                              {(app.has_jobfit || app.has_cover_letter) && (
+                                <button
+                                  onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("coverletter"); setJobPanelOpen(true) }}
+                                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: TYPE.secondary, fontWeight: 700, color: T.INK_EMPHASIS, textDecoration: "underline" }}
+                                >
+                                  Cover Letter
+                                </button>
+                              )}
+                            </div>
+                          )}
+                          <div style={{ marginBottom: 12 }}>
+                            <LinkCompanyControl
+                              clientProfileId={clientId}
+                              applicationId={app.id}
+                              jobCompanyName={app.company_name ?? null}
+                              linked={app.linked_company ?? null}
+                              authFetch={authFetch}
+                              onChanged={() => void loadAll({ silent: true })}
+                            />
+                          </div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+                            <div style={{ fontSize: TYPE.secondary, color: T.DIM }}>
+                              <span style={{ color: T.MUTED, fontWeight: 700 }}>URL: </span>
+                              {app.job_url
+                                ? <a href={app.job_url} target="_blank" rel="noopener noreferrer" style={{ color: T.INK_LINK, textDecoration: "underline" }}>{app.job_url}</a>
+                                : <span style={{ color: T.DIM }}>No URL saved</span>
+                              }
+                            </div>
+                            {app.created_at && (
+                              <div style={{ fontSize: TYPE.secondary, color: T.DIM }}>
+                                <span style={{ color: T.MUTED, fontWeight: 700 }}>Date: </span>
+                                {new Date(app.created_at).toLocaleDateString()}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Job Description — read-only, saved from the
+                              scoring run so the client can reread it for
+                              interview prep after the posting comes down.
+                              Mirrors the client tracker section. Null for
+                              manual/legacy jobs → nothing renders. */}
+                          {app.job_description && (
+                            <div style={{ marginBottom: 12, background: T.GLASS, borderRadius: 10, padding: "12px 14px", border: `1px solid ${T.BORDER_SOFT}` }}>
+                              <div onClick={() => setJdOpenIds((prev) => { const next = new Set(prev); next.has(app.id) ? next.delete(app.id) : next.add(app.id); return next })} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
+                                <span style={{ ...eyebrow, fontSize: TYPE.micro, color: T.DIM }}>JOB DESCRIPTION</span>
+                                <span style={{ fontSize: TYPE.secondary, color: T.DIM }}>{jdOpenIds.has(app.id) ? "▲" : "▼"}</span>
+                              </div>
+                              <p style={{ fontSize: TYPE.micro, color: T.DIM, margin: "4px 0 0" }}>
+                                Saved from when this job was scored, so you can reread it even if the original posting comes down.
+                              </p>
+                              {jdOpenIds.has(app.id) && (
+                                <div style={{ marginTop: 10, fontSize: TYPE.secondary, color: T.MUTED, lineHeight: "18px", whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: 360, overflowY: "auto" }}>
+                                  {app.job_description}
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Existing annotations */}
+                          {app.coach_annotations?.length > 0 && (
+                            <div style={{ marginBottom: 12 }}>
+                              <div style={{ ...eyebrow, fontSize: TYPE.micro, color: T.DIM, marginBottom: 6 }}>YOUR NOTES</div>
+                              {app.coach_annotations.map((ann: any, i: number) => (
+                                <p key={i} style={{ fontSize: TYPE.secondary, color: T.MUTED, lineHeight: "18px", marginBottom: 4, paddingLeft: 8, borderLeft: `2px solid ${T.WRN_ORANGE}40`, display: "flex", alignItems: "flex-start", gap: 6 }}>
+                                  <span style={{ marginTop: 3 }}>
+                                    <NoteVisibilityIcon visible={ann.visible_to_client !== false} />
+                                  </span>
+                                  <span>{ann.note}</span>
+                                </p>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Add coaching note button / inline form */}
+                          {!isAnnotating ? (
+                            <button
+                              onClick={() => {
+                                setAnnotatingAppId(app.id)
+                                setAnnotationNote("")
+                                setAnnotationPriority("info")
+                                setAnnotationVisible(true)
+                              }}
+                              style={{ ...btnSecondary, fontSize: TYPE.micro, padding: "6px 14px", borderRadius: 8, color: T.INK_EMPHASIS, borderColor: "rgba(254,176,106,0.3)" }}
+                            >
+                              + Add coaching note
+                            </button>
+                          ) : (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
+                              {/* Form-fields wrapper: dim during save (Phase 4.1.5). Sibling
+                                  of the button row below so the buttons stay full-visibility
+                                  with their own disabled/spinner state. */}
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: 10,
+                                  opacity: annotationSaving ? 0.5 : 1,
+                                  pointerEvents: annotationSaving ? "none" : "auto",
+                                  transition: "opacity 120ms ease",
+                                }}
+                              >
+                              <div>
+                                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 5, fontSize: TYPE.micro }}>PRIORITY</span>
+                                <div style={{ display: "flex", gap: 6 }}>
+                                  {(["urgent", "important", "info", "positive"] as const).map((p) => (
+                                    <button
+                                      key={p}
+                                      onClick={() => setAnnotationPriority(p)}
+                                      style={{
+                                        fontSize: TYPE.label, fontWeight: 900, padding: "4px 10px", borderRadius: 6, cursor: "pointer",
+                                        textTransform: "uppercase", letterSpacing: 0.6,
+                                        border: annotationPriority === p ? `1px solid ${T.WRN_ORANGE}50` : `1px solid ${T.BORDER_SOFT}`,
+                                        background: annotationPriority === p ? "rgba(254,176,106,0.1)" : T.GLASS,
+                                        color: annotationPriority === p ? T.INK_EMPHASIS : T.DIM,
+                                      }}
+                                    >
+                                      {p}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                              <textarea
+                                style={{ ...textarea, minHeight: 60, fontSize: TYPE.secondary }}
+                                placeholder="Coaching note..."
+                                value={annotationNote}
+                                onChange={(e) => setAnnotationNote(e.target.value)}
+                              />
+                              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: TYPE.secondary, color: T.MUTED, cursor: "pointer" }}>
+                                <input
+                                  type="checkbox"
+                                  checked={annotationVisible}
+                                  onChange={(e) => setAnnotationVisible(e.target.checked)}
+                                  style={{ accentColor: T.WRN_ORANGE }}
+                                />
+                                Visible to client
+                              </label>
+                              </div>
+                              <div style={{ display: "flex", gap: 8 }}>
+                                <button
+                                  onClick={async () => {
+                                    if (!annotationNote.trim()) return
+                                    setAnnotationSaving(true)
+                                    try {
+                                      const res = await authFetch("/api/coach/annotate", {
+                                        method: "POST",
+                                        body: JSON.stringify({
+                                          client_profile_id: clientId,
+                                          target_type: "application",
+                                          target_id: app.id,
+                                          application_id: app.id,
+                                          note: annotationNote,
+                                          priority: annotationPriority,
+                                          visible_to_client: annotationVisible,
+                                        }),
+                                      })
+                                      if (res.ok) {
+                                        setAnnotatingAppId(null)
+                                        setAnnotationNote("")
+                                        await loadAll({ silent: true })
+                                      }
+                                    } finally {
+                                      setAnnotationSaving(false)
+                                    }
+                                  }}
+                                  disabled={annotationSaving || !annotationNote.trim()}
+                                  style={{ ...btnPrimary, fontSize: TYPE.micro, padding: "6px 14px", background: "#FEB06A", color: "var(--sig-ink-on-bright, #04060F)", opacity: annotationSaving || !annotationNote.trim() ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
+                                >
+                                  {annotationSaving && <SavingSpinner size={10} />}
+                                  {annotationSaving ? "Saving..." : "Save Note"}
+                                </button>
+                                <button
+                                  onClick={() => setAnnotatingAppId(null)}
+                                  disabled={annotationSaving}
+                                  style={{ ...btnSecondary, fontSize: TYPE.micro, padding: "6px 12px", opacity: annotationSaving ? 0.5 : 1 }}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          {/* A job a coach added (Job Queue Add Job, Source a Job)
+                              can be deleted from the row itself; the DELETE
+                              route checks team and full access. */}
+                          {(app.added_by_role === "coach" || recAppIds.has(app.id)) && (
+                            <DeleteJob
+                              onDelete={async () => {
+                                const res = await authFetch(`/api/coach/clients/${clientId}/applications/${app.id}`, { method: "DELETE" })
+                                const j = await res.json().catch(() => ({}))
+                                if (!res.ok || !j?.ok) return j?.error || `Couldn't delete the job (${res.status})`
+                                void loadAll({ silent: true })
+                                return null
+                              }}
+                            />
+                          )}
+                        </div>
+    )
   }
 
   const TABS: { id: Tab; label: string }[] = [
@@ -1016,14 +1262,45 @@ export default function CoachClientPage() {
                   const priorityLabels: Record<string, string> = { urgent: "Urgent", this_week: "This Week", when_ready: "When Ready", not_recommended: "For Awareness" }
                   const priorityLabel = rec.priority ? priorityLabels[rec.priority] || rec.priority : null
 
+                  // The tracker job this recommendation created. Clicking the
+                  // header opens its details, the same block a Their
+                  // Applications row opens.
+                  const recApp = rec.application_id ? appById.get(rec.application_id) : undefined
+                  const recOpen = !!recApp && openAppIds.has(recApp.id)
+
                   return (
-                    <div key={rec.id} style={{ ...card, padding: 20 }}>
-                      {/* Company + title + verdict */}
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
-                        <span style={{ fontSize: TYPE.body, fontWeight: 950, color: T.TEXT }}>{rec.company}</span>
-                        <span style={{ fontSize: TYPE.secondary, color: T.MUTED }}>— {rec.title}</span>
+                    <div key={rec.id} id={recApp ? `app-${recApp.id}` : undefined} style={{ ...card, padding: 20, overflow: "visible" }}>
+                      {/* Company + title + verdict + posting link */}
+                      <div
+                        onClick={() => {
+                          if (!recApp) return
+                          setOpenAppIds((prev) => {
+                            const next = new Set(prev)
+                            if (next.has(recApp.id)) next.delete(recApp.id)
+                            else next.add(recApp.id)
+                            return next
+                          })
+                        }}
+                        style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 8, cursor: recApp ? "pointer" : "default", userSelect: "none" }}
+                      >
+                        <span style={{ fontSize: TYPE.body, fontWeight: 950, color: T.TEXT }}>{rec.company || recApp?.company_name}</span>
+                        <span style={{ fontSize: TYPE.secondary, color: T.MUTED }}>— {rec.title || recApp?.job_title}</span>
                         {rec.verdict && (
                           <Badge text={rec.verdict} style={DECISION_STYLE[rec.verdict] || { bg: T.BORDER_SOFT, color: T.MUTED }} />
+                        )}
+                        {recApp?.job_url && (
+                          <a
+                            href={recApp.job_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ fontSize: TYPE.secondary, fontWeight: 700, color: T.INK_LINK, textDecoration: "underline" }}
+                          >
+                            View posting
+                          </a>
+                        )}
+                        {recApp && (
+                          <span style={{ marginLeft: "auto", fontSize: TYPE.secondary, color: T.DIM }}>{recOpen ? "▲" : "▼"}</span>
                         )}
                       </div>
 
@@ -1160,60 +1437,26 @@ export default function CoachClientPage() {
                             Edit
                           </button>
 
-                          {/* The tracker job this recommendation created: status,
-                              the per-job panel, and Delete, which removes both the
-                              job and this recommendation. */}
-                          {(() => {
-                            const app = rec.application_id ? appById.get(rec.application_id) : undefined
-                            if (!app) return null
-                            const link = { background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: TYPE.secondary, fontWeight: 700, textDecoration: "underline" } as const
-                            return (
-                              <div style={{ marginTop: 12, borderTop: `1px solid ${T.BORDER_SOFT}`, paddingTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-                                  <ApplicationStatusEditPill
-                                    value={app.application_status}
-                                    getToken={getToken}
-                                    clientProfileId={clientId}
-                                    applicationId={app.id}
-                                    onChange={(next) => {
-                                      setClientApps((prev) =>
-                                        prev.map((a) => (a.id === app.id ? { ...a, application_status: next as ApplicationStatus } : a)),
-                                      )
-                                    }}
-                                  />
-                                  {app.has_jobfit && (
-                                    <button onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("jobfit"); setJobPanelOpen(true) }} style={{ ...link, color: T.INK_LINK }}>
-                                      Full Jobfit
-                                    </button>
-                                  )}
-                                  {app.has_jobfit && (
-                                    <button onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("positioning"); setJobPanelOpen(true) }} style={{ ...link, color: T.WRN_TEAL }}>
-                                      Positioning
-                                    </button>
-                                  )}
-                                  {(app.has_jobfit || app.has_cover_letter) && (
-                                    <button onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("coverletter"); setJobPanelOpen(true) }} style={{ ...link, color: T.INK_LINK }}>
-                                      Cover Letter
-                                    </button>
-                                  )}
-                                  {app.job_url && (
-                                    <a href={app.job_url} target="_blank" rel="noopener noreferrer" style={{ ...link, color: T.INK_LINK }}>
-                                      Posting
-                                    </a>
-                                  )}
-                                </div>
-                                <DeleteJob
-                                  onDelete={async () => {
-                                    const res = await authFetch(`/api/coach/clients/${clientId}/applications/${app.id}`, { method: "DELETE" })
-                                    const j = await res.json().catch(() => ({}))
-                                    if (!res.ok || !j?.ok) return j?.error || `Couldn't delete the job (${res.status})`
-                                    void loadAll({ silent: true })
-                                    return null
-                                  }}
-                                />
-                              </div>
-                            )
-                          })()}
+                          {/* The tracker job: status always visible; the header
+                              opens the full details (panel links, posting URL, job
+                              description, notes, Delete). */}
+                          {recApp && (
+                            <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                              <span style={{ fontSize: TYPE.micro, fontWeight: 900, letterSpacing: 1, color: T.DIM }}>CLIENT STATUS</span>
+                              <ApplicationStatusEditPill
+                                value={recApp.application_status}
+                                getToken={getToken}
+                                clientProfileId={clientId}
+                                applicationId={recApp.id}
+                                onChange={(next) => {
+                                  setClientApps((prev) =>
+                                    prev.map((a) => (a.id === recApp.id ? { ...a, application_status: next as ApplicationStatus } : a)),
+                                  )
+                                }}
+                              />
+                            </div>
+                          )}
+                          {recApp && recOpen && renderAppDetails(recApp)}
                         </>
                       )}
                     </div>
@@ -1350,227 +1593,8 @@ export default function CoachClientPage() {
                         <span style={{ marginLeft: "auto", fontSize: TYPE.secondary, color: T.DIM }}>{isOpen ? "▲" : "▼"}</span>
                       </div>
 
-                      {/* Expanded content */}
-                      {isOpen && (
-                        <div style={{ marginTop: 14, borderTop: `1px solid ${T.BORDER_SOFT}`, paddingTop: 14 }}>
-                          {/* Per-job detail links — open the side panel focused on the
-                              clicked section. With a JobFit run, Positioning and Cover
-                              Letter always show: the panel is where a coach runs them.
-                              Without one, Cover Letter shows only when one was run. */}
-                          {(app.has_jobfit || app.has_cover_letter) && (
-                            <div style={{ display: "flex", gap: 16, marginBottom: 12 }}>
-                              {app.has_jobfit && (
-                                <button
-                                  onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("jobfit"); setJobPanelOpen(true) }}
-                                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: TYPE.secondary, fontWeight: 700, color: T.INK_LINK, textDecoration: "underline" }}
-                                >
-                                  Full Jobfit
-                                </button>
-                              )}
-                              {app.has_jobfit && (
-                                <button
-                                  onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("positioning"); setJobPanelOpen(true) }}
-                                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: TYPE.secondary, fontWeight: 700, color: T.WRN_TEAL, textDecoration: "underline" }}
-                                >
-                                  Positioning
-                                </button>
-                              )}
-                              {(app.has_jobfit || app.has_cover_letter) && (
-                                <button
-                                  onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("coverletter"); setJobPanelOpen(true) }}
-                                  style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: TYPE.secondary, fontWeight: 700, color: T.INK_EMPHASIS, textDecoration: "underline" }}
-                                >
-                                  Cover Letter
-                                </button>
-                              )}
-                            </div>
-                          )}
-                          <div style={{ marginBottom: 12 }}>
-                            <LinkCompanyControl
-                              clientProfileId={clientId}
-                              applicationId={app.id}
-                              jobCompanyName={app.company_name ?? null}
-                              linked={app.linked_company ?? null}
-                              authFetch={authFetch}
-                              onChanged={() => void loadAll({ silent: true })}
-                            />
-                          </div>
-                          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
-                            <div style={{ fontSize: TYPE.secondary, color: T.DIM }}>
-                              <span style={{ color: T.MUTED, fontWeight: 700 }}>URL: </span>
-                              {app.job_url
-                                ? <a href={app.job_url} target="_blank" rel="noopener noreferrer" style={{ color: T.INK_LINK, textDecoration: "underline" }}>{app.job_url}</a>
-                                : <span style={{ color: T.DIM }}>No URL saved</span>
-                              }
-                            </div>
-                            {app.created_at && (
-                              <div style={{ fontSize: TYPE.secondary, color: T.DIM }}>
-                                <span style={{ color: T.MUTED, fontWeight: 700 }}>Date: </span>
-                                {new Date(app.created_at).toLocaleDateString()}
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Job Description — read-only, saved from the
-                              scoring run so the client can reread it for
-                              interview prep after the posting comes down.
-                              Mirrors the client tracker section. Null for
-                              manual/legacy jobs → nothing renders. */}
-                          {app.job_description && (
-                            <div style={{ marginBottom: 12, background: T.GLASS, borderRadius: 10, padding: "12px 14px", border: `1px solid ${T.BORDER_SOFT}` }}>
-                              <div onClick={() => setJdOpenIds((prev) => { const next = new Set(prev); next.has(app.id) ? next.delete(app.id) : next.add(app.id); return next })} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
-                                <span style={{ ...eyebrow, fontSize: TYPE.micro, color: T.DIM }}>JOB DESCRIPTION</span>
-                                <span style={{ fontSize: TYPE.secondary, color: T.DIM }}>{jdOpenIds.has(app.id) ? "▲" : "▼"}</span>
-                              </div>
-                              <p style={{ fontSize: TYPE.micro, color: T.DIM, margin: "4px 0 0" }}>
-                                Saved from when this job was scored, so you can reread it even if the original posting comes down.
-                              </p>
-                              {jdOpenIds.has(app.id) && (
-                                <div style={{ marginTop: 10, fontSize: TYPE.secondary, color: T.MUTED, lineHeight: "18px", whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: 360, overflowY: "auto" }}>
-                                  {app.job_description}
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Existing annotations */}
-                          {app.coach_annotations?.length > 0 && (
-                            <div style={{ marginBottom: 12 }}>
-                              <div style={{ ...eyebrow, fontSize: TYPE.micro, color: T.DIM, marginBottom: 6 }}>YOUR NOTES</div>
-                              {app.coach_annotations.map((ann: any, i: number) => (
-                                <p key={i} style={{ fontSize: TYPE.secondary, color: T.MUTED, lineHeight: "18px", marginBottom: 4, paddingLeft: 8, borderLeft: `2px solid ${T.WRN_ORANGE}40`, display: "flex", alignItems: "flex-start", gap: 6 }}>
-                                  <span style={{ marginTop: 3 }}>
-                                    <NoteVisibilityIcon visible={ann.visible_to_client !== false} />
-                                  </span>
-                                  <span>{ann.note}</span>
-                                </p>
-                              ))}
-                            </div>
-                          )}
-
-                          {/* Add coaching note button / inline form */}
-                          {!isAnnotating ? (
-                            <button
-                              onClick={() => {
-                                setAnnotatingAppId(app.id)
-                                setAnnotationNote("")
-                                setAnnotationPriority("info")
-                                setAnnotationVisible(true)
-                              }}
-                              style={{ ...btnSecondary, fontSize: TYPE.micro, padding: "6px 14px", borderRadius: 8, color: T.INK_EMPHASIS, borderColor: "rgba(254,176,106,0.3)" }}
-                            >
-                              + Add coaching note
-                            </button>
-                          ) : (
-                            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 4 }}>
-                              {/* Form-fields wrapper: dim during save (Phase 4.1.5). Sibling
-                                  of the button row below so the buttons stay full-visibility
-                                  with their own disabled/spinner state. */}
-                              <div
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  gap: 10,
-                                  opacity: annotationSaving ? 0.5 : 1,
-                                  pointerEvents: annotationSaving ? "none" : "auto",
-                                  transition: "opacity 120ms ease",
-                                }}
-                              >
-                              <div>
-                                <span style={{ ...label, color: T.INK_LINK, display: "block", marginBottom: 5, fontSize: TYPE.micro }}>PRIORITY</span>
-                                <div style={{ display: "flex", gap: 6 }}>
-                                  {(["urgent", "important", "info", "positive"] as const).map((p) => (
-                                    <button
-                                      key={p}
-                                      onClick={() => setAnnotationPriority(p)}
-                                      style={{
-                                        fontSize: TYPE.label, fontWeight: 900, padding: "4px 10px", borderRadius: 6, cursor: "pointer",
-                                        textTransform: "uppercase", letterSpacing: 0.6,
-                                        border: annotationPriority === p ? `1px solid ${T.WRN_ORANGE}50` : `1px solid ${T.BORDER_SOFT}`,
-                                        background: annotationPriority === p ? "rgba(254,176,106,0.1)" : T.GLASS,
-                                        color: annotationPriority === p ? T.INK_EMPHASIS : T.DIM,
-                                      }}
-                                    >
-                                      {p}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                              <textarea
-                                style={{ ...textarea, minHeight: 60, fontSize: TYPE.secondary }}
-                                placeholder="Coaching note..."
-                                value={annotationNote}
-                                onChange={(e) => setAnnotationNote(e.target.value)}
-                              />
-                              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: TYPE.secondary, color: T.MUTED, cursor: "pointer" }}>
-                                <input
-                                  type="checkbox"
-                                  checked={annotationVisible}
-                                  onChange={(e) => setAnnotationVisible(e.target.checked)}
-                                  style={{ accentColor: T.WRN_ORANGE }}
-                                />
-                                Visible to client
-                              </label>
-                              </div>
-                              <div style={{ display: "flex", gap: 8 }}>
-                                <button
-                                  onClick={async () => {
-                                    if (!annotationNote.trim()) return
-                                    setAnnotationSaving(true)
-                                    try {
-                                      const res = await authFetch("/api/coach/annotate", {
-                                        method: "POST",
-                                        body: JSON.stringify({
-                                          client_profile_id: clientId,
-                                          target_type: "application",
-                                          target_id: app.id,
-                                          application_id: app.id,
-                                          note: annotationNote,
-                                          priority: annotationPriority,
-                                          visible_to_client: annotationVisible,
-                                        }),
-                                      })
-                                      if (res.ok) {
-                                        setAnnotatingAppId(null)
-                                        setAnnotationNote("")
-                                        await loadAll({ silent: true })
-                                      }
-                                    } finally {
-                                      setAnnotationSaving(false)
-                                    }
-                                  }}
-                                  disabled={annotationSaving || !annotationNote.trim()}
-                                  style={{ ...btnPrimary, fontSize: TYPE.micro, padding: "6px 14px", background: "#FEB06A", color: "var(--sig-ink-on-bright, #04060F)", opacity: annotationSaving || !annotationNote.trim() ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6 }}
-                                >
-                                  {annotationSaving && <SavingSpinner size={10} />}
-                                  {annotationSaving ? "Saving..." : "Save Note"}
-                                </button>
-                                <button
-                                  onClick={() => setAnnotatingAppId(null)}
-                                  disabled={annotationSaving}
-                                  style={{ ...btnSecondary, fontSize: TYPE.micro, padding: "6px 12px", opacity: annotationSaving ? 0.5 : 1 }}
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                          {/* A job a coach added (Job Queue Add Job, Source a Job)
-                              can be deleted from the row itself; the DELETE
-                              route checks team and full access. */}
-                          {app.added_by_role === "coach" && (
-                            <DeleteJob
-                              onDelete={async () => {
-                                const res = await authFetch(`/api/coach/clients/${clientId}/applications/${app.id}`, { method: "DELETE" })
-                                const j = await res.json().catch(() => ({}))
-                                if (!res.ok || !j?.ok) return j?.error || `Couldn't delete the job (${res.status})`
-                                void loadAll({ silent: true })
-                                return null
-                              }}
-                            />
-                          )}
-                        </div>
-                      )}
+                      {/* Expanded content (shared with the From You card) */}
+                      {isOpen && renderAppDetails(app)}
                     </div>
                   )
                 })}
