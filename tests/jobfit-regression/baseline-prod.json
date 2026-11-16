@@ -44712,6 +44712,13 @@
         "label": "prospecting, outreach, and pipeline management"
       },
       {
+        "id": "63747e50d1bccc1f",
+        "key": "community_organizing_advocacy",
+        "kind": "function",
+        "strength": 6,
+        "label": "community organizing and advocacy outreach"
+      },
+      {
         "id": "7c735e78a5e27080",
         "key": "drafting_documentation",
         "kind": "deliverable",
@@ -44738,6 +44745,13 @@
         "kind": "function",
         "strength": 5,
         "label": "strategy, synthesis, and problem-solving work"
+      },
+      {
+        "id": "a1b3812d22db8c29",
+        "key": "community_organizing_advocacy",
+        "kind": "function",
+        "strength": 5,
+        "label": "community organizing and advocacy outreach"
       },
       {
         "id": "b6bba217e0c76a52",
@@ -45757,6 +45771,13 @@
         "label": "prospecting, outreach, and pipeline management"
       },
       {
+        "id": "63747e50d1bccc1f",
+        "key": "community_organizing_advocacy",
+        "kind": "function",
+        "strength": 6,
+        "label": "community organizing and advocacy outreach"
+      },
+      {
         "id": "7c735e78a5e27080",
         "key": "drafting_documentation",
         "kind": "deliverable",
@@ -45783,6 +45804,13 @@
         "kind": "function",
         "strength": 5,
         "label": "strategy, synthesis, and problem-solving work"
+      },
+      {
+        "id": "a1b3812d22db8c29",
+        "key": "community_organizing_advocacy",
+        "kind": "function",
+        "strength": 5,
+        "label": "community organizing and advocacy outreach"
       },
       {
         "id": "b6bba217e0c76a52",
@@ -52392,8 +52420,8 @@
     "schema_version": 2,
     "id": "prod-26a36036-3dca-451d-bf86-e0c490fbcde9",
     "label": "prod 26a36036 — Account Coordinator @ BerlinRosen (2026-05-12)",
-    "decision": "Priority Apply",
-    "score": 97,
+    "decision": "Apply",
+    "score": 89,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -52419,6 +52447,14 @@
         "kind": "stakeholder",
         "strength": 10,
         "label": "stakeholder coordination and cross-functional execution",
+        "requiredness": "core"
+      },
+      {
+        "id": "e481543e1aa93cfd",
+        "key": "community_organizing_advocacy",
+        "kind": "function",
+        "strength": 10,
+        "label": "community organizing and advocacy outreach",
         "requiredness": "core"
       },
       {
@@ -52733,7 +52769,13 @@
         "match_key": "stakeholder_coordination"
       }
     ],
-    "risk_codes": [],
+    "risk_codes": [
+      {
+        "code": "RISK_MISSING_PROOF",
+        "severity": "high",
+        "weight": -8.399999999999999
+      }
+    ],
     "scalars": {
       "job": {
         "analytics": {
@@ -52844,26 +52886,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Priority Apply"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": 0,
-          "note": "0"
+          "points": -8,
+          "note": "8.399999999999999"
         }
       ],
-      "raw_score": 97,
-      "clamped_score": 97
+      "raw_score": 89,
+      "clamped_score": 89
     }
   },
   "prod-27a50a31-ff2d-4bb3-902f-2e2d16163a66": {
@@ -55528,6 +55570,13 @@
         "label": "prospecting, outreach, and pipeline management"
       },
       {
+        "id": "63747e50d1bccc1f",
+        "key": "community_organizing_advocacy",
+        "kind": "function",
+        "strength": 6,
+        "label": "community organizing and advocacy outreach"
+      },
+      {
         "id": "7c735e78a5e27080",
         "key": "drafting_documentation",
         "kind": "deliverable",
@@ -55554,6 +55603,13 @@
         "kind": "function",
         "strength": 5,
         "label": "strategy, synthesis, and problem-solving work"
+      },
+      {
+        "id": "a1b3812d22db8c29",
+        "key": "community_organizing_advocacy",
+        "kind": "function",
+        "strength": 5,
+        "label": "community organizing and advocacy outreach"
       },
       {
         "id": "b6bba217e0c76a52",
@@ -56711,7 +56767,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Accounting",
@@ -66978,7 +67034,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Accounting",
@@ -107258,7 +107314,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": true,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Sales",
@@ -113008,7 +113064,7 @@
     "id": "prod-509dd3fd-8016-41ef-a141-50e5a83187a1",
     "label": "prod 509dd3fd — Marketing Coordinator @ Meadow (2026-06-25)",
     "decision": "Review",
-    "score": 70,
+    "score": 74,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -113236,11 +113292,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
         "code": "RISK_MISSING_PROOF",
         "severity": "high",
         "weight": 0
@@ -113277,7 +113328,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Marketing",
@@ -113378,12 +113429,12 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
@@ -113392,12 +113443,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -22,
-          "note": "22"
+          "points": -4,
+          "note": "4"
         }
       ],
-      "raw_score": 70,
-      "clamped_score": 70
+      "raw_score": 88,
+      "clamped_score": 74
     }
   },
   "prod-50fe53cf-6f15-40b2-b0a0-31244c65b594": {
@@ -116128,8 +116179,8 @@
     "schema_version": 2,
     "id": "prod-5379c2ed-322b-4c6d-9e8f-07613e007ed7",
     "label": "prod 5379c2ed — Account Executive @ Billion Dollar Boy (2026-05-07)",
-    "decision": "Review",
-    "score": 62,
+    "decision": "Apply",
+    "score": 80,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -116610,13 +116661,7 @@
         "match_key": "operations_execution"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -116640,7 +116685,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Sales",
@@ -116730,26 +116775,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -18,
-          "note": "18"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 62,
-      "clamped_score": 62
+      "raw_score": 80,
+      "clamped_score": 80
     }
   },
   "prod-53a7237d-cb88-4eca-84e2-f31a7891a127": {
@@ -148583,8 +148628,8 @@
     "schema_version": 2,
     "id": "prod-6c1f582b-c4d8-4669-9a2e-d5764bc496c7",
     "label": "prod 6c1f582b — Marketing Assistant - Riverhead Books @ Penguin Random House / Riverhead Books (2026-06-09)",
-    "decision": "Apply",
-    "score": 79,
+    "decision": "Priority Apply",
+    "score": 97,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -148963,13 +149008,7 @@
         "match_key": "photoshop"
       }
     ],
-    "risk_codes": [
-      {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      }
-    ],
+    "risk_codes": [],
     "scalars": {
       "job": {
         "analytics": {
@@ -148996,7 +149035,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Marketing",
@@ -149089,26 +149128,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Apply"
+          "note": "Priority Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -18,
-          "note": "18"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 79,
-      "clamped_score": 79
+      "raw_score": 97,
+      "clamped_score": 97
     }
   },
   "prod-6d0be438-b6ed-4e48-afae-90a16c85b58f": {
@@ -241748,6 +241787,13 @@
         "label": "prospecting, outreach, and pipeline management"
       },
       {
+        "id": "63747e50d1bccc1f",
+        "key": "community_organizing_advocacy",
+        "kind": "function",
+        "strength": 6,
+        "label": "community organizing and advocacy outreach"
+      },
+      {
         "id": "7c735e78a5e27080",
         "key": "drafting_documentation",
         "kind": "deliverable",
@@ -241774,6 +241820,13 @@
         "kind": "function",
         "strength": 5,
         "label": "strategy, synthesis, and problem-solving work"
+      },
+      {
+        "id": "a1b3812d22db8c29",
+        "key": "community_organizing_advocacy",
+        "kind": "function",
+        "strength": 5,
+        "label": "community organizing and advocacy outreach"
       },
       {
         "id": "b6bba217e0c76a52",
@@ -283688,8 +283741,8 @@
     "schema_version": 2,
     "id": "prod-cf2b7359-424a-46a3-9cbb-98f29688c705",
     "label": "prod cf2b7359 — Communications Assistant @ Whitney Museum of American Art (2026-05-07)",
-    "decision": "Review",
-    "score": 71,
+    "decision": "Apply",
+    "score": 82,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -284373,7 +284426,7 @@
       {
         "code": "RISK_EXPERIENCE",
         "severity": "medium",
-        "weight": -18
+        "weight": -7
       },
       {
         "code": "RISK_MISSING_PROOF",
@@ -284405,7 +284458,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "unclear",
         "jobFamily": "Sales",
@@ -284499,26 +284552,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Review"
+          "note": "Apply"
         },
         {
           "label": "penalty_sum",
-          "points": -26,
-          "note": "26.4"
+          "points": -15,
+          "note": "15.399999999999999"
         }
       ],
-      "raw_score": 71,
-      "clamped_score": 71
+      "raw_score": 82,
+      "clamped_score": 82
     }
   },
   "prod-cf2ece01-dec7-4bc0-af59-6f8bff83a78d": {
@@ -288984,6 +289037,13 @@
         "label": "prospecting, outreach, and pipeline management"
       },
       {
+        "id": "63747e50d1bccc1f",
+        "key": "community_organizing_advocacy",
+        "kind": "function",
+        "strength": 6,
+        "label": "community organizing and advocacy outreach"
+      },
+      {
         "id": "7c735e78a5e27080",
         "key": "drafting_documentation",
         "kind": "deliverable",
@@ -289010,6 +289070,13 @@
         "kind": "function",
         "strength": 5,
         "label": "strategy, synthesis, and problem-solving work"
+      },
+      {
+        "id": "a1b3812d22db8c29",
+        "key": "community_organizing_advocacy",
+        "kind": "function",
+        "strength": 5,
+        "label": "community organizing and advocacy outreach"
       },
       {
         "id": "b6bba217e0c76a52",
@@ -296053,8 +296120,8 @@
     "schema_version": 2,
     "id": "prod-d5e848db-604b-48ef-8a18-0415adf95563",
     "label": "prod d5e848db — Communications Broadcast & Multimedia Production Coordinator @ LaGuardia Community College (2026-05-21)",
-    "decision": "Pass",
-    "score": 42,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -296301,11 +296368,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -296333,7 +296395,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Analytics",
@@ -296422,26 +296484,26 @@
         {
           "label": "decision_initial",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_after_gate",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
-          "points": -18,
-          "note": "18"
+          "points": 0,
+          "note": "0"
         }
       ],
-      "raw_score": 42,
-      "clamped_score": 42
+      "raw_score": 60,
+      "clamped_score": 60
     }
   },
   "prod-d63816b9-2b4b-4e97-b9ec-72a72a0286f8": {
@@ -315116,6 +315178,13 @@
         "label": "prospecting, outreach, and pipeline management"
       },
       {
+        "id": "63747e50d1bccc1f",
+        "key": "community_organizing_advocacy",
+        "kind": "function",
+        "strength": 6,
+        "label": "community organizing and advocacy outreach"
+      },
+      {
         "id": "7c735e78a5e27080",
         "key": "drafting_documentation",
         "kind": "deliverable",
@@ -315142,6 +315211,13 @@
         "kind": "function",
         "strength": 5,
         "label": "strategy, synthesis, and problem-solving work"
+      },
+      {
+        "id": "a1b3812d22db8c29",
+        "key": "community_organizing_advocacy",
+        "kind": "function",
+        "strength": 5,
+        "label": "community organizing and advocacy outreach"
       },
       {
         "id": "b6bba217e0c76a52",
@@ -356604,7 +356680,7 @@
     "id": "prod-fde3c2fb-8f53-4efb-bbb2-98c6621cad16",
     "label": "prod fde3c2fb — Coordinator- Ticket Operations @ Kansas City Royals (2026-05-07)",
     "decision": "Pass",
-    "score": 31,
+    "score": 49,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -357095,11 +357171,6 @@
     ],
     "risk_codes": [
       {
-        "code": "RISK_EXPERIENCE",
-        "severity": "medium",
-        "weight": -18
-      },
-      {
         "code": "RISK_FAMILY_MISMATCH",
         "severity": "medium",
         "weight": -12
@@ -357134,7 +357205,7 @@
         "isGovernment": false,
         "isHourly": false,
         "isSalesHeavy": false,
-        "isSeniorRole": true,
+        "isSeniorRole": false,
         "isTrainingProgram": false,
         "jobArchetype": "mixed",
         "jobFamily": "Operations",
@@ -357229,12 +357300,12 @@
         },
         {
           "label": "penalty_sum",
-          "points": -26,
-          "note": "26"
+          "points": -8,
+          "note": "8"
         }
       ],
-      "raw_score": 31,
-      "clamped_score": 31
+      "raw_score": 49,
+      "clamped_score": 49
     }
   },
   "prod-fe2bfe0e-c9eb-45d2-8aef-9f99affede87": {

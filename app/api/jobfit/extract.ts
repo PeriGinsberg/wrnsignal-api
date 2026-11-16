@@ -121,6 +121,9 @@ const PROCUREMENT_OBJECTS = [
   "bid", "bids", "pricing", "price", "cost", "lead time", "purchase", "purchases",
 ]
 
+// Court-filing sense of "petition(s)", kept out of community_organizing_advocacy.
+const LEGAL_PETITION_CONTEXT = ["court", "habeas", "complaints", "motions", "filed", "filing", "pleadings", "injunctive"]
+
 const CAPABILITY_RULES: CapabilityRule[] = [
   {
     key: "brand_messaging",
@@ -1211,6 +1214,45 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "meet with families", "meet with business owners",
     ].map((phrase) => ({ phrase, negativeContext: ["underwriting", "underwriter", "claims"] })),
     adjacentKeys: ["customer_service_guest_experience", "prospecting_pipeline_management", "account_management"],
+  },
+  {
+    // Organizing and advocacy outreach (C015). Campaign organizer postings
+    // (canvassing, petitions, volunteer recruitment, coalitions, lobbying
+    // elected officials) extracted only "campaign" -> brand_messaging, and a
+    // résumé of legislative turnout and coalition outreach matched nothing.
+    // No bare "organized"/"organizing" ("highly organized", "organizing
+    // files") and no "community engagement" (mission blurbs say it).
+    key: "community_organizing_advocacy",
+    label: "community organizing and advocacy outreach",
+    kind: "function",
+    functionTag: "communications_pr",
+    profilePhrases: [
+      "grassroots", "coalition", "coalitions", "mobilized", "mobilizing", "mobilize",
+      "organized turnout", "turnout", "canvass", "canvassed", "canvassing", "collected petitions", "collecting petitions", "petition drive", "petition drives", "petition signatures",
+      "legislative outreach", "legislators", "lobbied", "lobbying", "voter education", "voter registration",
+      "voter outreach", "get out the vote", "community organizing", "community organizer", "campus organizer", "campaign organizer", "field organizer", "union organizer",
+      "phone bank", "phone banking", "volunteer recruitment", "recruited volunteers",
+    ].map((phrase) => ({ phrase, negativeContext: ["coursework", "course", ...LEGAL_PETITION_CONTEXT] })),
+    // "grassroots" alone is also marketing ("grassroots outreach to generate
+    // leads", "grassroots network"), and bare "mobilize" is culture-blurb
+    // language ("mobilize them around ... challenges"), so neither stands
+    // alone. Court petitions are legal work (Bureau of Prisons).
+    jobPhrases: [
+      { phrase: "grassroots", requiresNearby: [
+        "organizing", "organize", "organizer", "organizers", "campaign", "campaigns", "advocacy", "advocate",
+        "volunteers", "elected", "legislative", "canvass", "canvassers", "collect petitions", "coalition", "movement",
+      ] },
+      "build a coalition", "building a coalition", "coalition building", "build coalitions",
+      "canvass", "canvassers", "canvassing", "collect petitions", "collecting petitions", "petition drive", "petition drives", "turnout",
+      "recruit volunteers", "recruiting volunteers", "recruiting and inspiring", "volunteer recruitment",
+      "community organizing", "campus organizer", "campus organizers", "campaign organizer",
+      "lobby elected officials", "lobbying", "elected officials",
+      "voter registration", "get out the vote", "phone bank", "phone banking", "public education campaign",
+    ].map((spec) => ({
+      ...(typeof spec === "string" ? { phrase: spec } : spec),
+      negativeContext: ["about us", "our mission", "founded in", "equal opportunity", ...LEGAL_PETITION_CONTEXT],
+    })),
+    adjacentKeys: ["prospecting_pipeline_management", "policy_regulatory_research", "brand_messaging", "customer_service_guest_experience"],
   },
   {
     // Trademark / copyright / patent practice (C013). Without it an IP
@@ -4716,14 +4758,26 @@ export function extractJobSignals(
   // oversees, not its own level — the real-corpus false-negative). "junior-level"
   // is unambiguous and kept.
   const JUNIOR_BODY_RX =
-    /\b(?:recent|new)\s+grad(?:uate)?s?\b|\bentry[-\s]?level\b|\bearly[-\s]?career\b|\bjunior[-\s]level\b|\bno\s+(?:prior\s+)?experience\s+(?:required|necessary|needed)\b|\b[01]\s*(?:[-–—]|to)\s*[123]\+?\s*years?\b|\bup\s+to\s+(?:one|two|three|[123])\s+years?\b/i
+    /\b(?:recent|new)\s+grad(?:uate)?s?\b|\bentry[-\s]?level\b|\bearly[-\s]?career\b|\bjunior[-\s]level\b|\bno\s+(?:prior\s+)?experience\s+(?:required|necessary|needed)\b|\b[01]\s*(?:[-–—]|to)\s*[123]\+?\s*years?\b|\bup\s+to\s+(?:one|two|three|[123])\s+years?\b|\b(?:at\s+least|minimum(?:\s+of)?)\s+(?:one|1)\s+years?\s+(?:of\s+)?(?:relevant\s+|related\s+|professional\s+|work\s+)?experience\b/i
+  // "At least 1 year of relevant experience" is the posting's own level
+  // statement; without it "central coordinator and project manager" in the
+  // opening tagged an Associate role senior (EPN, C015).
   // TITLE signals — bare "junior"/"jr"/"intern" ARE unambiguous in a TITLE (a job
   // title never says "manages junior staff"), so allow them here in addition.
   const JUNIOR_TITLE_RX =
     /\b(?:junior|jr\.?|intern(?:ship)?)\b|\b(?:recent|new)\s+grad(?:uate)?s?\b|\bentry[-\s]?level\b|\bearly[-\s]?career\b|\bno\s+(?:prior\s+)?experience\s+(?:required|necessary|needed)\b|\b[01]\s*(?:[-–—]|to)\s*[123]\+?\s*years?\b|\bup\s+to\s+(?:one|two|three|[123])\s+years?\b/i
   const jdIsEntryLevel = JUNIOR_TITLE_RX.test(userTitleNorm) || JUNIOR_BODY_RX.test(normalized)
+  // The opening often names who the role works with or reports to ("will work
+  // closely with the Director of Development", "Reporting to EPN's Senior
+  // Director"). That is the boss's level, not this role's (HCFA Development
+  // Coordinator, C015). Needs "the"/"our"/a possessive so "looking for a
+  // Senior Manager to..." still counts.
+  const seniorScanOpening = normalized.slice(0, 300).replace(
+    /\b(?:with|to|under|support(?:s|ing)?|assist(?:s|ing)?)\s+(?:the|our|its|[a-z&]+['’]s)\s+(?:[a-z&-]+\s+){0,3}?(?:senior|lead|manager|director|vp|vice president|head of|principal)\b/gi,
+    " "
+  )
   const isSeniorRole =
-    (SENIOR_ROLE_RX.test(userTitleNorm) || SENIOR_ROLE_RX.test(normalized.slice(0, 300))) && !jdIsEntryLevel
+    (SENIOR_ROLE_RX.test(userTitleNorm) || SENIOR_ROLE_RX.test(seniorScanOpening)) && !jdIsEntryLevel
 
   // Inject default finance units when title signals Finance but body extracted nothing finance-related
   if (jobTitleIsFinance) {

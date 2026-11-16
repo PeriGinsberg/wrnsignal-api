@@ -29737,6 +29737,13 @@
         "label": "event planning, coordination, and bookings"
       },
       {
+        "id": "c1b73b5d46584414",
+        "key": "community_organizing_advocacy",
+        "kind": "function",
+        "strength": 10,
+        "label": "community organizing and advocacy outreach"
+      },
+      {
         "id": "e0dbc7ced1bda103",
         "key": "word",
         "kind": "tool",
