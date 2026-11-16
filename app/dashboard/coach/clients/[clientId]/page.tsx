@@ -83,6 +83,8 @@ type CoachRec = {
   verdict: string | null
   recommended_action: string | null
   created_at: string | null
+  /** The client's tracker row this recommendation created (null on a few old rows). */
+  application_id: string | null
 }
 
 type ClientApplication = {
@@ -728,10 +730,29 @@ export default function CoachClientPage() {
     { id: "history", label: "History" },
   ]
 
+  // A job the coach sourced is one job: its tracker row and its recommendation
+  // are shown together under From You, so Their Applications leaves it out.
+  // Before, the row sat in Their Applications and the note in From You.
+  const recAppIds = useMemo(
+    () => new Set(coachRecs.map((r) => r.application_id).filter((id): id is string => !!id)),
+    [coachRecs],
+  )
+  const appById = useMemo(() => new Map(clientApps.map((a) => [a.id, a])), [clientApps])
+
   const filteredApps = useMemo(() => {
-    if (statusFilter === "all") return clientApps
-    return clientApps.filter((a) => a.application_status === statusFilter)
-  }, [clientApps, statusFilter])
+    const theirApps = clientApps.filter((a) => !recAppIds.has(a.id))
+    if (statusFilter === "all") return theirApps
+    return theirApps.filter((a) => a.application_status === statusFilter)
+  }, [clientApps, recAppIds, statusFilter])
+
+  // A status tile counts every job, so its filter applies to From You too.
+  const visibleRecs = useMemo(() => {
+    if (statusFilter === "all") return coachRecs
+    return coachRecs.filter((r) => {
+      const app = r.application_id ? appById.get(r.application_id) : undefined
+      return app?.application_status === statusFilter
+    })
+  }, [coachRecs, appById, statusFilter])
 
   function handleTileClick(filterStatus: StatusFilter) {
     setStatusFilter(filterStatus)
@@ -980,15 +1001,15 @@ export default function CoachClientPage() {
               style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", marginBottom: recsExpanded ? 12 : 0 }}
             >
               <div style={{ ...eyebrow, color: T.INK_EMPHASIS }}>
-                FROM YOU — COACH RECOMMENDATIONS {coachRecs.length > 0 && <span style={{ color: T.DIM, fontWeight: 700 }}>({coachRecs.length})</span>}
+                FROM YOU — COACH RECOMMENDATIONS {visibleRecs.length > 0 && <span style={{ color: T.DIM, fontWeight: 700 }}>({visibleRecs.length})</span>}
               </div>
               <span style={{ fontSize: TYPE.secondary, color: T.DIM }}>{recsExpanded ? "▲" : "▼"}</span>
             </div>
-            {!recsExpanded ? null : coachRecs.length === 0 ? (
-              <p style={{ color: T.MUTED, fontSize: TYPE.secondary }}>No recommendations sent yet. Use the "Source a Job" tab to find and send jobs.</p>
+            {!recsExpanded ? null : visibleRecs.length === 0 ? (
+              <p style={{ color: T.MUTED, fontSize: TYPE.secondary }}>{coachRecs.length === 0 ? `No recommendations sent yet. Use the "Source a Job" tab to find and send jobs.` : `No ${statusFilter.replace(/_/g, " ")} recommendations.`}</p>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {coachRecs.map((rec) => {
+                {visibleRecs.map((rec) => {
                   const sentDate = rec.created_at
                     ? new Date(rec.created_at).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", year: "numeric" })
                     : null
@@ -1138,6 +1159,61 @@ export default function CoachClientPage() {
                           >
                             Edit
                           </button>
+
+                          {/* The tracker job this recommendation created: status,
+                              the per-job panel, and Delete, which removes both the
+                              job and this recommendation. */}
+                          {(() => {
+                            const app = rec.application_id ? appById.get(rec.application_id) : undefined
+                            if (!app) return null
+                            const link = { background: "none", border: "none", padding: 0, cursor: "pointer", fontSize: TYPE.secondary, fontWeight: 700, textDecoration: "underline" } as const
+                            return (
+                              <div style={{ marginTop: 12, borderTop: `1px solid ${T.BORDER_SOFT}`, paddingTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                                  <ApplicationStatusEditPill
+                                    value={app.application_status}
+                                    getToken={getToken}
+                                    clientProfileId={clientId}
+                                    applicationId={app.id}
+                                    onChange={(next) => {
+                                      setClientApps((prev) =>
+                                        prev.map((a) => (a.id === app.id ? { ...a, application_status: next as ApplicationStatus } : a)),
+                                      )
+                                    }}
+                                  />
+                                  {app.has_jobfit && (
+                                    <button onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("jobfit"); setJobPanelOpen(true) }} style={{ ...link, color: T.INK_LINK }}>
+                                      Full Jobfit
+                                    </button>
+                                  )}
+                                  {app.has_jobfit && (
+                                    <button onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("positioning"); setJobPanelOpen(true) }} style={{ ...link, color: T.WRN_TEAL }}>
+                                      Positioning
+                                    </button>
+                                  )}
+                                  {(app.has_jobfit || app.has_cover_letter) && (
+                                    <button onClick={() => { setJobPanelAppId(app.id); setJobPanelSection("coverletter"); setJobPanelOpen(true) }} style={{ ...link, color: T.INK_LINK }}>
+                                      Cover Letter
+                                    </button>
+                                  )}
+                                  {app.job_url && (
+                                    <a href={app.job_url} target="_blank" rel="noopener noreferrer" style={{ ...link, color: T.INK_LINK }}>
+                                      Posting
+                                    </a>
+                                  )}
+                                </div>
+                                <DeleteJob
+                                  onDelete={async () => {
+                                    const res = await authFetch(`/api/coach/clients/${clientId}/applications/${app.id}`, { method: "DELETE" })
+                                    const j = await res.json().catch(() => ({}))
+                                    if (!res.ok || !j?.ok) return j?.error || `Couldn't delete the job (${res.status})`
+                                    void loadAll({ silent: true })
+                                    return null
+                                  }}
+                                />
+                              </div>
+                            )
+                          })()}
                         </>
                       )}
                     </div>
