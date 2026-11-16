@@ -200,6 +200,9 @@ export function inferTargetFamilies(
     /\bproject coordinator\b/.test(roles) ||
     /\bprogram coordinator\b/.test(roles) ||
     /\boperations\b/.test(roles) ||
+    // "Non Profit Administration, Administration" (Dani Jonas, C015): admin
+    // and office-support targets are the Operations family on the JD side.
+    /\b(administration|administrative|office (manager|coordinator|administrator)|executive assistant)\b/.test(roles) ||
     // Hotel / guest-facing roles: the JD side reads front office and guest
     // services postings as Operations, so "Hospitality Front Desk, Guest
     // Services" targets fell to whatever else was listed (Sales) and took the

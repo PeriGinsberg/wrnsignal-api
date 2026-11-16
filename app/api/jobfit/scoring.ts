@@ -696,7 +696,12 @@ function selectWhyMatches(all: WhyEvidenceMatch[], min = 3, max = 6): WhyEvidenc
     if (t.length < 35) return true
     if (t.length > 320) return true
     if (t.includes("core competencies")) return true
-    if (t.includes("linkedin")) return true
+    // A contact-header line carries a LinkedIn URL or "LinkedIn:" label. A
+    // bullet that names LinkedIn as a channel the candidate ran ("Run the
+    // organization's Instagram, LinkedIn, and Facebook channels") is real
+    // evidence; dropping it left Dani Jonas (C015) with zero WHYs and a
+    // forced Pass on every advocacy posting.
+    if (/linkedin\.com|linkedin\s*:/.test(t)) return true
     if (t.includes("portfolio")) return true
     if (/@/.test(t)) return true
     if (/\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/.test(t)) return true
