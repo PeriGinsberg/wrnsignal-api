@@ -206,6 +206,24 @@ export function jobHasNoReadableRequirements(job: { requirement_units?: { kind: 
   return !(job.requirement_units ?? []).some((u) => u.kind !== "tool")
 }
 
+// Units that show up on almost any posting and say nothing about the actual
+// job: they come from generic lines ("keep records", "work with teams").
+const GENERIC_REQUIREMENT_KEYS = new Set([
+  "drafting_documentation",
+  "stakeholder_coordination",
+  "operations_execution",
+  "analysis_reporting",
+])
+
+// The engine read at most two real requirements from the posting (tools and
+// the generic units above don't count). The 2026-11-17 prod sweep found 72
+// zero-WHY Passes in the candidate's own target family; 45 had two or fewer
+// units, mostly generic ones, on postings for scientists, engineers and
+// marketers (DEF-050). Used by the decision guardrails only.
+export function jobReadIsThin(job: { requirement_units?: { kind: string; key: string }[] }): boolean {
+  return (job.requirement_units ?? []).filter((u) => u.kind !== "tool" && !GENERIC_REQUIREMENT_KEYS.has(u.key)).length <= 2
+}
+
 export type StructuredJobSignals = {
   rawHash: string
   jobTitle: string | null

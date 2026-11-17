@@ -877,8 +877,8 @@
     "schema_version": 2,
     "id": "batch-40926c",
     "label": "40926c — Lily Stein / Chemist I",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -1211,7 +1211,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -1220,15 +1220,15 @@
         }
       ],
       "raw_score": 88,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "batch-40926d": {
     "schema_version": 2,
     "id": "batch-40926d",
     "label": "40926d — Lily Stein / Analytical Scientist I",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -1580,7 +1580,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -1589,15 +1589,15 @@
         }
       ],
       "raw_score": 87,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "batch-40926e": {
     "schema_version": 2,
     "id": "batch-40926e",
     "label": "40926e — Lily Stein / QC Analyst I",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -1937,7 +1937,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -1946,7 +1946,7 @@
         }
       ],
       "raw_score": 87,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "batch-40926f": {
