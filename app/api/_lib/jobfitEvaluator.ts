@@ -33,7 +33,7 @@ import type {
   Decision,
   LocationConstraint,
 } from "../jobfit/signals"
-import { jobHasNoReadableRequirements } from "../jobfit/signals"
+import { jobHasNoReadableRequirements, jobReadIsThin } from "../jobfit/signals"
 import { renderBulletsV4, RENDERER_V4_STAMP } from "../jobfit/deterministicBulletRendererV4"
 import { extractJobSignalsLLM } from "../jobfit/extractJobSignalsLLM"
 import { llmJobExtractionToSignals } from "../jobfit/llmJobSignalsAdapter"
@@ -359,6 +359,7 @@ export async function runJobFit(args: {
     yearsRequired: jobSignals.yearsRequired,
     yearsExperienceApprox: profileSignals.yearsExperienceApprox,
     unreadableJob: jobHasNoReadableRequirements(jobSignals),
+    thinJob: jobReadIsThin(jobSignals),
     gateType: gate.type,
   })
   const decisionPreLedger = guardrail.decision

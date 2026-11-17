@@ -4433,8 +4433,8 @@
     "schema_version": 2,
     "id": "prod-045c0a6c-2985-46cc-860e-550605402c8c",
     "label": "prod 045c0a6c — Pre-Clinical Vector Design Group - Research Associate @ MeiraGTx (2026-05-23)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -4722,7 +4722,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -4731,7 +4731,7 @@
         }
       ],
       "raw_score": 68,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-04691f04-5350-4bd3-aeef-76425000be15": {
@@ -17149,8 +17149,8 @@
     "schema_version": 2,
     "id": "prod-0aafba6c-e1a6-40ef-816e-5b5ae89abc20",
     "label": "prod 0aafba6c — Associate Scientist @ Regeneron (2026-05-07)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -17424,7 +17424,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -17433,15 +17433,15 @@
         }
       ],
       "raw_score": 76,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-0ab7b19c-9074-422c-980f-3b2075d62a25": {
     "schema_version": 2,
     "id": "prod-0ab7b19c-9074-422c-980f-3b2075d62a25",
     "label": "prod 0ab7b19c — Associate Scientist @ Regeneron (2026-05-07)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -17715,7 +17715,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -17724,7 +17724,7 @@
         }
       ],
       "raw_score": 76,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-0ad34348-0ad4-47e5-9b06-161d512e00fa": {
@@ -20597,8 +20597,8 @@
     "schema_version": 2,
     "id": "prod-0cb7c8e6-6a38-4d1b-9a72-eb65b77685bf",
     "label": "prod 0cb7c8e6 — Associate Scientist, Formulation @ GSK (2026-06-03)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -20887,7 +20887,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -20896,7 +20896,7 @@
         }
       ],
       "raw_score": 78,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-0cdb911b-1720-4719-a453-40370b3d55d3": {
@@ -51737,8 +51737,8 @@
     "schema_version": 2,
     "id": "prod-25da799d-0796-4e9b-8b9d-914c3d704a38",
     "label": "prod 25da799d — Associate Scientist - DNA Core @ Regeneron (2026-05-17)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -51993,7 +51993,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -52002,7 +52002,7 @@
         }
       ],
       "raw_score": 84,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-2630c7d8-a511-4400-ab69-7d09fd91f745": {
@@ -57752,8 +57752,8 @@
     "schema_version": 2,
     "id": "prod-2a58c7b9-bb0d-417d-b38e-9d4fdf424c48",
     "label": "prod 2a58c7b9 — Research Associate, ID Virology @ Moderna (2026-06-02)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -58013,7 +58013,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -58022,7 +58022,7 @@
         }
       ],
       "raw_score": 84,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-2ab50beb-f0b3-40ae-b382-f6a542850690": {
@@ -61417,8 +61417,8 @@
     "schema_version": 2,
     "id": "prod-2dbf1b0b-1597-493e-9fbf-72c33b3f17e9",
     "label": "prod 2dbf1b0b — Cell Research Engineer @ Astrix (2026-05-23)",
-    "decision": "Pass",
-    "score": 54,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -61701,7 +61701,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -61710,7 +61710,7 @@
         }
       ],
       "raw_score": 54,
-      "clamped_score": 54
+      "clamped_score": 60
     }
   },
   "prod-2dd3ca6b-b79b-4234-8a3d-f7e6ebca5379": {
@@ -63888,8 +63888,8 @@
     "schema_version": 2,
     "id": "prod-2fb3325b-1f7a-4159-ae2d-31bf76760aad",
     "label": "prod 2fb3325b — Specialist, Client Service Management @ BNY (2026-05-17)",
-    "decision": "Pass",
-    "score": 45,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -64293,7 +64293,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -64302,7 +64302,7 @@
         }
       ],
       "raw_score": 45,
-      "clamped_score": 45
+      "clamped_score": 60
     }
   },
   "prod-2fb654cc-bcfb-4423-bb68-c8b9995bc303": {
@@ -65312,8 +65312,8 @@
     "schema_version": 2,
     "id": "prod-2ff6a06b-249b-47ea-bf39-8c96b70a0ede",
     "label": "prod 2ff6a06b — Associate Scientist @ Regeneron Genetics Medicines (2026-05-30)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -65568,7 +65568,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -65577,7 +65577,7 @@
         }
       ],
       "raw_score": 84,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-306c99f0-f56b-41d0-99b6-5c87dfd57df9": {
@@ -67152,8 +67152,8 @@
     "schema_version": 2,
     "id": "prod-309a7bea-5da5-45c7-8482-9f59f9736466",
     "label": "prod 309a7bea — Scientist @ AstraZeneca (2026-05-20)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -67440,7 +67440,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -67449,7 +67449,7 @@
         }
       ],
       "raw_score": 82,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-3132dab7-f521-498b-bc4e-3493bde51dd3": {
@@ -72992,8 +72992,8 @@
     "schema_version": 2,
     "id": "prod-35384d57-7226-47f8-8ce6-86ef73da4c04",
     "label": "prod 35384d57 — Scientist 1 or 2 - Biologics Downstream Process Development @ Parexel FSP (2026-06-01)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -73271,7 +73271,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -73280,7 +73280,7 @@
         }
       ],
       "raw_score": 76,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-35dc3ee9-8ed9-4478-8715-382fdf1d3139": {
@@ -86704,8 +86704,8 @@
     "schema_version": 2,
     "id": "prod-3da90911-68ac-4a89-8d65-1f76a59a1d3a",
     "label": "prod 3da90911 — Associate Scientist @ Pfizer (2026-06-09)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -86996,7 +86996,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -87005,7 +87005,7 @@
         }
       ],
       "raw_score": 78,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-3e3d5068-4c37-4e2f-a9bf-12fcb3eb5270": {
@@ -92325,8 +92325,8 @@
     "schema_version": 2,
     "id": "prod-4200e0d3-80ce-4796-ad46-fff7da619606",
     "label": "prod 4200e0d3 — Clinical Research Associate for Memory Disorders @ Mount Sinai Medical Center (2026-06-02)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -92599,7 +92599,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -92608,7 +92608,7 @@
         }
       ],
       "raw_score": 58,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-421d194d-c5c5-4750-b883-9c47391c20aa": {
@@ -138620,8 +138620,8 @@
     "schema_version": 2,
     "id": "prod-62a2998d-c4de-4801-8653-8e14f2b7104d",
     "label": "prod 62a2998d — Associate Scientist (Technical Product Development) @ Abbott (2026-06-05)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -138894,7 +138894,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -138903,7 +138903,7 @@
         }
       ],
       "raw_score": 62,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-6382d77d-c788-46aa-98c9-aa5aaf647d96": {
@@ -148023,8 +148023,8 @@
     "schema_version": 2,
     "id": "prod-6a554adb-515d-4e99-8f1d-1e1a8136d995",
     "label": "prod 6a554adb — Experienced Scientist I @ Janssen Research & Development, LLC (2026-06-02)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -148284,7 +148284,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -148293,7 +148293,7 @@
         }
       ],
       "raw_score": 77,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-6b5174c1-7e61-441f-bcb3-b4c4d22f85cb": {
@@ -153225,8 +153225,8 @@
     "schema_version": 2,
     "id": "prod-6ef865a2-da73-45d0-b662-540499dbc69a",
     "label": "prod 6ef865a2 — Consulting Intern @ Numerator (2026-04-19)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -153517,7 +153517,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -153526,7 +153526,7 @@
         }
       ],
       "raw_score": 84,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-6f30e83f-47f6-4a6b-9aa6-5bffd8a41f83": {
@@ -164121,8 +164121,8 @@
     "schema_version": 2,
     "id": "prod-788f5c06-cce5-4bc0-a195-5640c677bcfe",
     "label": "prod 788f5c06 — Associate Scientist @ Regeneron (2026-05-14)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -164377,7 +164377,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -164386,7 +164386,7 @@
         }
       ],
       "raw_score": 84,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-78db8f95-b3da-4a71-ba9b-a58c0a77245e": {
@@ -179347,8 +179347,8 @@
     "schema_version": 2,
     "id": "prod-83120e3b-c7fb-40e1-a1c2-02cfaca062d5",
     "label": "prod 83120e3b — Chemist I @ ADMA Biologics (2026-05-28)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -179622,7 +179622,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -179631,7 +179631,7 @@
         }
       ],
       "raw_score": 76,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-83e330fd-3d61-4336-b0a9-a3d827525567": {
@@ -184637,8 +184637,8 @@
     "schema_version": 2,
     "id": "prod-853953e2-1132-4d27-ad26-4ba583d17673",
     "label": "prod 853953e2 — Associate Molecular Biologist @ JPMorgan Chase (2026-05-28)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -184907,7 +184907,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -184916,7 +184916,7 @@
         }
       ],
       "raw_score": 76,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-8676b6b9-2d17-4b18-a794-183cff60ade4": {
@@ -186255,8 +186255,8 @@
     "schema_version": 2,
     "id": "prod-86d294d9-6435-4dfb-9b48-c6dd27d76e4a",
     "label": "prod 86d294d9 — Associate Scientist - Sample Management @ Regeneron (2026-05-14)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -186511,7 +186511,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -186520,7 +186520,7 @@
         }
       ],
       "raw_score": 84,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-86d81044-e96e-4b48-8364-6319f78f5c63": {
@@ -189688,8 +189688,8 @@
     "schema_version": 2,
     "id": "prod-88b66889-8a7a-4dee-bf9f-72ee1f437c58",
     "label": "prod 88b66889 — US Procurement Consultant Internship 2026 @ Proxima (2026-04-15)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -189985,7 +189985,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -189994,7 +189994,7 @@
         }
       ],
       "raw_score": 78,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-890683c6-2292-43df-9938-0888e1e5a984": {
@@ -199446,8 +199446,8 @@
     "schema_version": 2,
     "id": "prod-8ea21440-9b4b-407e-9631-5f2ec726c373",
     "label": "prod 8ea21440 — Clinical Laboratory Process Development Associate I @ Broad Institute of MIT and Harvard (2026-06-08)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -199721,7 +199721,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -199730,7 +199730,7 @@
         }
       ],
       "raw_score": 76,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-8f153489-f088-45f2-a8ed-1a4767cd4b04": {
@@ -223079,8 +223079,8 @@
     "schema_version": 2,
     "id": "prod-9fd4fa64-1996-451d-a792-501fbda199f3",
     "label": "prod 9fd4fa64 — Associate Scientist, Cell Culture Sciences, Biologics Drug Substance Commercialization @ Merck (2026-06-05)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -223363,7 +223363,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -223372,7 +223372,7 @@
         }
       ],
       "raw_score": 76,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-a006b63a-6bb6-41a1-b0cd-bc8d8e370735": {
@@ -240695,8 +240695,8 @@
     "schema_version": 2,
     "id": "prod-af4a6eac-26ff-4509-8c2a-11b8cd797af9",
     "label": "prod af4a6eac — Associate Scientist, Product Biochemistry @ Regeneron (2026-06-09)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -240951,7 +240951,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -240960,7 +240960,7 @@
         }
       ],
       "raw_score": 84,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-aff0e14d-f717-4eda-835b-2b4523225b6b": {
@@ -243293,8 +243293,8 @@
     "schema_version": 2,
     "id": "prod-b23a2d50-d470-4f35-8a5f-cd9a4940e75b",
     "label": "prod b23a2d50 — Biochemist 1 @ Siemens Healthineers (2026-06-02)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -243581,7 +243581,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -243590,7 +243590,7 @@
         }
       ],
       "raw_score": 61,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-b26cc4c1-caa4-4236-a7cf-5d88a4befb31": {
@@ -245846,8 +245846,8 @@
     "schema_version": 2,
     "id": "prod-b3662be3-3f9e-4154-bc70-c11e7ab6ad59",
     "label": "prod b3662be3 — High Throughput Screening/ Bioanalytical Associate Scientist @ Excelsior Sciences (2026-06-03)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -246127,7 +246127,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -246136,7 +246136,7 @@
         }
       ],
       "raw_score": 62,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-b3e99f67-b91f-4722-ad54-2c9eace0064b": {
@@ -258922,8 +258922,8 @@
     "schema_version": 2,
     "id": "prod-b978d32b-b780-43f0-a538-02f84439a250",
     "label": "prod b978d32b — Business Architecture Team Lead/Consultant @ Veeva (2026-06-09)",
-    "decision": "Pass",
-    "score": 46,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -259285,7 +259285,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -259294,7 +259294,7 @@
         }
       ],
       "raw_score": 46,
-      "clamped_score": 46
+      "clamped_score": 60
     }
   },
   "prod-ba169972-545f-444a-9b0f-05cad6fc506e": {
@@ -262610,8 +262610,8 @@
     "schema_version": 2,
     "id": "prod-bc6967b9-9c80-4ac6-bfbe-92749564f223",
     "label": "prod bc6967b9 — Associate Scientist @ Pfizer (2026-04-22)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -262871,7 +262871,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -262880,7 +262880,7 @@
         }
       ],
       "raw_score": 76,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-bc6bc2f7-374b-40ba-bee9-0a92eb581b6c": {
@@ -272494,8 +272494,8 @@
     "schema_version": 2,
     "id": "prod-c509e144-6ac9-4451-98f8-a2769f333270",
     "label": "prod c509e144 — Process Development Associate II @ Regeneron (2026-06-01)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -272750,7 +272750,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -272759,15 +272759,15 @@
         }
       ],
       "raw_score": 84,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-c5921c0d-5fef-40b6-a6b9-c30afe482e6d": {
     "schema_version": 2,
     "id": "prod-c5921c0d-5fef-40b6-a6b9-c30afe482e6d",
     "label": "prod c5921c0d — Junior Software Engineer @ Rokt (2026-04-21)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -273215,7 +273215,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -273224,7 +273224,7 @@
         }
       ],
       "raw_score": 87,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-c72c6cb0-f606-4269-9d0b-055df7ec52da": {
@@ -277779,8 +277779,8 @@
     "schema_version": 2,
     "id": "prod-c9a58da4-5dba-49ed-a31c-f4f155d9a883",
     "label": "prod c9a58da4 — Operations Coordinator @ Mayfair Property Management (2026-06-25)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -278165,7 +278165,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -278174,7 +278174,7 @@
         }
       ],
       "raw_score": 82,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-ca3e774c-553f-4c35-a964-a84748231139": {
@@ -291662,8 +291662,8 @@
     "schema_version": 2,
     "id": "prod-d416fbda-d872-4169-a299-90979fd8b982",
     "label": "prod d416fbda — Associate, QC Analytical, Cell Therapy @ Bristol Myers Squibb (2026-06-07)",
-    "decision": "Pass",
-    "score": 52,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -291928,7 +291928,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -291937,15 +291937,15 @@
         }
       ],
       "raw_score": 52,
-      "clamped_score": 52
+      "clamped_score": 60
     }
   },
   "prod-d4177d7b-d4cc-46ba-bb8c-fae8ee780292": {
     "schema_version": 2,
     "id": "prod-d4177d7b-d4cc-46ba-bb8c-fae8ee780292",
     "label": "prod d4177d7b — Associate Scientist - Advanced Technology @ The Estée Lauder Companies Inc. (2026-05-20)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -292208,7 +292208,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -292217,7 +292217,7 @@
         }
       ],
       "raw_score": 84,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-d49c660c-00c3-4053-9362-a36bc3f80f18": {
@@ -296573,8 +296573,8 @@
     "schema_version": 2,
     "id": "prod-d63816b9-2b4b-4e97-b9ec-72a72a0286f8",
     "label": "prod d63816b9 — Biologics Process Research & Development, Associate Scientist @ Merck (2026-05-17)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -296843,7 +296843,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -296852,7 +296852,7 @@
         }
       ],
       "raw_score": 84,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-d63bf417-c637-43d5-806d-3371628b237e": {
@@ -306658,8 +306658,8 @@
     "schema_version": 2,
     "id": "prod-ddd88929-c731-42b5-9e90-948e2af769df",
     "label": "prod ddd88929 — Digital Marketing & Client Development Intern @ David Zwirner (2026-04-27)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -307104,7 +307104,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -307113,7 +307113,7 @@
         }
       ],
       "raw_score": 55,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-dddf37a0-8363-448f-a2d4-1c0cab531b45": {
@@ -308649,8 +308649,8 @@
     "schema_version": 2,
     "id": "prod-de4548ac-db76-437b-94ee-0ebbb41864ec",
     "label": "prod de4548ac — Clinical Research Associate (CRA 2) @ IQVIA Biotech (2026-05-17)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -308939,7 +308939,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -308948,7 +308948,7 @@
         }
       ],
       "raw_score": 72,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-de820071-fa39-4227-bfb9-081a839039f4": {
@@ -313118,8 +313118,8 @@
     "schema_version": 2,
     "id": "prod-df65eac8-dcda-4f60-bf1e-05b1d16030fa",
     "label": "prod df65eac8 — Engineer I (Lab Testing & Operations) @ Amgen (2026-05-20)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -313447,7 +313447,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -313456,7 +313456,7 @@
         }
       ],
       "raw_score": 64,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-df6bc6ab-d6af-44b9-be34-bbfb2dc4714a": {
@@ -316409,8 +316409,8 @@
     "schema_version": 2,
     "id": "prod-dfeb4b3a-0386-4307-a4c0-26e40e61341e",
     "label": "prod dfeb4b3a — Associate Scientist @ Regeneron (2026-05-07)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -316684,7 +316684,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -316693,15 +316693,15 @@
         }
       ],
       "raw_score": 76,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-e013d114-fbbd-4fae-a614-4e8621336768": {
     "schema_version": 2,
     "id": "prod-e013d114-fbbd-4fae-a614-4e8621336768",
     "label": "prod e013d114 — Standards Bioprocess Engineer @ GSK (2026-06-23)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -316975,7 +316975,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -316984,7 +316984,7 @@
         }
       ],
       "raw_score": 60,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-e0aeb067-c660-40da-8455-580f62679c7f": {
@@ -320576,8 +320576,8 @@
     "schema_version": 2,
     "id": "prod-e30ddd8f-14d8-4e22-bfb0-353025720560",
     "label": "prod e30ddd8f — Junior Operations Analyst @ Energy CX (2026-05-04)",
-    "decision": "Pass",
-    "score": 55,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [],
@@ -320778,7 +320778,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -320787,7 +320787,7 @@
         }
       ],
       "raw_score": 80,
-      "clamped_score": 55
+      "clamped_score": 60
     }
   },
   "prod-e37ae047-388e-406f-96d7-018c1cb6ef38": {
@@ -346350,8 +346350,8 @@
     "schema_version": 2,
     "id": "prod-f3be98f9-6c85-4526-b4c6-9d83e6d2e68e",
     "label": "prod f3be98f9 — Business Development Associate @ Dorne Region (2026-06-23)",
-    "decision": "Pass",
-    "score": 45,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [
@@ -346661,7 +346661,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -346670,7 +346670,7 @@
         }
       ],
       "raw_score": 45,
-      "clamped_score": 45
+      "clamped_score": 60
     }
   },
   "prod-f43c1ca6-1ea8-4d91-bea6-27890c9ffd0a": {
@@ -354410,8 +354410,8 @@
     "schema_version": 2,
     "id": "prod-fc8c5d0d-79cb-46d3-8bbc-f3840cfcd092",
     "label": "prod fc8c5d0d — Recruiter @ MDRI - Medical Device Recruiters Inc. (2026-05-20)",
-    "decision": "Pass",
-    "score": 44,
+    "decision": "Review",
+    "score": 60,
     "gateType": "none",
     "traceMissing": false,
     "requirement_units": [],
@@ -354799,7 +354799,7 @@
         {
           "label": "decision_final",
           "points": 0,
-          "note": "Pass"
+          "note": "Review"
         },
         {
           "label": "penalty_sum",
@@ -354808,7 +354808,7 @@
         }
       ],
       "raw_score": 44,
-      "clamped_score": 44
+      "clamped_score": 60
     }
   },
   "prod-fcf67ed9-1caf-4826-a020-c47f3bb99782": {

@@ -125,6 +125,8 @@ function isQualityDirectWhy(w: WhyCode): boolean {
 // Rules:
 //   0. Unreadable posting           → Review         (no requirements beyond
 //      office tools, zero WHYs, no gate, no other risk; can lift a Pass)
+//   0b. Thin read                   → Review         (two or fewer real requirements,
+//      zero WHYs, no gate, no family mismatch, no high risk beyond "no match"; DEF-050)
 //   1. Zero WHY codes               → cap at Pass    (no evidence of any fit)
 //   2. Zero QUALITY direct WHY codes → cap at Review  (only weak/boilerplate proof)
 //      "Quality" means match_strength=direct AND weight >= 75 AND profile_fact
@@ -149,6 +151,7 @@ export function applyEvidenceGuardrails(
     yearsRequired?: number | null
     yearsExperienceApprox?: number | null
     unreadableJob?: boolean
+    thinJob?: boolean
     gateType?: GateTriggered["type"]
   } = {}
 ): { decision: Decision; reason: string | null; pinScore?: number } {
@@ -172,6 +175,30 @@ export function applyEvidenceGuardrails(
     riskCodes.every((r) => r.code === "RISK_LIMITED_MATCH_EVIDENCE" || r.code === "RISK_AMBIGUOUS_ROLE")
   ) {
     const reason = `unreadable posting — no requirements beyond office tools, zero WHY codes`
+    console.log(`[decision] Evidence guardrail: ${decision} -> Review (${reason})`)
+    return { decision: "Review", reason, pinScore: 60 }
+  }
+
+  // Rule 0b: thin read (DEF-050). The posting yielded at most two real
+  // requirements (office tools and generic units such as documentation or
+  // coordination don't count), so zero WHYs is again more likely a reading
+  // failure than a verdict on the candidate. Like rule 0 the result is Review
+  // either way: it lifts a Pass and caps an Apply that rule 1 would have
+  // turned into Pass. The 2026-11-17 prod sweep found 63
+  // runs where rule 1 turned a raw Apply or Review into Pass this way, 30 of
+  // them lab-science postings with no lab rules to read. Unlike rule 0 it
+  // stands aside when something real argues for Pass:
+  // a gate, a family mismatch, or any high-severity risk other than the two
+  // that only restate "no match found".
+  const NO_MATCH_RISKS = new Set(["RISK_LIMITED_MATCH_EVIDENCE", "RISK_MISSING_PROOF"])
+  if (
+    opts.thinJob &&
+    whyCount === 0 &&
+    (opts.gateType ?? "none") === "none" &&
+    !riskCodes.some((r) => r.code === "RISK_FAMILY_MISMATCH") &&
+    !riskCodes.some((r) => r.severity === "high" && !NO_MATCH_RISKS.has(r.code))
+  ) {
+    const reason = `thin read — at most two real requirements read from the posting, zero WHY codes`
     console.log(`[decision] Evidence guardrail: ${decision} -> Review (${reason})`)
     return { decision: "Review", reason, pinScore: 60 }
   }
