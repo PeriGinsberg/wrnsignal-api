@@ -26397,6 +26397,14 @@
         "requiredness": "supporting"
       },
       {
+        "id": "934442422199eeb9",
+        "key": "brand_messaging",
+        "kind": "function",
+        "strength": 5,
+        "label": "brand messaging and campaign work",
+        "requiredness": "supporting"
+      },
+      {
         "id": "b789b559c8c1443a",
         "key": "photoshop",
         "kind": "tool",
@@ -26418,14 +26426,6 @@
         "kind": "execution",
         "strength": 6,
         "label": "analysis, reporting, and measurement work",
-        "requiredness": "supporting"
-      },
-      {
-        "id": "e8e983c93d19d43a",
-        "key": "brand_messaging",
-        "kind": "function",
-        "strength": 5,
-        "label": "brand messaging and campaign work",
         "requiredness": "supporting"
       },
       {
