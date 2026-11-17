@@ -1004,8 +1004,10 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "product training",
       "train staff",
       "educate staff",
-      "product intro",
-      "product introduction",
+      // DEF-049 (C017): "New Product Introduction (NPI)" is the engineering
+      // launch stage, not a rep introducing products to clinicians.
+      { phrase: "product intro", negativeContext: ["new product introduction", "npi"] },
+      { phrase: "product introduction", negativeContext: ["new product introduction", "npi"] },
       "demo",
       "demonstration",
       "case support",
@@ -3101,6 +3103,12 @@ function buildUnitsFromLines(
   const functionTags = new Set<FunctionTag>()
   const debugHits: Record<string, number> = {}
   let inRequiredSection = false
+  // DEF-049 (C017): a posting can name the disciplines it hires from as bare
+  // one-line items under a lead-in ("talent from many disciplines including:"
+  // then "Mechanical Engineering"). Each item is too short for scoreJobLine, so
+  // the whole list was dropped and a MechE student matched nothing. Items stay
+  // in while the list runs: short lines with no sentence punctuation.
+  let inDisciplineList = false
 
   for (const line of lines) {
     const cleaned = cleanLine(line)
@@ -3115,7 +3123,12 @@ function buildUnitsFromLines(
     const n = norm(cleaned)
     if (!n) continue
 
-    const lineScore = side === "job" ? scoreJobLine(cleaned) : scoreProfileLine(cleaned)
+    let lineScore = side === "job" ? scoreJobLine(cleaned) : scoreProfileLine(cleaned)
+    if (side === "job") {
+      const isListItem = inDisciplineList && cleaned.split(/\s+/).length <= 5 && !/[.!?:]/.test(cleaned)
+      if (isListItem) lineScore = Math.max(lineScore, 2)
+      else inDisciplineList = /\b(disciplines|majors|fields of study|areas of study|degree programs)\b[^:]*:\s*$/i.test(cleaned)
+    }
     if (lineScore < 2) continue
 
     if (
