@@ -122,6 +122,7 @@ const PROCUREMENT_OBJECTS = [
 ]
 
 // Court-filing sense of "petition(s)", kept out of community_organizing_advocacy.
+const LEASING_MARKETING_CONTEXT = ["occupancy", "concessions", "leasing", "lease-up", "residents"]
 const LEGAL_PETITION_CONTEXT = ["court", "habeas", "complaints", "motions", "filed", "filing", "pleadings", "injunctive"]
 
 const CAPABILITY_RULES: CapabilityRule[] = [
@@ -159,6 +160,15 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "campaign initiatives",
       "marketing initiatives",
       "brand events",
+      // P&G-style brand-management postings (C016): "brand management",
+      // "developing marketing plans", "execute marketing tactics", "brand growth".
+      // Leasing JDs use the same words for filling units ("marketing plans ...
+      // to sustain occupancy", "pricing, concessions, and marketing tactics").
+      "brand management",
+      { phrase: "marketing plan", negativeContext: LEASING_MARKETING_CONTEXT },
+      { phrase: "marketing plans", negativeContext: LEASING_MARKETING_CONTEXT },
+      { phrase: "marketing tactics", negativeContext: LEASING_MARKETING_CONTEXT },
+      "brand growth",
     ],
     adjacentKeys: ["content_execution", "visual_communication"],
   },
@@ -344,6 +354,13 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "trend analysis",
       "audience research",
       "brand research",
+      // "identify consumer, shopper, and customer insights" (C016). Bare
+      // "customer insights" is also a department name ("Marketing, Customer
+      // Insights, Service Planning"), a consultancy's service list, and sales
+      // feedback ("champion customer insights by escalating feedback"), so it
+      // needs the consumer/shopper framing alongside it.
+      { phrase: "customer insights", requiresNearby: ["consumer", "consumers", "shopper", "shoppers"] },
+      "shopper insights",
     ],
     adjacentKeys: ["analysis_reporting", "policy_regulatory_research"],
   },
@@ -381,6 +398,9 @@ const CAPABILITY_RULES: CapabilityRule[] = [
       "trend analysis",
       "measurement",
       "performance reporting",
+      // "derive insights from the data" (C016).
+      "insights from the data",
+      "insights from data",
     ],
     adjacentKeys: ["financial_analysis", "performance_optimization"],
   },
