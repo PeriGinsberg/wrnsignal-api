@@ -310,6 +310,7 @@ export default function CoachClientPage() {
   const [coachClientId, setCoachClientId] = useState<string | null>(null)
   const [acceptedAt, setAcceptedAt] = useState<string | null>(null)
   const [lifecycleStatus, setLifecycleStatus] = useState<LifecycleStatus>("Active")
+  const [nightlySearch, setNightlySearch] = useState(false)
   // Prospect-capture columns from the profile GET `capture` namespace (Commit 1),
   // rendered as the read-only "Client Information" card (arc 1).
   const [capture, setCapture] = useState<Capture | null>(null)
@@ -440,6 +441,7 @@ export default function CoachClientPage() {
       setAcceptedAt(profileData.accepted_at ?? null)
       setLifecycleStatus((profileData.lifecycle_status as LifecycleStatus) ?? "Active")
       setCapture((profileData.capture as Capture | null) ?? null)
+      setNightlySearch(profileData.nightly_search === true)
       setInvitedAt((profileData.capture as Capture | null)?.invited_at ?? null)
       setClientApps(trackerData.applications || [])
       // The tracker returns raw coach_job_recommendations rows, whose columns are
@@ -1111,6 +1113,7 @@ export default function CoachClientPage() {
             engagement_started_at: acceptedAt ?? (clientProfile as any).created_at ?? null,
           }}
           lifecycleStatus={lifecycleStatus}
+          nightlySearch={nightlySearch}
           getToken={getToken}
           invitedAt={invitedAt}
           onSendInvite={handleSendInvite}
