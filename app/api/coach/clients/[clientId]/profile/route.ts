@@ -6,6 +6,7 @@ import { canonicalizeLegacyJobType, normalizeJobType } from "@/lib/jobType"
 import { resolveDelegation } from "@/lib/collab/delegation"
 import { getAuthedUser, getProfileId } from "@/lib/collab/identity"
 import { errorStatus } from "@/app/api/_lib/routeError"
+import { nightlySearchClientIds } from "@/lib/match/nightlySearch"
 
 
 export const runtime = "nodejs"
@@ -162,22 +163,15 @@ export async function GET(
       }
     }
 
-    // Same condition the nightly job-sourcing run uses to pick its clients
-    // (lib/pipeline/tick.ts, lib/pipeline/pairs.ts): a client_match_criteria
-    // row with active = true. Drives the "Nightly Search" pill.
-    const { data: crit, error: critErr } = await supabase
-      .from("client_match_criteria")
-      .select("active")
-      .eq("client_profile_id", clientProfileId)
-      .maybeSingle()
-    if (critErr) console.error("[coach/profile] client_match_criteria:", critErr.message)
+    // Drives the "Nightly Search" pill (lib/match/nightlySearch.ts).
+    const nightly = await nightlySearchClientIds(supabase, [clientProfileId])
 
     return withCorsJson(req, {
       ok: true,
       profile,
       personas: personas || [],
       capture,
-      nightly_search: crit?.active === true,
+      nightly_search: nightly.has(clientProfileId),
       // The coach_clients.id for (this client_profile_id, authed coach) —
       // already resolved by verifyCoachAccess above (access.id). The
       // Engagements tab is keyed by it (the engagement API uses coach_clients.id,

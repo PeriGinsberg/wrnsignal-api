@@ -33,6 +33,7 @@ import {
 import { resolveDelegation } from "@/lib/collab/delegation"
 import { getAuthedUser, getProfileRowOrNull } from "@/lib/collab/identity"
 import { errorStatus } from "@/app/api/_lib/routeError"
+import { nightlySearchClientIds } from "@/lib/match/nightlySearch"
 
 // The greeting's first name. Profiles store names as typed, so the first word
 // alone gave "Coach:" for "Coach: Peri Ginsberg" and "Dupuy," for "Dupuy, Alex".
@@ -425,7 +426,10 @@ export async function GET(req: NextRequest) {
       else responsesByClient.set(r.client_profile_id, [r.client_responded_at])
     }
 
-    // No awaits past this point: every card is assembled from the four reads
+    // D. Which clients the nightly job search includes: one query for all of them.
+    const nightly = await nightlySearchClientIds(supabase, clientProfileIds)
+
+    // No awaits past this point: every card is assembled from the reads
     // above, so the roster size costs CPU rather than round trips.
     const clientCards = relationships.map((rel) => {
       // cpid is null for prospect-lifecycle rows (Prospects v0.1 Commit 3 /
@@ -494,6 +498,7 @@ export async function GET(req: NextRequest) {
         email: profile?.email ?? rel.invited_email,
         status: rel.status,
         lifecycle_status: rel.lifecycle_status ?? "Active",
+        nightly_search: cpid ? nightly.has(cpid) : false,
         attention_level,
         stats,
         last_activity: lastActivity,
