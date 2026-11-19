@@ -548,14 +548,19 @@ export default function CoachClientPage() {
         body: JSON.stringify({ url: sourceUrl.trim() }),
       })
       const j = await res.json()
+      // Any site we can't read (LinkedIn, Indeed, a bot wall, a page with no
+      // readable description) gets the same open-and-paste popup. parse-job-url
+      // marks every such failure with suggestion "paste_text".
       if (res.ok) {
         if (j.jobDescription) setSourceJD(j.jobDescription)
         if (j.companyName) setSourceCompany(j.companyName)
         if (j.jobTitle) setSourceTitle(j.jobTitle)
-        if (!j.jobDescription && !j.companyName && !j.jobTitle) {
-          setRunError("Fetched the URL but could not extract job details. Try pasting the job description manually below.")
+        if (!j.jobDescription) {
+          setShowBlockedPopup(true)
+          setShowLinkedInHelper(true)
+          setLinkedInPasteText("")
         }
-      } else if (j.code === "LINKEDIN") {
+      } else if (j.suggestion === "paste_text") {
         setShowBlockedPopup(true)
         setShowLinkedInHelper(true)
         setLinkedInPasteText("")
@@ -1727,13 +1732,13 @@ export default function CoachClientPage() {
                 }}
               >
                 <div style={{ ...card, padding: 28, maxWidth: 460, width: "100%", textAlign: "center" }}>
-                  <div style={{ ...eyebrow, color: T.INK_EMPHASIS, fontSize: TYPE.micro, marginBottom: 10 }}>LINKEDIN</div>
+                  <div style={{ ...eyebrow, color: T.INK_EMPHASIS, fontSize: TYPE.micro, marginBottom: 10 }}>PASTE THE POSTING</div>
                   <div style={{ fontSize: 18, fontWeight: 900, color: T.TEXT, marginBottom: 12 }}>
                     We couldn't read this job posting
                   </div>
                   <p style={{ fontSize: TYPE.secondary, color: T.MUTED, lineHeight: "20px", marginBottom: 20, textAlign: "left" }}>
-                    LinkedIn blocks automated access to job postings. To continue, open the
-                    posting, copy the full job description, and paste it below.
+                    This site blocks automated access to its job postings. To continue, open the
+                    posting, copy the whole page, and paste it below.
                   </p>
                   <div style={{ display: "flex", gap: 10 }}>
                     <button
@@ -1753,15 +1758,15 @@ export default function CoachClientPage() {
               </div>
             )}
 
-            {/* LinkedIn helper */}
+            {/* Paste helper: any site we couldn't read */}
             {showLinkedInHelper && !showBlockedPopup && (
               <div style={{
                 background: "rgba(253,186,40,0.08)", border: "1px solid rgba(253,186,40,0.3)",
                 borderRadius: 14, padding: 20, marginBottom: 20,
               }}>
-                <div style={{ ...eyebrow, color: T.INK_EMPHASIS, fontSize: TYPE.micro, marginBottom: 8 }}>LINKEDIN: PASTE MANUALLY</div>
+                <div style={{ ...eyebrow, color: T.INK_EMPHASIS, fontSize: TYPE.micro, marginBottom: 8 }}>PASTE MANUALLY</div>
                 <p style={{ fontSize: TYPE.secondary, color: T.MUTED, marginBottom: 12, lineHeight: "18px" }}>
-                  LinkedIn blocks automated access. Open the job posting in your browser, select all the text (Ctrl+A / Cmd+A), copy it, and paste it below.
+                  This site blocks automated access. Open the job posting in your browser, select all the text (Ctrl+A / Cmd+A), copy it, and paste it below.
                 </p>
                 <textarea
                   style={{
@@ -1772,7 +1777,7 @@ export default function CoachClientPage() {
                     pointerEvents: fetchingUrl ? "none" : "auto",
                     transition: "opacity 120ms ease",
                   }}
-                  placeholder="Paste the full LinkedIn job page text here..."
+                  placeholder="Paste the full job page text here..."
                   value={linkedInPasteText}
                   onChange={(e) => setLinkedInPasteText(e.target.value)}
                 />
