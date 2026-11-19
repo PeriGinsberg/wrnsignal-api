@@ -10,6 +10,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { getSupabaseBrowser } from "../../../../lib/supabase-browser"
 import { T, btnSecondary, card, eyebrow, selectDark, selectDarkOption } from "../../../../lib/dashboard-theme"
 import { LifecycleStatusPill, LIFECYCLE_STATUS_VALUES, type LifecycleStatus } from "../LifecycleStatusPill"
+import { NightlySearchPill } from "../NightlySearchPill"
 import { BackToDashboard } from "../BackToDashboard"
 import CreateClientModal from "../CreateClientModal"
 import { LoadingShell } from "../LoadingShell"
@@ -53,6 +54,8 @@ type CoachClient = {
   email: string | null
   status: string | null
   lifecycle_status: LifecycleStatus
+  /** In the nightly job search (lib/match/nightlySearch.ts). */
+  nightly_search?: boolean
   attention_level: "high" | "medium" | "low" | null
   stats: {
     applications: number
@@ -511,6 +514,7 @@ export default function MyClientsFullPage() {
                             {c.lifecycle_status}
                           </span>
                         )}
+                        {c.nightly_search && <NightlySearchPill />}
                       </div>
                     </div>
                     <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { T, eyebrow } from "../../../../../../lib/dashboard-theme"
 import { Avatar } from "./Avatar"
 import { LifecycleStatusPill, type LifecycleStatus } from "../../../LifecycleStatusPill"
+import { NightlySearchPill } from "../../../NightlySearchPill"
 import { useDropdownPlacement } from "../../../useDropdownPlacement"
 
 // Overflow menu has 1 item × ~36px row + 12px padding = ~48px. Bumped
@@ -136,26 +137,7 @@ export function ClientHeaderStrip({
               onChange={onLifecycleStatusChange}
               size="md"
             />
-            {nightlySearch && (
-              // Same size and shape as the md status pill (LifecycleStatusPill),
-              // without the dropdown: it reports state, it doesn't set it.
-              <span
-                title="Included in the nightly job search"
-                style={{
-                  background: "var(--sig-pill-nightly-bg, #E0117A)",
-                  color: "var(--sig-pill-nightly-ink, #FFFFFF)",
-                  fontSize: 12,
-                  fontWeight: 900,
-                  padding: "6px 14px",
-                  borderRadius: 999,
-                  whiteSpace: "nowrap",
-                  letterSpacing: 0.2,
-                  lineHeight: "normal",
-                }}
-              >
-                Nightly Search
-              </span>
-            )}
+            {nightlySearch && <NightlySearchPill size="md" />}
             {engagementStart && (
               <span style={{ fontSize: TYPE.micro, color: T.DIM }}>
                 Client since {engagementStart}
