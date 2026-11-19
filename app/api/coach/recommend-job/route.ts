@@ -7,7 +7,7 @@ import {
   assembleProfileForScoring,
   runJobFitForProfile,
 } from "../../_lib/runJobFitForProfile"
-import { resolveDelegation } from "@/lib/collab/delegation"
+import { verifyCoachAccess } from "@/lib/collab/access"
 import { isolatePosting, type IsolatedPosting } from "@/lib/jobs/isolatePosting"
 import { getAuthedUser, getProfileId } from "@/lib/collab/identity"
 import { errorStatus } from "@/app/api/_lib/routeError"
@@ -34,20 +34,6 @@ async function verifyCoach(profileId: string, supabase: any): Promise<boolean> {
     .eq("id", profileId)
     .single()
   return data?.is_coach === true
-}
-
-async function verifyCoachAccess(coachProfileId: string, clientProfileId: string, requiredLevel: string, supabase: any) {
-  const levels: Record<string, string[]> = { view: ["view", "annotate", "full"], annotate: ["annotate", "full"], full: ["full"] }
-  const { data } = await supabase
-    .from("coach_clients")
-    .select("id, access_level, status")
-    .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
-    .eq("client_profile_id", clientProfileId)
-    .eq("status", "active")
-    .maybeSingle()
-  if (!data) return null
-  if (!levels[requiredLevel]?.includes(data.access_level)) return null
-  return data
 }
 
 export async function OPTIONS(req: NextRequest) {
@@ -194,15 +180,11 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Look up coach_client_id (required NOT NULL FK on coach_job_recommendations)
-    const { data: coachClientRow, error: ccErr } = await supabase
-      .from("coach_clients")
-      .select("id")
-      .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
-      .eq("client_profile_id", clientProfileId)
-      .eq("status", "active")
-      .maybeSingle()
-    if (ccErr || !coachClientRow) throw new Error("coach_clients relationship not found")
+    // coach_client_id (required NOT NULL FK on coach_job_recommendations): the
+    // relationship row that granted access above. A second .maybeSingle() lookup
+    // here failed whenever the caller matched two active rows for this client
+    // (a delegate acting for a principal who also has a row).
+    const coachClientRow = { id: access.id }
 
     // Create a jobfit_runs row for audit trail (owned by client)
     const { data: runRow } = await supabase

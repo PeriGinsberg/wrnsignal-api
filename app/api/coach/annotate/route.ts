@@ -2,7 +2,7 @@
 import { type NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { corsOptionsResponse, withCorsJson } from "../../_lib/cors"
-import { resolveDelegation } from "@/lib/collab/delegation"
+import { verifyCoachAccess } from "@/lib/collab/access"
 import { getAuthedUser, getProfileId } from "@/lib/collab/identity"
 import { errorStatus } from "@/app/api/_lib/routeError"
 
@@ -17,20 +17,6 @@ function getSupabaseAdmin() {
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
-}
-
-async function verifyCoachAccess(coachProfileId: string, clientProfileId: string, requiredLevel: string, supabase: any) {
-  const levels: Record<string, string[]> = { view: ["view", "annotate", "full"], annotate: ["annotate", "full"], full: ["full"] }
-  const { data } = await supabase
-    .from("coach_clients")
-    .select("id, access_level, status")
-    .in("coach_profile_id", (await resolveDelegation(supabase, coachProfileId)).actingIds)
-    .eq("client_profile_id", clientProfileId)
-    .eq("status", "active")
-    .maybeSingle()
-  if (!data) return null
-  if (!levels[requiredLevel]?.includes(data.access_level)) return null
-  return data
 }
 
 export async function OPTIONS(req: NextRequest) {
