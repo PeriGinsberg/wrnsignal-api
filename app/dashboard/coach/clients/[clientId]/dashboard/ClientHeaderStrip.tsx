@@ -31,6 +31,8 @@ export type ClientHeaderProfile = {
 type Props = {
   profile: ClientHeaderProfile
   lifecycleStatus: LifecycleStatus
+  /** The nightly job-sourcing run includes this client (active client_match_criteria row). */
+  nightlySearch?: boolean
   getToken: () => Promise<string | null>
   // Invite state. invited_at is the single source of truth: NULL = the deferred
   // invite has not been sent yet (create-client provisions the account but
@@ -53,6 +55,7 @@ type Props = {
 export function ClientHeaderStrip({
   profile,
   lifecycleStatus,
+  nightlySearch = false,
   getToken,
   invitedAt,
   onSendInvite,
@@ -133,6 +136,26 @@ export function ClientHeaderStrip({
               onChange={onLifecycleStatusChange}
               size="md"
             />
+            {nightlySearch && (
+              // Same size and shape as the md status pill (LifecycleStatusPill),
+              // without the dropdown: it reports state, it doesn't set it.
+              <span
+                title="Included in the nightly job search"
+                style={{
+                  background: "var(--sig-pill-nightly-bg, #E0117A)",
+                  color: "var(--sig-pill-nightly-ink, #FFFFFF)",
+                  fontSize: 12,
+                  fontWeight: 900,
+                  padding: "6px 14px",
+                  borderRadius: 999,
+                  whiteSpace: "nowrap",
+                  letterSpacing: 0.2,
+                  lineHeight: "normal",
+                }}
+              >
+                Nightly Search
+              </span>
+            )}
             {engagementStart && (
               <span style={{ fontSize: TYPE.micro, color: T.DIM }}>
                 Client since {engagementStart}
