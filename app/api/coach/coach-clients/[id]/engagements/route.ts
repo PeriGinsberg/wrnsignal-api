@@ -78,12 +78,24 @@ export async function POST(
       return withCorsJson(req, { ok: false, error: "Client relationship not found" }, 404)
     }
 
+    // The RPC gates on the coach who OWNS the relationship and the package, not
+    // on the caller: a delegate passes the route check above through her
+    // principal, but the row and the packages are the principal's. So hand the
+    // RPC the relationship's own coach. The event log below still names the
+    // caller.
+    const { data: rel, error: relErr } = await supabase
+      .from("coach_clients")
+      .select("coach_profile_id")
+      .eq("id", id)
+      .single()
+    if (relErr) throw new Error(`Relationship lookup failed: ${relErr.message}`)
+
     // The RPC does its own dual-ownership gate (relationship AND package) and
     // snapshots everything atomically. Map its raised exceptions to a 404.
     const { data: newEngagementId, error: rpcErr } = await supabase.rpc("attach_package_to_engagement", {
       p_coach_client_id: id,
       p_package_id: packageId,
-      p_coach_profile_id: coachProfileId,
+      p_coach_profile_id: rel.coach_profile_id as string,
     })
     if (rpcErr) {
       const msg = rpcErr.message || ""
